@@ -1,26 +1,39 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const tintColorLight = "#CBAD8D"; // Tan
+const tintColorDark = "#F1EDE6"; // Cream
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
+    // --- Original ---
+    text: "#3A2D28", // Dark Brown
+    background: "#F1EDE6", // Cream
+    tint: tintColorLight, // Tan
+    icon: "#A48374", // Rosewood
+    tabIconDefault: "#A48374",
     tabIconSelected: tintColorLight,
+
+    // --- New ---
+    cardBackground: "#E6DED7", // 2% darker than #EBE3DB
+
+    border: "#D1C7BD", // Soft Taupe
+    buttonBackground: "#CBAD8D", // Tan
+    buttonText: "#3A2D28", // Dark Brown
+    shadow: "rgba(0, 0, 0, 0.1)", // Soft shadow
   },
+
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    // --- Original ---
+    text: "#F1EDE6", // Cream
+    background: "#3A2D28", // Dark Brown
+    tint: tintColorDark, // Cream
+    icon: "#D1C7BD", // Soft Taupe
+    tabIconDefault: "#D1C7BD",
     tabIconSelected: tintColorDark,
+
+    // --- New ---
+    cardBackground: "#A48374", // Rosewood
+    border: "#A48374", // Rosewood (doubled for stronger lines in dark)
+    buttonBackground: "#A48374", // Rosewood
+    buttonText: "#F1EDE6", // Cream
+    shadow: "rgba(0, 0, 0, 0.5)", // Stronger shadow
   },
 };
