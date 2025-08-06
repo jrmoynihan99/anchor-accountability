@@ -1,7 +1,9 @@
 // app/(tabs)/_layout.tsx
 import { FloatingPillNavigation } from "@/components/FloatingPillNavigation";
-import { FloatingReachOutButton } from "@/components/FloatingReachOutButton";
 import { HapticTab } from "@/components/HapticTab";
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { FloatingReachOutButton } from "@/components/morphing/reach-out-floating-button/FloatingReachOutButton";
+import { FloatingReachOutModal } from "@/components/morphing/reach-out-floating-button/FloatingReachOutModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
@@ -74,7 +76,46 @@ export default function TabLayout() {
       </Tabs>
 
       {/* Only render FloatingReachOutButton if NOT on index tab */}
-      {activeTab !== "index" && <FloatingReachOutButton />}
+      {activeTab !== "index" && (
+        <ButtonModalTransitionBridge
+          modalWidthPercent={1.0}
+          modalHeightPercent={1.0}
+          modalBorderRadius={50}
+          buttonBorderRadius={24}
+        >
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => (
+            <>
+              <FloatingReachOutButton
+                buttonRef={buttonRef}
+                style={buttonAnimatedStyle}
+                onPress={() => {
+                  console.log("Floating reach out pressed!");
+                  open();
+                }}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+              />
+
+              <FloatingReachOutModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+              />
+            </>
+          )}
+        </ButtonModalTransitionBridge>
+      )}
 
       {/* Custom floating pill navigation */}
       <FloatingPillNavigation
