@@ -1,10 +1,17 @@
-// ReachOutModal.tsx
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
+import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -14,42 +21,70 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { ReachOutConfirmationScreen } from "./ReachOutConfirmationScreen";
-import { ReachOutInputScreen } from "./ReachOutInputScreen";
+import { GuidedPrayerContent } from "./GuidedPrayerContent";
+import { PrayerStepNavigation } from "./PrayerStepNavigation";
+import { PrayerTimer } from "./PrayerTimer";
+import { PRAYER_STEPS, PrayerStep, getNextStep } from "./prayerUtils";
 
-interface ReachOutModalProps {
+interface GuidedPrayerModalProps {
   isVisible: boolean;
   progress: Animated.SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 }
 
-type ScreenType = "input" | "confirmation";
-
-export function ReachOutModal({
+export function GuidedPrayerModal({
   isVisible,
   progress,
   modalAnimatedStyle,
   close,
-}: ReachOutModalProps) {
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
-  const [contextMessage, setContextMessage] = useState("");
+}: GuidedPrayerModalProps) {
   const gestureY = useSharedValue(0);
   const theme = useColorScheme();
-  const accent = Colors[theme ?? "dark"].tint ?? "#CBAD8D";
+  const colors = Colors[theme ?? "dark"];
+  const mainTextColor = "#3A2D28";
+  const prayerColor = "#8B6914";
 
-  // Reset state when modal closes
-  const handleClose = (velocity?: number) => {
-    setCurrentScreen("input");
-    setContextMessage("");
-    close(velocity);
+  const [currentStep, setCurrentStep] = useState<PrayerStep>("intro");
+  const [isTimerActive, setIsTimerActive] = useState(false);
+
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (isVisible) {
+      setCurrentStep("intro");
+      setIsTimerActive(false);
+    }
+  }, [isVisible]);
+
+  const handleStepChange = (step: PrayerStep) => {
+    // Stop current timer first
+    setIsTimerActive(false);
+    setCurrentStep(step);
+
+    const stepConfig = PRAYER_STEPS[step];
+
+    // Always provide haptic feedback for step changes
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Start timer if the step has a duration
+    if (stepConfig.duration) {
+      // Small delay to ensure state updates properly
+      setTimeout(() => {
+        setIsTimerActive(true);
+      }, 50);
+    }
   };
 
-  // Handle sending the message
-  const handleSendMessage = () => {
-    // TODO: Implement actual sending logic here
-    console.log("Sending message:", contextMessage);
-    setCurrentScreen("confirmation");
+  const handleTimerComplete = () => {
+    setIsTimerActive(false);
+    const nextStep = getNextStep(currentStep);
+
+    if (nextStep) {
+      if (nextStep === "complete") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      handleStepChange(nextStep);
+    }
   };
 
   // Drag-to-close (swipe UP to close)
@@ -72,7 +107,7 @@ export function ReachOutModal({
           { duration: 200, easing: Easing.inOut(Easing.quad) },
           (finished) => {
             if (finished) {
-              runOnJS(handleClose)(event.velocityY);
+              runOnJS(close)(event.velocityY);
               gestureY.value = 0;
             }
           }
@@ -100,8 +135,10 @@ export function ReachOutModal({
     opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),
   }));
   const buttonContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.1], [1, 0], "clamp"),
+    opacity: interpolate(progress.value, [0, 0.3], [1, 0], "clamp"),
   }));
+
+  const stepInfo = PRAYER_STEPS[currentStep];
 
   return (
     <Modal
@@ -109,7 +146,7 @@ export function ReachOutModal({
       transparent
       statusBarTranslucent
       animationType="none"
-      onRequestClose={() => handleClose()}
+      onRequestClose={() => close()}
     >
       {/* Overlay */}
       <Animated.View
@@ -122,7 +159,7 @@ export function ReachOutModal({
       >
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
-          onPress={() => handleClose()}
+          onPress={() => close()}
           activeOpacity={1}
         />
       </Animated.View>
@@ -138,7 +175,7 @@ export function ReachOutModal({
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: accent },
+            { backgroundColor: colors.cardBackground },
             solidBackgroundStyle,
           ]}
         />
@@ -153,28 +190,22 @@ export function ReachOutModal({
             <View
               style={[
                 styles.blurBackground,
-                { backgroundColor: `${accent}B8` },
+                { backgroundColor: `${colors.cardBackground}B8` },
               ]}
             />
           </BlurView>
         </Animated.View>
 
-        {/* === PILL BUTTON CONTENT (animates in/out) === */}
+        {/* === PRAYER CARD CONTENT (animates in/out) === */}
         <Animated.View
-          style={[styles.pillButton, buttonContentStyle]}
-          pointerEvents="none"
+          style={[styles.prayerCardButton, buttonContentStyle]}
+          pointerEvents="box-none"
         >
-          <View style={styles.pillButtonTouchable}>
-            <View style={styles.pillTextContainer}>
-              <Ionicons
-                name="shield-checkmark"
-                size={20}
-                color="#fff"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.pillText}>Reach Out</Text>
-            </View>
-            <Text style={styles.subduedText}>Get anonymous help</Text>
+          <View style={styles.prayerButtonContent}>
+            <GuidedPrayerContent
+              showButtons={true}
+              onBeginPrayer={() => handleStepChange("breathing")}
+            />
           </View>
         </Animated.View>
 
@@ -182,28 +213,53 @@ export function ReachOutModal({
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.modalContent, modalContentStyle]}>
             <TouchableOpacity
-              onPress={() => handleClose()}
+              onPress={() => close()}
               style={styles.closeButton}
               hitSlop={16}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={28} color="#3A2D28" />
+              <Ionicons name="close" size={28} color={mainTextColor} />
             </TouchableOpacity>
 
-            {currentScreen === "input" ? (
-              <ReachOutInputScreen
-                contextMessage={contextMessage}
-                onContextChange={setContextMessage}
-                onSend={handleSendMessage}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* Header */}
+              <View style={styles.modalHeader}>
+                <Text style={styles.emoji}>🙏</Text>
+                <Text style={[styles.modalTitle, { color: mainTextColor }]}>
+                  {stepInfo.title}
+                </Text>
+                {stepInfo.subtitle && (
+                  <Text style={[styles.modalSubtitle, { color: "#8D7963" }]}>
+                    {stepInfo.subtitle}
+                  </Text>
+                )}
+              </View>
+
+              {/* Timer Display */}
+              {stepInfo.duration && (
+                <PrayerTimer
+                  duration={stepInfo.duration}
+                  isActive={isTimerActive}
+                  onComplete={handleTimerComplete}
+                  color={prayerColor}
+                />
+              )}
+
+              {/* Content */}
+              <View style={styles.contentContainer}>
+                <Text style={[styles.contentText, { color: mainTextColor }]}>
+                  {stepInfo.content}
+                </Text>
+              </View>
+
+              {/* Step Navigation */}
+              <PrayerStepNavigation
+                currentStep={currentStep}
+                onStepChange={handleStepChange}
+                onClose={close}
+                prayerColor={prayerColor}
               />
-            ) : (
-              <ReachOutConfirmationScreen
-                onClose={handleClose}
-                onGuidedPrayer={() => {
-                  /* TODO: Navigate to guided prayer */
-                }}
-              />
-            )}
+            </ScrollView>
 
             <View style={styles.bottomDragIndicator} />
           </Animated.View>
@@ -219,37 +275,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
-  pillButton: {
+  prayerCardButton: {
     position: "absolute",
     top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
-    paddingVertical: 100,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 20,
     zIndex: 10,
     backgroundColor: "transparent",
-  },
-  pillButtonTouchable: {
-    alignItems: "center",
     justifyContent: "center",
-    flexDirection: "column",
   },
-  pillTextContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  pillText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 24,
-  },
-  subduedText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 0.2,
+  prayerButtonContent: {
+    alignItems: "stretch",
   },
   modalContent: {
     flex: 1,
@@ -266,6 +304,41 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: "center",
     justifyContent: "center",
+  },
+  modalHeader: {
+    alignItems: "center",
+    marginTop: 60,
+    marginBottom: 32,
+  },
+  emoji: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
+    opacity: 0.8,
+  },
+  contentContainer: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+  },
+  contentText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: "center",
+    fontWeight: "500",
   },
   bottomDragIndicator: {
     position: "absolute",

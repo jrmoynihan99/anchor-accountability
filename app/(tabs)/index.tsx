@@ -1,5 +1,6 @@
-import { GuidedPrayer } from "@/components/GuidedPrayer";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { GuidedPrayer } from "@/components/morphing/guided-prayer/GuidedPrayer";
+import { GuidedPrayerModal } from "@/components/morphing/guided-prayer/GuidedPrayerModal";
 import { ReachOutButton } from "@/components/morphing/reach-out-main-button/ReachOutButton";
 import { ReachOutModal } from "@/components/morphing/reach-out-main-button/ReachOutModal";
 import { StreakCard } from "@/components/morphing/streak/StreakCard";
@@ -222,12 +223,36 @@ export default function HomeScreen() {
           )}
         </ButtonModalTransitionBridge>
 
-        <GuidedPrayer
-          onPress={() => {
-            // Handle guided prayer start
-            console.log("Starting guided prayer...");
-          }}
-        />
+        <ButtonModalTransitionBridge>
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => (
+            <>
+              <GuidedPrayer
+                buttonRef={buttonRef}
+                style={buttonAnimatedStyle}
+                onPress={open}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onBeginPrayer={open} // This allows the button inside the card to also open the modal
+              />
+              <GuidedPrayerModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+              />
+            </>
+          )}
+        </ButtonModalTransitionBridge>
       </ScrollView>
     </View>
   );

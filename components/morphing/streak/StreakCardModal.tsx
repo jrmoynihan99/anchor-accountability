@@ -115,10 +115,10 @@ export function StreakCardModal({
     opacity: interpolate(progress.value, [0, 1], [0, 0.4]),
   }));
   const solidBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.25], [1, 0], "clamp"),
+    opacity: interpolate(progress.value, [0, 0.4], [1, 0], "clamp"),
   }));
   const blurBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.05, 0.25], [0, 1], "clamp"),
+    opacity: interpolate(progress.value, [0.1, 0.3], [0, 1], "clamp"),
   }));
   const modalContentStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),

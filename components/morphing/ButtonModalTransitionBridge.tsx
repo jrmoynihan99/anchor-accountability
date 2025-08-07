@@ -1,6 +1,6 @@
 import * as Haptics from "expo-haptics";
-import React, { useRef, useState } from "react";
-import { Dimensions } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Dimensions, Keyboard, Platform } from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -13,17 +13,6 @@ import Animated, {
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export interface ButtonModalTransitionBridgeProps {
-  /**
-   * Render prop. You get:
-   *  - open: call to open modal
-   *  - close: call to close modal
-   *  - isModalVisible: modal open state
-   *  - progress: Reanimated sharedValue (0=button, 1=modal)
-   *  - animated styles for button & modal
-   *  - buttonRef: attach to your button for measuring
-   *  - measured layout
-   *  - handlePressIn/Out: for button press animations
-   */
   children: (args: {
     open: () => void;
     close: (velocity?: number) => void;
@@ -36,10 +25,10 @@ export interface ButtonModalTransitionBridgeProps {
     handlePressIn: () => void;
     handlePressOut: () => void;
   }) => React.ReactNode;
-  modalWidthPercent?: number; // default 0.9
-  modalHeightPercent?: number; // default 0.7
-  modalBorderRadius?: number; // default 28
-  buttonBorderRadius?: number; // default 20
+  modalWidthPercent?: number;
+  modalHeightPercent?: number;
+  modalBorderRadius?: number;
+  buttonBorderRadius?: number;
 }
 
 export function ButtonModalTransitionBridge({
@@ -62,11 +51,49 @@ export function ButtonModalTransitionBridge({
   // --- Animated values ---
   const progress = useSharedValue(0);
   const pressScale = useSharedValue(1);
+  const keyboardOffset = useSharedValue(0);
+
+  // --- Keyboard handling ---
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        if (isModalVisible) {
+          // Calculate how much to move the modal up
+          const keyboardHeight = event.endCoordinates.height;
+          const modalBottom =
+            (screenHeight + screenHeight * modalHeightPercent) / 2;
+          const overlap = modalBottom - (screenHeight - keyboardHeight);
+
+          if (overlap > 0) {
+            keyboardOffset.value = withTiming(-overlap - 20, {
+              duration: Platform.OS === "ios" ? event.duration : 250,
+              easing: Easing.bezier(0.22, 1, 0.36, 1),
+            });
+          }
+        }
+      }
+    );
+
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        keyboardOffset.value = withTiming(0, {
+          duration: Platform.OS === "ios" ? event.duration : 250,
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
+        });
+      }
+    );
+
+    return () => {
+      showSubscription?.remove();
+      hideSubscription?.remove();
+    };
+  }, [isModalVisible]);
 
   // --- Button press handlers ---
   const handlePressIn = () => {
     if (!isModalVisible) {
-      // Measure FIRST at full scale, then immediately start press animation
       if (
         buttonRef.current &&
         typeof buttonRef.current.measureInWindow === "function"
@@ -78,7 +105,6 @@ export function ButtonModalTransitionBridge({
         );
       }
 
-      // Start press animation immediately (doesn't wait for measurement)
       pressScale.value = withTiming(0.97, {
         duration: 100,
         easing: Easing.quad,
@@ -98,8 +124,6 @@ export function ButtonModalTransitionBridge({
   // --- Modal open ---
   const open = () => {
     setIsModalVisible(true);
-
-    // Animate after visible with haptic feedback
     requestAnimationFrame(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       progress.value = withTiming(1, {
@@ -111,6 +135,9 @@ export function ButtonModalTransitionBridge({
 
   // --- Modal close ---
   const close = (velocity = 0) => {
+    // Reset keyboard offset when closing
+    keyboardOffset.value = 0;
+
     const currentProgress = progress.value;
     const remainingDistance = currentProgress;
     if (Math.abs(velocity) > 100) {
@@ -167,7 +194,7 @@ export function ButtonModalTransitionBridge({
     const top = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.y, targetTop]
+      [buttonLayout.y, targetTop + keyboardOffset.value] // Add keyboard offset here
     );
     const borderRadius = interpolate(
       progress.value,

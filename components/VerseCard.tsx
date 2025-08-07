@@ -82,7 +82,7 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
           </Text>
         </View>
         <IconSymbol
-          name="arrow.up.left.and.arrow.down.right"
+          name="arrow.left.arrow.right"
           size={18}
           color={colors.icon}
           style={styles.expandIcon}
