@@ -66,6 +66,19 @@ export function ButtonModalTransitionBridge({
   // --- Button press handlers ---
   const handlePressIn = () => {
     if (!isModalVisible) {
+      // Measure FIRST at full scale, then immediately start press animation
+      if (
+        buttonRef.current &&
+        typeof buttonRef.current.measureInWindow === "function"
+      ) {
+        buttonRef.current.measureInWindow(
+          (x: number, y: number, width: number, height: number) => {
+            setButtonLayout({ x, y, width, height });
+          }
+        );
+      }
+
+      // Start press animation immediately (doesn't wait for measurement)
       pressScale.value = withTiming(0.97, {
         duration: 100,
         easing: Easing.quad,
@@ -84,26 +97,16 @@ export function ButtonModalTransitionBridge({
 
   // --- Modal open ---
   const open = () => {
-    if (
-      buttonRef.current &&
-      typeof buttonRef.current.measureInWindow === "function"
-    ) {
-      buttonRef.current.measureInWindow(
-        (x: number, y: number, width: number, height: number) => {
-          setButtonLayout({ x, y, width, height });
-          setIsModalVisible(true);
+    setIsModalVisible(true);
 
-          // Animate after visible with haptic feedback
-          requestAnimationFrame(() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            progress.value = withTiming(1, {
-              duration: 400,
-              easing: Easing.bezier(0.22, 1, 0.36, 1),
-            });
-          });
-        }
-      );
-    }
+    // Animate after visible with haptic feedback
+    requestAnimationFrame(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      progress.value = withTiming(1, {
+        duration: 400,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      });
+    });
   };
 
   // --- Modal close ---
@@ -111,9 +114,9 @@ export function ButtonModalTransitionBridge({
     const currentProgress = progress.value;
     const remainingDistance = currentProgress;
     if (Math.abs(velocity) > 100) {
-      const progressVelocity = Math.abs(velocity) / 200;
+      const progressVelocity = Math.abs(velocity) / 150;
       const duration = Math.max(
-        100,
+        80,
         Math.min(600, (remainingDistance / progressVelocity) * 1000)
       );
       progress.value = withTiming(
@@ -126,7 +129,7 @@ export function ButtonModalTransitionBridge({
     } else {
       progress.value = withTiming(
         0,
-        { duration: 300, easing: Easing.bezier(0.4, 0, 1, 1) },
+        { duration: 200, easing: Easing.bezier(0.4, 0, 1, 1) },
         (finished) => {
           if (finished) runOnJS(setIsModalVisible)(false);
         }

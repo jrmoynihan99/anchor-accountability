@@ -98,8 +98,14 @@ export function ReachOutModal({
           { backgroundColor: "#000", zIndex: 10 },
           overlayStyle,
         ]}
-        pointerEvents="none"
-      />
+        pointerEvents="auto"
+      >
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          onPress={() => close()}
+          activeOpacity={1}
+        />
+      </Animated.View>
 
       {/* Modal Card */}
       <Animated.View

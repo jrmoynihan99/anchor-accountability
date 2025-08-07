@@ -3,6 +3,7 @@ import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTr
 import { ReachOutButton } from "@/components/morphing/reach-out-main-button/ReachOutButton";
 import { ReachOutModal } from "@/components/morphing/reach-out-main-button/ReachOutModal";
 import { StreakCard } from "@/components/morphing/streak/StreakCard";
+import { StreakCardModal } from "@/components/morphing/streak/StreakCardModal";
 import { VerseCarousel } from "@/components/VerseCarousel";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -155,7 +156,7 @@ export default function HomeScreen() {
       >
         <VerseCarousel />
 
-        {/* ---- Button + Modal Transition Bridge ---- */}
+        {/* ---- Reach Out Button + Modal Transition Bridge ---- */}
         <ButtonModalTransitionBridge>
           {({
             open,
@@ -186,7 +187,40 @@ export default function HomeScreen() {
           )}
         </ButtonModalTransitionBridge>
 
-        <StreakCard streakData={streakData} onCheckIn={handleStreakCheckIn} />
+        {/* ---- Streak Card + Modal Transition Bridge ---- */}
+        <ButtonModalTransitionBridge>
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => (
+            <>
+              <StreakCard
+                streakData={streakData}
+                onCheckIn={handleStreakCheckIn}
+                buttonRef={buttonRef}
+                style={buttonAnimatedStyle}
+                onPress={open}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+              />
+              <StreakCardModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+                streakData={streakData}
+                onCheckIn={handleStreakCheckIn}
+              />
+            </>
+          )}
+        </ButtonModalTransitionBridge>
 
         <GuidedPrayer
           onPress={() => {

@@ -1,3 +1,4 @@
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import * as Haptics from "expo-haptics";
@@ -80,6 +81,12 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
             1 Corinthians 10:13
           </Text>
         </View>
+        <IconSymbol
+          name="arrow.up.left.and.arrow.down.right"
+          size={18}
+          color={colors.icon}
+          style={styles.expandIcon}
+        />
       </Animated.View>
     </Pressable>
   );
@@ -138,5 +145,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     fontStyle: "italic",
     opacity: 0.8,
+  },
+  expandIcon: {
+    position: "absolute",
+    bottom: cardPadding,
+    left: cardPadding,
+    opacity: 0.85,
   },
 });
