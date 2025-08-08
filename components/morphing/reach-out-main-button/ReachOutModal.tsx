@@ -1,19 +1,18 @@
-// ReachOutModal.tsx
+// ReachOutModal.tsx - Refactored to use ThemedText
+import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import React, { useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { BaseModal } from "../BaseModal";
 import { ReachOutConfirmationScreen } from "./ReachOutConfirmationScreen";
 import { ReachOutInputScreen } from "./ReachOutInputScreen";
 
@@ -22,6 +21,7 @@ interface ReachOutModalProps {
   progress: Animated.SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+  onGuidedPrayer?: () => void;
 }
 
 type ScreenType = "input" | "confirmation";
@@ -31,205 +31,159 @@ export function ReachOutModal({
   progress,
   modalAnimatedStyle,
   close,
+  onGuidedPrayer,
 }: ReachOutModalProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
-  const gestureY = useSharedValue(0);
+  const screenTransition = useSharedValue(0); // 0 = input, 1 = confirmation
   const theme = useColorScheme();
-  const accent = Colors[theme ?? "dark"].tint ?? "#CBAD8D";
+  const colors = Colors[theme ?? "dark"];
 
-  // Reset state when modal closes
-  const handleClose = (velocity?: number) => {
-    setCurrentScreen("input");
-    setContextMessage("");
-    close(velocity);
-  };
+  // Reset state only when modal becomes invisible
+  useEffect(() => {
+    if (!isVisible) {
+      const timer = setTimeout(() => {
+        setCurrentScreen("input");
+        setContextMessage("");
+        screenTransition.value = 0;
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
 
   // Handle sending the message
   const handleSendMessage = () => {
     // TODO: Implement actual sending logic here
     console.log("Sending message:", contextMessage);
+
+    // Animate to confirmation screen
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+
     setCurrentScreen("confirmation");
   };
 
-  // Drag-to-close (swipe UP to close)
-  const panGesture = Gesture.Pan()
-    .onStart(() => {
-      gestureY.value = 0;
-    })
-    .onUpdate((event) => {
-      if (event.translationY < 0) {
-        gestureY.value = event.translationY;
-        const dragProgress = Math.min(Math.abs(event.translationY) / 200, 1);
-        progress.value = 1 - dragProgress;
-      }
-    })
-    .onEnd((event) => {
-      const shouldClose = event.translationY < -100 || event.velocityY < -500;
-      if (shouldClose) {
-        progress.value = withTiming(
-          0,
-          { duration: 200, easing: Easing.inOut(Easing.quad) },
-          (finished) => {
-            if (finished) {
-              runOnJS(handleClose)(event.velocityY);
-              gestureY.value = 0;
-            }
-          }
-        );
-      } else {
-        progress.value = withTiming(1, {
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-        });
-        gestureY.value = 0;
-      }
-    });
+  // Screen transition animations
+  const inputScreenStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateX: interpolate(
+          screenTransition.value,
+          [0, 1],
+          [0, -100],
+          "clamp"
+        ),
+      },
+    ],
+    opacity: interpolate(
+      screenTransition.value,
+      [0, 0.8, 1],
+      [1, 0.3, 0],
+      "clamp"
+    ),
+  }));
 
-  // Animation styles
-  const overlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.4]),
+  const confirmationScreenStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateX: interpolate(
+          screenTransition.value,
+          [0, 1],
+          [300, 0],
+          "clamp"
+        ),
+      },
+    ],
+    opacity: interpolate(
+      screenTransition.value,
+      [0, 0.2, 1],
+      [0, 1, 1],
+      "clamp"
+    ),
   }));
-  const solidBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.4], [1, 0], "clamp"),
-  }));
-  const blurBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.1, 0.3], [0, 1], "clamp"),
-  }));
-  const modalContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),
-  }));
-  const buttonContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.1], [1, 0], "clamp"),
-  }));
+
+  // Button content (what shows during the transition)
+  const buttonContent = (
+    <View style={styles.pillButtonTouchable}>
+      <View style={styles.pillTextContainer}>
+        <Ionicons
+          name="shield-checkmark"
+          size={20}
+          color={colors.white}
+          style={{ marginRight: 8 }}
+        />
+        <ThemedText
+          type="buttonXLarge"
+          lightColor={colors.white}
+          darkColor={colors.white}
+        >
+          Reach Out
+        </ThemedText>
+      </View>
+      <ThemedText
+        type="body"
+        lightColor={colors.whiteTranslucent}
+        darkColor={colors.whiteTranslucent}
+        style={{ letterSpacing: 0.2 }}
+      >
+        Get anonymous help
+      </ThemedText>
+    </View>
+  );
+
+  // Modal content
+  const modalContent = (
+    <View style={styles.screenContainer}>
+      {/* Input Screen */}
+      <Animated.View
+        style={[
+          styles.screenWrapper,
+          styles.screenBackground,
+          inputScreenStyle,
+        ]}
+      >
+        <ReachOutInputScreen
+          contextMessage={contextMessage}
+          onContextChange={setContextMessage}
+          onSend={handleSendMessage}
+        />
+      </Animated.View>
+
+      {/* Confirmation Screen */}
+      <Animated.View
+        style={[
+          styles.screenWrapper,
+          styles.screenBackground,
+          confirmationScreenStyle,
+        ]}
+      >
+        <ReachOutConfirmationScreen
+          onClose={close}
+          onGuidedPrayer={onGuidedPrayer}
+        />
+      </Animated.View>
+    </View>
+  );
 
   return (
-    <Modal
-      visible={isVisible}
-      transparent
-      statusBarTranslucent
-      animationType="none"
-      onRequestClose={() => handleClose()}
+    <BaseModal
+      isVisible={isVisible}
+      progress={progress}
+      modalAnimatedStyle={modalAnimatedStyle}
+      close={close}
+      theme={theme ?? "dark"}
+      backgroundColor={colors.tint}
+      buttonContent={buttonContent}
+      buttonContentOpacityRange={[0, 0.1]} // Custom range for ReachOut
     >
-      {/* Overlay */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: "#000", zIndex: 10 },
-          overlayStyle,
-        ]}
-        pointerEvents="auto"
-      >
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          onPress={() => handleClose()}
-          activeOpacity={1}
-        />
-      </Animated.View>
-
-      {/* Modal Card */}
-      <Animated.View
-        style={[
-          modalAnimatedStyle,
-          { overflow: "hidden", zIndex: 20, borderRadius: 28 },
-        ]}
-      >
-        {/* Solid background (fades out) */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            { backgroundColor: accent },
-            solidBackgroundStyle,
-          ]}
-        />
-
-        {/* BlurView background (fades in) */}
-        <Animated.View style={[StyleSheet.absoluteFill, blurBackgroundStyle]}>
-          <BlurView
-            intensity={24}
-            tint={theme === "dark" ? "dark" : "light"}
-            style={StyleSheet.absoluteFill}
-          >
-            <View
-              style={[
-                styles.blurBackground,
-                { backgroundColor: `${accent}B8` },
-              ]}
-            />
-          </BlurView>
-        </Animated.View>
-
-        {/* === PILL BUTTON CONTENT (animates in/out) === */}
-        <Animated.View
-          style={[styles.pillButton, buttonContentStyle]}
-          pointerEvents="none"
-        >
-          <View style={styles.pillButtonTouchable}>
-            <View style={styles.pillTextContainer}>
-              <Ionicons
-                name="shield-checkmark"
-                size={20}
-                color="#fff"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={styles.pillText}>Reach Out</Text>
-            </View>
-            <Text style={styles.subduedText}>Get anonymous help</Text>
-          </View>
-        </Animated.View>
-
-        {/* === MODAL CONTENT === */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.modalContent, modalContentStyle]}>
-            <TouchableOpacity
-              onPress={() => handleClose()}
-              style={styles.closeButton}
-              hitSlop={16}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="close" size={28} color="#3A2D28" />
-            </TouchableOpacity>
-
-            {currentScreen === "input" ? (
-              <ReachOutInputScreen
-                contextMessage={contextMessage}
-                onContextChange={setContextMessage}
-                onSend={handleSendMessage}
-              />
-            ) : (
-              <ReachOutConfirmationScreen
-                onClose={handleClose}
-                onGuidedPrayer={() => {
-                  /* TODO: Navigate to guided prayer */
-                }}
-              />
-            )}
-
-            <View style={styles.bottomDragIndicator} />
-          </Animated.View>
-        </GestureDetector>
-      </Animated.View>
-    </Modal>
+      {modalContent}
+    </BaseModal>
   );
 }
 
 const styles = StyleSheet.create({
-  blurBackground: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-  },
-  pillButton: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 100,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 10,
-    backgroundColor: "transparent",
-  },
   pillButtonTouchable: {
     alignItems: "center",
     justifyContent: "center",
@@ -240,40 +194,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4,
   },
-  pillText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 24,
-  },
-  subduedText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 0.2,
-  },
-  modalContent: {
+  screenContainer: {
     flex: 1,
-    padding: 24,
+    position: "relative",
   },
-  closeButton: {
+  screenWrapper: {
     position: "absolute",
-    top: 55,
-    right: 30,
-    zIndex: 30,
-    backgroundColor: "rgba(0,0,0,0.08)",
-    borderRadius: 18,
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  bottomDragIndicator: {
-    position: "absolute",
-    bottom: 12,
-    width: 200,
-    height: 4,
-    backgroundColor: "rgba(58, 45, 40, 0.3)",
-    borderRadius: 2,
-    alignSelf: "center",
+  screenBackground: {
+    backgroundColor: "transparent",
+    borderRadius: 28,
+    overflow: "hidden",
   },
 });

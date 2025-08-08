@@ -1,8 +1,9 @@
+import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 interface ReachOutButtonProps {
@@ -21,13 +22,21 @@ export function ReachOutButton({
   onPressOut,
 }: ReachOutButtonProps) {
   const theme = useColorScheme();
-  const accent = Colors[theme ?? "dark"].tint;
+  const colors = Colors[theme ?? "dark"];
 
   return (
-    <Animated.View style={[styles.shadowContainer, style]}>
+    <Animated.View
+      style={[
+        styles.shadowContainer,
+        {
+          shadowColor: colors.shadow,
+        },
+        style,
+      ]}
+    >
       <TouchableOpacity
         ref={buttonRef}
-        style={[styles.button, { backgroundColor: accent }]}
+        style={[styles.button, { backgroundColor: colors.tint }]}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
@@ -37,12 +46,28 @@ export function ReachOutButton({
           <Ionicons
             name="shield-checkmark"
             size={20}
-            color="#fff"
+            color={colors.white}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.text}>Reach Out</Text>
+          <ThemedText
+            type="buttonXLarge"
+            style={[styles.text, { color: colors.white }]}
+          >
+            Reach Out
+          </ThemedText>
         </View>
-        <Text style={styles.subduedText}>Get anonymous help</Text>
+        <ThemedText
+          type="body"
+          style={[
+            styles.subduedText,
+            {
+              color: colors.whiteTranslucent,
+              letterSpacing: 0.2,
+            },
+          ]}
+        >
+          Get anonymous help
+        </ThemedText>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -50,7 +75,6 @@ export function ReachOutButton({
 
 const styles = StyleSheet.create({
   shadowContainer: {
-    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -65,9 +89,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   text: {
-    color: "white",
-    fontSize: 24,
-    fontWeight: "600",
+    // Typography styles moved to Typography.styles.buttonXLarge
   },
   textContainer: {
     flexDirection: "row",
@@ -75,9 +97,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subduedText: {
-    color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 16,
-    fontWeight: "500",
-    letterSpacing: 0.2,
+    // Typography styles moved to Typography.styles.body + inline styles
   },
 });

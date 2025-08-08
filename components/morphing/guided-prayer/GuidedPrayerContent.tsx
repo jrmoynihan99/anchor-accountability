@@ -1,8 +1,9 @@
+import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import * as Haptics from "expo-haptics";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface GuidedPrayerContentProps {
   showButtons?: boolean;
@@ -15,9 +16,6 @@ export function GuidedPrayerContent({
 }: GuidedPrayerContentProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
-  const mainTextColor = "#3A2D28";
-  const prayerBg = "#FFF3E0";
-  const prayerColor = "#8B6914";
 
   const handleBeginPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -28,7 +26,7 @@ export function GuidedPrayerContent({
     <IconSymbol
       name="arrow.up.left.and.arrow.down.right"
       size={18}
-      color="#8D7963"
+      color={colors.textSecondary}
       style={styles.expandIcon}
     />
   );
@@ -42,8 +40,24 @@ export function GuidedPrayerContent({
         onPress={handleBeginPress}
         activeOpacity={0.85}
       >
-        <Text style={[styles.buttonText, { color: "#fff" }]}>Begin Prayer</Text>
-        <Text style={[styles.arrow, { color: "#fff" }]}>→</Text>
+        <ThemedText
+          type="button"
+          style={[
+            styles.buttonText,
+            {
+              color: colors.white,
+              marginRight: 8,
+            },
+          ]}
+        >
+          Begin Prayer
+        </ThemedText>
+        <ThemedText
+          type="button"
+          style={[styles.arrow, { color: colors.white }]}
+        >
+          →
+        </ThemedText>
       </TouchableOpacity>
     );
   };
@@ -54,22 +68,52 @@ export function GuidedPrayerContent({
 
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.iconCircle, { backgroundColor: prayerBg }]}>
-          <Text style={[styles.iconText, { color: prayerColor }]}>🙏</Text>
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.iconCircleBackground },
+          ]}
+        >
+          <ThemedText style={[styles.iconText, { color: colors.fireColor }]}>
+            🙏
+          </ThemedText>
         </View>
         <View style={styles.titleContainer}>
-          <Text style={[styles.title, { color: mainTextColor }]}>
+          <ThemedText
+            type="title"
+            style={[styles.title, { color: colors.text }]}
+          >
             Daily Guided Prayer
-          </Text>
-          <Text style={[styles.subtitle, { color: "#8D7963" }]}>
+          </ThemedText>
+          <ThemedText
+            type="subtitle"
+            style={[
+              styles.subtitle,
+              {
+                color: colors.textSecondary,
+                marginTop: 2,
+                opacity: 0.8,
+              },
+            ]}
+          >
             2-min Exercise
-          </Text>
+          </ThemedText>
         </View>
       </View>
 
-      <Text style={[styles.description, { color: colors.icon }]}>
+      <ThemedText
+        type="captionMedium"
+        style={[
+          styles.description,
+          {
+            color: colors.icon,
+            marginBottom: 18,
+            opacity: 0.9,
+          },
+        ]}
+      >
         Try this in times of temptation
-      </Text>
+      </ThemedText>
 
       <BeginButton />
     </View>
@@ -97,21 +141,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "600",
+    // Typography styles moved to Typography.styles.title
     lineHeight: 24,
   },
   subtitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 2,
-    opacity: 0.8,
+    // Typography styles moved to Typography.styles.subtitle + inline styles
   },
   description: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 18,
-    opacity: 0.9,
+    // Typography styles moved to Typography.styles.captionMedium + inline styles
   },
   button: {
     flexDirection: "row",
@@ -122,13 +159,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   buttonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginRight: 8,
+    // Typography styles moved to Typography.styles.button + inline styles
   },
   arrow: {
-    fontSize: 16,
-    fontWeight: "600",
+    // Typography styles moved to Typography.styles.button
   },
   expandIcon: {
     position: "absolute",

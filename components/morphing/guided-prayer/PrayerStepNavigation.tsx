@@ -1,6 +1,9 @@
+import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { PrayerStep, getNextStep, getPreviousStep } from "./prayerUtils";
 
 interface PrayerStepNavigationProps {
@@ -16,6 +19,9 @@ export function PrayerStepNavigation({
   onClose,
   prayerColor,
 }: PrayerStepNavigationProps) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? "light"];
+
   const previousStep = getPreviousStep(currentStep);
   const nextStep = getNextStep(currentStep);
 
@@ -29,11 +35,17 @@ export function PrayerStepNavigation({
         >
           <IconSymbol
             name="play.fill"
-            color="#fff"
+            color={colors.white}
             size={16}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.primaryButtonText}>Begin Prayer</Text>
+          <ThemedText
+            type="button"
+            lightColor={colors.white}
+            darkColor={colors.white}
+          >
+            Begin Prayer
+          </ThemedText>
         </TouchableOpacity>
       )}
 
@@ -43,10 +55,16 @@ export function PrayerStepNavigation({
           onPress={() => onStepChange("reflection")}
           activeOpacity={0.85}
         >
-          <Text style={styles.primaryButtonText}>Move on</Text>
+          <ThemedText
+            type="button"
+            lightColor={colors.white}
+            darkColor={colors.white}
+          >
+            Move on
+          </ThemedText>
           <IconSymbol
             name="arrow.right"
-            color="#fff"
+            color={colors.white}
             size={16}
             style={{ marginLeft: 8 }}
           />
@@ -58,7 +76,7 @@ export function PrayerStepNavigation({
           <TouchableOpacity
             style={[
               styles.secondaryButton,
-              { backgroundColor: "rgba(139, 105, 20, 0.3)" },
+              { backgroundColor: `${prayerColor}4D` }, // 30% opacity
             ]}
             onPress={() => onStepChange("breathing")}
             activeOpacity={0.85}
@@ -69,9 +87,13 @@ export function PrayerStepNavigation({
               size={16}
               style={{ marginRight: 8 }}
             />
-            <Text style={[styles.secondaryButtonText, { color: prayerColor }]}>
+            <ThemedText
+              type="button"
+              lightColor={prayerColor}
+              darkColor={prayerColor}
+            >
               Go back
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -82,10 +104,16 @@ export function PrayerStepNavigation({
             onPress={() => onStepChange("complete")}
             activeOpacity={0.85}
           >
-            <Text style={styles.primaryButtonText}>Move on</Text>
+            <ThemedText
+              type="button"
+              lightColor={colors.white}
+              darkColor={colors.white}
+            >
+              Move on
+            </ThemedText>
             <IconSymbol
               name="arrow.right"
-              color="#fff"
+              color={colors.white}
               size={16}
               style={{ marginLeft: 8 }}
             />
@@ -98,7 +126,7 @@ export function PrayerStepNavigation({
           <TouchableOpacity
             style={[
               styles.secondaryButton,
-              { backgroundColor: "rgba(139, 105, 20, 0.3)" },
+              { backgroundColor: `${prayerColor}4D` }, // 30% opacity
             ]}
             onPress={() => onStepChange("reflection")}
             activeOpacity={0.85}
@@ -109,9 +137,13 @@ export function PrayerStepNavigation({
               size={16}
               style={{ marginRight: 8 }}
             />
-            <Text style={[styles.secondaryButtonText, { color: prayerColor }]}>
+            <ThemedText
+              type="button"
+              lightColor={prayerColor}
+              darkColor={prayerColor}
+            >
               Go back
-            </Text>
+            </ThemedText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -124,11 +156,17 @@ export function PrayerStepNavigation({
           >
             <IconSymbol
               name="heart.fill"
-              color="#fff"
+              color={colors.white}
               size={20}
               style={{ marginRight: 8 }}
             />
-            <Text style={styles.primaryButtonText}>Amen</Text>
+            <ThemedText
+              type="button"
+              lightColor={colors.white}
+              darkColor={colors.white}
+            >
+              Amen
+            </ThemedText>
           </TouchableOpacity>
         </View>
       )}
@@ -143,9 +181,7 @@ export function PrayerStepNavigation({
                 styles.stepDot,
                 {
                   backgroundColor:
-                    step === currentStep
-                      ? prayerColor
-                      : "rgba(139, 105, 20, 0.3)",
+                    step === currentStep ? prayerColor : `${prayerColor}4D`,
                 },
               ]}
             />
@@ -186,15 +222,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginVertical: 8,
   },
-  primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  // text styles now handled by ThemedText (type="button")
   stepsIndicator: {
     flexDirection: "row",
     justifyContent: "center",

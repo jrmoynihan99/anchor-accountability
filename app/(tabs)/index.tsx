@@ -9,7 +9,7 @@ import { VerseCarousel } from "@/components/VerseCarousel";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { StatusBar } from "expo-status-bar";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -17,6 +17,10 @@ export default function HomeScreen() {
   const theme = useColorScheme();
   const bgColor = Colors[theme ?? "dark"].background;
   const insets = useSafeAreaInsets();
+
+  // Refs to control the guided prayer modal
+  const guidedPrayerOpenRef = useRef<(() => void) | null>(null);
+  const reachOutCloseRef = useRef<((velocity?: number) => void) | null>(null);
 
   const today = new Date();
   function getDate(offset: number) {
@@ -141,6 +145,21 @@ export default function HomeScreen() {
     });
   };
 
+  // Function to transition from ReachOut to Guided Prayer
+  const handleOpenGuidedPrayer = () => {
+    // First close the ReachOut modal
+    if (reachOutCloseRef.current) {
+      reachOutCloseRef.current();
+    }
+
+    // Then open the Guided Prayer modal with a slight delay
+    setTimeout(() => {
+      if (guidedPrayerOpenRef.current) {
+        guidedPrayerOpenRef.current();
+      }
+    }, 200); // Small delay to allow ReachOut modal to close
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
@@ -169,23 +188,29 @@ export default function HomeScreen() {
             buttonRef,
             handlePressIn,
             handlePressOut,
-          }) => (
-            <>
-              <ReachOutButton
-                buttonRef={buttonRef}
-                style={buttonAnimatedStyle}
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-              />
-              <ReachOutModal
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-              />
-            </>
-          )}
+          }) => {
+            // Store the close function reference
+            reachOutCloseRef.current = close;
+
+            return (
+              <>
+                <ReachOutButton
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <ReachOutModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                  onGuidedPrayer={handleOpenGuidedPrayer}
+                />
+              </>
+            );
+          }}
         </ButtonModalTransitionBridge>
 
         {/* ---- Streak Card + Modal Transition Bridge ---- */}
@@ -234,24 +259,29 @@ export default function HomeScreen() {
             buttonRef,
             handlePressIn,
             handlePressOut,
-          }) => (
-            <>
-              <GuidedPrayer
-                buttonRef={buttonRef}
-                style={buttonAnimatedStyle}
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                onBeginPrayer={open} // This allows the button inside the card to also open the modal
-              />
-              <GuidedPrayerModal
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-              />
-            </>
-          )}
+          }) => {
+            // Store the open function reference
+            guidedPrayerOpenRef.current = open;
+
+            return (
+              <>
+                <GuidedPrayer
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                  onBeginPrayer={open} // This allows the button inside the card to also open the modal
+                />
+                <GuidedPrayerModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            );
+          }}
         </ButtonModalTransitionBridge>
       </ScrollView>
     </View>

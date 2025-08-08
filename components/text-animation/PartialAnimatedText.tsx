@@ -1,22 +1,40 @@
+// components/text-animation/PartialAnimatedText.tsx
+import { ThemedText, type ThemedTextProps } from "@/components/ThemedText";
 import { useEffect, useRef, useState } from "react";
-import { Animated, Text, TextStyle, View } from "react-native";
+import { Animated, TextStyle, View } from "react-native";
 
 interface PartialAnimatedTextProps {
   staticText: string;
   dynamicText: string;
   animationKey: string | number;
+
+  /** Typography + styling */
+  type?: ThemedTextProps["type"];
   style?: TextStyle | TextStyle[];
   dynamicStyle?: TextStyle | TextStyle[];
-  duration?: number;
-  slideDistance?: number;
+
+  /** Optional explicit colors (handy to avoid putting color in style) */
+  lightColor?: string;
+  darkColor?: string;
+  dynamicLightColor?: string;
+  dynamicDarkColor?: string;
+
+  /** Animation config */
+  duration?: number; // per phase (out/in)
+  slideDistance?: number; // px up/down for the dynamic portion
 }
 
 export const PartialAnimatedText = ({
   staticText,
   dynamicText,
   animationKey,
+  type = "body",
   style,
   dynamicStyle,
+  lightColor,
+  darkColor,
+  dynamicLightColor,
+  dynamicDarkColor,
   duration = 150,
   slideDistance = 5,
 }: PartialAnimatedTextProps) => {
@@ -27,18 +45,12 @@ export const PartialAnimatedText = ({
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Don't re-animate if the key hasn't changed
-    if (prevKeyRef.current === animationKey) {
-      return;
-    }
-
-    if (isAnimating) {
-      return;
-    }
+    // bail if no change or mid-animation
+    if (prevKeyRef.current === animationKey || isAnimating) return;
 
     setIsAnimating(true);
 
-    // Step 1: fade/slide out dynamic text
+    // Phase 1: fade/slide out
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -51,11 +63,11 @@ export const PartialAnimatedText = ({
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Update the dynamic content
+      // swap text + reset position
       setDisplayDynamicText(dynamicText);
-      slideAnim.setValue(slideDistance); // reset to below
+      slideAnim.setValue(slideDistance);
 
-      // Step 2: fade/slide in with new content
+      // Phase 2: fade/slide in
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -84,14 +96,29 @@ export const PartialAnimatedText = ({
 
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-      <Text style={style}>{staticText}</Text>
+      <ThemedText
+        type={type}
+        style={style}
+        lightColor={lightColor}
+        darkColor={darkColor}
+      >
+        {staticText}
+      </ThemedText>
+
       <Animated.View
         style={{
           opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
         }}
       >
-        <Text style={[style, dynamicStyle]}>{displayDynamicText}</Text>
+        <ThemedText
+          type={type}
+          style={dynamicStyle ?? style}
+          lightColor={dynamicLightColor ?? lightColor}
+          darkColor={dynamicDarkColor ?? darkColor}
+        >
+          {displayDynamicText}
+        </ThemedText>
       </Animated.View>
     </View>
   );

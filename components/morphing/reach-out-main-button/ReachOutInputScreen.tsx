@@ -1,12 +1,16 @@
 // ReachOutInputScreen.tsx
+import { ThemedText } from "@/components/ThemedText";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -23,7 +27,15 @@ export function ReachOutInputScreen({
   onContextChange,
   onSend,
 }: ReachOutInputScreenProps) {
-  const mainTextColor = "#3A2D28";
+  const theme = useColorScheme();
+  const colors = Colors[theme ?? "dark"];
+
+  const handleSendPress = () => {
+    // Trigger haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Call the original onSend function
+    onSend();
+  };
 
   return (
     <KeyboardAvoidingView
@@ -33,49 +45,118 @@ export function ReachOutInputScreen({
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header with Icon */}
         <View style={styles.modalHeader}>
-          <Ionicons name="shield-checkmark" size={40} color={mainTextColor} />
-          <Text style={[styles.title, { color: mainTextColor }]}>
+          <Ionicons name="shield-checkmark" size={40} color={colors.text} />
+          <ThemedText
+            type="titleLarge"
+            style={[
+              styles.title,
+              {
+                color: colors.text,
+                marginTop: 12,
+                textAlign: "center",
+              },
+            ]}
+          >
             Need Support?
-          </Text>
+          </ThemedText>
         </View>
 
-        <Text style={styles.description}>
+        <ThemedText
+          type="body"
+          style={[
+            styles.description,
+            {
+              color: colors.textMuted,
+              lineHeight: 22,
+              textAlign: "center",
+              marginBottom: 24,
+            },
+          ]}
+        >
           You're not alone in this journey. Reach out anonymously, and receive
           instant encouragement & accoutability from our community.
-        </Text>
+        </ThemedText>
 
-        <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.inputContainer,
+            {
+              backgroundColor: colors.modalCardBackground,
+              borderColor: colors.modalCardBorder,
+            },
+          ]}
+        >
           <TextInput
-            style={styles.textInput}
+            style={[
+              styles.textInput,
+              {
+                backgroundColor: colors.textInputBackground,
+                borderColor: colors.textInputBorder,
+                color: colors.text,
+              },
+            ]}
             placeholder="(Optional) Share any context that might help others encourage you..."
-            placeholderTextColor="rgba(58, 45, 40, 0.5)"
+            placeholderTextColor={colors.textMuted}
             multiline
             value={contextMessage}
             onChangeText={onContextChange}
             maxLength={500}
           />
-          <Text style={styles.characterCount}>{contextMessage.length}/500</Text>
+          <ThemedText
+            type="small"
+            style={[
+              styles.characterCount,
+              {
+                color: colors.textMuted,
+                textAlign: "right",
+                marginTop: 8,
+              },
+            ]}
+          >
+            {contextMessage.length}/500
+          </ThemedText>
         </View>
 
-        <TouchableOpacity style={styles.sendButton} onPress={onSend}>
-          <Ionicons
-            name="paper-plane"
+        <TouchableOpacity
+          style={[styles.sendButton, { backgroundColor: colors.text }]}
+          onPress={handleSendPress}
+        >
+          <IconSymbol
+            name="paperplane"
             size={20}
-            color="#fff"
+            color={colors.white}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.sendButtonText}>Send Request</Text>
+          <ThemedText
+            type="buttonLarge"
+            style={[styles.sendButtonText, { color: colors.white }]}
+          >
+            Send Request
+          </ThemedText>
         </TouchableOpacity>
 
         {/* Anonymous Badge */}
-        <View style={styles.anonymousBadge}>
-          <Ionicons
-            name="eye-off"
+        <View
+          style={[
+            styles.anonymousBadge,
+            {
+              backgroundColor: colors.modalCardBackground,
+              borderColor: colors.modalCardBorder,
+            },
+          ]}
+        >
+          <IconSymbol
+            name="eye.slash"
             size={14}
-            color="rgba(58, 45, 40, 0.6)"
+            color={colors.textMuted}
             style={{ marginRight: 6 }}
           />
-          <Text style={styles.anonymousBadgeText}>100% anonymous</Text>
+          <ThemedText
+            type="badge"
+            style={[styles.anonymousBadgeText, { color: colors.textMuted }]}
+          >
+            100% anonymous
+          </ThemedText>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -92,51 +173,29 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginTop: 12,
-    textAlign: "center",
+    // Typography styles moved to Typography.styles.titleLarge + inline styles
   },
   description: {
-    color: "rgba(58, 45, 40, 0.8)",
-    fontSize: 16,
-    lineHeight: 22,
-    textAlign: "center",
-    marginBottom: 24,
+    // Typography styles moved to Typography.styles.body + inline styles
   },
   inputContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 16,
     padding: 12,
     marginBottom: 0,
   },
-  inputLabel: {
-    color: "#3A2D28",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 12,
-  },
   textInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.6)",
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
-    color: "#3A2D28",
     minHeight: 120,
     textAlignVertical: "top",
     borderWidth: 1,
-    borderColor: "rgba(58, 45, 40, 0.1)",
   },
   characterCount: {
-    color: "rgba(58, 45, 40, 0.6)",
-    fontSize: 12,
-    textAlign: "right",
-    marginTop: 8,
+    // Typography styles moved to Typography.styles.small + inline styles
   },
   sendButton: {
-    backgroundColor: "#3A2D28",
     borderRadius: 16,
     padding: 18,
     flexDirection: "row",
@@ -145,14 +204,10 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   sendButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+    // Typography styles moved to Typography.styles.buttonLarge
   },
   anonymousBadge: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 16,
     padding: 8,
     flexDirection: "row",
@@ -162,8 +217,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   anonymousBadgeText: {
-    color: "rgba(58, 45, 40, 0.6)",
-    fontSize: 13,
-    fontWeight: "500",
+    // Typography styles moved to Typography.styles.badge
   },
 });

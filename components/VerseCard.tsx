@@ -1,10 +1,11 @@
+import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import React, { useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
 export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
   const theme = useColorScheme();
@@ -64,22 +65,63 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
           styles.card,
           {
             backgroundColor: colors.cardBackground,
-            shadowColor: "#000",
+            shadowColor: colors.shadow,
             transform: [{ scale }],
           },
         ]}
       >
-        <Text style={[styles.date, { color: colors.icon }]}>
+        <ThemedText
+          type="captionMedium"
+          style={[
+            styles.date,
+            {
+              color: colors.textSecondary,
+              opacity: 0.6,
+            },
+          ]}
+        >
           {formattedDate}
-        </Text>
-        <Text style={[styles.openQuote, { color: colors.icon }]}>❝</Text>
-        <Text style={[styles.verseText, { color: colors.icon }]}>
+        </ThemedText>
+        <ThemedText
+          type="quote"
+          style={[
+            styles.openQuote,
+            {
+              color: colors.textSecondary,
+              opacity: 0.6,
+            },
+          ]}
+        >
+          ❝
+        </ThemedText>
+        <ThemedText
+          type="verse"
+          style={[
+            styles.verseText,
+            {
+              color: colors.textSecondary,
+              textAlign: "center",
+              marginTop: 40,
+              marginBottom: 8,
+            },
+          ]}
+        >
           No temptation has overtaken you that is not common to man.
-        </Text>
+        </ThemedText>
         <View style={styles.referenceContainer}>
-          <Text style={[styles.reference, { color: colors.icon }]}>
+          <ThemedText
+            type="caption"
+            style={[
+              styles.reference,
+              {
+                color: colors.textSecondary,
+                fontStyle: "italic",
+                opacity: 0.8,
+              },
+            ]}
+          >
             1 Corinthians 10:13
-          </Text>
+          </ThemedText>
         </View>
         <IconSymbol
           name="arrow.left.arrow.right"
@@ -100,7 +142,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginTop: 24,
     marginBottom: 16,
-    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
@@ -111,40 +152,21 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: cardPadding,
     right: cardPadding,
-    fontSize: 15,
-    fontWeight: "500",
-    opacity: 0.6,
   },
   openQuote: {
-    fontSize: 70,
-    fontWeight: "200",
-    lineHeight: 70,
     position: "absolute",
     top: cardPadding,
     left: cardPadding,
-    opacity: 0.6,
-    fontFamily: "serif",
   },
   verseText: {
-    fontSize: 30,
-    lineHeight: 40,
-    textAlign: "center",
-    fontWeight: "500",
-    fontStyle: "italic",
-    letterSpacing: 0.5,
-    marginTop: 40,
-    marginBottom: 8,
-    fontFamily: "Spectral_700Bold_Italic",
+    // All typography styles moved to Typography.styles.verse
   },
   referenceContainer: {
     alignItems: "flex-end",
     marginTop: 8,
   },
   reference: {
-    fontSize: 14,
-    fontWeight: "500",
-    fontStyle: "italic",
-    opacity: 0.8,
+    // Typography styles moved to Typography.styles.caption + inline styles
   },
   expandIcon: {
     position: "absolute",

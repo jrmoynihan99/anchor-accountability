@@ -82,13 +82,21 @@ export function FloatingPillNavigation({
 
   return (
     <View style={[styles.container, { bottom: insets.bottom + 15 }]}>
-      <View style={styles.shadowParent}>
+      <View style={[styles.shadowParent, { shadowColor: colors.shadow }]}>
         <BlurView
           intensity={80}
           tint={colorScheme === "dark" ? "dark" : "light"}
           style={styles.roundedChild}
         >
-          <View style={styles.pillContainer}>
+          <View
+            style={[
+              styles.pillContainer,
+              {
+                backgroundColor: colors.navBackground,
+                borderColor: colors.navBorder,
+              },
+            ]}
+          >
             {/* Animated background pill */}
             <Animated.View
               style={[
@@ -117,13 +125,17 @@ export function FloatingPillNavigation({
                   <IconSymbol
                     size={20}
                     name={tab.icon as any}
-                    color={isActive ? "#FFFFFF" : colors.tabIconDefault}
+                    color={
+                      isActive ? colors.navActiveText : colors.tabIconDefault
+                    }
                   />
                   <ThemedText
-                    style={[
-                      styles.tabLabel,
-                      { color: isActive ? "#FFFFFF" : colors.tabIconDefault },
-                    ]}
+                    type="tab"
+                    style={{
+                      color: isActive
+                        ? colors.navActiveText
+                        : colors.tabIconDefault,
+                    }}
                   >
                     {tab.label}
                   </ThemedText>
@@ -150,7 +162,6 @@ const styles = StyleSheet.create({
   // Outermost: gets the shadow and radius, NO overflow
   shadowParent: {
     borderRadius: PILL_RADIUS,
-    shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
@@ -166,10 +177,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: PILL_RADIUS,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   tabButton: {
     flexDirection: "row",
@@ -195,8 +204,5 @@ const styles = StyleSheet.create({
   lastTab: {
     marginLeft: 4,
   },
-  tabLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  // Removed tabLabel style - now using Typography.styles.tab
 });

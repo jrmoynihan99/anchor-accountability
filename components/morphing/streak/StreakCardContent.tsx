@@ -1,11 +1,13 @@
+// StreakCardContent.tsx (updated to pass `type` to PartialAnimatedText)
 import { AppearingText } from "@/components/text-animation/AppearingText";
 import { PartialAnimatedText } from "@/components/text-animation/PartialAnimatedText";
 import { TransitioningText } from "@/components/text-animation/TransitioningText";
+import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import * as Haptics from "expo-haptics";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 import {
   STRINGS,
@@ -32,10 +34,6 @@ export function StreakCardContent({
 }: StreakCardContentProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
-  const mainTextColor = "#3A2D28";
-  const accent = colors.tint;
-  const fireBg = "#FFF3E0";
-  const fireColor = "#F47C1A";
 
   const currentStreak = getCurrentStreak(streakData);
   const personalBest = getPersonalBest(streakData);
@@ -53,16 +51,33 @@ export function StreakCardContent({
   };
 
   const ComeBackBanner = () => (
-    <View style={styles.banner}>
+    <View
+      style={[
+        styles.banner,
+        {
+          backgroundColor: colors.bannerBackground,
+          borderColor: colors.bannerBorder,
+        },
+      ]}
+    >
       <IconSymbol
         name="calendar"
         color={colors.icon}
         size={20}
         style={{ marginRight: 8 }}
       />
-      <Text style={[styles.bannerText, { color: colors.icon }]}>
+      <ThemedText
+        type="body"
+        style={[
+          styles.bannerText,
+          {
+            color: colors.icon,
+            opacity: 0.8,
+          },
+        ]}
+      >
         {STRINGS.BANNER_COME_BACK_TOMORROW}
-      </Text>
+      </ThemedText>
     </View>
   );
 
@@ -72,30 +87,43 @@ export function StreakCardContent({
     return (
       <View style={styles.buttonRow}>
         <TouchableOpacity
-          style={[styles.checkinButton, { backgroundColor: accent }]}
+          style={[
+            styles.checkinButton,
+            { backgroundColor: colors.buttonBackground },
+          ]}
           onPress={handleSuccessPress}
           activeOpacity={0.85}
         >
           <IconSymbol
             name="checkmark.circle.fill"
-            color="#fff"
+            color={colors.white}
             size={22}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.buttonText}>{STRINGS.BUTTON_PORN_FREE}</Text>
+          <ThemedText
+            type="button"
+            style={[styles.buttonText, { color: colors.white }]}
+          >
+            {STRINGS.BUTTON_PORN_FREE}
+          </ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.checkinButton, { backgroundColor: "#E57373" }]}
+          style={[styles.checkinButton, { backgroundColor: colors.error }]}
           onPress={handleFailPress}
           activeOpacity={0.85}
         >
           <IconSymbol
             name="xmark.circle.fill"
-            color="#fff"
+            color={colors.white}
             size={22}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.buttonText}>{STRINGS.BUTTON_I_SLIPPED}</Text>
+          <ThemedText
+            type="button"
+            style={[styles.buttonText, { color: colors.white }]}
+          >
+            {STRINGS.BUTTON_I_SLIPPED}
+          </ThemedText>
         </TouchableOpacity>
       </View>
     );
@@ -105,7 +133,7 @@ export function StreakCardContent({
     <IconSymbol
       name="arrow.up.left.and.arrow.down.right"
       size={18}
-      color="#8D7963"
+      color={colors.textSecondary}
       style={styles.expandIcon}
     />
   );
@@ -126,8 +154,17 @@ export function StreakCardContent({
 
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.iconCircle, { backgroundColor: fireBg }]}>
-              <IconSymbol name="flame.fill" size={32} color={fireColor} />
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.iconCircleBackground },
+              ]}
+            >
+              <IconSymbol
+                name="flame.fill"
+                size={32}
+                color={colors.fireColor}
+              />
             </View>
             <View style={styles.titleContainer}>
               <PartialAnimatedText
@@ -136,8 +173,9 @@ export function StreakCardContent({
                   currentStreak === 1 ? STRINGS.DAY : STRINGS.DAYS
                 }`}
                 animationKey={currentStreak}
-                style={[styles.title, { color: mainTextColor }]}
-                dynamicStyle={{ color: fireColor }}
+                type="title"
+                style={[styles.title, { color: colors.text }]}
+                dynamicStyle={{ color: colors.fireColor }}
               />
               {personalBest > 0 ? (
                 <PartialAnimatedText
@@ -146,20 +184,41 @@ export function StreakCardContent({
                     personalBest === 1 ? "Day" : "Days"
                   }`}
                   animationKey={personalBest}
-                  style={styles.subtitle}
+                  type="subtitle"
+                  style={[styles.subtitle, { color: colors.textSecondary }]}
                 />
               ) : (
-                <Text style={styles.subtitle}>
+                <ThemedText
+                  type="subtitle"
+                  style={[
+                    styles.subtitle,
+                    {
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                      opacity: 0.85,
+                    },
+                  ]}
+                >
                   {STRINGS.SUBTITLE_BEGIN_TRACKING}
-                </Text>
+                </ThemedText>
               )}
             </View>
           </View>
 
           <AppearingText animationKey={`success-${currentStreak}`}>
-            <Text style={[styles.encouragement, { color: colors.icon }]}>
+            <ThemedText
+              type="captionMedium"
+              style={[
+                styles.encouragement,
+                {
+                  color: colors.icon,
+                  opacity: 0.8,
+                  marginTop: 6,
+                },
+              ]}
+            >
               {encouragement}
-            </Text>
+            </ThemedText>
           </AppearingText>
           <AppearingText animationKey="banner-success">
             <ComeBackBanner />
@@ -175,14 +234,26 @@ export function StreakCardContent({
 
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.iconCircle, { backgroundColor: fireBg }]}>
-              <IconSymbol name="flame.fill" size={32} color={fireColor} />
+            <View
+              style={[
+                styles.iconCircle,
+                { backgroundColor: colors.iconCircleBackground },
+              ]}
+            >
+              <IconSymbol
+                name="flame.fill"
+                size={32}
+                color={colors.fireColor}
+              />
             </View>
             <View style={styles.titleContainer}>
               <TransitioningText animationKey="restart-title">
-                <Text style={[styles.title, { color: mainTextColor }]}>
+                <ThemedText
+                  type="title"
+                  style={[styles.title, { color: colors.text }]}
+                >
                   {STRINGS.TITLE_START_NEW_STREAK}
-                </Text>
+                </ThemedText>
               </TransitioningText>
               {personalBest > 0 ? (
                 <PartialAnimatedText
@@ -191,12 +262,23 @@ export function StreakCardContent({
                     personalBest === 1 ? "Day" : "Days"
                   }`}
                   animationKey={personalBest}
-                  style={styles.subtitle}
+                  type="subtitle"
+                  style={[styles.subtitle, { color: colors.textSecondary }]}
                 />
               ) : (
-                <Text style={styles.subtitle}>
+                <ThemedText
+                  type="subtitle"
+                  style={[
+                    styles.subtitle,
+                    {
+                      color: colors.textSecondary,
+                      marginTop: 2,
+                      opacity: 0.85,
+                    },
+                  ]}
+                >
                   {STRINGS.SUBTITLE_BEGIN_TRACKING}
-                </Text>
+                </ThemedText>
               )}
             </View>
           </View>
@@ -204,9 +286,19 @@ export function StreakCardContent({
           <AppearingText
             animationKey={`fail-${hadNewPersonalBest(streakData)}`}
           >
-            <Text style={[styles.encouragement, { color: colors.icon }]}>
+            <ThemedText
+              type="captionMedium"
+              style={[
+                styles.encouragement,
+                {
+                  color: colors.icon,
+                  opacity: 0.8,
+                  marginTop: 6,
+                },
+              ]}
+            >
               {encouragement}
-            </Text>
+            </ThemedText>
           </AppearingText>
           <AppearingText animationKey="banner-fail">
             <ComeBackBanner />
@@ -223,8 +315,13 @@ export function StreakCardContent({
 
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.iconCircle, { backgroundColor: fireBg }]}>
-          <IconSymbol name="flame.fill" size={32} color={fireColor} />
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.iconCircleBackground },
+          ]}
+        >
+          <IconSymbol name="flame.fill" size={32} color={colors.fireColor} />
         </View>
         <View style={styles.titleContainer}>
           {hasActiveStreak ? (
@@ -234,14 +331,18 @@ export function StreakCardContent({
                 currentStreak === 1 ? STRINGS.DAY : STRINGS.DAYS
               }`}
               animationKey={currentStreak}
-              style={[styles.title, { color: mainTextColor }]}
-              dynamicStyle={{ color: fireColor }}
+              type="title"
+              style={[styles.title, { color: colors.text }]}
+              dynamicStyle={{ color: colors.fireColor }}
             />
           ) : (
             <TransitioningText animationKey="start">
-              <Text style={[styles.title, { color: mainTextColor }]}>
+              <ThemedText
+                type="title"
+                style={[styles.title, { color: colors.text }]}
+              >
                 {STRINGS.TITLE_START_STREAK}
-              </Text>
+              </ThemedText>
             </TransitioningText>
           )}
           {personalBest > 0 ? (
@@ -251,12 +352,23 @@ export function StreakCardContent({
                 personalBest === 1 ? "Day" : "Days"
               }`}
               animationKey={personalBest}
-              style={styles.subtitle}
+              type="subtitle"
+              style={[styles.subtitle, { color: colors.textSecondary }]}
             />
           ) : (
-            <Text style={styles.subtitle}>
+            <ThemedText
+              type="subtitle"
+              style={[
+                styles.subtitle,
+                {
+                  color: colors.textSecondary,
+                  marginTop: 2,
+                  opacity: 0.85,
+                },
+              ]}
+            >
               {STRINGS.SUBTITLE_BEGIN_TRACKING}
-            </Text>
+            </ThemedText>
           )}
         </View>
       </View>
@@ -265,14 +377,20 @@ export function StreakCardContent({
         <AppearingText
           animationKey={`restart-encourage-${hadNewPersonalBest(streakData)}`}
         >
-          <Text
+          <ThemedText
+            type="captionMedium"
             style={[
               styles.encouragement,
-              { color: colors.icon, marginBottom: 10 },
+              {
+                color: colors.icon,
+                marginBottom: 10,
+                opacity: 0.8,
+                marginTop: 6,
+              },
             ]}
           >
             {getFailureMessage(false, streakData)}
-          </Text>
+          </ThemedText>
         </AppearingText>
       )}
 
@@ -286,7 +404,16 @@ export function StreakCardContent({
             : `${formatDate(dateToAsk.date)}?`
         }
         animationKey={dateToAsk.date}
-        style={[styles.description, { color: colors.icon }]}
+        type="captionMedium"
+        style={[
+          styles.description,
+          {
+            color: colors.icon,
+            lineHeight: 22,
+            marginBottom: 18,
+            opacity: 0.95,
+          },
+        ]}
       />
 
       <CheckInButtons />
@@ -312,22 +439,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "700",
+    // Typography.styles.title applies via ThemedText/PartialAnimatedText
     lineHeight: 24,
   },
   subtitle: {
-    fontSize: 14,
-    fontWeight: "500",
-    marginTop: 2,
-    color: "#8D7963",
-    opacity: 0.85,
+    // Typography.styles.subtitle applies via ThemedText/PartialAnimatedText
   },
   description: {
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 18,
-    opacity: 0.95,
+    // Typography.styles.captionMedium applies via PartialAnimatedText
   },
   buttonRow: {
     flexDirection: "row",
@@ -343,14 +462,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    // Typography.styles.button handled by ThemedText type="button"
   },
   encouragement: {
-    fontSize: 15,
-    opacity: 0.8,
-    marginTop: 6,
+    // Typography.styles.captionMedium handled by ThemedText
   },
   banner: {
     flexDirection: "row",
@@ -359,15 +474,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     marginTop: 12,
-    backgroundColor: "rgba(116, 116, 128, 0.08)",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(116, 116, 128, 0.12)",
   },
   bannerText: {
-    fontSize: 16,
-    fontWeight: "600",
-    opacity: 0.8,
+    // Typography.styles.body handled by ThemedText
   },
   expandIcon: {
     position: "absolute",

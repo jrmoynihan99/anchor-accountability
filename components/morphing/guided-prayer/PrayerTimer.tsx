@@ -1,5 +1,6 @@
+import { ThemedText } from "@/components/ThemedText";
 import React, { useEffect, useState } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
+import { Animated, StyleSheet, View } from "react-native";
 import { formatTime } from "./prayerUtils";
 
 interface PrayerTimerProps {
@@ -64,10 +65,21 @@ export function PrayerTimer({
 
   return (
     <View style={styles.timerContainer}>
-      <Text style={[styles.timerText, { color }]}>
+      <ThemedText
+        type="timer"
+        style={[
+          styles.timerText,
+          {
+            color,
+            marginBottom: 12,
+          },
+        ]}
+      >
         {formatTime(timeRemaining)}
-      </Text>
-      <View style={styles.timerProgress}>
+      </ThemedText>
+      <View style={[styles.timerProgress, { backgroundColor: `${color}33` }]}>
+        {" "}
+        {/* 20% opacity */}
         <Animated.View
           style={[
             styles.timerProgressFill,
@@ -91,14 +103,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   timerText: {
-    fontSize: 48,
-    fontWeight: "700",
-    marginBottom: 12,
+    // Typography styles moved to Typography.styles.timer + inline styles
   },
   timerProgress: {
     width: "100%",
     height: 6,
-    backgroundColor: "rgba(139, 105, 20, 0.2)",
     borderRadius: 3,
     overflow: "hidden",
   },

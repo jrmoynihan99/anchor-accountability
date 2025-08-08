@@ -1,11 +1,15 @@
 // ReachOutConfirmationScreen.tsx
+import { ThemedText } from "@/components/ThemedText";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface ReachOutConfirmationScreenProps {
   onClose: () => void;
-  onGuidedPrayer: () => void;
+  onGuidedPrayer?: () => void;
 }
 
 interface RecommendedAction {
@@ -19,117 +23,265 @@ export function ReachOutConfirmationScreen({
   onClose,
   onGuidedPrayer,
 }: ReachOutConfirmationScreenProps) {
+  const theme = useColorScheme();
+  const colors = Colors[theme ?? "dark"];
+
+  // Using the exact color that matches your hardcoded #3A2D28
+  // This is colors.background in dark mode and colors.text in light mode
+  const mainTextColor = theme === "dark" ? colors.background : colors.text;
+
   const recommendedActions: RecommendedAction[] = [
     {
       icon: "book",
       title: "Read Scripture",
       subtitle: "Find peace in God's word",
+      // No action property = non-interactive
     },
-    { icon: "walk", title: "Take a Walk", subtitle: "Get some fresh air" },
+    {
+      icon: "walk",
+      title: "Take a Walk",
+      subtitle: "Get some fresh air",
+      // No action property = non-interactive
+    },
     {
       icon: "heart",
       title: "Guided Prayer",
       subtitle: "Connect with God",
-      action: onGuidedPrayer,
+      action: onGuidedPrayer, // Only this one has an action
     },
   ];
 
+  const handleDonePress = () => {
+    // Trigger haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Call the original onClose function
+    onClose();
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.successIcon}>
-        <Ionicons name="checkmark-circle" size={64} color="#4CAF50" />
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.scrollContent}
+    >
+      {/* Header with Icon */}
+      <View style={styles.modalHeader}>
+        <Ionicons name="checkmark-circle" size={40} color={mainTextColor} />
+        <ThemedText
+          type="titleLarge"
+          style={[
+            styles.title,
+            {
+              color: mainTextColor,
+              marginTop: 12,
+              textAlign: "center",
+            },
+          ]}
+        >
+          Message Sent!
+        </ThemedText>
       </View>
 
-      <Text style={styles.title}>Message Sent!</Text>
-      <Text style={styles.description}>
+      <ThemedText
+        type="body"
+        style={[
+          styles.description,
+          {
+            color: colors.textMuted,
+            lineHeight: 22,
+            textAlign: "center",
+            marginBottom: 24,
+          },
+        ]}
+      >
         Your anonymous request has been sent to the community. Sit tight -
         people will be responding with encouragement soon.
-      </Text>
+      </ThemedText>
 
       <View style={styles.recommendationsContainer}>
-        <Text style={styles.recommendationsTitle}>While you wait:</Text>
-        {recommendedActions.map((action, index) => (
-          <TouchableOpacity
-            key={index}
-            style={styles.recommendationCard}
-            onPress={action.action}
-            activeOpacity={0.7}
-          >
-            <View style={styles.recommendationIconContainer}>
-              <Ionicons name={action.icon as any} size={24} color="#3A2D28" />
-            </View>
-            <View style={styles.recommendationText}>
-              <Text style={styles.recommendationTitle}>{action.title}</Text>
-              <Text style={styles.recommendationSubtitle}>
-                {action.subtitle}
-              </Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color="rgba(58, 45, 40, 0.4)"
-            />
-          </TouchableOpacity>
-        ))}
+        <ThemedText
+          type="xl"
+          style={[
+            styles.recommendationsTitle,
+            {
+              color: mainTextColor,
+              marginBottom: 16,
+              textAlign: "center",
+            },
+          ]}
+        >
+          While you wait:
+        </ThemedText>
+
+        {recommendedActions.map((action, index) => {
+          const isInteractive = !!action.action;
+
+          if (isInteractive) {
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.recommendationCard,
+                  {
+                    backgroundColor: colors.modalCardBackground,
+                    borderColor: colors.modalCardBorder,
+                  },
+                ]}
+                onPress={action.action}
+                activeOpacity={0.7}
+              >
+                <View
+                  style={[
+                    styles.recommendationIconContainer,
+                    {
+                      backgroundColor: colors.iconCircleSecondaryBackground,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={24}
+                    color={mainTextColor}
+                  />
+                </View>
+                <View style={styles.recommendationText}>
+                  <ThemedText
+                    type="body"
+                    style={[
+                      styles.recommendationTitle,
+                      {
+                        color: mainTextColor,
+                        marginBottom: 2,
+                      },
+                    ]}
+                  >
+                    {action.title}
+                  </ThemedText>
+                  <ThemedText
+                    type="caption"
+                    style={[
+                      styles.recommendationSubtitle,
+                      { color: colors.textMuted },
+                    ]}
+                  >
+                    {action.subtitle}
+                  </ThemedText>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={colors.textMuted}
+                />
+              </TouchableOpacity>
+            );
+          } else {
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.recommendationCard,
+                  {
+                    backgroundColor: colors.modalCardBackground,
+                    borderColor: colors.modalCardBorder,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.recommendationIconContainer,
+                    {
+                      backgroundColor: colors.iconCircleSecondaryBackground,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={action.icon as any}
+                    size={24}
+                    color={mainTextColor}
+                  />
+                </View>
+                <View style={styles.recommendationText}>
+                  <ThemedText
+                    type="body"
+                    style={[
+                      styles.recommendationTitle,
+                      {
+                        color: mainTextColor,
+                        marginBottom: 2,
+                      },
+                    ]}
+                  >
+                    {action.title}
+                  </ThemedText>
+                  <ThemedText
+                    type="caption"
+                    style={[
+                      styles.recommendationSubtitle,
+                      { color: colors.textMuted },
+                    ]}
+                  >
+                    {action.subtitle}
+                  </ThemedText>
+                </View>
+              </View>
+            );
+          }
+        })}
       </View>
 
-      <TouchableOpacity style={styles.doneButton} onPress={onClose}>
-        <Text style={styles.doneButtonText}>Done</Text>
+      <TouchableOpacity
+        style={[styles.doneButton, { backgroundColor: mainTextColor }]}
+        onPress={handleDonePress}
+      >
+        <ThemedText
+          type="buttonLarge"
+          style={[styles.doneButtonText, { color: colors.white }]}
+        >
+          Done
+        </ThemedText>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 80,
-    alignItems: "center",
   },
-  successIcon: {
-    marginBottom: 24,
+  scrollContent: {
+    paddingTop: 30,
+    paddingHorizontal: 16,
+  },
+  modalHeader: {
+    alignItems: "center",
+    marginTop: 0,
+    marginBottom: 16,
   },
   title: {
-    color: "#3A2D28",
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 12,
-    textAlign: "center",
+    // Typography styles moved to Typography.styles.titleLarge + inline styles
   },
   description: {
-    color: "rgba(58, 45, 40, 0.8)",
-    fontSize: 16,
-    lineHeight: 22,
-    textAlign: "center",
-    marginBottom: 32,
-    paddingHorizontal: 16,
+    // Typography styles moved to Typography.styles.body + inline styles
   },
   recommendationsContainer: {
     width: "100%",
-    marginBottom: 32,
+    marginBottom: 12,
   },
   recommendationsTitle: {
-    color: "#3A2D28",
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 16,
-    textAlign: "center",
+    // Typography styles moved to Typography.styles.xl + inline styles
   },
   recommendationCard: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    borderRadius: 12,
+    borderWidth: 1,
+    borderRadius: 16,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(58, 45, 40, 0.1)",
   },
   recommendationIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(58, 45, 40, 0.1)",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
@@ -138,25 +290,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   recommendationTitle: {
-    color: "#3A2D28",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 2,
+    // Typography styles moved to Typography.styles.body + inline styles
   },
   recommendationSubtitle: {
-    color: "rgba(58, 45, 40, 0.7)",
-    fontSize: 14,
+    // Typography styles moved to Typography.styles.caption
   },
   doneButton: {
-    backgroundColor: "rgba(58, 45, 40, 0.1)",
     borderRadius: 16,
-    padding: 16,
-    width: "100%",
+    padding: 18,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    marginTop: 0,
   },
   doneButtonText: {
-    color: "#3A2D28",
-    fontSize: 16,
-    fontWeight: "600",
+    // Typography styles moved to Typography.styles.buttonLarge
   },
 });
