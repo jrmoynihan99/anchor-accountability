@@ -100,7 +100,7 @@ export function ReachOutConfirmationScreen({
 
       <View style={styles.recommendationsContainer}>
         <ThemedText
-          type="xl"
+          type="captionMedium"
           style={[
             styles.recommendationsTitle,
             {

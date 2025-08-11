@@ -2,12 +2,31 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
-import React, { useRef } from "react";
-import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { doc, getDoc } from "firebase/firestore";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
+import { CarouselDots } from "./CarouselDots"; // Adjust path if needed
 
-export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
+export function VerseCard({
+  offsetDays = 0,
+  index,
+  currentIndex,
+  total,
+}: {
+  offsetDays?: number;
+  index?: number;
+  currentIndex?: number;
+  total?: number;
+}) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
   const router = useRouter();
@@ -16,12 +35,12 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
   const date = new Date(today);
   date.setDate(today.getDate() + offsetDays);
 
+  const dateId = date.toISOString().split("T")[0];
   const formattedDate = date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
 
-  // Animation
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -43,15 +62,90 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
     }).start();
   };
 
+  const [loading, setLoading] = useState(true);
+  const [verse, setVerse] = useState<string | null>(null);
+  const [reference, setReference] = useState<string | null>(null);
+  const [prayerContent, setPrayerContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVerse = async () => {
+      try {
+        const docRef = doc(db, "dailyContent", dateId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setVerse(data.verse ?? null);
+          setReference(data.reference ?? null);
+          setPrayerContent(data.prayerContent ?? null);
+        } else {
+          setVerse(null);
+        }
+      } catch (err) {
+        console.error("Error fetching verse:", err);
+        setVerse(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVerse();
+  }, [dateId]);
+
   const handlePress = () => {
     const params = new URLSearchParams({
       date: formattedDate,
-      verseText: "No temptation has overtaken you that is not common to man.",
-      reference: "1 Corinthians 10:13",
+      verseText: verse ?? "",
+      reference: reference ?? "",
+      prayerContent: prayerContent ?? "",
       offsetDays: offsetDays.toString(),
     });
     router.push(`/modal?${params.toString()}`);
   };
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.cardBackground,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ActivityIndicator size="small" color={colors.textSecondary} />
+      </View>
+    );
+  }
+
+  if (!verse) {
+    return (
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.cardBackground,
+            padding: 32,
+            justifyContent: "center",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ThemedText
+          type="caption"
+          style={{
+            color: colors.textSecondary,
+            textAlign: "center",
+            opacity: 0.6,
+          }}
+        >
+          No content available for {formattedDate}
+        </ThemedText>
+      </View>
+    );
+  }
 
   return (
     <Pressable
@@ -70,32 +164,41 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
           },
         ]}
       >
+        {/* Top-right icon */}
+        <IconSymbol
+          name="arrow.up.left.and.arrow.down.right"
+          size={18}
+          color={colors.icon}
+          style={styles.topRightIcon}
+        />
+
+        {/* Bottom-left date */}
         <ThemedText
           type="captionMedium"
           style={[
-            styles.date,
-            {
-              color: colors.textSecondary,
-              opacity: 0.6,
-            },
+            styles.bottomLeftDate,
+            { color: colors.textSecondary, opacity: 0.6 },
           ]}
         >
           {formattedDate}
         </ThemedText>
+
+        {/* Open quote mark */}
         <ThemedText
           type="quote"
           style={[
             styles.openQuote,
-            {
-              color: colors.textSecondary,
-              opacity: 0.6,
-            },
+            { color: colors.textSecondary, opacity: 0.6 },
           ]}
         >
           ❝
         </ThemedText>
+
+        {/* Main verse text, max 3 lines */}
         <ThemedText
           type="verse"
+          numberOfLines={3}
+          ellipsizeMode="tail"
           style={[
             styles.verseText,
             {
@@ -106,8 +209,10 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
             },
           ]}
         >
-          No temptation has overtaken you that is not common to man.
+          {verse}
         </ThemedText>
+
+        {/* Reference */}
         <View style={styles.referenceContainer}>
           <ThemedText
             type="caption"
@@ -120,15 +225,18 @@ export function VerseCard({ offsetDays = 0 }: { offsetDays?: number }) {
               },
             ]}
           >
-            1 Corinthians 10:13
+            {reference}
           </ThemedText>
         </View>
-        <IconSymbol
-          name="arrow.left.arrow.right"
-          size={18}
-          color={colors.icon}
-          style={styles.expandIcon}
-        />
+
+        {/* Carousel Dots (bottom-center) */}
+        {typeof index === "number" &&
+          typeof currentIndex === "number" &&
+          typeof total === "number" && (
+            <View style={styles.dotsContainer}>
+              <CarouselDots currentIndex={currentIndex} total={total} />
+            </View>
+          )}
       </Animated.View>
     </Pressable>
   );
@@ -148,30 +256,34 @@ const styles = StyleSheet.create({
     elevation: 5,
     position: "relative",
   },
-  date: {
-    position: "absolute",
-    top: cardPadding,
-    right: cardPadding,
-  },
+  verseText: {},
   openQuote: {
     position: "absolute",
     top: cardPadding,
     left: cardPadding,
   },
-  verseText: {
-    // All typography styles moved to Typography.styles.verse
-  },
   referenceContainer: {
     alignItems: "flex-end",
     marginTop: 8,
   },
-  reference: {
-    // Typography styles moved to Typography.styles.caption + inline styles
+  reference: {},
+  topRightIcon: {
+    position: "absolute",
+    top: cardPadding,
+    right: cardPadding,
+    opacity: 0.85,
   },
-  expandIcon: {
+  bottomLeftDate: {
     position: "absolute",
     bottom: cardPadding,
     left: cardPadding,
-    opacity: 0.85,
+  },
+  dotsContainer: {
+    position: "absolute",
+    bottom: cardPadding,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

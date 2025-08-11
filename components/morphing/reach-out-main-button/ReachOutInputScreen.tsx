@@ -1,4 +1,5 @@
 // ReachOutInputScreen.tsx
+import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
@@ -135,28 +136,9 @@ export function ReachOutInputScreen({
           </ThemedText>
         </TouchableOpacity>
 
-        {/* Anonymous Badge */}
-        <View
-          style={[
-            styles.anonymousBadge,
-            {
-              backgroundColor: colors.modalCardBackground,
-              borderColor: colors.modalCardBorder,
-            },
-          ]}
-        >
-          <IconSymbol
-            name="eye.slash"
-            size={14}
-            color={colors.textMuted}
-            style={{ marginRight: 6 }}
-          />
-          <ThemedText
-            type="badge"
-            style={[styles.anonymousBadgeText, { color: colors.textMuted }]}
-          >
-            100% anonymous
-          </ThemedText>
+        {/* Anonymous Badge - Using the component */}
+        <View style={{ marginTop: 12 }}>
+          <AnonymousBadge />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -205,18 +187,5 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     // Typography styles moved to Typography.styles.buttonLarge
-  },
-  anonymousBadge: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    alignSelf: "center",
-  },
-  anonymousBadgeText: {
-    // Typography styles moved to Typography.styles.badge
   },
 });

@@ -119,7 +119,7 @@ export const Typography = {
 
     // Special text styles
     verse: {
-      fontSize: 30,
+      fontSize: 28,
       fontWeight: "500" as const,
       fontStyle: "italic" as const,
       lineHeight: 40,
@@ -127,9 +127,9 @@ export const Typography = {
       fontFamily: "Spectral_700Bold_Italic",
     },
     quote: {
-      fontSize: 70,
+      fontSize: 60,
       fontWeight: "200" as const,
-      lineHeight: 70,
+      lineHeight: 60,
       fontFamily: "serif",
     },
     quoteText: {

@@ -1,34 +1,25 @@
+// app/_layout.tsx
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import {
+  Stack,
+  router,
+  useRootNavigationState,
+  useSegments,
+} from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { getHasOnboarded } from "@/lib/onboarding";
 
 // Font imports
-import {
-  DancingScript_400Regular,
-  DancingScript_700Bold,
-  useFonts as useDancingScriptFonts,
-} from "@expo-google-fonts/dancing-script";
-import {
-  GreatVibes_400Regular,
-  useFonts as useGreatVibesFonts,
-} from "@expo-google-fonts/great-vibes";
-import {
-  MarckScript_400Regular,
-  useFonts as useMarckScriptFonts,
-} from "@expo-google-fonts/marck-script";
-import {
-  Satisfy_400Regular,
-  useFonts as useSatisfyFonts,
-} from "@expo-google-fonts/satisfy";
 import {
   Spectral_400Regular,
   Spectral_700Bold,
@@ -36,62 +27,87 @@ import {
   useFonts as useSpectralFonts,
 } from "@expo-google-fonts/spectral";
 
-// Optional: Your custom font (e.g. SpaceMono)
-import { useFonts as useMonoFonts } from "expo-font";
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const segments = useSegments();
+  const navigationState = useRootNavigationState();
 
   const [spectralLoaded] = useSpectralFonts({
     Spectral_400Regular,
     Spectral_700Bold,
     Spectral_700Bold_Italic,
   });
-  const [greatVibesLoaded] = useGreatVibesFonts({
-    GreatVibes_400Regular,
-  });
-  const [satisfyLoaded] = useSatisfyFonts({
-    Satisfy_400Regular,
-  });
-  const [marckLoaded] = useMarckScriptFonts({
-    MarckScript_400Regular,
-  });
-  const [dancingLoaded] = useDancingScriptFonts({
-    DancingScript_400Regular,
-    DancingScript_700Bold,
-  });
-  const [monoLoaded] = useMonoFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
 
-  const fontsReady =
-    spectralLoaded &&
-    greatVibesLoaded &&
-    satisfyLoaded &&
-    marckLoaded &&
-    dancingLoaded &&
-    monoLoaded;
+  // Check if we're in the auth group
+  const inAuthGroup = segments[0] === "onboarding";
 
   useEffect(() => {
-    if (fontsReady) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsReady]);
+    if (!spectralLoaded || !navigationState?.key) return;
 
-  if (!fontsReady) return null;
+    const checkAuth = async () => {
+      try {
+        console.log("Checking onboarding status...");
+        const hasCompleted = await getHasOnboarded();
+        console.log("Has completed:", hasCompleted);
+
+        if (!isNavigationReady) {
+          setIsNavigationReady(true);
+          await SplashScreen.hideAsync();
+        }
+
+        // Only navigate if we're not already in the right place
+        if (hasCompleted && inAuthGroup) {
+          console.log("Redirecting to tabs...");
+          router.replace("/(tabs)");
+        } else if (!hasCompleted && !inAuthGroup) {
+          console.log("Redirecting to onboarding...");
+          router.replace("/onboarding/intro");
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        if (!isNavigationReady) {
+          setIsNavigationReady(true);
+          await SplashScreen.hideAsync();
+        }
+        router.replace("/onboarding/intro");
+      }
+    };
+
+    checkAuth();
+  }, [spectralLoaded, navigationState?.key, isNavigationReady]);
+
+  if (!spectralLoaded || !isNavigationReady) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
+        }}
+      >
+        <ActivityIndicator
+          size="large"
+          color={colorScheme === "dark" ? "#fff" : "#667eea"}
+        />
+      </View>
+    );
+  }
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="modal"
           options={{
             presentation: "modal",
             headerShown: false,
-            animation: "slide_from_bottom", // or try other values
+            animation: "slide_from_bottom",
             gestureEnabled: true,
             gestureDirection: "vertical",
           }}
