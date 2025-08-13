@@ -40,16 +40,16 @@ export function ReachOutConfirmationScreen({
       action: onReadScripture, // Now this has an action!
     },
     {
-      icon: "walk",
-      title: "Take a Walk",
-      subtitle: "Get some fresh air",
-      // No action property = non-interactive
-    },
-    {
       icon: "heart",
       title: "Guided Prayer",
       subtitle: "Connect with God",
       action: onGuidedPrayer,
+    },
+    {
+      icon: "walk",
+      title: "Take a Walk",
+      subtitle: "Get some fresh air",
+      // No action property = non-interactive
     },
   ];
 

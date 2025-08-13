@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   // Outermost: gets the shadow and radius, NO overflow
   shadowParent: {
     borderRadius: PILL_RADIUS,
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.35,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
     elevation: 5,

@@ -108,6 +108,7 @@ export function VerseModal({
           verse={verse}
           reference={reference}
           formattedDate={formattedDate}
+          bibleVersion={bibleVersion}
           onReadInContext={handleReadInContext}
           colors={colors}
         />

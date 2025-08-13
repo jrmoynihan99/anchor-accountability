@@ -186,7 +186,12 @@ export function BaseModal({
               hitSlop={16}
               activeOpacity={0.7}
             >
-              <IconSymbol name="xmark" size={28} color={buttonColor} />
+              <IconSymbol
+                name="xmark"
+                size={18}
+                weight="light"
+                color={buttonColor}
+              />
             </TouchableOpacity>
 
             {children}

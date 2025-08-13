@@ -7,6 +7,7 @@ interface VerseViewProps {
   verse: string;
   reference: string | null;
   formattedDate: string;
+  bibleVersion?: string;
   onReadInContext: () => void;
   colors: any;
 }
@@ -15,6 +16,7 @@ export function VerseView({
   verse,
   reference,
   formattedDate,
+  bibleVersion,
   onReadInContext,
   colors,
 }: VerseViewProps) {
@@ -24,7 +26,7 @@ export function VerseView({
         type="title"
         style={[styles.dateHeader, { color: colors.text, textAlign: "center" }]}
       >
-        {formattedDate}
+        Verse of the Day – {formattedDate}
       </ThemedText>
 
       <ThemedText
@@ -54,6 +56,14 @@ export function VerseView({
         >
           {reference}
         </ThemedText>
+        {!!bibleVersion && (
+          <ThemedText
+            type="caption"
+            style={{ color: colors.textSecondary, fontStyle: "italic" }}
+          >
+            {bibleVersion}
+          </ThemedText>
+        )}
       </View>
 
       <TouchableOpacity
