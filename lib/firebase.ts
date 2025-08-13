@@ -1,5 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { Auth, getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -20,5 +21,25 @@ console.log("App ID:", firebaseConfig.appId ? "EXISTS" : "MISSING");
 console.log("==============================");
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// Initialize Auth with AsyncStorage persistence using dynamic import
+let auth: Auth;
+try {
+  // Use require() to avoid TypeScript import issues
+  const { getReactNativePersistence } = require("firebase/auth");
+
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+  console.log("✅ Firebase Auth initialized with AsyncStorage persistence");
+} catch (error) {
+  // If auth is already initialized, get the existing instance
+  console.log(
+    "⚠️  Auth already initialized, getting existing instance:",
+    error
+  );
+  auth = getAuth(app);
+}
+
+export { auth };
 export const db = getFirestore(app);

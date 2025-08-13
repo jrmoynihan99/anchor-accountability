@@ -17,6 +17,7 @@ import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { ensureSignedIn } from "@/lib/auth";
 import { getHasOnboarded } from "@/lib/onboarding";
 
 // Font imports
@@ -52,6 +53,14 @@ export default function RootLayout() {
         console.log("Checking onboarding status...");
         const hasCompleted = await getHasOnboarded();
         console.log("Has completed:", hasCompleted);
+
+        // If onboarding is complete, proceed to tabs
+        // If onboarding is complete, ensure Firebase auth
+        if (hasCompleted) {
+          console.log("Onboarding complete, ensuring Firebase auth...");
+          await ensureSignedIn();
+          console.log("Firebase auth ensured");
+        }
 
         if (!isNavigationReady) {
           setIsNavigationReady(true);

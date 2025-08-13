@@ -28,15 +28,15 @@ export const STRINGS = {
   ENCOURAGE_RELAPSE_EARLIER_DAY_NEW_BEST:
     "Keep your head up. God loves you. Reach out for instant anonymous help at any time (and congrats on the new personal best, let's beat it!)",
   ENCOURAGE_RELAPSE_YESTERDAY:
-    "Keep your head up. God loves you. Reach out for instant anonymous help at any time. Let's get started again tomorrow!",
+    "Keep your head up. God loves you. Reach out for instant anonymous help at any time. Let's finish today strong!",
   ENCOURAGE_RELAPSE_YESTERDAY_NEW_BEST:
-    "Keep your head up. God loves you. Reach out for instant anonymous help at any time (and congrats on the new personal best, let's beat it starting tomorrow!)",
+    "Keep your head up. God loves you. Reach out for instant anonymous help at any time (and congrats on the new personal best, let's beat it starting today!)",
   ENCOURAGE_CLOSE_TO_BEST: (days: number) =>
     `You're only ${days} ${
       days === 1 ? "day" : "days"
     } away from your personal best! Come back tomorrow to continue.`,
   ENCOURAGE_NEW_BEST:
-    "New personal best! Amazing job! Come back tomorrow to keep it going.",
+    "New personal best! Amazing job! Finish today strong and come back tomorrow to keep it going!",
   ENCOURAGE_KEEP_GOING:
     "Great job! Check in again tomorrow to keep your streak alive.",
 
@@ -108,6 +108,7 @@ export const getPersonalBest = (streakData: StreakEntry[]) => {
       currentStreak = 0;
     }
   }
+
   return maxStreak;
 };
 
@@ -126,7 +127,7 @@ export const hadNewPersonalBest = (streakData: StreakEntry[]) => {
 
   let recentStreakLength = 0;
   for (let i = lastFailIndex - 1; i >= 0; i--) {
-    if (sorted[i] && sorted[i].status === "success") {
+    if (sorted[i]?.status === "success") {
       recentStreakLength++;
     } else {
       break;
@@ -138,10 +139,10 @@ export const hadNewPersonalBest = (streakData: StreakEntry[]) => {
 
   const endOfPreviousData = lastFailIndex - recentStreakLength;
   for (let i = 0; i <= endOfPreviousData; i++) {
-    if (sorted[i] && sorted[i].status === "success") {
+    if (sorted[i]?.status === "success") {
       tempStreak++;
       previousBest = Math.max(previousBest, tempStreak);
-    } else if (sorted[i] && sorted[i].status === "fail") {
+    } else if (sorted[i]?.status === "fail") {
       tempStreak = 0;
     }
   }
@@ -154,11 +155,11 @@ export const getDateToAskAbout = (streakData: StreakEntry[]) => {
   const pendingEntries = streakData.filter((e) => e.status === "pending");
 
   if (currentStreak === 0) {
-    return pendingEntries.find((e) => isYesterday(e.date));
+    return pendingEntries.find((e) => isYesterday(e.date)) ?? null;
   }
 
   const yesterdayEntry = streakData.find((e) => isYesterday(e.date));
-  if (yesterdayEntry && yesterdayEntry.status === "success") {
+  if (yesterdayEntry?.status === "success") {
     return null;
   }
 

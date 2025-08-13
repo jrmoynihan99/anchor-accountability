@@ -34,6 +34,14 @@ export function StreakCardModal({
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
 
+  // DEBUG: Log what's in streakData
+  console.log("🔍 StreakCardModal: streakData received:", streakData);
+  streakData.forEach((entry, index) => {
+    console.log(
+      `🔍 StreakCardModal: Entry ${index}: ${entry.date} - ${entry.status}`
+    );
+  });
+
   // Helper functions for stats
   const getTotalDaysTracked = (data: StreakEntry[]) => {
     return data.filter(
@@ -206,23 +214,62 @@ export function StreakCardModal({
                   type="caption"
                   style={[styles.activityDate, { color: colors.textSecondary }]}
                 >
-                  {new Date(entry.date).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {(() => {
+                    const [year, month, day] = entry.date
+                      .split("-")
+                      .map(Number);
+                    const date = new Date(year, month - 1, day);
+                    return date.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    });
+                  })()}
                 </ThemedText>
-                <IconSymbol
-                  name={
-                    entry.status === "success"
-                      ? "checkmark.circle.fill"
-                      : "xmark.circle.fill"
-                  }
-                  size={20}
-                  color={
-                    entry.status === "success" ? colors.success : colors.error
-                  }
-                />
+                {entry.status === "pending" ? (
+                  (() => {
+                    const today = new Date().toISOString().split("T")[0];
+                    const isToday = entry.date === today;
+
+                    if (isToday) {
+                      return (
+                        <ThemedText
+                          type="caption"
+                          style={[
+                            {
+                              color: colors.textSecondary,
+                              fontStyle: "italic",
+                            },
+                          ]}
+                        >
+                          In Progress
+                        </ThemedText>
+                      );
+                    } else {
+                      // For past pending dates - awaiting check-in
+                      return (
+                        <IconSymbol
+                          name="clock.badge.questionmark"
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      );
+                    }
+                  })()
+                ) : (
+                  // Success/fail icons as before
+                  <IconSymbol
+                    name={
+                      entry.status === "success"
+                        ? "checkmark.circle.fill"
+                        : "xmark.circle.fill"
+                    }
+                    size={20}
+                    color={
+                      entry.status === "success" ? colors.success : colors.error
+                    }
+                  />
+                )}
               </View>
             ))}
         </ScrollView>

@@ -10,6 +10,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 interface ReachOutConfirmationScreenProps {
   onClose: () => void;
   onGuidedPrayer?: () => void;
+  onReadScripture?: () => void; // Add this new prop
 }
 
 interface RecommendedAction {
@@ -22,6 +23,7 @@ interface RecommendedAction {
 export function ReachOutConfirmationScreen({
   onClose,
   onGuidedPrayer,
+  onReadScripture, // Add this parameter
 }: ReachOutConfirmationScreenProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
@@ -35,7 +37,7 @@ export function ReachOutConfirmationScreen({
       icon: "book",
       title: "Read Scripture",
       subtitle: "Find peace in God's word",
-      // No action property = non-interactive
+      action: onReadScripture, // Now this has an action!
     },
     {
       icon: "walk",
@@ -47,7 +49,7 @@ export function ReachOutConfirmationScreen({
       icon: "heart",
       title: "Guided Prayer",
       subtitle: "Connect with God",
-      action: onGuidedPrayer, // Only this one has an action
+      action: onGuidedPrayer,
     },
   ];
 

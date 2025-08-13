@@ -5,11 +5,17 @@ import { ReachOutButton } from "@/components/morphing/reach-out-main-button/Reac
 import { ReachOutModal } from "@/components/morphing/reach-out-main-button/ReachOutModal";
 import { StreakCard } from "@/components/morphing/streak/StreakCard";
 import { StreakCardModal } from "@/components/morphing/streak/StreakCardModal";
-import { VerseCarousel } from "@/components/VerseCarousel";
+import { getDateToAskAbout } from "@/components/morphing/streak/streakUtils";
+import {
+  VerseCarousel,
+  VerseCarouselRef,
+} from "@/components/morphing/verse/VerseCarousel";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useStreakData } from "@/hooks/useStreakData";
+import { auth } from "@/lib/firebase";
 import { StatusBar } from "expo-status-bar";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -18,146 +24,76 @@ export default function HomeScreen() {
   const bgColor = Colors[theme ?? "dark"].background;
   const insets = useSafeAreaInsets();
 
-  // Refs to control the guided prayer modal
+  const { streakData, updateStreakStatus } = useStreakData();
+
   const guidedPrayerOpenRef = useRef<(() => void) | null>(null);
   const reachOutCloseRef = useRef<((velocity?: number) => void) | null>(null);
 
-  const today = new Date();
-  function getDate(offset: number) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + offset);
-    // Format as YYYY-MM-DD
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(d.getDate()).padStart(2, "0")}`;
-  }
+  // Add ref for VerseCarousel
+  const verseCarouselRef = useRef<VerseCarouselRef>(null);
 
-  // Test scenarios - uncomment the one you want to test
-  const getTestScenario = (scenario: string) => {
-    switch (scenario) {
-      case "fresh-start":
-        // Brand new user - should ask about yesterday
-        return [
-          { date: getDate(-1), status: "pending" }, // yesterday
-          { date: getDate(0), status: "pending" }, // today
-        ];
+  // Debug logging for authentication and data
+  useEffect(() => {
+    console.log(`🔍 HomeScreen: Current user:`, auth.currentUser?.uid);
+    console.log(`🔍 HomeScreen: User email:`, auth.currentUser?.email);
+    console.log(`🔍 HomeScreen: Streak data length:`, streakData.length);
+    console.log(`🔍 HomeScreen: Streak data:`, streakData);
 
-      case "active-streak-catchup":
-        // User with 2-day streak, missed a few days - should ask about earliest missing day
-        return [
-          { date: getDate(-5), status: "success" }, // 5 days ago
-          { date: getDate(-4), status: "success" }, // 4 days ago - streak = 2
-          { date: getDate(-3), status: "pending" }, // 3 days ago - should ask about this first
-          { date: getDate(-2), status: "pending" }, // 2 days ago
-          { date: getDate(-1), status: "pending" }, // yesterday
-          { date: getDate(0), status: "pending" }, // today
-        ];
-
-      case "failed-yesterday":
-        // User had a streak but failed yesterday - should ask about yesterday, then encourage new streak
-        return [
-          { date: getDate(-3), status: "success" }, // 3 days ago
-          { date: getDate(-2), status: "success" }, // 2 days ago
-          { date: getDate(-1), status: "pending" }, // yesterday - will fail this
-          { date: getDate(0), status: "pending" }, // today
-        ];
-
-      case "completed-yesterday":
-        // User completed yesterday successfully - should show encouragement for tomorrow
-        return [
-          { date: getDate(-2), status: "success" }, // 2 days ago
-          { date: getDate(-1), status: "success" }, // yesterday - already completed
-          { date: getDate(0), status: "pending" }, // today - don't ask about this
-        ];
-
-      case "long-streak":
-        // User with long streak, close to personal best
-        return [
-          { date: getDate(-10), status: "success" },
-          { date: getDate(-9), status: "success" },
-          { date: getDate(-8), status: "success" },
-          { date: getDate(-7), status: "fail" }, // broke streak here
-          { date: getDate(-6), status: "success" }, // new streak starts
-          { date: getDate(-5), status: "success" },
-          { date: getDate(-4), status: "success" },
-          { date: getDate(-3), status: "success" },
-          { date: getDate(-2), status: "success" }, // current streak = 5, personal best = 6
-          { date: getDate(-1), status: "pending" }, // yesterday
-          { date: getDate(0), status: "pending" }, // today
-        ];
-
-      default:
-        return getTestScenario("fresh-start");
+    if (streakData.length > 0) {
+      const dateToAsk = getDateToAskAbout(streakData);
+      console.log(`🔍 HomeScreen: Date to ask about:`, dateToAsk);
     }
-  };
+  }, [streakData]);
 
-  // Change this to test different scenarios:
-  const [currentScenario] = useState("active-streak-catchup");
-  const [streakData, setStreakData] = useState(
-    getTestScenario(currentScenario)
-  );
+  const handleStreakCheckIn = async (status: "success" | "fail") => {
+    console.log(
+      `🔍 HomeScreen: handleStreakCheckIn called with status:`,
+      status
+    );
 
-  const handleStreakCheckIn = (status: "success" | "fail") => {
-    setStreakData((prev) => {
-      // Always update the date that StreakCard is currently asking about
-      // This should be yesterday if no streak, or the earliest pending if has streak
-      const sortedData = [...prev].sort((a, b) => a.date.localeCompare(b.date));
+    // Find the date we're supposed to be checking in for
+    const dateToAsk = getDateToAskAbout(streakData);
+    console.log(`🔍 HomeScreen: Date to ask about:`, dateToAsk);
 
-      // Count current active streak
-      let currentStreak = 0;
-      let lastFailIndex = -1;
-
-      // Find last failure
-      for (let i = sortedData.length - 1; i >= 0; i--) {
-        if (sortedData[i].status === "fail") {
-          lastFailIndex = i;
-          break;
-        }
-      }
-
-      // Count successes after last failure
-      for (let i = lastFailIndex + 1; i < sortedData.length; i++) {
-        if (sortedData[i].status === "success") {
-          currentStreak++;
-        }
-      }
-
-      // Determine which date to update (same logic as StreakCard)
-      let dateToUpdate;
-      if (currentStreak === 0) {
-        // No active streak - should be asking about yesterday
-        const yesterday = getDate(-1);
-        dateToUpdate = yesterday;
-      } else {
-        // Has active streak - should be asking about earliest pending
-        const pendingEntries = prev.filter((e) => e.status === "pending");
-        const sortedPending = pendingEntries.sort((a, b) =>
-          a.date.localeCompare(b.date)
-        );
-        dateToUpdate = sortedPending[0]?.date;
-      }
-
-      // Update the specific date
-      return prev.map((entry) =>
-        entry.date === dateToUpdate ? { ...entry, status } : entry
+    if (dateToAsk) {
+      // Update the specific date that was being asked about
+      console.log(
+        `🔍 HomeScreen: Updating date ${dateToAsk.date} with status ${status}`
       );
-    });
-  };
-
-  // Function to transition from ReachOut to Guided Prayer
-  const handleOpenGuidedPrayer = () => {
-    // First close the ReachOut modal
-    if (reachOutCloseRef.current) {
-      reachOutCloseRef.current();
+      await updateStreakStatus(dateToAsk.date, status);
+    } else {
+      // Fallback: update today's date (though this shouldn't happen in normal flow)
+      const today = new Date().toISOString().split("T")[0];
+      console.log(
+        `🔍 HomeScreen: No date to ask about, updating today (${today}) with status ${status}`
+      );
+      await updateStreakStatus(today, status);
     }
 
-    // Then open the Guided Prayer modal with a slight delay
+    console.log(
+      "Checked in with status:",
+      status,
+      "for date:",
+      dateToAsk?.date
+    );
+  };
+
+  const handleOpenGuidedPrayer = () => {
+    if (reachOutCloseRef.current) reachOutCloseRef.current();
     setTimeout(() => {
-      if (guidedPrayerOpenRef.current) {
-        guidedPrayerOpenRef.current();
+      if (guidedPrayerOpenRef.current) guidedPrayerOpenRef.current();
+    }, 200);
+  };
+
+  // Add new handler for opening verse modal from ReachOut
+  const handleOpenVerseModal = () => {
+    if (reachOutCloseRef.current) reachOutCloseRef.current();
+
+    setTimeout(() => {
+      if (verseCarouselRef.current) {
+        verseCarouselRef.current.openTodayInContext();
       }
-    }, 200); // Small delay to allow ReachOut modal to close
+    }, 200);
   };
 
   return (
@@ -169,14 +105,15 @@ export default function HomeScreen() {
           styles.scrollContent,
           {
             paddingTop: insets.top,
-            paddingBottom: insets.bottom + 120, // Extra space for floating navigation
+            paddingBottom: insets.bottom + 120,
           },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <VerseCarousel />
+        {/* Add ref to VerseCarousel */}
+        <VerseCarousel ref={verseCarouselRef} />
 
-        {/* ---- Reach Out Button + Modal Transition Bridge ---- */}
+        {/* ---- Reach Out ---- */}
         <ButtonModalTransitionBridge>
           {({
             open,
@@ -189,7 +126,6 @@ export default function HomeScreen() {
             handlePressIn,
             handlePressOut,
           }) => {
-            // Store the close function reference
             reachOutCloseRef.current = close;
 
             return (
@@ -207,13 +143,14 @@ export default function HomeScreen() {
                   modalAnimatedStyle={modalAnimatedStyle}
                   close={close}
                   onGuidedPrayer={handleOpenGuidedPrayer}
+                  onReadScripture={handleOpenVerseModal} // Add this new prop
                 />
               </>
             );
           }}
         </ButtonModalTransitionBridge>
 
-        {/* ---- Streak Card + Modal Transition Bridge ---- */}
+        {/* ---- Streak Card ---- */}
         <ButtonModalTransitionBridge>
           {({
             open,
@@ -248,6 +185,7 @@ export default function HomeScreen() {
           )}
         </ButtonModalTransitionBridge>
 
+        {/* ---- Guided Prayer ---- */}
         <ButtonModalTransitionBridge>
           {({
             open,
@@ -260,7 +198,6 @@ export default function HomeScreen() {
             handlePressIn,
             handlePressOut,
           }) => {
-            // Store the open function reference
             guidedPrayerOpenRef.current = open;
 
             return (
@@ -271,7 +208,7 @@ export default function HomeScreen() {
                   onPress={open}
                   onPressIn={handlePressIn}
                   onPressOut={handlePressOut}
-                  onBeginPrayer={open} // This allows the button inside the card to also open the modal
+                  onBeginPrayer={open}
                 />
                 <GuidedPrayerModal
                   isVisible={isModalVisible}

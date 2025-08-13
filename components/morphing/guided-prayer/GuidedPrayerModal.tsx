@@ -1,9 +1,11 @@
-// GuidedPrayerModal.tsx - Refactored to use ThemedText
+// GuidedPrayerModal.tsx - Updated to fetch dynamic reflection content
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { BaseModal } from "../BaseModal";
@@ -30,9 +32,39 @@ export function GuidedPrayerModal({
 
   const [currentStep, setCurrentStep] = useState<PrayerStep>("intro");
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [steps, setSteps] = useState(PRAYER_STEPS);
+
+  // Fetch reflection content on mount
+  useEffect(() => {
+    const fetchReflectionContent = async () => {
+      const today = new Date().toISOString().split("T")[0];
+      try {
+        const docRef = doc(db, "dailyContent", today);
+        const snapshot = await getDoc(docRef);
+
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          const content = data?.prayerContent;
+          if (content) {
+            setSteps((prev) => ({
+              ...prev,
+              reflection: {
+                ...prev.reflection,
+                content,
+              },
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch reflection content:", err);
+      }
+    };
+
+    fetchReflectionContent();
+  }, []);
 
   // Reset state when modal opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (isVisible) {
       setCurrentStep("intro");
       setIsTimerActive(false);
@@ -40,16 +72,12 @@ export function GuidedPrayerModal({
   }, [isVisible]);
 
   const handleStepChange = (step: PrayerStep) => {
-    // Stop current timer first
     setIsTimerActive(false);
     setCurrentStep(step);
 
-    const stepConfig = PRAYER_STEPS[step];
-
-    // Always provide haptic feedback for step changes
+    const stepConfig = steps[step];
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Start timer if the step has a duration
     if (stepConfig.duration) {
       setTimeout(() => {
         setIsTimerActive(true);
@@ -69,9 +97,8 @@ export function GuidedPrayerModal({
     }
   };
 
-  const stepInfo = PRAYER_STEPS[currentStep];
+  const stepInfo = steps[currentStep];
 
-  // Button content (what shows during the transition)
   const buttonContent = (
     <View style={styles.prayerButtonContent}>
       <GuidedPrayerContent
@@ -81,7 +108,6 @@ export function GuidedPrayerModal({
     </View>
   );
 
-  // Modal content
   const modalContent = (
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* Header */}

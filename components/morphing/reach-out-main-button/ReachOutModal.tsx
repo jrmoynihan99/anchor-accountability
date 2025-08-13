@@ -22,6 +22,7 @@ interface ReachOutModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   onGuidedPrayer?: () => void;
+  onReadScripture?: () => void; // Add this new prop
 }
 
 type ScreenType = "input" | "confirmation";
@@ -32,6 +33,7 @@ export function ReachOutModal({
   modalAnimatedStyle,
   close,
   onGuidedPrayer,
+  onReadScripture, // Add this parameter
 }: ReachOutModalProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
@@ -162,6 +164,7 @@ export function ReachOutModal({
         <ReachOutConfirmationScreen
           onClose={close}
           onGuidedPrayer={onGuidedPrayer}
+          onReadScripture={onReadScripture} // Pass the new prop through
         />
       </Animated.View>
     </View>

@@ -1,8 +1,7 @@
 // components/LoginHeader.tsx
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { BackButton } from "../../../components/BackButton";
 import { ThemedText } from "../../../components/ThemedText";
 import { Colors } from "../../../constants/Colors";
 import { useColorScheme } from "../../../hooks/useColorScheme";
@@ -16,22 +15,9 @@ export function LoginHeader({ isSignUp, onBackPress }: LoginHeaderProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  const handleBackPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onBackPress();
-  };
-
   return (
     <View style={styles.header}>
-      <TouchableOpacity
-        style={[
-          styles.backButton,
-          { backgroundColor: colors.whiteTranslucent },
-        ]}
-        onPress={handleBackPress}
-      >
-        <Ionicons name="arrow-back" size={24} color={colors.text} />
-      </TouchableOpacity>
+      <BackButton onPress={onBackPress} style={styles.backButtonSpacing} />
 
       <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
         {isSignUp ? "Create Account" : "Welcome Back"}
@@ -47,12 +33,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
+  backButtonSpacing: {
     marginRight: 16,
   },
   title: {

@@ -126,6 +126,14 @@ export const Typography = {
       letterSpacing: 0.5,
       fontFamily: "Spectral_700Bold_Italic",
     },
+    verseBody: {
+      fontSize: 22,
+      fontWeight: "500" as const,
+      fontStyle: "italic" as const,
+      lineHeight: 30,
+      letterSpacing: 0.5,
+      fontFamily: "Spectral_700Bold_Italic",
+    },
     quote: {
       fontSize: 60,
       fontWeight: "200" as const,

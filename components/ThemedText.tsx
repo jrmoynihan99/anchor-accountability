@@ -24,6 +24,7 @@ export type ThemedTextProps = TextProps & {
     | "buttonXLarge"
     | "timer"
     | "verse"
+    | "verseBody"
     | "quote"
     | "quoteText"
     | "badge"
@@ -64,6 +65,7 @@ export function ThemedText({
         type === "buttonXLarge" ? styles.buttonXLarge : undefined,
         type === "timer" ? styles.timer : undefined,
         type === "verse" ? styles.verse : undefined,
+        type === "verseBody" ? styles.verseBody : undefined,
         type === "quote" ? styles.quote : undefined,
         type === "quoteText" ? styles.quoteText : undefined,
         type === "badge" ? styles.badge : undefined,
@@ -97,6 +99,7 @@ const styles = StyleSheet.create({
   buttonXLarge: Typography.styles.buttonXLarge,
   timer: Typography.styles.timer,
   verse: Typography.styles.verse,
+  verseBody: Typography.styles.verseBody,
   quote: Typography.styles.quote,
   quoteText: Typography.styles.quoteText,
   badge: Typography.styles.badge,
