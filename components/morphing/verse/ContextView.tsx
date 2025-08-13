@@ -6,7 +6,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { VerseParagraph } from "./VerseParagraph";
 
 interface ContextViewProps {
-  reference: string | null;
+  reference: string | undefined;
   chapterText?: string;
   verse: string;
   bibleVersion?: string;
