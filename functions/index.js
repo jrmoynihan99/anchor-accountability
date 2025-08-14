@@ -4,10 +4,12 @@ require("dotenv").config();
 const { setGlobalOptions } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/https");
 const { onSchedule } = require("firebase-functions/scheduler");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch"); // ADD THIS LINE
+const axios = require("axios");
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -425,6 +427,72 @@ exports.generateDailyContentScheduled = onSchedule(
     } catch (error) {
       logger.error("Error in scheduled content generation:", error);
       throw error;
+    }
+  }
+);
+
+exports.sendHelpNotification = onDocumentCreated(
+  "pleas/{pleaId}",
+  async (event) => {
+    const snap = event.data;
+    const plea = snap?.data();
+    const { message, uid } = plea || {};
+
+    try {
+      const usersSnap = await admin
+        .firestore()
+        .collection("users")
+        .where("wantsToHelp", "==", true)
+        .get();
+
+      const tokens = [];
+
+      usersSnap.forEach((doc) => {
+        const data = doc.data();
+        if (
+          data.expoPushToken &&
+          typeof data.expoPushToken === "string" &&
+          data.expoPushToken.startsWith("ExponentPushToken")
+        ) {
+          tokens.push(data.expoPushToken);
+        }
+      });
+
+      if (tokens.length === 0) {
+        console.log("No users opted in for notifications.");
+        return;
+      }
+
+      const notifications = tokens.map((token) => ({
+        to: token,
+        sound: "default",
+        title: "Someone is struggling",
+        body: message?.length
+          ? `They wrote: "${message.slice(0, 100)}"`
+          : "They need encouragement. Tap to respond.",
+        data: {
+          pleaId: snap.id,
+        },
+      }));
+
+      const batchSize = 100;
+      for (let i = 0; i < notifications.length; i += batchSize) {
+        const chunk = notifications.slice(i, i + batchSize);
+        const res = await axios.post(
+          "https://exp.host/--/api/v2/push/send",
+          chunk,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
+      }
+
+      console.log(`✅ Notifications sent to ${tokens.length} helpers.`);
+    } catch (err) {
+      console.error("❌ Failed to send notifications:", err);
     }
   }
 );

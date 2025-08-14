@@ -1,17 +1,18 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { GuidedPrayer } from "@/components/morphing/guided-prayer/GuidedPrayer";
-import { GuidedPrayerModal } from "@/components/morphing/guided-prayer/GuidedPrayerModal";
-import { ReachOutButton } from "@/components/morphing/reach-out-main-button/ReachOutButton";
-import { ReachOutModal } from "@/components/morphing/reach-out-main-button/ReachOutModal";
-import { StreakCard } from "@/components/morphing/streak/StreakCard";
-import { StreakCardModal } from "@/components/morphing/streak/StreakCardModal";
-import { getDateToAskAbout } from "@/components/morphing/streak/streakUtils";
+import { GuidedPrayer } from "@/components/morphing/home/guided-prayer/GuidedPrayer";
+import { GuidedPrayerModal } from "@/components/morphing/home/guided-prayer/GuidedPrayerModal";
+import { ReachOutButton } from "@/components/morphing/home/reach-out-main-button/ReachOutButton";
+import { ReachOutModal } from "@/components/morphing/home/reach-out-main-button/ReachOutModal";
+import { StreakCard } from "@/components/morphing/home/streak/StreakCard";
+import { StreakCardModal } from "@/components/morphing/home/streak/StreakCardModal";
+import { getDateToAskAbout } from "@/components/morphing/home/streak/streakUtils";
 import {
   VerseCarousel,
   VerseCarouselRef,
-} from "@/components/morphing/verse/VerseCarousel";
+} from "@/components/morphing/home/verse/VerseCarousel";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { savePushTokenToFirestore } from "@/hooks/usePushNotifications";
 import { useStreakData } from "@/hooks/useStreakData";
 import { auth } from "@/lib/firebase";
 import { StatusBar } from "expo-status-bar";
@@ -32,6 +33,10 @@ export default function HomeScreen() {
   // Add ref for VerseCarousel
   const verseCarouselRef = useRef<VerseCarouselRef>(null);
 
+  useEffect(() => {
+    savePushTokenToFirestore();
+  }, []);
+
   // Debug logging for authentication and data
   useEffect(() => {
     console.log(`🔍 HomeScreen: Current user:`, auth.currentUser?.uid);
@@ -41,7 +46,6 @@ export default function HomeScreen() {
 
     if (streakData.length > 0) {
       const dateToAsk = getDateToAskAbout(streakData);
-      console.log(`🔍 HomeScreen: Date to ask about:`, dateToAsk);
     }
   }, [streakData]);
 

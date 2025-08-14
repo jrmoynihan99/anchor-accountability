@@ -1,4 +1,4 @@
-import { VerseCard } from "@/components/morphing/verse/VerseCard";
+import { VerseCard } from "@/components/morphing/home/verse/VerseCard";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { StatusBar } from "expo-status-bar";

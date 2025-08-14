@@ -20,11 +20,17 @@ interface BaseModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   theme: "light" | "dark";
-  backgroundColor: string; // Solid background color
+  backgroundColor: string; // Solid background color for button content
   buttonContent: React.ReactNode; // What shows during the button transition state
   children: React.ReactNode; // Modal content
   buttonContentOpacityRange?: [number, number]; // Custom opacity range for button content
   closeButtonColor?: string; // Custom close button color
+  // New props for button styling compatibility
+  buttonBackgroundColor?: string; // Background color for the button content container
+  buttonContentPadding?: number; // Padding for button content (defaults to 16 for PleaCard)
+  buttonBorderWidth?: number; // Border width to account for content positioning
+  buttonBorderColor?: string; // Border color for the button content
+  buttonBorderRadius?: number; // Border radius for the button content
 }
 
 export function BaseModal({
@@ -38,14 +44,20 @@ export function BaseModal({
   children,
   buttonContentOpacityRange = [0, 0.3], // Default range
   closeButtonColor, // Will use default from colors if not provided
+  buttonBackgroundColor, // Use this for button content background if provided
+  buttonContentPadding = 20, // Default padding, but PleaCard uses 16
+  buttonBorderWidth = 0, // Default no border
+  buttonBorderColor = "transparent", // Default transparent border
+  buttonBorderRadius = 0, // Default no border radius
 }: BaseModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   const gestureY = useSharedValue(0);
 
-  // Use provided closeButtonColor or fallback to colors
+  // Use provided colors or fallback to defaults
   const buttonColor = closeButtonColor || colors.closeButtonText;
+  const buttonBgColor = buttonBackgroundColor || backgroundColor;
 
   // Drag-to-close (swipe UP to close)
   const panGesture = Gesture.Pan()
@@ -133,16 +145,13 @@ export function BaseModal({
 
       {/* Modal Card */}
       <Animated.View
-        style={[
-          modalAnimatedStyle,
-          { overflow: "hidden", zIndex: 20, borderRadius: 28 },
-        ]}
+        style={[modalAnimatedStyle, { overflow: "hidden", zIndex: 20 }]}
       >
-        {/* Solid background (fades out) */}
+        {/* Solid background (fades out) - uses buttonBackgroundColor for button content */}
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor },
+            { backgroundColor: buttonBgColor },
             solidBackgroundStyle,
           ]}
         />
@@ -168,7 +177,16 @@ export function BaseModal({
 
         {/* Button Content (shows during transition) */}
         <Animated.View
-          style={[styles.buttonContentContainer, buttonContentStyle]}
+          style={[
+            styles.buttonContentContainer,
+            {
+              padding: buttonContentPadding,
+              borderWidth: buttonBorderWidth,
+              borderColor: buttonBorderColor,
+              borderRadius: buttonBorderRadius,
+            },
+            buttonContentStyle,
+          ]}
           pointerEvents="box-none"
         >
           {buttonContent}
@@ -220,7 +238,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 20,
     zIndex: 10,
     backgroundColor: "transparent",
     justifyContent: "center",

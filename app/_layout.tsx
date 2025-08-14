@@ -27,6 +27,17 @@ import {
   Spectral_700Bold_Italic,
   useFonts as useSpectralFonts,
 } from "@expo-google-fonts/spectral";
+import * as Notifications from "expo-notifications";
+
+// 👇 Set foreground notification handler before React renders
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -54,7 +65,6 @@ export default function RootLayout() {
         const hasCompleted = await getHasOnboarded();
         console.log("Has completed:", hasCompleted);
 
-        // If onboarding is complete, proceed to tabs
         // If onboarding is complete, ensure Firebase auth
         if (hasCompleted) {
           console.log("Onboarding complete, ensuring Firebase auth...");

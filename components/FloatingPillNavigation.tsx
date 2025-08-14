@@ -33,7 +33,7 @@ export function FloatingPillNavigation({
 
   const tabs = [
     { key: "index", label: "Home", icon: "house.fill" },
-    { key: "explore", label: "Messages", icon: "message.fill" },
+    { key: "messages", label: "Messages", icon: "message.fill" },
     { key: "community", label: "Community", icon: "person.3.fill" },
   ];
 

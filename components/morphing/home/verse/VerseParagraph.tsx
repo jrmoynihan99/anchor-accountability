@@ -16,20 +16,10 @@ export function VerseParagraph({
 }: VerseParagraphProps) {
   // Match lines that start with a verse number (e.g., "17 Therefore...")
   const match = line.match(/^(\d+)(\s+)(.*)$/);
-  console.log("👉 PARAGHGRAPOH verse:", activeVerse);
 
   if (match) {
     const [, verseNumber, , text] = match;
     const isActive = text.trim() === activeVerse?.trim();
-
-    console.log(
-      "[VerseParagraph] Comparing:\n",
-      text.trim(),
-      "\nvs\n",
-      activeVerse?.trim(),
-      "\n→ Match:",
-      isActive
-    );
 
     return (
       <View style={styles.lineContainer}>

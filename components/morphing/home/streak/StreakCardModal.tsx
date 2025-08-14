@@ -6,7 +6,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { BaseModal } from "../BaseModal";
+import { BaseModal } from "../../BaseModal";
 import { StreakCardContent } from "./StreakCardContent";
 import {
   type StreakEntry,

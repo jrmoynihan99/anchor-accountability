@@ -2,7 +2,9 @@
 import { ThemedText } from "@/components/ThemedText";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { auth, db } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -12,7 +14,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { BaseModal } from "../BaseModal";
+import { BaseModal } from "../../BaseModal";
 import { ReachOutConfirmationScreen } from "./ReachOutConfirmationScreen";
 import { ReachOutInputScreen } from "./ReachOutInputScreen";
 
@@ -54,17 +56,32 @@ export function ReachOutModal({
   }, [isVisible]);
 
   // Handle sending the message
-  const handleSendMessage = () => {
-    // TODO: Implement actual sending logic here
-    console.log("Sending message:", contextMessage);
+  const handleSendMessage = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      console.error("No user logged in");
+      return;
+    }
 
-    // Animate to confirmation screen
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
+    try {
+      await addDoc(collection(db, "pleas"), {
+        uid: user.uid,
+        message: contextMessage || "", // Default to empty string if none
+        createdAt: serverTimestamp(),
+      });
 
-    setCurrentScreen("confirmation");
+      console.log("✅ Plea sent!");
+
+      // Show confirmation screen
+      screenTransition.value = withTiming(1, {
+        duration: 300,
+        easing: Easing.out(Easing.quad),
+      });
+      setCurrentScreen("confirmation");
+    } catch (error) {
+      console.error("Error sending plea:", error);
+      // TODO: Show user-friendly error toast if desired
+    }
   };
 
   // Screen transition animations

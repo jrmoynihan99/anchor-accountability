@@ -27,9 +27,6 @@ export function ContextView({
     return `1 ${verse}\n\nThis is placeholder chapter content.`;
   };
 
-  console.log("👉 reference:", reference);
-  console.log("👉 verse:", verse);
-
   const rawText = (chapterText || getPlaceholderChapterText()).replace(
     /\\n/g,
     "\n"

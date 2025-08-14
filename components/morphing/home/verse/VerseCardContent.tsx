@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { CarouselDots } from "../../CarouselDots";
+import { CarouselDots } from "../../../CarouselDots";
 
 interface VerseCardContentProps {
   verse: string | null;

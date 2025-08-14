@@ -12,7 +12,7 @@ import {
   NativeSyntheticEvent,
   View,
 } from "react-native";
-import { ButtonModalTransitionBridge } from "../ButtonModalTransitionBridge";
+import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { VerseCard } from "./VerseCard";
 import { VerseModal } from "./VerseModal";
 

@@ -1,0 +1,326 @@
+// components/messages/MyReachOutsSection.tsx
+import { ThemedText } from "@/components/ThemedText";
+import { IconSymbol } from "@/components/ui/IconSymbol";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { useMyReachOuts } from "@/hooks/useMyReachOuts";
+import * as Haptics from "expo-haptics";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
+import { MyReachOutCard, MyReachOutData } from "./MyReachOutCard";
+import { MyReachOutModal } from "./MyReachOutModal";
+
+const PREVIEW_LIMIT = 3; // Only show 3 reach outs on main messages screen
+
+export function MyReachOutsSection() {
+  const theme = useColorScheme();
+  const colors = Colors[theme ?? "dark"];
+  const { myReachOuts, loading, error } = useMyReachOuts();
+
+  // State for selected reach out for modal
+  const [selectedReachOut, setSelectedReachOut] =
+    useState<MyReachOutData | null>(null);
+
+  const handleViewAll = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // TODO: Navigate to full my reach outs screen
+    console.log("Navigate to full my reach outs screen");
+    // router.push("/my-reach-outs");
+  };
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: colors.cardBackground,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
+        <SectionHeader colors={colors} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={colors.textSecondary} />
+          <ThemedText
+            type="caption"
+            style={[styles.loadingText, { color: colors.textSecondary }]}
+          >
+            Loading your reach outs...
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: colors.cardBackground,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
+        <SectionHeader colors={colors} />
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="exclamationmark.triangle"
+            size={24}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
+          <ThemedText
+            type="caption"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            Unable to load your reach outs. Please try again.
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  const displayedReachOuts = myReachOuts.slice(0, PREVIEW_LIMIT);
+  const hasMoreReachOuts = myReachOuts.length > PREVIEW_LIMIT;
+
+  return (
+    <View
+      style={[
+        styles.sectionCard,
+        {
+          backgroundColor: colors.cardBackground,
+          shadowColor: colors.shadow,
+        },
+      ]}
+    >
+      <SectionHeader colors={colors} totalCount={myReachOuts.length} />
+
+      {myReachOuts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="heart"
+            size={32}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            You haven't reached out yet
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={[styles.emptySubtext, { color: colors.textSecondary }]}
+          >
+            When you need support, reach out using the button on the Home tab
+          </ThemedText>
+        </View>
+      ) : (
+        <>
+          <View style={styles.reachOutsContainer}>
+            {displayedReachOuts.map((reachOut, index) => (
+              <ButtonModalTransitionBridge
+                key={reachOut.id}
+                buttonBorderRadius={16} // MyReachOutCard uses 16px border radius
+                modalBorderRadius={28} // Modal uses 28px border radius
+              >
+                {({
+                  open,
+                  close,
+                  isModalVisible,
+                  progress,
+                  buttonAnimatedStyle,
+                  modalAnimatedStyle,
+                  buttonRef,
+                  handlePressIn,
+                  handlePressOut,
+                }) => (
+                  <>
+                    <MyReachOutCard
+                      reachOut={reachOut}
+                      index={index}
+                      buttonRef={buttonRef}
+                      style={buttonAnimatedStyle}
+                      onPress={() => {
+                        setSelectedReachOut(reachOut);
+                        open();
+                      }}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                    />
+                    <MyReachOutModal
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                      reachOut={selectedReachOut}
+                    />
+                  </>
+                )}
+              </ButtonModalTransitionBridge>
+            ))}
+          </View>
+
+          {hasMoreReachOuts && (
+            <TouchableOpacity
+              style={[
+                styles.viewAllButton,
+                { backgroundColor: colors.buttonBackground },
+              ]}
+              onPress={handleViewAll}
+              activeOpacity={0.85}
+            >
+              <IconSymbol
+                name="list.bullet"
+                color={colors.white}
+                size={18}
+                style={{ marginRight: 8 }}
+              />
+              <ThemedText
+                type="button"
+                style={[styles.viewAllText, { color: colors.white }]}
+              >
+                View All ({myReachOuts.length})
+              </ThemedText>
+            </TouchableOpacity>
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
+function SectionHeader({
+  colors,
+  totalCount,
+}: {
+  colors: any;
+  totalCount?: number;
+}) {
+  return (
+    <View style={styles.header}>
+      <View style={styles.headerLeft}>
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: colors.iconCircleBackground },
+          ]}
+        >
+          <IconSymbol name="person.crop.circle" size={20} color={colors.icon} />
+        </View>
+        <View style={styles.headerText}>
+          <ThemedText
+            type="title"
+            style={[styles.headerTitle, { color: colors.text }]}
+          >
+            My Reach Outs
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+          >
+            {totalCount !== undefined
+              ? `${totalCount} ${
+                  totalCount === 1 ? "request" : "requests"
+                } for support`
+              : "Your requests for support"}
+          </ThemedText>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  sectionCard: {
+    padding: 20,
+    borderRadius: 20,
+    marginBottom: 32,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerTitle: {
+    lineHeight: 22,
+  },
+  headerSubtitle: {
+    marginTop: 1,
+    opacity: 0.8,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 32,
+    gap: 12,
+  },
+  loadingText: {
+    opacity: 0.8,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+  },
+  emptyIcon: {
+    marginBottom: 12,
+    opacity: 0.6,
+  },
+  emptyText: {
+    textAlign: "center",
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  emptySubtext: {
+    textAlign: "center",
+    opacity: 0.6,
+    lineHeight: 18,
+  },
+  reachOutsContainer: {
+    gap: 12,
+  },
+  viewAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    paddingVertical: 14,
+    justifyContent: "center",
+    marginTop: 16,
+  },
+  viewAllText: {
+    // Typography.styles.button handled by ThemedText type="button"
+  },
+});

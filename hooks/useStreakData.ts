@@ -1,4 +1,4 @@
-import { StreakEntry } from "@/components/morphing/streak/streakUtils";
+import { StreakEntry } from "@/components/morphing/home/streak/streakUtils";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
