@@ -1,7 +1,6 @@
 // components/messages/PleaCard.tsx
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import * as Haptics from "expo-haptics";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -13,14 +12,14 @@ export interface PleaData {
   uid: string;
   createdAt: Date;
   encouragementCount: number;
-  hasUserResponded?: boolean; // New field to track if current user responded
+  hasUserResponded?: boolean;
 }
 
 interface PleaCardProps {
   plea: PleaData;
+  now: Date; // <-- NEW
   index: number;
   onPress: () => void;
-  // New props for modal support
   buttonRef?: any;
   style?: any;
   onPressIn?: () => void;
@@ -29,6 +28,7 @@ interface PleaCardProps {
 
 export function PleaCard({
   plea,
+  now,
   index,
   onPress,
   buttonRef,
@@ -40,20 +40,19 @@ export function PleaCard({
   const colors = Colors[theme ?? "dark"];
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   };
 
-  // Determine urgency based on encouragement count and time
+  // Use the parent-passed "now" for urgency, not Date.now()
   const isUrgent =
-    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt) > 2;
+    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
 
   return (
     <TouchableOpacity
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      activeOpacity={buttonRef ? 1 : 0.85} // Use activeOpacity 1 when using modal bridge
+      activeOpacity={buttonRef ? 1 : 0.85}
       style={{ flex: 1 }}
     >
       <Animated.View
@@ -69,16 +68,15 @@ export function PleaCard({
           style,
         ]}
       >
-        <PleaCardContent plea={plea} />
+        {/* Pass now to PleaCardContent */}
+        <PleaCardContent plea={plea} now={now} />
       </Animated.View>
     </TouchableOpacity>
   );
 }
 
-function getHoursAgo(date: Date): number {
-  const now = new Date();
-  const diffInMilliseconds = now.getTime() - date.getTime();
-  return diffInMilliseconds / (1000 * 60 * 60);
+function getHoursAgo(date: Date, now: Date): number {
+  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 const styles = StyleSheet.create({

@@ -5,26 +5,36 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePendingPleas } from "@/hooks/usePendingPleas";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
-import { PleaCard, PleaData } from "./PleaCard";
+import { PleaCard } from "./PleaCard";
 import { PleaResponseModal } from "./PleaResponseModal";
 
-const PREVIEW_LIMIT = 3; // Only show 3 pleas on main messages screen
+const PREVIEW_LIMIT = 3;
 
 export function PendingPleasSection() {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
   const { pendingPleas, loading, error } = usePendingPleas();
 
-  // State for selected plea for modal
-  const [selectedPlea, setSelectedPlea] = useState<PleaData | null>(null);
+  // Add a single timer here
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Store just the id, not the object!
+  const [selectedPleaId, setSelectedPleaId] = useState<string | null>(null);
+  const selectedPlea =
+    pendingPleas.find((p) => p.id === selectedPleaId) || null;
 
   const handleViewAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -72,7 +82,20 @@ export function PendingPleasSection() {
     );
   }
 
-  const displayedPleas = pendingPleas.slice(0, PREVIEW_LIMIT);
+  // Use now for urgency and sorting
+  const sortedPleas = [...pendingPleas].sort((a, b) => {
+    const aIsUrgent =
+      a.encouragementCount === 0 && getHoursAgo(a.createdAt, now) > 2;
+    const bIsUrgent =
+      b.encouragementCount === 0 && getHoursAgo(b.createdAt, now) > 2;
+    // Use Number(...) to compare booleans numerically
+    if (aIsUrgent !== bIsUrgent) return Number(bIsUrgent) - Number(aIsUrgent); // Urgent (red) at bottom
+    if (a.encouragementCount !== b.encouragementCount)
+      return a.encouragementCount - b.encouragementCount;
+    return a.createdAt.getTime() - b.createdAt.getTime();
+  });
+
+  const displayedPleas = sortedPleas.slice(0, PREVIEW_LIMIT);
   const hasMorePleas = pendingPleas.length > PREVIEW_LIMIT;
 
   return (
@@ -112,45 +135,52 @@ export function PendingPleasSection() {
         <>
           <View style={styles.pleasContainer}>
             {displayedPleas.map((plea, index) => (
-              <ButtonModalTransitionBridge
+              <Animated.View
                 key={plea.id}
-                buttonBorderRadius={16} // PleaCard uses 16px border radius
-                modalBorderRadius={28} // Modal uses 28px border radius
+                layout={LinearTransition.duration(300)}
+                style={{ width: "100%" }}
               >
-                {({
-                  open,
-                  close,
-                  isModalVisible,
-                  progress,
-                  buttonAnimatedStyle,
-                  modalAnimatedStyle,
-                  buttonRef,
-                  handlePressIn,
-                  handlePressOut,
-                }) => (
-                  <>
-                    <PleaCard
-                      plea={plea}
-                      index={index}
-                      buttonRef={buttonRef}
-                      style={buttonAnimatedStyle}
-                      onPress={() => {
-                        setSelectedPlea(plea);
-                        open();
-                      }}
-                      onPressIn={handlePressIn}
-                      onPressOut={handlePressOut}
-                    />
-                    <PleaResponseModal
-                      isVisible={isModalVisible}
-                      progress={progress}
-                      modalAnimatedStyle={modalAnimatedStyle}
-                      close={close}
-                      plea={selectedPlea}
-                    />
-                  </>
-                )}
-              </ButtonModalTransitionBridge>
+                <ButtonModalTransitionBridge
+                  buttonBorderRadius={16}
+                  modalBorderRadius={28}
+                >
+                  {({
+                    open,
+                    close,
+                    isModalVisible,
+                    progress,
+                    buttonAnimatedStyle,
+                    modalAnimatedStyle,
+                    buttonRef,
+                    handlePressIn,
+                    handlePressOut,
+                  }) => (
+                    <>
+                      <PleaCard
+                        plea={plea}
+                        now={now}
+                        index={index}
+                        buttonRef={buttonRef}
+                        style={buttonAnimatedStyle}
+                        onPress={() => {
+                          setSelectedPleaId(plea.id);
+                          open();
+                        }}
+                        onPressIn={handlePressIn}
+                        onPressOut={handlePressOut}
+                      />
+                      <PleaResponseModal
+                        isVisible={isModalVisible}
+                        progress={progress}
+                        modalAnimatedStyle={modalAnimatedStyle}
+                        close={close}
+                        plea={selectedPlea}
+                        now={now}
+                      />
+                    </>
+                  )}
+                </ButtonModalTransitionBridge>
+              </Animated.View>
             ))}
           </View>
 
@@ -183,6 +213,11 @@ export function PendingPleasSection() {
   );
 }
 
+// Helper for urgency
+function getHoursAgo(date: Date, now: Date): number {
+  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+}
+
 function SectionHeader({
   colors,
   totalCount,
@@ -199,7 +234,7 @@ function SectionHeader({
             { backgroundColor: colors.iconCircleBackground },
           ]}
         >
-          <IconSymbol name="hands.and.sparkles" size={20} color={colors.icon} />
+          <IconSymbol name="hand.raised" size={20} color={colors.icon} />
         </View>
         <View style={styles.headerText}>
           <ThemedText
@@ -303,7 +338,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 16,
   },
-  viewAllText: {
-    // Typography.styles.button handled by ThemedText type="button"
-  },
+  viewAllText: {},
 });

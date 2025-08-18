@@ -9,18 +9,18 @@ import { MyReachOutData } from "./MyReachOutCard";
 
 interface MyReachOutCardContentProps {
   reachOut: MyReachOutData;
+  now: Date; // <--- accept now from parent
 }
 
 export function MyReachOutCardContent({
   reachOut,
+  now, // <--- get from props
 }: MyReachOutCardContentProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
-
-  // Format time ago
-  const timeAgo = getTimeAgo(reachOut.createdAt);
+  const timeAgo = getTimeAgo(reachOut.createdAt, now);
   const lastEncouragementAgo = reachOut.lastEncouragementAt
-    ? getTimeAgo(reachOut.lastEncouragementAt)
+    ? getTimeAgo(reachOut.lastEncouragementAt, now)
     : null;
 
   // Determine if this reach out needs attention (no encouragements yet)
@@ -56,21 +56,13 @@ export function MyReachOutCardContent({
             <IconSymbol
               name="message.fill"
               size={16}
-              color={
-                reachOut.encouragementCount > 0
-                  ? colors.success
-                  : colors.textSecondary
-              }
+              color={colors.textSecondary}
             />
             <ThemedText
               type="captionMedium"
               style={[
                 {
-                  color:
-                    reachOut.encouragementCount > 0
-                      ? colors.success
-                      : colors.textSecondary,
-                  fontWeight: "600",
+                  color: colors.textSecondary,
                 },
               ]}
             >
@@ -123,8 +115,7 @@ export function MyReachOutCardContent({
 }
 
 // Helper function
-function getTimeAgo(date: Date): string {
-  const now = new Date();
+function getTimeAgo(date: Date, now: Date): string {
   const diffInMinutes = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60)
   );

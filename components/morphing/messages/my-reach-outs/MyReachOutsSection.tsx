@@ -5,7 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -22,6 +22,13 @@ export function MyReachOutsSection() {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
   const { myReachOuts, loading, error } = useMyReachOuts();
+
+  // ==== ADD TIMER STATE HERE ====
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // State for selected reach out for modal
   const [selectedReachOut, setSelectedReachOut] =
@@ -131,8 +138,8 @@ export function MyReachOutsSection() {
             {displayedReachOuts.map((reachOut, index) => (
               <ButtonModalTransitionBridge
                 key={reachOut.id}
-                buttonBorderRadius={16} // MyReachOutCard uses 16px border radius
-                modalBorderRadius={28} // Modal uses 28px border radius
+                buttonBorderRadius={16}
+                modalBorderRadius={28}
               >
                 {({
                   open,
@@ -151,6 +158,7 @@ export function MyReachOutsSection() {
                       index={index}
                       buttonRef={buttonRef}
                       style={buttonAnimatedStyle}
+                      now={now} // PASS NOW
                       onPress={() => {
                         setSelectedReachOut(reachOut);
                         open();
@@ -163,7 +171,12 @@ export function MyReachOutsSection() {
                       progress={progress}
                       modalAnimatedStyle={modalAnimatedStyle}
                       close={close}
-                      reachOut={selectedReachOut}
+                      reachOut={
+                        myReachOuts.find(
+                          (r) => r.id === selectedReachOut?.id
+                        ) ?? selectedReachOut
+                      }
+                      now={now} // PASS NOW TO MODAL
                     />
                   </>
                 )}
@@ -216,7 +229,7 @@ function SectionHeader({
             { backgroundColor: colors.iconCircleBackground },
           ]}
         >
-          <IconSymbol name="person.crop.circle" size={20} color={colors.icon} />
+          <IconSymbol name="paperplane" size={20} color={colors.icon} />
         </View>
         <View style={styles.headerText}>
           <ThemedText

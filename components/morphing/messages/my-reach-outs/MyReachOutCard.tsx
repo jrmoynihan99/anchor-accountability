@@ -1,7 +1,6 @@
 // components/messages/MyReachOutCard.tsx
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import * as Haptics from "expo-haptics";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -19,7 +18,7 @@ interface MyReachOutCardProps {
   reachOut: MyReachOutData;
   index: number;
   onPress: () => void;
-  // New props for modal support
+  now: Date; // <--- add
   buttonRef?: any;
   style?: any;
   onPressIn?: () => void;
@@ -30,6 +29,7 @@ export function MyReachOutCard({
   reachOut,
   index,
   onPress,
+  now, // <--- accept
   buttonRef,
   style,
   onPressIn,
@@ -39,7 +39,7 @@ export function MyReachOutCard({
   const colors = Colors[theme ?? "dark"];
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Haptic is handled by ButtonModalTransitionBridge.open()
     onPress();
   };
 
@@ -48,7 +48,7 @@ export function MyReachOutCard({
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      activeOpacity={buttonRef ? 1 : 0.85} // Use activeOpacity 1 when using modal bridge
+      activeOpacity={buttonRef ? 1 : 0.85}
       style={{ flex: 1 }}
     >
       <Animated.View
@@ -63,7 +63,7 @@ export function MyReachOutCard({
           style,
         ]}
       >
-        <MyReachOutCardContent reachOut={reachOut} />
+        <MyReachOutCardContent reachOut={reachOut} now={now} />
       </Animated.View>
     </TouchableOpacity>
   );

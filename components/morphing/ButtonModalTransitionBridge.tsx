@@ -55,11 +55,12 @@ export function ButtonModalTransitionBridge({
 
   // --- Keyboard handling ---
   useEffect(() => {
+    // Alternative with the exact iOS keyboard animation curve
+
     const showSubscription = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
         if (isModalVisible) {
-          // Calculate how much to move the modal up
           const keyboardHeight = event.endCoordinates.height;
           const modalBottom =
             (screenHeight + screenHeight * modalHeightPercent) / 2;
@@ -68,7 +69,11 @@ export function ButtonModalTransitionBridge({
           if (overlap > 0) {
             keyboardOffset.value = withTiming(-overlap - 20, {
               duration: Platform.OS === "ios" ? event.duration : 250,
-              easing: Easing.bezier(0.22, 1, 0.36, 1),
+              // Exact iOS keyboard animation curve
+              easing:
+                Platform.OS === "ios"
+                  ? Easing.bezier(0.25, 0.46, 0.45, 0.94) // iOS UIView animation curve
+                  : Easing.bezier(0.22, 1, 0.36, 1),
             });
           }
         }
@@ -80,7 +85,11 @@ export function ButtonModalTransitionBridge({
       (event) => {
         keyboardOffset.value = withTiming(0, {
           duration: Platform.OS === "ios" ? event.duration : 250,
-          easing: Easing.bezier(0.22, 1, 0.36, 1),
+          // Exact iOS keyboard animation curve
+          easing:
+            Platform.OS === "ios"
+              ? Easing.bezier(0.25, 0.46, 0.45, 0.94) // iOS UIView animation curve
+              : Easing.bezier(0.22, 1, 0.36, 1),
         });
       }
     );

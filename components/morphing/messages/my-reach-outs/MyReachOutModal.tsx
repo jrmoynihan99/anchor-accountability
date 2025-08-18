@@ -3,12 +3,24 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React from "react";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutCardContent } from "./MyReachOutCardContent";
+
+interface EncouragementData {
+  id: string;
+  message: string;
+  helperUid: string;
+  createdAt: Date;
+}
 
 interface MyReachOutModalProps {
   isVisible: boolean;
@@ -16,6 +28,26 @@ interface MyReachOutModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   reachOut: MyReachOutData | null;
+  now: Date; // <-- NEW: passed in from parent!
+}
+
+// --- Animation wrapper for encouragement entry ---
+function AnimatedEncouragementItem({
+  children,
+  index,
+}: {
+  children: React.ReactNode;
+  index: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(index * 40)}
+      layout={LinearTransition.duration(220)}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 
 export function MyReachOutModal({
@@ -24,20 +56,60 @@ export function MyReachOutModal({
   modalAnimatedStyle,
   close,
   reachOut,
+  now, // <-- accept as prop
 }: MyReachOutModalProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
+  const [encouragements, setEncouragements] = useState<EncouragementData[]>([]);
+  const [loadingEncouragements, setLoadingEncouragements] = useState(false);
 
+  // No timer state here! All time math uses 'now' from props
+
+  // Fetch encouragements when modal opens and reachOut changes
+  useEffect(() => {
+    if (!isVisible || !reachOut) {
+      setEncouragements([]);
+      return;
+    }
+
+    setLoadingEncouragements(true);
+
+    const encouragementsQuery = query(
+      collection(db, "pleas", reachOut.id, "encouragements"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsubscribe = onSnapshot(
+      encouragementsQuery,
+      (snapshot) => {
+        const encouragementData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          message: doc.data().message || "",
+          helperUid: doc.data().helperUid || "",
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+        }));
+        setEncouragements(encouragementData);
+        setLoadingEncouragements(false);
+      },
+      (error) => {
+        console.error("Error fetching encouragements:", error);
+        setLoadingEncouragements(false);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isVisible, reachOut]);
+
+  // Early return after all hooks (perfect!)
   if (!reachOut) return null;
 
-  // Format time ago
-  const timeAgo = getTimeAgo(reachOut.createdAt);
-  const lastEncouragementAgo = reachOut.lastEncouragementAt
-    ? getTimeAgo(reachOut.lastEncouragementAt)
-    : null;
+  // Format time ago using 'now' from props
+  const timeAgo = getTimeAgo(reachOut.createdAt, now);
 
   // Button content (shows the reach out card in collapsed state)
-  const buttonContent = <MyReachOutCardContent reachOut={reachOut} />;
+  const buttonContent = <MyReachOutCardContent reachOut={reachOut} now={now} />;
 
   // Modal content
   const modalContent = (
@@ -46,7 +118,7 @@ export function MyReachOutModal({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* Reach Out Header */}
+      {/* Reach Out Header - Simplified */}
       <View style={styles.reachOutHeader}>
         <View style={styles.userInfo}>
           <View
@@ -55,15 +127,11 @@ export function MyReachOutModal({
               { backgroundColor: colors.iconCircleBackground },
             ]}
           >
-            <IconSymbol
-              name="person.crop.circle"
-              size={24}
-              color={colors.icon}
-            />
+            <IconSymbol name="paperplane" size={24} color={colors.icon} />
           </View>
           <View style={styles.userDetails}>
             <ThemedText
-              type="title"
+              type="subtitleSemibold"
               style={[styles.title, { color: colors.text }]}
             >
               Your Request
@@ -75,78 +143,71 @@ export function MyReachOutModal({
               >
                 {timeAgo}
               </ThemedText>
-              {lastEncouragementAgo && (
-                <>
-                  <View
-                    style={[
-                      styles.dot,
-                      { backgroundColor: colors.textSecondary },
-                    ]}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={[styles.lastReply, { color: colors.textSecondary }]}
-                  >
-                    Last reply: {lastEncouragementAgo}
-                  </ThemedText>
-                </>
-              )}
             </View>
           </View>
         </View>
-
-        <View style={styles.encouragementStats}>
-          <IconSymbol
-            name="message.fill"
-            size={18}
-            color={
-              reachOut.encouragementCount > 0
-                ? colors.success
-                : colors.textSecondary
-            }
-          />
-          <ThemedText
-            type="captionMedium"
-            style={[
-              styles.statNumber,
-              {
-                color:
-                  reachOut.encouragementCount > 0
-                    ? colors.success
-                    : colors.textSecondary,
-              },
-            ]}
-          >
-            {reachOut.encouragementCount}
-          </ThemedText>
-        </View>
       </View>
 
-      {/* Reach Out Message */}
-      {reachOut.message && reachOut.message.trim() && (
-        <View
-          style={[
-            styles.messageContainer,
-            { backgroundColor: colors.background },
-          ]}
-        >
+      {/* Context Section */}
+      <View style={styles.contextSection}>
+        {reachOut.message && reachOut.message.trim() ? (
+          <>
+            <ThemedText
+              type="subtitleMedium"
+              style={[styles.contextLabel, { color: colors.text }]}
+            >
+              Your Message
+            </ThemedText>
+            <View
+              style={[
+                styles.contextMessageContainer,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderLeftColor: colors.tint,
+                },
+              ]}
+            >
+              <ThemedText
+                type="body"
+                style={[styles.contextMessage, { color: colors.text }]}
+              >
+                "{reachOut.message}"
+              </ThemedText>
+            </View>
+          </>
+        ) : (
           <ThemedText
             type="body"
-            style={[styles.reachOutMessage, { color: colors.text }]}
+            style={[styles.generalContext, { color: colors.textSecondary }]}
           >
-            "{reachOut.message}"
+            You reached out for support and encouragement.
           </ThemedText>
-        </View>
-      )}
+        )}
+      </View>
 
-      {/* Encouragements Section */}
+      {/* Encouragements Section - Now with inline count */}
       <View style={styles.encouragementsSection}>
-        <ThemedText
-          type="title"
-          style={[styles.sectionTitle, { color: colors.text }]}
-        >
-          Encouragements Received
-        </ThemedText>
+        <View style={styles.sectionHeader}>
+          <ThemedText
+            type="subtitleSemibold"
+            style={[styles.sectionTitle, { color: colors.text }]}
+          >
+            Encouragements Received
+          </ThemedText>
+          <View style={styles.encouragementStats}>
+            <IconSymbol
+              name="message.fill"
+              size={18}
+              color={colors.textSecondary}
+            />
+            <ThemedText
+              type="statValue"
+              style={[styles.statNumber, { color: colors.textSecondary }]}
+            >
+              {reachOut.encouragementCount}
+            </ThemedText>
+          </View>
+        </View>
 
         {reachOut.encouragementCount === 0 ? (
           <View style={styles.noEncouragements}>
@@ -172,76 +233,73 @@ export function MyReachOutModal({
           </View>
         ) : (
           <View style={styles.encouragementsList}>
-            {/* TODO: Map through actual encouragements when available */}
-            <View
-              style={[
-                styles.encouragementItem,
-                { backgroundColor: colors.background },
-              ]}
-            >
-              <View style={styles.encouragementHeader}>
-                <View
-                  style={[
-                    styles.encouragementAvatar,
-                    { backgroundColor: colors.iconCircleSecondaryBackground },
-                  ]}
-                >
-                  <ThemedText
-                    type="caption"
-                    style={[styles.avatarText, { color: colors.icon }]}
-                  >
-                    A
-                  </ThemedText>
-                </View>
-                <View style={styles.encouragementMeta}>
-                  <ThemedText
-                    type="bodyMedium"
-                    style={[
-                      styles.encouragementUsername,
-                      { color: colors.text },
-                    ]}
-                  >
-                    Anonymous supporter
-                  </ThemedText>
-                  <ThemedText
-                    type="caption"
-                    style={[
-                      styles.encouragementTime,
-                      { color: colors.textSecondary },
-                    ]}
-                  >
-                    2h ago
-                  </ThemedText>
-                </View>
-              </View>
-              <ThemedText
-                type="body"
-                style={[styles.encouragementText, { color: colors.text }]}
-              >
-                "You've got this! Remember that difficult times don't last, but
-                resilient people do. Take it one step at a time. 💪"
-              </ThemedText>
-            </View>
+            {encouragements.map((encouragement, index) => {
+              // Generate anonymous username from helperUid
+              const anonymousUsername = `user-${encouragement.helperUid.substring(
+                0,
+                5
+              )}`;
+              const encouragementTimeAgo = getTimeAgo(
+                encouragement.createdAt,
+                now
+              );
 
-            {/* Show placeholder for additional encouragements */}
-            {reachOut.encouragementCount > 1 && (
-              <View
-                style={[
-                  styles.moreEncouragements,
-                  { backgroundColor: colors.background },
-                ]}
-              >
-                <ThemedText
-                  type="caption"
-                  style={[styles.moreText, { color: colors.textSecondary }]}
-                >
-                  +{reachOut.encouragementCount - 1} more{" "}
-                  {reachOut.encouragementCount - 1 === 1
-                    ? "encouragement"
-                    : "encouragements"}
-                </ThemedText>
-              </View>
-            )}
+              return (
+                <AnimatedEncouragementItem key={encouragement.id} index={index}>
+                  <View
+                    style={[
+                      styles.encouragementItem,
+                      { backgroundColor: colors.background },
+                    ]}
+                  >
+                    <View style={styles.encouragementHeader}>
+                      <View
+                        style={[
+                          styles.encouragementAvatar,
+                          {
+                            backgroundColor:
+                              colors.iconCircleSecondaryBackground,
+                          },
+                        ]}
+                      >
+                        <ThemedText
+                          type="caption"
+                          style={[styles.avatarText, { color: colors.icon }]}
+                        >
+                          {anonymousUsername[5].toUpperCase()}
+                        </ThemedText>
+                      </View>
+                      <View style={styles.encouragementMeta}>
+                        <ThemedText
+                          type="bodyMedium"
+                          style={[
+                            styles.encouragementUsername,
+                            { color: colors.text },
+                          ]}
+                        >
+                          {anonymousUsername}
+                        </ThemedText>
+                        <ThemedText
+                          type="caption"
+                          style={[
+                            styles.encouragementTime,
+                            { color: colors.textSecondary },
+                          ]}
+                        >
+                          {encouragementTimeAgo}
+                        </ThemedText>
+                      </View>
+                    </View>
+                    <ThemedText
+                      type="body"
+                      style={[styles.encouragementText, { color: colors.text }]}
+                    >
+                      "{encouragement.message}"
+                    </ThemedText>
+                  </View>
+                </AnimatedEncouragementItem>
+              );
+            })}
           </View>
         )}
       </View>
@@ -255,12 +313,12 @@ export function MyReachOutModal({
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
       theme={theme ?? "dark"}
-      backgroundColor={colors.cardBackground} // Modal background
-      buttonBackgroundColor={colors.background} // MyReachOutCard uses background
-      buttonContentPadding={16} // MyReachOutCard uses 16px padding
-      buttonBorderWidth={1} // MyReachOutCard has borderWidth: 1
-      buttonBorderColor="transparent" // MyReachOutCard uses transparent border
-      buttonBorderRadius={16} // MyReachOutCard uses 16px border radius
+      backgroundColor={colors.cardBackground}
+      buttonBackgroundColor={colors.background}
+      buttonContentPadding={16}
+      buttonBorderWidth={1}
+      buttonBorderColor="transparent"
+      buttonBorderRadius={16}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.15]}
     >
@@ -270,8 +328,7 @@ export function MyReachOutModal({
 }
 
 // Helper function
-function getTimeAgo(date: Date): string {
-  const now = new Date();
+function getTimeAgo(date: Date, now: Date): string {
   const diffInMinutes = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60)
   );
@@ -337,13 +394,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+    paddingTop: 42,
     paddingBottom: 32,
   },
   reachOutHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   userInfo: {
     flexDirection: "row",
@@ -372,15 +427,41 @@ const styles = StyleSheet.create({
   timestamp: {
     opacity: 0.8,
   },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    marginHorizontal: 8,
-    opacity: 0.5,
+  // Context Section
+  contextSection: {
+    marginBottom: 32,
   },
-  lastReply: {
-    opacity: 0.8,
+  contextLabel: {
+    marginBottom: 12,
+    opacity: 0.9,
+  },
+  contextMessageContainer: {
+    borderRadius: 12,
+    padding: 16,
+    borderLeftWidth: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
+  },
+  contextMessage: {
+    lineHeight: 22,
+    opacity: 0.9,
+  },
+  generalContext: {
+    textAlign: "center",
+    fontStyle: "italic",
+    opacity: 0.7,
+    lineHeight: 22,
+  },
+  encouragementsSection: {
+    marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    // marginBottom removed since it's now in sectionHeader
   },
   encouragementStats: {
     flexDirection: "row",
@@ -388,22 +469,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statNumber: {
-    fontWeight: "600",
-  },
-  messageContainer: {
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 24,
-  },
-  reachOutMessage: {
-    fontStyle: "italic",
-    lineHeight: 22,
-  },
-  encouragementsSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    marginBottom: 16,
+    // Typography handled by ThemedText type
   },
   noEncouragements: {
     alignItems: "center",

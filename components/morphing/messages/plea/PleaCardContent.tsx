@@ -9,24 +9,28 @@ import { PleaData } from "./PleaCard";
 
 interface PleaCardContentProps {
   plea: PleaData;
+  now: Date; // <-- NEW
 }
 
-export function PleaCardContent({ plea }: PleaCardContentProps) {
+export function PleaCardContent({ plea, now }: PleaCardContentProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
 
   // Generate anonymous username from UID
   const anonymousUsername = `user-${plea.uid.substring(0, 5)}`;
 
-  // Format time ago
-  const timeAgo = getTimeAgo(plea.createdAt);
-
-  // Determine urgency based on encouragement count and time
+  // Use now passed from parent for all time math
+  const timeAgo = getTimeAgo(plea.createdAt, now);
   const isUrgent =
-    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt) > 2;
+    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
 
-  // Determine if user has responded
   const hasResponded = plea.hasUserResponded || false;
+
+  const getMessageColor = () => {
+    if (isUrgent) return colors.error;
+    if (hasResponded) return colors.success;
+    return colors.textSecondary;
+  };
 
   return (
     <>
@@ -73,28 +77,16 @@ export function PleaCardContent({ plea }: PleaCardContentProps) {
         <View style={styles.stats}>
           <View style={styles.statItem}>
             <IconSymbol
-              name={hasResponded ? "message.fill" : "message"}
+              name="message.fill"
               size={16}
-              color={
-                isUrgent
-                  ? colors.error
-                  : hasResponded
-                  ? colors.success
-                  : colors.textSecondary
-              }
+              color={getMessageColor()}
             />
             <ThemedText
               type="captionMedium"
-              style={[
-                {
-                  color: isUrgent
-                    ? colors.error
-                    : plea.encouragementCount > 0
-                    ? colors.success
-                    : colors.textSecondary,
-                  fontWeight: "600",
-                },
-              ]}
+              style={{
+                color: getMessageColor(),
+                fontWeight: "600",
+              }}
             >
               {plea.encouragementCount}
             </ThemedText>
@@ -139,30 +131,23 @@ export function PleaCardContent({ plea }: PleaCardContentProps) {
   );
 }
 
-// Helper functions
-function getTimeAgo(date: Date): string {
-  const now = new Date();
+// Helper functions (now always expect the "now" argument)
+function getTimeAgo(date: Date, now: Date): string {
   const diffInMinutes = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60)
   );
-
   if (diffInMinutes < 1) return "Just now";
   if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours}h ago`;
-
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) return `${diffInDays}d ago`;
-
   const diffInWeeks = Math.floor(diffInDays / 7);
   return `${diffInWeeks}w ago`;
 }
 
-function getHoursAgo(date: Date): number {
-  const now = new Date();
-  const diffInMilliseconds = now.getTime() - date.getTime();
-  return diffInMilliseconds / (1000 * 60 * 60);
+function getHoursAgo(date: Date, now: Date): number {
+  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 const styles = StyleSheet.create({

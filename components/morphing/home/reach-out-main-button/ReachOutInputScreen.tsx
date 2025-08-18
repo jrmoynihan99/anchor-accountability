@@ -1,4 +1,5 @@
 // ReachOutInputScreen.tsx
+import { MessageInput } from "@/components/MessageInput";
 import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -12,7 +13,6 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -78,45 +78,13 @@ export function ReachOutInputScreen({
           instant encouragement & accoutability from our community.
         </ThemedText>
 
-        <View
-          style={[
-            styles.inputContainer,
-            {
-              backgroundColor: colors.modalCardBackground,
-              borderColor: colors.modalCardBorder,
-            },
-          ]}
-        >
-          <TextInput
-            style={[
-              styles.textInput,
-              {
-                backgroundColor: colors.textInputBackground,
-                borderColor: colors.textInputBorder,
-                color: colors.text,
-              },
-            ]}
-            placeholder="(Optional) Share any context that might help others encourage you..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-            value={contextMessage}
-            onChangeText={onContextChange}
-            maxLength={500}
-          />
-          <ThemedText
-            type="small"
-            style={[
-              styles.characterCount,
-              {
-                color: colors.textMuted,
-                textAlign: "right",
-                marginTop: 8,
-              },
-            ]}
-          >
-            {contextMessage.length}/500
-          </ThemedText>
-        </View>
+        <MessageInput
+          value={contextMessage}
+          onChangeText={onContextChange}
+          placeholder="(Optional) Share any context that might help others encourage you..."
+          maxLength={500}
+          minHeight={120}
+        />
 
         <TouchableOpacity
           style={[styles.sendButton, { backgroundColor: colors.text }]}
@@ -159,23 +127,6 @@ const styles = StyleSheet.create({
   },
   description: {
     // Typography styles moved to Typography.styles.body + inline styles
-  },
-  inputContainer: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 0,
-  },
-  textInput: {
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    minHeight: 120,
-    textAlignVertical: "top",
-    borderWidth: 1,
-  },
-  characterCount: {
-    // Typography styles moved to Typography.styles.small + inline styles
   },
   sendButton: {
     borderRadius: 16,

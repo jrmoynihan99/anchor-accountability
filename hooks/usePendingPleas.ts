@@ -7,152 +7,100 @@ import {
   onSnapshot,
   orderBy,
   query,
+  Unsubscribe,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const MAX_RECENT_PLEAS = 20; // Only fetch the most recent 20 pleas to sort
+// How many pleas to fetch
+const MAX_RECENT_PLEAS = 20;
 
 export function usePendingPleas() {
   const [pendingPleas, setPendingPleas] = useState<PleaData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Keep track of all active encouragement listeners so we can unsubscribe
+  const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
+
   useEffect(() => {
     if (!auth.currentUser) {
       setLoading(false);
+      setPendingPleas([]);
       return;
     }
 
-    console.log("🔍 usePendingPleas: Setting up listener for pending pleas");
+    // Clean up any old listeners before setting new ones
+    Object.values(encouragementListenersRef.current).forEach((unsub) =>
+      unsub()
+    );
+    encouragementListenersRef.current = {};
 
-    // Simple query: get the most recent pleas ordered by creation time
-    // We'll filter out current user's pleas and count encouragements client-side
     const pleasQuery = query(
       collection(db, "pleas"),
       orderBy("createdAt", "desc"),
       limit(MAX_RECENT_PLEAS)
     );
 
-    const unsubscribe = onSnapshot(
+    // Top-level listener for latest pleas
+    const unsubPleas = onSnapshot(
       pleasQuery,
-      async (snapshot) => {
-        try {
-          console.log(
-            "🔍 usePendingPleas: Received snapshot with",
-            snapshot.docs.length,
-            "pleas"
-          );
+      (snapshot) => {
+        const currentUserId = auth.currentUser?.uid;
+        let pleas: PleaData[] = [];
 
-          const currentUserId = auth.currentUser?.uid;
-          if (!currentUserId) {
-            console.log("🔍 usePendingPleas: No current user found");
-            setLoading(false);
-            return;
-          }
-
-          const pleasPromises = snapshot.docs
-            // TODO: Re-enable this filter later to hide current user's pleas
-            // .filter(doc => {
-            //   // Filter out current user's pleas client-side
-            //   const data = doc.data();
-            //   return data.uid !== currentUserId;
-            // })
-            .map(async (doc) => {
-              const data = doc.data();
-
-              // Count encouragements for this plea and check if current user responded
-              try {
-                const encouragementsSnapshot = await new Promise(
-                  (resolve, reject) => {
-                    const encouragementsQuery = collection(
-                      db,
-                      "pleas",
-                      doc.id,
-                      "encouragements"
-                    );
-                    const unsubscribeEncouragements = onSnapshot(
-                      encouragementsQuery,
-                      (snap) => {
-                        unsubscribeEncouragements();
-                        resolve(snap);
-                      },
-                      reject
-                    );
-                  }
-                );
-
-                const encouragementCount = (encouragementsSnapshot as any).size;
-
-                // Check if current user has responded to this plea
-                const hasUserResponded = (
-                  encouragementsSnapshot as any
-                ).docs.some((encouragementDoc: any) => {
-                  const encouragementData = encouragementDoc.data();
-                  return encouragementData.helperUid === currentUserId;
-                });
-
-                console.log(
-                  `🔍 usePendingPleas: Plea ${doc.id} has ${encouragementCount} encouragements, user responded: ${hasUserResponded}`
-                );
-
-                return {
-                  id: doc.id,
-                  message: data.message || "",
-                  uid: data.uid,
-                  createdAt: data.createdAt?.toDate() || new Date(),
-                  encouragementCount,
-                  hasUserResponded,
-                } as PleaData;
-              } catch (encouragementError) {
-                console.error(
-                  `Error fetching encouragements for plea ${doc.id}:`,
-                  encouragementError
-                );
-                // Return plea with 0 encouragements if counting fails
-                return {
-                  id: doc.id,
-                  message: data.message || "",
-                  uid: data.uid,
-                  createdAt: data.createdAt?.toDate() || new Date(),
-                  encouragementCount: 0,
-                  hasUserResponded: false,
-                } as PleaData;
-              }
-            });
-
-          const pleas = await Promise.all(pleasPromises);
-
-          // Sort by encouragement count (least first), then by creation time (oldest first for same encouragement count)
-          const sortedPleas = pleas.sort((a, b) => {
-            // Primary sort: encouragement count (ascending - least encouragements first)
-            if (a.encouragementCount !== b.encouragementCount) {
-              return a.encouragementCount - b.encouragementCount;
-            }
-            // Secondary sort: for pleas with same encouragement count, prioritize older ones (ascending time)
-            return a.createdAt.getTime() - b.createdAt.getTime();
+        // Optionally filter out current user's pleas
+        // .filter(doc => doc.data().uid !== currentUserId)
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          pleas.push({
+            id: doc.id,
+            message: data.message || "",
+            uid: data.uid,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            encouragementCount: 0, // will be set live below
+            hasUserResponded: false,
           });
+        });
 
-          console.log("🔍 usePendingPleas: Sorting debug:");
-          sortedPleas.forEach((plea, index) => {
-            console.log(
-              `  ${index + 1}. ${plea.id} - ${
-                plea.encouragementCount
-              } encouragements - ${plea.createdAt.toLocaleString()}`
+        // For each plea, set up a real-time encouragements listener
+        pleas.forEach((plea) => {
+          // If we already have a listener for this plea, skip
+          if (encouragementListenersRef.current[plea.id]) return;
+
+          const encouragementsQuery = collection(
+            db,
+            "pleas",
+            plea.id,
+            "encouragements"
+          );
+          const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
+            const encouragementCount = encSnap.size;
+            const hasUserResponded = encSnap.docs.some(
+              (doc) => doc.data().helperUid === currentUserId
             );
-          });
 
-          console.log(
-            "🔍 usePendingPleas: Final sorted pleas:",
-            sortedPleas.length
-          );
-          setPendingPleas(sortedPleas);
-          setError(null);
-        } catch (err) {
-          console.error("Error processing pending pleas:", err);
-          setError("Failed to load pending requests");
-        } finally {
-          setLoading(false);
-        }
+            // Update state for this plea
+            setPendingPleas((oldPleas) => {
+              const newPleas = oldPleas.map((p) =>
+                p.id === plea.id
+                  ? { ...p, encouragementCount, hasUserResponded }
+                  : p
+              );
+              // Sort as you did before: lowest count first, then oldest first
+              return newPleas.sort((a, b) => {
+                if (a.encouragementCount !== b.encouragementCount) {
+                  return a.encouragementCount - b.encouragementCount;
+                }
+                return a.createdAt.getTime() - b.createdAt.getTime();
+              });
+            });
+          });
+          encouragementListenersRef.current[plea.id] = unsub;
+        });
+
+        setPendingPleas(pleas);
+        setError(null);
+        setLoading(false);
       },
       (err) => {
         console.error("Error listening to pending pleas:", err);
@@ -162,8 +110,11 @@ export function usePendingPleas() {
     );
 
     return () => {
-      console.log("🔍 usePendingPleas: Cleaning up listener");
-      unsubscribe();
+      unsubPleas();
+      Object.values(encouragementListenersRef.current).forEach((unsub) =>
+        unsub()
+      );
+      encouragementListenersRef.current = {};
     };
   }, [auth.currentUser]);
 
