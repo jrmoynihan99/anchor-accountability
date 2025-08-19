@@ -6,6 +6,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { OpenToChatToggle } from "./OpenToChatToggle";
 import { PleaData } from "./PleaCard";
 
 interface PleaResponseInputScreenProps {
@@ -15,6 +16,8 @@ interface PleaResponseInputScreenProps {
   onChangeEncouragementText: (text: string) => void;
   isSending: boolean;
   onSend: () => void;
+  isOpenToChat: boolean;
+  onToggleOpenToChat: (value: boolean) => void;
 }
 
 export function PleaResponseInputScreen({
@@ -24,6 +27,8 @@ export function PleaResponseInputScreen({
   onChangeEncouragementText,
   isSending,
   onSend,
+  isOpenToChat,
+  onToggleOpenToChat,
 }: PleaResponseInputScreenProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
@@ -50,190 +55,232 @@ export function PleaResponseInputScreen({
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Plea Header */}
-      <View style={styles.pleaHeader}>
-        <View style={styles.userInfo}>
-          <View
-            style={[
-              styles.avatarCircle,
-              { backgroundColor: colors.iconCircleSecondaryBackground },
-            ]}
-          >
-            <ThemedText
-              type="subtitleSemibold"
-              style={[styles.avatarText, { color: colors.icon }]}
-            >
-              {anonymousUsername[5].toUpperCase()}
-            </ThemedText>
-          </View>
-          <View style={styles.userDetails}>
-            <ThemedText
-              type="subtitleSemibold"
-              style={[styles.username, { color: colors.text }]}
-            >
-              {anonymousUsername}
-            </ThemedText>
-            <View style={styles.metaInfo}>
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.timestamp,
-                  { color: isUrgent ? colors.error : colors.textSecondary },
-                ]}
-              >
-                {timeAgo}
-              </ThemedText>
-              {isUrgent && (
-                <>
-                  <View
-                    style={[
-                      styles.dot,
-                      { backgroundColor: colors.textSecondary },
-                    ]}
-                  />
-                  <ThemedText
-                    type="captionMedium"
-                    style={[styles.urgentText, { color: colors.error }]}
-                  >
-                    Needs attention
-                  </ThemedText>
-                </>
-              )}
-            </View>
-          </View>
-        </View>
-        <View style={styles.encouragementStats}>
-          <IconSymbol name="message.fill" size={18} color={getMessageColor()} />
-          <ThemedText
-            type="statValue"
-            style={[styles.statNumber, { color: getMessageColor() }]}
-          >
-            {plea.encouragementCount}
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* Context Section */}
-      <View style={styles.contextSection}>
-        {plea.message && plea.message.trim() ? (
-          <>
-            <ThemedText
-              type="subtitleMedium"
-              style={[styles.contextLabel, { color: colors.text }]}
-            >
-              Additional Context
-            </ThemedText>
+      {/* Combined Header and Context Card */}
+      <View
+        style={[
+          styles.headerCard,
+          {
+            backgroundColor: colors.modalCardBackground,
+            borderColor: colors.modalCardBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
+        <View style={styles.pleaHeader}>
+          <View style={styles.userInfo}>
             <View
               style={[
-                styles.contextMessageContainer,
-                {
-                  backgroundColor: colors.cardBackground,
-                  borderLeftColor: colors.tint,
-                },
+                styles.avatarCircle,
+                { backgroundColor: colors.iconCircleSecondaryBackground },
               ]}
             >
               <ThemedText
-                type="body"
-                style={[styles.contextMessage, { color: colors.text }]}
+                type="subtitleSemibold"
+                style={{ color: colors.icon }}
               >
-                "{plea.message}"
+                {anonymousUsername[5].toUpperCase()}
               </ThemedText>
             </View>
-          </>
-        ) : (
-          <ThemedText
-            type="body"
-            style={[styles.generalContext, { color: colors.textSecondary }]}
+            <View style={styles.userDetails}>
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.text }}
+              >
+                {anonymousUsername}
+              </ThemedText>
+              <View style={styles.metaInfo}>
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: isUrgent ? colors.error : colors.textSecondary,
+                  }}
+                >
+                  {timeAgo}
+                </ThemedText>
+                {isUrgent && (
+                  <>
+                    <View
+                      style={[
+                        styles.dot,
+                        { backgroundColor: colors.textSecondary },
+                      ]}
+                    />
+                    <ThemedText
+                      type="captionMedium"
+                      style={{ color: colors.error }}
+                    >
+                      Needs attention
+                    </ThemedText>
+                  </>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* Stats Section - Similar to streak modal stat cards */}
+          <View
+            style={[
+              styles.statsSection,
+              {
+                backgroundColor: colors.cardBackground,
+                borderColor: colors.modalCardBorder,
+              },
+            ]}
           >
-            This person is struggling and could use some encouragement and
-            support.
+            <View style={styles.statContent}>
+              <View
+                style={[
+                  styles.statIconCircle,
+                  { backgroundColor: `${getMessageColor()}33` }, // 20% opacity
+                ]}
+              >
+                <IconSymbol
+                  name="message.fill"
+                  size={16}
+                  color={getMessageColor()}
+                />
+              </View>
+              <ThemedText type="statValue" style={{ color: getMessageColor() }}>
+                {plea.encouragementCount}
+              </ThemedText>
+            </View>
+          </View>
+        </View>
+
+        {/* Context Section - Now inside the same card */}
+        <View style={styles.contextDivider} />
+        <View style={styles.contextHeader}>
+          <View
+            style={[
+              styles.contextIconCircle,
+              { backgroundColor: `${colors.iconCircleBackground}50` },
+            ]}
+          >
+            <IconSymbol name="heart" size={16} color={colors.icon} />
+          </View>
+          <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
+            Support Needed
           </ThemedText>
-        )}
+        </View>
+        {plea.message && plea.message.trim() ? (
+          <View
+            style={[
+              styles.contextMessageContainer,
+              {
+                backgroundColor: colors.cardBackground,
+                borderLeftColor: colors.tint,
+              },
+            ]}
+          >
+            <ThemedText type="body" style={{ color: colors.text }}>
+              "{plea.message}"
+            </ThemedText>
+          </View>
+        ) : null}
       </View>
 
-      {/* Response Section */}
+      {/* Response Section - No card styling */}
       <View style={styles.responseSection}>
-        <ThemedText
-          type="subtitleSemibold"
-          style={[styles.responseTitle, { color: colors.text }]}
-        >
-          Send Encouragement
-        </ThemedText>
-        <ThemedText
-          type="caption"
-          style={[styles.responseSubtitle, { color: colors.textSecondary }]}
-        >
-          Your message will be sent anonymously
-        </ThemedText>
+        <View style={styles.responseHeader}>
+          <View
+            style={[
+              styles.responseIconCircle,
+              { backgroundColor: `${colors.iconCircleBackground}50` },
+            ]}
+          >
+            <IconSymbol name="paperplane" size={16} color={colors.icon} />
+          </View>
+          <View style={styles.responseHeaderText}>
+            <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
+              Send Encouragement
+            </ThemedText>
+            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
+              Your message will be sent anonymously
+            </ThemedText>
+          </View>
+        </View>
 
         <MessageInput
           value={encouragementText}
           onChangeText={onChangeEncouragementText}
-          placeholder="Type your encouragement here..."
+          placeholder="Type your message here..."
           maxLength={500}
-          minHeight={120}
+          minHeight={60}
+          showBorder={false}
         />
-      </View>
 
-      {/* Send Button */}
-      <View style={styles.sendButtonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            {
-              backgroundColor: encouragementText.trim()
-                ? colors.buttonBackground
-                : colors.textSecondary,
-            },
-            isSending && styles.sendButtonDisabled,
-          ]}
-          onPress={onSend}
-          disabled={!encouragementText.trim() || isSending}
-          activeOpacity={0.8}
-        >
-          {isSending ? (
-            <IconSymbol name="arrow.up" size={20} color={colors.white} />
-          ) : (
-            <>
-              <IconSymbol name="heart.fill" size={18} color={colors.white} />
+        {/* Open to Chat Toggle */}
+        <OpenToChatToggle
+          isOpen={isOpenToChat}
+          onToggle={onToggleOpenToChat}
+          user={anonymousUsername}
+        />
+
+        {/* Send Button */}
+        <View style={styles.sendButtonContainer}>
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor: encouragementText.trim()
+                  ? colors.buttonBackground
+                  : colors.textSecondary,
+              },
+              isSending && styles.sendButtonDisabled,
+            ]}
+            onPress={onSend}
+            disabled={!encouragementText.trim() || isSending}
+            activeOpacity={0.8}
+          >
+            {isSending ? (
+              <IconSymbol name="arrow.up" size={20} color={colors.white} />
+            ) : (
+              <>
+                <IconSymbol name="heart.fill" size={18} color={colors.white} />
+                <ThemedText type="button" style={{ color: colors.white }}>
+                  Send Encouragement
+                </ThemedText>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {hasResponded && (
+            <View style={styles.alreadyRespondedContainer}>
+              <IconSymbol name="checkmark" size={12} color={colors.success} />
               <ThemedText
-                type="button"
-                style={[styles.sendButtonText, { color: colors.white }]}
+                type="caption"
+                style={{ color: colors.textSecondary }}
               >
-                Send Encouragement
+                You've already sent encouragement
               </ThemedText>
-            </>
+            </View>
           )}
-        </TouchableOpacity>
-
-        {hasResponded && (
-          <View style={styles.alreadyRespondedContainer}>
-            <ThemedText
-              type="caption"
-              style={[
-                styles.alreadyRespondedText,
-                { color: colors.textSecondary },
-              ]}
-            >
-              You've sent encouragement
-            </ThemedText>
-            <IconSymbol name="checkmark" size={12} color={colors.success} />
-          </View>
-        )}
+        </View>
       </View>
     </ScrollView>
   );
 }
 
-// ... All styles from your original modal for the inner content
 const styles = StyleSheet.create({
+  // Layout and structural styles only - NO text styling
   scrollContainer: { flex: 1 },
-  scrollContent: { padding: 24, paddingTop: 42, paddingBottom: 32 },
+  scrollContent: { padding: 8, paddingTop: 42, paddingBottom: 32 },
+
+  // Header Card Styles
+  headerCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 20,
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
   pleaHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
   },
   userInfo: {
     flexDirection: "row",
@@ -248,40 +295,84 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  avatarText: {},
   userDetails: { flex: 1 },
-  username: { lineHeight: 22 },
   metaInfo: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  timestamp: { opacity: 0.8 },
   dot: {
     width: 3,
     height: 3,
     borderRadius: 1.5,
     marginHorizontal: 8,
-    opacity: 0.5,
   },
-  urgentText: {},
-  encouragementStats: { flexDirection: "row", alignItems: "center", gap: 6 },
-  statNumber: {},
-  contextSection: { marginBottom: 32 },
-  contextLabel: { marginBottom: 12, opacity: 0.9 },
+
+  // Stats section
+  statsSection: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 8,
+  },
+  statContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  statIconCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Context Section
+  contextDivider: {
+    height: 1,
+    marginVertical: 16,
+  },
+  contextHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  contextIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
   contextMessageContainer: {
     borderRadius: 12,
     padding: 16,
     borderLeftWidth: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    marginTop: 8,
   },
-  contextMessage: { lineHeight: 22, opacity: 0.9 },
-  generalContext: {
-    textAlign: "center",
-    fontStyle: "italic",
-    opacity: 0.7,
-    lineHeight: 22,
+
+  // Response Section - No card styling
+  responseSection: {
+    marginBottom: 20,
   },
-  responseSection: { marginBottom: 32 },
-  responseTitle: { marginBottom: 6 },
-  responseSubtitle: { marginBottom: 16, opacity: 0.8 },
-  sendButtonContainer: { paddingTop: 16, backgroundColor: "transparent" },
+  responseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  responseIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  responseHeaderText: {
+    flex: 1,
+  },
+
+  // Send Button Styles
+  sendButtonContainer: {
+    marginTop: 20,
+  },
   sendButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -289,14 +380,14 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     gap: 8,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
-  sendButtonDisabled: { opacity: 0.6 },
-  sendButtonText: {},
+  sendButtonDisabled: {
+    opacity: 0.6,
+  },
   alreadyRespondedContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -304,7 +395,6 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 12,
   },
-  alreadyRespondedText: { opacity: 0.6 },
 });
 
 // Helpers
@@ -321,6 +411,7 @@ function getTimeAgo(date: Date, now: Date): string {
   const diffInWeeks = Math.floor(diffInDays / 7);
   return `${diffInWeeks}w ago`;
 }
+
 function getHoursAgo(date: Date, now: Date): number {
   return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }

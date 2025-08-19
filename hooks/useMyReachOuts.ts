@@ -7,27 +7,34 @@ import {
   onSnapshot,
   orderBy,
   query,
+  Unsubscribe,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 
-const MAX_RECENT_REACH_OUTS = 20; // Only fetch the most recent 20 reach outs
+const MAX_RECENT_REACH_OUTS = 20;
 
 export function useMyReachOuts() {
   const [myReachOuts, setMyReachOuts] = useState<MyReachOutData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Track subcollection listeners for cleanup
-  const encouragementUnsubs = useRef<Record<string, () => void>>({});
+  // Keep track of all active encouragement listeners so we can unsubscribe
+  const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
 
   useEffect(() => {
     if (!auth.currentUser) {
-      setMyReachOuts([]);
       setLoading(false);
+      setMyReachOuts([]);
       return;
     }
 
     const currentUserId = auth.currentUser.uid;
+
+    // Clean up any old listeners before setting new ones
+    Object.values(encouragementListenersRef.current).forEach((unsub) =>
+      unsub()
+    );
+    encouragementListenersRef.current = {};
 
     const pleasQuery = query(
       collection(db, "pleas"),
@@ -35,97 +42,88 @@ export function useMyReachOuts() {
       limit(MAX_RECENT_REACH_OUTS)
     );
 
-    let isUnmounted = false;
-
-    const unsubscribePleas = onSnapshot(
+    // Top-level listener for latest pleas
+    const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
-        if (isUnmounted) return;
-        // Filter for current user's pleas
-        const myDocs = snapshot.docs.filter(
-          (doc) => doc.data().uid === currentUserId
-        );
+        let reachOuts: MyReachOutData[] = [];
 
-        // Remove listeners for reach outs that no longer exist
-        const newDocIds = new Set(myDocs.map((doc) => doc.id));
-        for (const id in encouragementUnsubs.current) {
-          if (!newDocIds.has(id)) {
-            encouragementUnsubs.current[id]();
-            delete encouragementUnsubs.current[id];
-          }
-        }
-
-        // Temp object to accumulate live reach out data
-        const nextReachOuts: Record<string, MyReachOutData> = {};
-
-        myDocs.forEach((doc) => {
+        // Filter for current user's pleas and build initial array
+        snapshot.docs.forEach((doc) => {
           const data = doc.data();
-          const docId = doc.id;
 
-          // Only create a listener if not already listening
-          if (!encouragementUnsubs.current[docId]) {
-            const encouragementsRef = collection(
-              db,
-              "pleas",
-              docId,
-              "encouragements"
-            );
-            const unsub = onSnapshot(encouragementsRef, (snap) => {
-              const encouragementCount = snap.size;
-              let lastEncouragementAt: Date | undefined = undefined;
-
-              if (encouragementCount > 0) {
-                // Sort encouragements by createdAt to get most recent
-                const encouragements = snap.docs
-                  .map((d) => d.data())
-                  .filter((d) => !!d.createdAt)
-                  .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-
-                lastEncouragementAt = encouragements[0]?.createdAt?.toDate?.();
-              }
-
-              nextReachOuts[docId] = {
-                id: docId,
-                message: data.message || "",
-                createdAt: data.createdAt?.toDate() || new Date(),
-                encouragementCount,
-                lastEncouragementAt,
-              };
-
-              // When all listeners have reported, update the state
-              if (Object.keys(nextReachOuts).length === myDocs.length) {
-                setMyReachOuts(
-                  myDocs
-                    .map((d) => nextReachOuts[d.id])
-                    .filter(Boolean)
-                    .sort(
-                      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-                    )
-                );
-                setLoading(false);
-              }
+          // Only process pleas that belong to current user
+          if (data.uid === currentUserId) {
+            reachOuts.push({
+              id: doc.id,
+              message: data.message || "",
+              createdAt: data.createdAt?.toDate() || new Date(),
+              encouragementCount: 0, // will be set live below
+              lastEncouragementAt: undefined,
             });
-            encouragementUnsubs.current[docId] = unsub;
           }
         });
 
+        // For each of MY reach outs, set up a real-time encouragements listener
+        reachOuts.forEach((reachOut) => {
+          // If we already have a listener for this reach out, skip
+          if (encouragementListenersRef.current[reachOut.id]) return;
+
+          const encouragementsQuery = collection(
+            db,
+            "pleas",
+            reachOut.id,
+            "encouragements"
+          );
+
+          const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
+            const encouragementCount = encSnap.size;
+            let lastEncouragementAt: Date | undefined = undefined;
+
+            if (encouragementCount > 0) {
+              // Sort encouragements by createdAt to get most recent
+              const encouragements = encSnap.docs
+                .map((d) => d.data())
+                .filter((d) => !!d.createdAt)
+                .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+              lastEncouragementAt = encouragements[0]?.createdAt?.toDate?.();
+            }
+
+            // Update state for this reach out
+            setMyReachOuts((oldReachOuts) => {
+              const newReachOuts = oldReachOuts.map((r) =>
+                r.id === reachOut.id
+                  ? { ...r, encouragementCount, lastEncouragementAt }
+                  : r
+              );
+              // Sort by creation date, newest first
+              return newReachOuts.sort(
+                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+              );
+            });
+          });
+
+          encouragementListenersRef.current[reachOut.id] = unsub;
+        });
+
+        setMyReachOuts(reachOuts);
         setError(null);
         setLoading(false);
       },
       (err) => {
+        console.error("Error listening to my reach outs:", err);
         setError("Failed to load your reach outs");
         setLoading(false);
       }
     );
 
-    // Cleanup: remove all sublisteners on unmount
     return () => {
-      isUnmounted = true;
-      unsubscribePleas();
-      for (const unsub of Object.values(encouragementUnsubs.current)) {
-        unsub();
-      }
-      encouragementUnsubs.current = {};
+      unsubPleas();
+      Object.values(encouragementListenersRef.current).forEach((unsub) =>
+        unsub()
+      );
+      encouragementListenersRef.current = {};
     };
   }, [auth.currentUser]);
 

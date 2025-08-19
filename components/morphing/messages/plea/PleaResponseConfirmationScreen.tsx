@@ -15,7 +15,7 @@ export function PleaResponseConfirmationScreen() {
       <View
         style={[
           styles.iconCircle,
-          { backgroundColor: colors.iconCircleBackground },
+          { backgroundColor: `${colors.iconCircleBackground}50` },
         ]}
       >
         <IconSymbol name="checkmark" size={36} color={colors.icon} />

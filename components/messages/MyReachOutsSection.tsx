@@ -1,51 +1,43 @@
-// components/messages/PendingPleasSection.tsx
+// components/messages/MyReachOutsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { usePendingPleas } from "@/hooks/usePendingPleas";
+import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
-import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
-import { PleaCard } from "./PleaCard";
-import { PleaResponseModal } from "./PleaResponseModal";
+import { MyReachOutCard } from "../morphing/messages/my-reach-outs/MyReachOutCard";
 
-const PREVIEW_LIMIT = 3;
+const PREVIEW_LIMIT = 3; // Only show 3 reach outs on main messages screen
 
-export function PendingPleasSection() {
+export function MyReachOutsSection() {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
-  const { pendingPleas, loading, error } = usePendingPleas();
-
-  // Add a single timer here
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Store just the id, not the object!
-  const [selectedPleaId, setSelectedPleaId] = useState<string | null>(null);
-  const selectedPlea =
-    pendingPleas.find((p) => p.id === selectedPleaId) || null;
+  const { myReachOuts, loading, error } = useMyReachOuts();
 
   const handleViewAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Navigate to pending pleas screen
-    console.log("Navigate to full pending pleas screen");
-    // router.push("/pending-pleas");
+    // TODO: Navigate to full my reach outs screen
+    console.log("Navigate to full my reach outs screen");
+    // router.push("/my-reach-outs");
   };
 
   if (loading) {
     return (
-      <View style={styles.sectionCard}>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: colors.cardBackground,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
         <SectionHeader colors={colors} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.textSecondary} />
@@ -53,7 +45,7 @@ export function PendingPleasSection() {
             type="caption"
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
-            Loading recent requests...
+            Loading your reach outs...
           </ThemedText>
         </View>
       </View>
@@ -62,7 +54,15 @@ export function PendingPleasSection() {
 
   if (error) {
     return (
-      <View style={styles.sectionCard}>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: colors.cardBackground,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
         <SectionHeader colors={colors} />
         <View style={styles.emptyContainer}>
           <IconSymbol
@@ -75,28 +75,15 @@ export function PendingPleasSection() {
             type="caption"
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
-            Unable to load requests. Please try again.
+            Unable to load your reach outs. Please try again.
           </ThemedText>
         </View>
       </View>
     );
   }
 
-  // Use now for urgency and sorting
-  const sortedPleas = [...pendingPleas].sort((a, b) => {
-    const aIsUrgent =
-      a.encouragementCount === 0 && getHoursAgo(a.createdAt, now) > 2;
-    const bIsUrgent =
-      b.encouragementCount === 0 && getHoursAgo(b.createdAt, now) > 2;
-    // Use Number(...) to compare booleans numerically
-    if (aIsUrgent !== bIsUrgent) return Number(bIsUrgent) - Number(aIsUrgent); // Urgent (red) at bottom
-    if (a.encouragementCount !== b.encouragementCount)
-      return a.encouragementCount - b.encouragementCount;
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
-
-  const displayedPleas = sortedPleas.slice(0, PREVIEW_LIMIT);
-  const hasMorePleas = pendingPleas.length > PREVIEW_LIMIT;
+  const displayedReachOuts = myReachOuts.slice(0, PREVIEW_LIMIT);
+  const hasMoreReachOuts = myReachOuts.length > PREVIEW_LIMIT;
 
   return (
     <View
@@ -108,12 +95,12 @@ export function PendingPleasSection() {
         },
       ]}
     >
-      <SectionHeader colors={colors} totalCount={pendingPleas.length} />
+      <SectionHeader colors={colors} totalCount={myReachOuts.length} />
 
-      {pendingPleas.length === 0 ? (
+      {myReachOuts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <IconSymbol
-            name="heart.circle"
+            name="heart"
             size={32}
             color={colors.textSecondary}
             style={styles.emptyIcon}
@@ -122,71 +109,35 @@ export function PendingPleasSection() {
             type="captionMedium"
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
-            No recent requests right now
+            You haven't reached out yet
           </ThemedText>
           <ThemedText
             type="caption"
             style={[styles.emptySubtext, { color: colors.textSecondary }]}
           >
-            When someone reaches out for help, you'll see their request here
+            When you need support, reach out using the button on the Home tab
           </ThemedText>
         </View>
       ) : (
         <>
-          <View style={styles.pleasContainer}>
-            {displayedPleas.map((plea, index) => (
-              <Animated.View
-                key={plea.id}
-                layout={LinearTransition.duration(300)}
-                style={{ width: "100%" }}
-              >
-                <ButtonModalTransitionBridge
-                  buttonBorderRadius={16}
-                  modalBorderRadius={28}
-                  modalWidthPercent={0.95} // 95% of screen width (wider)
-                  modalHeightPercent={0.7}
-                >
-                  {({
-                    open,
-                    close,
-                    isModalVisible,
-                    progress,
-                    buttonAnimatedStyle,
-                    modalAnimatedStyle,
-                    buttonRef,
-                    handlePressIn,
-                    handlePressOut,
-                  }) => (
-                    <>
-                      <PleaCard
-                        plea={plea}
-                        now={now}
-                        index={index}
-                        buttonRef={buttonRef}
-                        style={buttonAnimatedStyle}
-                        onPress={() => {
-                          setSelectedPleaId(plea.id);
-                          open();
-                        }}
-                        onPressIn={handlePressIn}
-                        onPressOut={handlePressOut}
-                      />
-                      <PleaResponseModal
-                        isVisible={isModalVisible}
-                        progress={progress}
-                        modalAnimatedStyle={modalAnimatedStyle}
-                        close={close}
-                        plea={selectedPlea}
-                        now={now}
-                      />
-                    </>
-                  )}
-                </ButtonModalTransitionBridge>
-              </Animated.View>
+          <View style={styles.reachOutsContainer}>
+            {displayedReachOuts.map((reachOut, index) => (
+              <MyReachOutCard
+                key={reachOut.id}
+                reachOut={reachOut}
+                index={index}
+                onPress={() => {
+                  // TODO: Navigate to encouragements received screen
+                  console.log(
+                    "View encouragements for reach out:",
+                    reachOut.id
+                  );
+                }}
+              />
             ))}
           </View>
 
-          {hasMorePleas && (
+          {hasMoreReachOuts && (
             <TouchableOpacity
               style={[
                 styles.viewAllButton,
@@ -205,7 +156,7 @@ export function PendingPleasSection() {
                 type="button"
                 style={[styles.viewAllText, { color: colors.white }]}
               >
-                View All ({pendingPleas.length})
+                View All ({myReachOuts.length})
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -213,11 +164,6 @@ export function PendingPleasSection() {
       )}
     </View>
   );
-}
-
-// Helper for urgency
-function getHoursAgo(date: Date, now: Date): number {
-  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 function SectionHeader({
@@ -236,14 +182,14 @@ function SectionHeader({
             { backgroundColor: colors.iconCircleBackground },
           ]}
         >
-          <IconSymbol name="hand.raised" size={20} color={colors.icon} />
+          <IconSymbol name="person.crop.circle" size={20} color={colors.icon} />
         </View>
         <View style={styles.headerText}>
           <ThemedText
             type="title"
             style={[styles.headerTitle, { color: colors.text }]}
           >
-            Recent Requests
+            My Reach Outs
           </ThemedText>
           <ThemedText
             type="caption"
@@ -251,9 +197,9 @@ function SectionHeader({
           >
             {totalCount !== undefined
               ? `${totalCount} ${
-                  totalCount === 1 ? "person needs" : "people need"
-                } support`
-              : "People who need encouragement"}
+                  totalCount === 1 ? "request" : "requests"
+                } for support`
+              : "Your requests for support"}
           </ThemedText>
         </View>
       </View>
@@ -329,7 +275,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     lineHeight: 18,
   },
-  pleasContainer: {
+  reachOutsContainer: {
     gap: 12,
   },
   viewAllButton: {
@@ -340,5 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 16,
   },
-  viewAllText: {},
+  viewAllText: {
+    // Typography.styles.button handled by ThemedText type="button"
+  },
 });

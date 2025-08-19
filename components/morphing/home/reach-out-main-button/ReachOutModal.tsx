@@ -70,8 +70,6 @@ export function ReachOutModal({
         createdAt: serverTimestamp(),
       });
 
-      console.log("✅ Plea sent!");
-
       // Show confirmation screen
       screenTransition.value = withTiming(1, {
         duration: 300,

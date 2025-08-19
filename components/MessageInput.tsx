@@ -12,6 +12,7 @@ interface MessageInputProps {
   maxLength?: number;
   minHeight?: number;
   showCharacterCount?: boolean;
+  showBorder?: boolean; // New optional prop
 }
 
 export function MessageInput({
@@ -21,6 +22,7 @@ export function MessageInput({
   maxLength = 500,
   minHeight = 120,
   showCharacterCount = true,
+  showBorder = true, // Defaults to true for backward compatibility
 }: MessageInputProps) {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
@@ -28,8 +30,8 @@ export function MessageInput({
   return (
     <View
       style={[
-        styles.inputContainer,
-        {
+        showBorder && styles.inputContainer, // Only apply border styles if showBorder is true
+        showBorder && {
           backgroundColor: colors.modalCardBackground,
           borderColor: colors.modalCardBorder,
         },

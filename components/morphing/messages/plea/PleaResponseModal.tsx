@@ -5,7 +5,7 @@ import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -45,6 +45,7 @@ export function PleaResponseModal({
   const screenTransition = useSharedValue(0); // 0 = input, 1 = confirmation
   const [encouragementText, setEncouragementText] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isOpenToChat, setIsOpenToChat] = useState(true); // Default to true
 
   // Reset on close
   useEffect(() => {
@@ -52,6 +53,7 @@ export function PleaResponseModal({
       setTimeout(() => {
         setScreen("input");
         setEncouragementText("");
+        setIsOpenToChat(true); // Reset to default
         screenTransition.value = 0;
       }, 200);
     }
@@ -123,6 +125,7 @@ export function PleaResponseModal({
       await addDoc(collection(db, "pleas", plea.id, "encouragements"), {
         helperUid: auth.currentUser.uid,
         message: encouragementText.trim(),
+        openToChat: isOpenToChat, // Changed from OpenToChat to openToChat
         createdAt: serverTimestamp(),
       });
 
@@ -143,28 +146,25 @@ export function PleaResponseModal({
 
   // Modal content is a layered animated container
   const modalContent = (
-    <KeyboardAvoidingView
-      style={styles.modalContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <View style={{ flex: 1, minHeight: 420 }}>
-        {/* Input Screen */}
-        <Animated.View style={[styles.animatedScreen, inputScreenStyle]}>
-          <PleaResponseInputScreen
-            plea={plea}
-            now={now}
-            encouragementText={encouragementText}
-            onChangeEncouragementText={setEncouragementText}
-            isSending={isSending}
-            onSend={handleSendEncouragement}
-          />
-        </Animated.View>
-        {/* Confirmation Screen */}
-        <Animated.View style={[styles.animatedScreen, confirmationScreenStyle]}>
-          <PleaResponseConfirmationScreen />
-        </Animated.View>
-      </View>
-    </KeyboardAvoidingView>
+    <View style={{ flex: 1, minHeight: 420 }}>
+      {/* Input Screen */}
+      <Animated.View style={[styles.animatedScreen, inputScreenStyle]}>
+        <PleaResponseInputScreen
+          plea={plea}
+          now={now}
+          encouragementText={encouragementText}
+          onChangeEncouragementText={setEncouragementText}
+          isSending={isSending}
+          onSend={handleSendEncouragement}
+          isOpenToChat={isOpenToChat}
+          onToggleOpenToChat={setIsOpenToChat}
+        />
+      </Animated.View>
+      {/* Confirmation Screen */}
+      <Animated.View style={[styles.animatedScreen, confirmationScreenStyle]}>
+        <PleaResponseConfirmationScreen />
+      </Animated.View>
+    </View>
   );
 
   return (
