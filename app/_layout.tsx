@@ -122,6 +122,14 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
+          name="message-thread"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+            presentation: "card",
+          }}
+        />
+        <Stack.Screen
           name="modal"
           options={{
             presentation: "modal",

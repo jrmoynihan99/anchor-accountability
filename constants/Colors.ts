@@ -22,6 +22,7 @@ export const Colors = {
     navBackground: "rgba(255, 255, 255, 0.1)",
     navBorder: "rgba(255, 255, 255, 0.2)",
     navActiveText: "#FFFFFF",
+    messageInputBackground: "rgba(241, 237, 230, 0.1)", // Cream with same opacity as navBackground
 
     // --- Status Colors ---
     success: "#4CAF50", // Green for checkmarks
@@ -79,6 +80,7 @@ export const Colors = {
     navBackground: "rgba(255, 255, 255, 0.1)",
     navBorder: "rgba(255, 255, 255, 0.2)",
     navActiveText: "#FFFFFF",
+    messageInputBackground: "rgba(58, 45, 40, 0.1)", // Dark Brown with same opacity as navBackground
 
     // --- Status Colors ---
     success: "#4CAF50", // Green for checkmarks

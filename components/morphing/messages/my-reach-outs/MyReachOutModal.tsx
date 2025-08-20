@@ -99,6 +99,8 @@ export function MyReachOutModal({
         encouragementCount={reachOut.encouragementCount}
         now={now}
         colors={colors}
+        pleaId={reachOut.id}
+        onClose={close} // Add this line to pass the close function
       />
     </ScrollView>
   );

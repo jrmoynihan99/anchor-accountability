@@ -1,6 +1,7 @@
 // components/messages/EncouragementsList.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -21,6 +22,8 @@ interface EncouragmentsListProps {
   encouragementCount: number;
   now: Date;
   colors: any;
+  pleaId: string;
+  onClose?: () => void; // Add this prop for closing the modal
 }
 
 // --- Animation wrapper for encouragement entry ---
@@ -47,12 +50,14 @@ export function EncouragementsList({
   encouragementCount,
   now,
   colors,
+  pleaId,
+  onClose,
 }: EncouragmentsListProps) {
   return (
     <View style={styles.encouragementsSection}>
       <View style={styles.sectionHeader}>
         <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
-          Recieved Support
+          Encouragements Received
         </ThemedText>
         <View style={styles.encouragementStats}>
           <IconSymbol
@@ -151,8 +156,23 @@ export function EncouragementsList({
                     <TouchableOpacity
                       style={styles.chatInvitation}
                       onPress={() => {
-                        // TODO: Handle chat start
-                        console.log("Start chat with", anonymousUsername);
+                        // Close the modal first
+                        onClose?.();
+
+                        // Small delay to let modal close animation start
+                        setTimeout(() => {
+                          // Start a new chat with this user, including the plea ID
+                          router.push({
+                            pathname: "/message-thread",
+                            params: {
+                              threadId: "", // Empty for new threads
+                              threadName: anonymousUsername,
+                              otherUserId: encouragement.helperUid,
+                              pleaId: pleaId, // Pass the plea ID from props
+                              isNewThread: "true",
+                            },
+                          });
+                        }, 100); // 100ms delay for smooth transition
                       }}
                       activeOpacity={0.8}
                     >
@@ -161,7 +181,7 @@ export function EncouragementsList({
                           type="small"
                           style={{ color: colors.textSecondary }}
                         >
-                          user is open to chat
+                          {anonymousUsername} is open to chat. Start a chat now
                         </ThemedText>
                         <View
                           style={[
@@ -171,7 +191,7 @@ export function EncouragementsList({
                         >
                           <IconSymbol
                             name="square.and.pencil"
-                            size={20}
+                            size={16}
                             color={colors.white}
                           />
                         </View>
@@ -310,6 +330,7 @@ const styles = StyleSheet.create({
   // Chat invitation styles
   chatInvitation: {
     position: "relative",
+    marginTop: 12,
     marginBottom: -8,
     marginRight: -8,
   },
@@ -320,12 +341,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chatButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 100,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

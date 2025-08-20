@@ -3,62 +3,105 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import React from "react";
+import { useThreads } from "@/hooks/useThreads";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { MessageThreadsHeader } from "./MessageThreadsHeader";
+import { ThreadItem } from "./ThreadItem";
 
 export function MessageThreadsSection() {
   const theme = useColorScheme();
   const colors = Colors[theme ?? "dark"];
+  const { threads, loading, error } = useThreads();
+
+  // Timer for updating relative timestamps
+  const [now, setNow] = useState<Date>(() => new Date());
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.section}>
+        <MessageThreadsHeader colors={colors} threadsCount={0} loading={true} />
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="clock"
+            size={32}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            Loading your conversations...
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.section}>
+        <MessageThreadsHeader colors={colors} threadsCount={0} error={error} />
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="exclamationmark.triangle"
+            size={32}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            {error}
+          </ThemedText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.section}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View
-            style={[
-              styles.iconCircle,
-              { backgroundColor: colors.iconCircleBackground },
-            ]}
-          >
-            <IconSymbol name="message" size={20} color={colors.icon} />
-          </View>
-          <View style={styles.headerText}>
-            <ThemedText
-              type="title"
-              style={[styles.headerTitle, { color: colors.text }]}
-            >
-              Message Threads
-            </ThemedText>
-            <ThemedText
-              type="caption"
-              style={[styles.headerSubtitle, { color: colors.textSecondary }]}
-            >
-              Ongoing conversations
-            </ThemedText>
-          </View>
-        </View>
-      </View>
+      <MessageThreadsHeader colors={colors} threadsCount={threads.length} />
 
-      <View style={styles.comingSoonContainer}>
-        <IconSymbol
-          name="clock"
-          size={24}
-          color={colors.textSecondary}
-          style={styles.comingSoonIcon}
-        />
-        <ThemedText
-          type="captionMedium"
-          style={[styles.comingSoonText, { color: colors.textSecondary }]}
-        >
-          Coming Soon
-        </ThemedText>
-        <ThemedText
-          type="caption"
-          style={[styles.comingSoonSubtext, { color: colors.textSecondary }]}
-        >
-          Private conversations with people who are willing to chat
-        </ThemedText>
-      </View>
+      {threads.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="message"
+            size={32}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
+          >
+            No message threads yet
+          </ThemedText>
+          <ThemedText
+            type="caption"
+            style={[styles.emptySubtext, { color: colors.textSecondary }]}
+          >
+            When someone starts a chat with you, it will appear here
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.threadsList}>
+          {threads.map((thread) => (
+            <ThreadItem
+              key={thread.id}
+              thread={thread}
+              colors={colors}
+              now={now}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -67,52 +110,26 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  headerText: {
-    flex: 1,
-  },
-  headerTitle: {
-    lineHeight: 22,
-  },
-  headerSubtitle: {
-    marginTop: 1,
-    opacity: 0.8,
-  },
-  comingSoonContainer: {
+  emptyContainer: {
     alignItems: "center",
     paddingVertical: 32,
     paddingHorizontal: 24,
   },
-  comingSoonIcon: {
+  emptyIcon: {
     marginBottom: 12,
     opacity: 0.6,
   },
-  comingSoonText: {
+  emptyText: {
     textAlign: "center",
     marginBottom: 4,
     opacity: 0.8,
   },
-  comingSoonSubtext: {
+  emptySubtext: {
     textAlign: "center",
     opacity: 0.6,
     lineHeight: 18,
+  },
+  threadsList: {
+    gap: 8,
   },
 });
