@@ -1,6 +1,7 @@
 // components/messages/ThreadItem.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { ThreadWithMessages } from "@/hooks/useThreads";
 import { router } from "expo-router";
 import React from "react";
@@ -96,12 +97,15 @@ export function ThreadItem({ thread, colors, now }: ThreadItemProps) {
 
         <View style={styles.threadInfo}>
           <View style={styles.threadHeader}>
-            <ThemedText
-              type="bodyMedium"
-              style={[styles.threadName, { color: colors.text }]}
-            >
-              {thread.otherUserName}
-            </ThemedText>
+            <View style={styles.threadNameRow}>
+              <ThemedText
+                type="bodyMedium"
+                style={[styles.threadName, { color: colors.text }]}
+              >
+                {thread.otherUserName}
+              </ThemedText>
+              <UserStreakDisplay userId={thread.otherUserId} size="small" />
+            </View>
 
             <View style={styles.timeAndChevron}>
               <ThemedText
@@ -189,9 +193,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 4,
   },
-  threadName: {
+  threadNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     flex: 1,
     marginRight: 8,
+  },
+  threadName: {
+    // Removed flex: 1 and marginRight since it's now in threadNameRow
   },
   timeAndChevron: {
     flexDirection: "row",

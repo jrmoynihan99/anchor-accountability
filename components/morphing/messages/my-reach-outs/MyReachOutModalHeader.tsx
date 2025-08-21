@@ -199,7 +199,7 @@ function getTimeAgo(date: Date, now: Date): string {
     })
     .toLowerCase();
 
-  return `${month} ${day}, ${timeString}`;
+  return `${month} ${day} - ${timeString}`;
 }
 
 const styles = StyleSheet.create({

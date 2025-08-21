@@ -25,6 +25,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -194,78 +195,89 @@ export default function MessageThreadScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <View style={styles.loadingContainer}>
-          <ThemedText type="body" style={{ color: colors.textSecondary }}>
-            Loading conversation...
-          </ThemedText>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View
+          style={[styles.container, { backgroundColor: colors.background }]}
+        >
+          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <View style={styles.loadingContainer}>
+            <ThemedText type="body" style={{ color: colors.textSecondary }}>
+              Loading conversation...
+            </ThemedText>
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
-        <View style={styles.loadingContainer}>
-          <ThemedText type="body" style={{ color: colors.textSecondary }}>
-            Error: {error}
-          </ThemedText>
-          <TouchableOpacity
-            style={[styles.errorButton, { backgroundColor: colors.tint }]}
-            onPress={handleBack}
-          >
-            <ThemedText type="body" style={{ color: colors.white }}>
-              Go Back
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View
+          style={[styles.container, { backgroundColor: colors.background }]}
+        >
+          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <View style={styles.loadingContainer}>
+            <ThemedText type="body" style={{ color: colors.textSecondary }}>
+              Error: {error}
             </ThemedText>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.errorButton, { backgroundColor: colors.tint }]}
+              onPress={handleBack}
+            >
+              <ThemedText type="body" style={{ color: colors.white }}>
+                Go Back
+              </ThemedText>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar style={theme === "dark" ? "light" : "dark"} />
 
-      {/* Messages - Full screen behind everything with keyboard animation */}
-      <Animated.View style={[styles.content, animatedMessagesStyle]}>
-        <MessagesList
-          ref={scrollViewRef}
-          messages={messages}
-          currentUserId={currentUserId}
-          isNewThread={isNewThread}
+        {/* Messages - Full screen behind everything with keyboard animation */}
+        <Animated.View style={[styles.content, animatedMessagesStyle]}>
+          <MessagesList
+            ref={scrollViewRef}
+            messages={messages}
+            currentUserId={currentUserId}
+            isNewThread={isNewThread}
+            threadName={threadName}
+            colors={colors}
+            onContentSizeChange={handleContentSizeChange}
+          />
+        </Animated.View>
+
+        {/* Floating Header */}
+        <MessageThreadHeader
           threadName={threadName}
+          isTyping={isTyping}
           colors={colors}
-          onContentSizeChange={handleContentSizeChange}
-        />
-      </Animated.View>
-
-      {/* Floating Header */}
-      <MessageThreadHeader
-        threadName={threadName}
-        isTyping={isTyping}
-        colors={colors}
-        onBack={handleBack}
-        colorScheme={theme ?? "light"}
-      />
-
-      {/* Floating Input - with smooth native-like animation */}
-      <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
-        <MessageInput
-          ref={inputRef}
-          inputText={inputText}
-          onInputChange={setInputText}
-          onSend={handleSendMessage}
-          onFocus={handleInputFocus}
-          colors={colors}
-          disabled={sending}
+          onBack={handleBack}
           colorScheme={theme ?? "light"}
+          otherUserId={otherUserId}
         />
-      </Animated.View>
-    </View>
+
+        {/* Floating Input - with smooth native-like animation */}
+        <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
+          <MessageInput
+            ref={inputRef}
+            inputText={inputText}
+            onInputChange={setInputText}
+            onSend={handleSendMessage}
+            onFocus={handleInputFocus}
+            colors={colors}
+            disabled={sending}
+            colorScheme={theme ?? "light"}
+          />
+        </Animated.View>
+      </View>
+    </GestureHandlerRootView>
   );
 }
 

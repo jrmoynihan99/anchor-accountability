@@ -1,10 +1,14 @@
-// components/messages/MessageThreadHeader.tsx
+// components/messages/chat/MessageThreadHeader.tsx
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { BlurView } from "expo-blur";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { InfoButton } from "../../morphing/messages/message-thread-info/InfoButton";
+import { ThreadInfoModal } from "../../morphing/messages/message-thread-info/InfoModal";
 import { ThreadHeaderProps } from "./types";
 
 export function MessageThreadHeader({
@@ -13,7 +17,11 @@ export function MessageThreadHeader({
   colors,
   onBack,
   colorScheme = "light",
-}: ThreadHeaderProps & { colorScheme?: "light" | "dark" }) {
+  otherUserId, // Add this prop to pass to the modal
+}: ThreadHeaderProps & {
+  colorScheme?: "light" | "dark";
+  otherUserId?: string;
+}) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -63,9 +71,14 @@ export function MessageThreadHeader({
               </ThemedText>
             </View>
             <View style={styles.headerText}>
-              <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-                {threadName || "Anonymous User"}
-              </ThemedText>
+              <View style={styles.usernameRow}>
+                <ThemedText type="bodyMedium" style={{ color: colors.text }}>
+                  {threadName || "Anonymous User"}
+                </ThemedText>
+                {otherUserId && (
+                  <UserStreakDisplay userId={otherUserId} size="small" />
+                )}
+              </View>
               {isTyping && (
                 <ThemedText
                   type="caption"
@@ -77,13 +90,45 @@ export function MessageThreadHeader({
             </View>
           </View>
 
-          <TouchableOpacity style={styles.headerAction} activeOpacity={0.7}>
-            <IconSymbol
-              name="info.circle"
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          {/* Info button with modal transition */}
+          <ButtonModalTransitionBridge
+            buttonBorderRadius={16}
+            modalBorderRadius={28}
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.7}
+            buttonFadeThreshold={0.01}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => (
+              <>
+                <InfoButton
+                  colors={colors}
+                  onPress={open}
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <ThreadInfoModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                  threadName={threadName || "Anonymous User"}
+                  otherUserId={otherUserId || ""}
+                />
+              </>
+            )}
+          </ButtonModalTransitionBridge>
         </View>
       </BlurView>
     </View>
@@ -128,8 +173,9 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
   },
-  headerAction: {
-    padding: 4,
-    marginLeft: 8,
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 });

@@ -130,6 +130,22 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="plea-view-all"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+            presentation: "card",
+          }}
+        />
+        <Stack.Screen
+          name="my-reachouts-all"
+          options={{
+            headerShown: false,
+            animation: "slide_from_right",
+            presentation: "card",
+          }}
+        />
+        <Stack.Screen
           name="modal"
           options={{
             presentation: "modal",

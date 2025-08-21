@@ -14,11 +14,13 @@ export interface MessageDisplayProps {
   colors: any;
 }
 
+// components/messages/chat/types.ts
 export interface ThreadHeaderProps {
-  threadName: string;
-  isTyping: boolean;
+  threadName?: string;
+  isTyping?: boolean;
   colors: any;
   onBack: () => void;
+  otherUserId?: string; // Add this line
 }
 
 export interface MessageInputProps {

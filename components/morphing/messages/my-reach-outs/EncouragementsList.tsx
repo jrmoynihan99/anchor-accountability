@@ -1,6 +1,7 @@
 // components/messages/EncouragementsList.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -127,12 +128,18 @@ export function EncouragementsList({
                       </ThemedText>
                     </View>
                     <View style={styles.encouragementMeta}>
-                      <ThemedText
-                        type="bodyMedium"
-                        style={{ color: colors.text }}
-                      >
-                        {anonymousUsername}
-                      </ThemedText>
+                      <View style={styles.usernameRow}>
+                        <ThemedText
+                          type="bodyMedium"
+                          style={{ color: colors.text }}
+                        >
+                          {anonymousUsername}
+                        </ThemedText>
+                        <UserStreakDisplay
+                          userId={encouragement.helperUid}
+                          size="small"
+                        />
+                      </View>
                       <ThemedText
                         type="caption"
                         style={[
@@ -181,7 +188,7 @@ export function EncouragementsList({
                           type="small"
                           style={{ color: colors.textSecondary }}
                         >
-                          {anonymousUsername} is open to chat. Start a chat now
+                          Start a chat now
                         </ThemedText>
                         <View
                           style={[
@@ -191,7 +198,7 @@ export function EncouragementsList({
                         >
                           <IconSymbol
                             name="square.and.pencil"
-                            size={16}
+                            size={20}
                             color={colors.white}
                           />
                         </View>
@@ -266,7 +273,7 @@ function getTimeAgo(date: Date, now: Date): string {
     })
     .toLowerCase();
 
-  return `${month} ${day}, ${timeString}`;
+  return `${month} ${day} - ${timeString}`;
 }
 
 const styles = StyleSheet.create({
@@ -323,6 +330,11 @@ const styles = StyleSheet.create({
   encouragementMeta: {
     flex: 1,
   },
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   encouragementTime: {
     marginTop: 1,
   },
@@ -341,9 +353,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chatButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     shadowOffset: { width: 0, height: 2 },

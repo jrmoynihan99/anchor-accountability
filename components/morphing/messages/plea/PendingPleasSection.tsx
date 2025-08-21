@@ -5,6 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { usePendingPleas } from "@/hooks/usePendingPleas";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -38,9 +39,7 @@ export function PendingPleasSection() {
 
   const handleViewAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Navigate to pending pleas screen
-    console.log("Navigate to full pending pleas screen");
-    // router.push("/pending-pleas");
+    router.push("/plea-view-all");
   };
 
   if (loading) {

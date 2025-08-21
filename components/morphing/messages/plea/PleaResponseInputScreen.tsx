@@ -2,6 +2,7 @@
 import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import React from "react";
@@ -82,12 +83,15 @@ export function PleaResponseInputScreen({
               </ThemedText>
             </View>
             <View style={styles.userDetails}>
-              <ThemedText
-                type="subtitleSemibold"
-                style={{ color: colors.text }}
-              >
-                {anonymousUsername}
-              </ThemedText>
+              <View style={styles.usernameRow}>
+                <ThemedText
+                  type="subtitleSemibold"
+                  style={{ color: colors.text }}
+                >
+                  {anonymousUsername}
+                </ThemedText>
+                <UserStreakDisplay userId={plea.uid} size="small" />
+              </View>
               <View style={styles.metaInfo}>
                 <ThemedText
                   type="caption"
@@ -296,6 +300,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   userDetails: { flex: 1 },
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   metaInfo: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   dot: {
     width: 3,

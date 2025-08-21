@@ -5,6 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -36,9 +37,7 @@ export function MyReachOutsSection() {
 
   const handleViewAll = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Navigate to full my reach outs screen
-    console.log("Navigate to full my reach outs screen");
-    // router.push("/my-reach-outs");
+    router.push("/my-reachouts-all");
   };
 
   if (loading) {

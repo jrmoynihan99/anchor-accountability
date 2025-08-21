@@ -29,6 +29,7 @@ export interface ButtonModalTransitionBridgeProps {
   modalHeightPercent?: number;
   modalBorderRadius?: number;
   buttonBorderRadius?: number;
+  buttonFadeThreshold?: number; // New prop for custom fade-in timing
 }
 
 export function ButtonModalTransitionBridge({
@@ -37,6 +38,7 @@ export function ButtonModalTransitionBridge({
   modalHeightPercent = 0.7,
   modalBorderRadius = 28,
   buttonBorderRadius = 20,
+  buttonFadeThreshold = 0.1, // Default to 0.1 (10%)
 }: ButtonModalTransitionBridgeProps) {
   // --- State & refs ---
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -180,7 +182,12 @@ export function ButtonModalTransitionBridge({
   const targetTop = (screenHeight - targetHeight) / 2;
 
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.1], [1, 0], "clamp"),
+    opacity: interpolate(
+      progress.value,
+      [0, buttonFadeThreshold],
+      [1, 0],
+      "clamp"
+    ),
     transform: [{ scale: pressScale.value }],
   }));
 
