@@ -1,7 +1,6 @@
 // GuidedPrayerModal.tsx - Updated to fetch dynamic reflection content
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { doc, getDoc } from "firebase/firestore";
@@ -27,8 +26,7 @@ export function GuidedPrayerModal({
   modalAnimatedStyle,
   close,
 }: GuidedPrayerModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
   const [currentStep, setCurrentStep] = useState<PrayerStep>("intro");
   const [isTimerActive, setIsTimerActive] = useState(false);
@@ -174,7 +172,7 @@ export function GuidedPrayerModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonContent={buttonContent}
     >

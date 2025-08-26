@@ -1,14 +1,12 @@
 // components/IntroHeader.tsx
+import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { ThemedText } from "../../../components/ThemedText";
-import { Colors } from "../../../constants/Colors";
-import { useColorScheme } from "../../../hooks/useColorScheme";
 
 export function IntroHeader() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   return (
     <View style={styles.header}>

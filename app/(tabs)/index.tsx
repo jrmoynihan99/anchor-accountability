@@ -10,8 +10,7 @@ import {
   VerseCarousel,
   VerseCarouselRef,
 } from "@/components/morphing/home/verse/VerseCarousel";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { savePushTokenToFirestore } from "@/hooks/usePushNotifications";
 import { useStreakData } from "@/hooks/useStreakData";
 import { auth } from "@/lib/firebase";
@@ -21,8 +20,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
-  const theme = useColorScheme();
-  const bgColor = Colors[theme ?? "dark"].background;
+  const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const { streakData, updateStreakStatus } = useStreakData();
@@ -101,8 +99,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: bgColor }]}>
-      <StatusBar style={theme === "dark" ? "light" : "dark"} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[

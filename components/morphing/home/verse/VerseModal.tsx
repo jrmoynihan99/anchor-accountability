@@ -1,7 +1,6 @@
 // ✅ VerseModal.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -46,8 +45,7 @@ export function VerseModal({
   bibleVersion,
   initialView = "verse",
 }: VerseModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
   const [currentView, setCurrentView] = useState<ModalView>(initialView);
 
   useEffect(() => {
@@ -122,7 +120,7 @@ export function VerseModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.15]}

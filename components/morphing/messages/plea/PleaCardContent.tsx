@@ -2,8 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { PleaData } from "./PleaCard";
@@ -14,8 +13,7 @@ interface PleaCardContentProps {
 }
 
 export function PleaCardContent({ plea, now }: PleaCardContentProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   // Generate anonymous username from UID
   const anonymousUsername = `user-${plea.uid.substring(0, 5)}`;

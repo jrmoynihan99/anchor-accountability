@@ -1,20 +1,18 @@
 // components/IntroContinueButton.tsx
+import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "../../../components/ThemedText";
-import { Colors } from "../../../constants/Colors";
-import { useColorScheme } from "../../../hooks/useColorScheme";
 
 interface IntroContinueButtonProps {
   onPress: () => void;
 }
 
 export function IntroContinueButton({ onPress }: IntroContinueButtonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

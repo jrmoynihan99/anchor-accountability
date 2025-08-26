@@ -1,8 +1,7 @@
 // components/messages/PendingPleasSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { usePendingPleas } from "@/hooks/usePendingPleas";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -18,11 +17,10 @@ import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { PleaCard } from "./PleaCard";
 import { PleaResponseModal } from "./PleaResponseModal";
 
-const PREVIEW_LIMIT = 3;
+const PREVIEW_LIMIT = 4;
 
 export function PendingPleasSection() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
   const { pendingPleas, loading, error } = usePendingPleas();
 
   // Add a single timer here
@@ -44,7 +42,7 @@ export function PendingPleasSection() {
 
   if (loading) {
     return (
-      <View style={styles.sectionCard}>
+      <View style={styles.sectionContainer}>
         <SectionHeader colors={colors} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.textSecondary} />
@@ -61,7 +59,7 @@ export function PendingPleasSection() {
 
   if (error) {
     return (
-      <View style={styles.sectionCard}>
+      <View style={styles.sectionContainer}>
         <SectionHeader colors={colors} />
         <View style={styles.emptyContainer}>
           <IconSymbol
@@ -87,7 +85,6 @@ export function PendingPleasSection() {
       a.encouragementCount === 0 && getHoursAgo(a.createdAt, now) > 2;
     const bIsUrgent =
       b.encouragementCount === 0 && getHoursAgo(b.createdAt, now) > 2;
-    // Use Number(...) to compare booleans numerically
     if (aIsUrgent !== bIsUrgent) return Number(bIsUrgent) - Number(aIsUrgent); // Urgent (red) at bottom
     if (a.encouragementCount !== b.encouragementCount)
       return a.encouragementCount - b.encouragementCount;
@@ -98,15 +95,7 @@ export function PendingPleasSection() {
   const hasMorePleas = pendingPleas.length > PREVIEW_LIMIT;
 
   return (
-    <View
-      style={[
-        styles.sectionCard,
-        {
-          backgroundColor: colors.cardBackground,
-          shadowColor: colors.shadow,
-        },
-      ]}
-    >
+    <View style={styles.sectionContainer}>
       <SectionHeader colors={colors} totalCount={pendingPleas.length} />
 
       {pendingPleas.length === 0 ? (
@@ -142,7 +131,7 @@ export function PendingPleasSection() {
                 <ButtonModalTransitionBridge
                   buttonBorderRadius={16}
                   modalBorderRadius={28}
-                  modalWidthPercent={0.95} // 95% of screen width (wider)
+                  modalWidthPercent={0.95}
                   modalHeightPercent={0.7}
                 >
                   {({
@@ -260,21 +249,19 @@ function SectionHeader({
   );
 }
 
+// --- Flat, no card, no background, no shadow styles ---
 const styles = StyleSheet.create({
-  sectionCard: {
-    padding: 20,
-    borderRadius: 20,
+  sectionContainer: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     marginBottom: 32,
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 5,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 4,
   },
   headerLeft: {
     flexDirection: "row",
@@ -338,6 +325,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     justifyContent: "center",
     marginTop: 16,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
   },
   viewAllText: {},
 });

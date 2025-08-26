@@ -4,7 +4,10 @@ require("dotenv").config();
 const { setGlobalOptions } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/https");
 const { onSchedule } = require("firebase-functions/scheduler");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+} = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
 const admin = require("firebase-admin");
@@ -431,68 +434,394 @@ exports.generateDailyContentScheduled = onSchedule(
   }
 );
 
+// --- HELP NOTIFICATIONS --- //
+
+// When a plea is created and immediately approved
 exports.sendHelpNotification = onDocumentCreated(
   "pleas/{pleaId}",
   async (event) => {
     const snap = event.data;
     const plea = snap?.data();
-    const { message, uid } = plea || {};
 
-    try {
-      const usersSnap = await admin
-        .firestore()
-        .collection("users")
-        .where("wantsToHelp", "==", true)
-        .get();
+    // Only notify for approved pleas
+    if (!plea || plea.status !== "approved") return;
 
-      const tokens = [];
+    await sendHelpNotificationToHelpers(plea, snap.id);
+  }
+);
 
-      usersSnap.forEach((doc) => {
-        const data = doc.data();
-        if (
-          data.expoPushToken &&
-          typeof data.expoPushToken === "string" &&
-          data.expoPushToken.startsWith("ExponentPushToken")
-        ) {
-          tokens.push(data.expoPushToken);
-        }
-      });
+// When a plea's status changes to approved
+exports.sendHelpNotificationOnApprove = onDocumentUpdated(
+  "pleas/{pleaId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
 
-      if (tokens.length === 0) {
-        console.log("No users opted in for notifications.");
-        return;
-      }
-
-      const notifications = tokens.map((token) => ({
-        to: token,
-        sound: "default",
-        title: "Someone is struggling",
-        body: message?.length
-          ? `They wrote: "${message.slice(0, 100)}"`
-          : "They need encouragement. Tap to respond.",
-        data: {
-          pleaId: snap.id,
-        },
-      }));
-
-      const batchSize = 100;
-      for (let i = 0; i < notifications.length; i += batchSize) {
-        const chunk = notifications.slice(i, i + batchSize);
-        const res = await axios.post(
-          "https://exp.host/--/api/v2/push/send",
-          chunk,
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
-      }
-
-      console.log(`✅ Notifications sent to ${tokens.length} helpers.`);
-    } catch (err) {
-      console.error("❌ Failed to send notifications:", err);
+    if (before.status !== "approved" && after.status === "approved") {
+      await sendHelpNotificationToHelpers(after, event.params.pleaId);
     }
   }
 );
+
+// Helper function (use for both triggers) - UPDATE THIS
+async function sendHelpNotificationToHelpers(plea, pleaId) {
+  const { message, uid } = plea || {};
+
+  try {
+    // Only users who opted in for plea notifications
+    const usersSnap = await admin
+      .firestore()
+      .collection("users")
+      .where("notificationPreferences.pleas", "==", true)
+      .get();
+
+    const tokens = [];
+
+    usersSnap.forEach((doc) => {
+      const data = doc.data();
+      if (
+        data.expoPushToken &&
+        typeof data.expoPushToken === "string" &&
+        data.expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        // Don't notify the sender of the plea
+        if (data.uid && data.uid === uid) return;
+        tokens.push(data.expoPushToken);
+      }
+    });
+
+    if (tokens.length === 0) {
+      console.log("No users opted in for plea notifications.");
+      return;
+    }
+
+    const notifications = tokens.map((token) => ({
+      to: token,
+      sound: "default",
+      title: "Someone is struggling",
+      body: message?.length
+        ? `They wrote: "${message.slice(0, 100)}"`
+        : "They need encouragement. Tap to respond.",
+      data: {
+        pleaId,
+        type: "plea", // 👈 ADD THIS FLAG
+      },
+    }));
+
+    // Send in batches of 100
+    const batchSize = 100;
+    for (let i = 0; i < notifications.length; i += batchSize) {
+      const chunk = notifications.slice(i, i + batchSize);
+      const res = await axios.post(
+        "https://exp.host/--/api/v2/push/send",
+        chunk,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
+    }
+
+    console.log(`✅ Notifications sent to ${tokens.length} helpers.`);
+  } catch (err) {
+    console.error("❌ Failed to send plea notifications:", err);
+  }
+}
+
+// --- ENCOURAGEMENT NOTIFICATIONS --- //
+
+// When an encouragement is created and immediately approved
+exports.sendEncouragementNotification = onDocumentCreated(
+  "pleas/{pleaId}/encouragements/{encId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const encouragement = snap.data();
+
+    // Only notify for approved encouragements
+    if (encouragement.status !== "approved") return;
+
+    // 👈 ADD THIS: Increment unread count
+    await snap.ref.parent.parent.update({
+      unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
+    });
+
+    await sendEncouragementNotificationToPleaOwner(
+      snap.ref.parent.parent, // pleaRef
+      encouragement
+    );
+  }
+);
+
+// When an encouragement's status changes to approved
+exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
+  "pleas/{pleaId}/encouragements/{encId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    if (before.status !== "approved" && after.status === "approved") {
+      // 👈 ADD THIS: Increment unread count
+      await event.data.after.ref.parent.parent.update({
+        unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
+      });
+
+      // "pleaRef" is 2 levels up from encouragement doc
+      await sendEncouragementNotificationToPleaOwner(
+        event.data.after.ref.parent.parent,
+        after
+      );
+    }
+  }
+);
+
+// Helper function for encouragement notifications - UPDATE THIS
+async function sendEncouragementNotificationToPleaOwner(
+  pleaRef,
+  encouragement
+) {
+  // Find the parent plea
+  const pleaDoc = await pleaRef.get();
+  if (!pleaDoc.exists) return;
+  const plea = pleaDoc.data();
+
+  // Don't notify the sender of the encouragement
+  if (plea.uid === encouragement.helperUid) return;
+
+  // Fetch the user who created the plea
+  const userDoc = await admin
+    .firestore()
+    .collection("users")
+    .doc(plea.uid)
+    .get();
+  const user = userDoc.data();
+
+  // Only notify if they want encouragement notifications and have a token
+  if (user?.expoPushToken && user?.notificationPreferences?.encouragements) {
+    const notification = {
+      to: user.expoPushToken,
+      sound: "default",
+      title: "Someone encouraged you!",
+      body: encouragement.message?.length
+        ? `"${encouragement.message.slice(0, 100)}"`
+        : "Someone sent encouragement. Tap to view.",
+      data: {
+        pleaId: pleaRef.id,
+        type: "encouragement", // 👈 ADD THIS FLAG
+      },
+    };
+
+    try {
+      await axios.post("https://exp.host/--/api/v2/push/send", [notification], {
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log(
+        `✅ Encouragement notification sent to ${user.expoPushToken}`
+      );
+    } catch (err) {
+      console.error("❌ Failed to send encouragement notification:", err);
+    }
+  }
+}
+
+// This triggers on every new message in a thread
+exports.sendMessageNotification = onDocumentCreated(
+  "threads/{threadId}/messages/{messageId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const message = snap.data();
+    const { senderUid, text } = message;
+    const { threadId } = event.params;
+
+    // Fetch the thread to find participants
+    const threadDoc = await admin
+      .firestore()
+      .collection("threads")
+      .doc(threadId)
+      .get();
+    if (!threadDoc.exists) return;
+
+    const thread = threadDoc.data();
+    const userA = thread.userA;
+    const userB = thread.userB;
+
+    // Find recipient(s)
+    const recipients = [userA, userB].filter((uid) => uid !== senderUid);
+
+    // For each recipient, check notification preferences
+    for (const recipientUid of recipients) {
+      const userDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(recipientUid)
+        .get();
+      if (!userDoc.exists) continue;
+
+      const userData = userDoc.data();
+      // Default to true if not set (optional: up to you)
+      const wantsMessages = userData.notificationPreferences?.messages ?? true;
+      const expoPushToken = userData.expoPushToken;
+
+      if (
+        wantsMessages &&
+        expoPushToken &&
+        expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        // Send push notification
+        try {
+          await axios.post(
+            "https://exp.host/--/api/v2/push/send",
+            [
+              {
+                to: expoPushToken,
+                sound: "default",
+                title: "New Message",
+                body:
+                  text && text.length
+                    ? text.slice(0, 100)
+                    : "You have a new message.",
+                data: {
+                  threadId,
+                  messageId: snap.id,
+                },
+              },
+            ],
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+          console.log(`✅ Sent message notification to ${recipientUid}`);
+        } catch (err) {
+          console.error(
+            `❌ Failed to send notification to ${recipientUid}:`,
+            err
+          );
+        }
+      }
+    }
+  }
+);
+
+exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const plea = snap.data();
+  const message = (plea?.message || "").trim();
+
+  // If message/context is blank, auto-approve
+  if (!message) {
+    await snap.ref.update({ status: "approved" });
+    logger.info(`Plea ${snap.id} has empty context, auto-approved.`);
+    return;
+  }
+
+  // 1. OpenAI Moderation API
+  let flagged = false;
+  try {
+    const modResult = await openai.moderations.create({ input: message });
+    flagged = modResult.results[0].flagged;
+  } catch (e) {
+    logger.error("OpenAI Moderation API failed, skipping to GPT fallback.", e);
+  }
+
+  // 2. GPT moderation with Firestore prompt
+  let gptFlagged = false;
+  if (!flagged) {
+    try {
+      const filteringPrompt = await getFilteringPrompt("plea");
+      const promptText = filteringPrompt.replace("{message}", message);
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 3,
+      });
+      const result = gptCheck.choices[0].message.content.trim();
+      gptFlagged = result !== "ALLOW";
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+    }
+  }
+
+  const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+  logger.info(`Moderation result for plea ${snap.id}: ${newStatus}`);
+
+  await snap.ref.update({
+    status: newStatus,
+    unreadEncouragementCount: 0, // 👈 Add this line
+  });
+});
+
+exports.moderateEncouragement = onDocumentCreated(
+  "pleas/{pleaId}/encouragements/{encId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const encouragement = snap.data();
+    const message = (encouragement?.message || "").trim();
+
+    // If blank, auto-reject
+    if (!message) {
+      await snap.ref.update({ status: "rejected" });
+      logger.info(`Encouragement ${snap.id} was blank, auto-rejected.`);
+      return;
+    }
+
+    // 1. OpenAI Moderation API
+    let flagged = false;
+    try {
+      const modResult = await openai.moderations.create({ input: message });
+      flagged = modResult.results[0].flagged;
+    } catch (e) {
+      logger.error(
+        "OpenAI Moderation API failed, skipping to GPT fallback.",
+        e
+      );
+    }
+
+    // 2. GPT moderation with Firestore prompt
+    let gptFlagged = false;
+    if (!flagged) {
+      try {
+        const filteringPrompt = await getFilteringPrompt("encouragement");
+        const promptText = filteringPrompt.replace("{message}", message);
+        const gptCheck = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "system", content: promptText }],
+          temperature: 0,
+          max_tokens: 3,
+        });
+        const result = gptCheck.choices[0].message.content.trim();
+        gptFlagged = result !== "ALLOW";
+      } catch (err) {
+        logger.error("GPT moderation failed:", err);
+        gptFlagged = true;
+      }
+    }
+
+    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for encouragement ${snap.id}: ${newStatus}`);
+
+    await snap.ref.update({ status: newStatus });
+  }
+);
+
+async function getFilteringPrompt(type = "plea") {
+  const docId =
+    type === "plea" ? "pleaFilteringPrompt" : "encouragementFilteringPrompt";
+  try {
+    const doc = await admin.firestore().collection("config").doc(docId).get();
+    if (doc.exists) {
+      return doc.data().prompt;
+    }
+  } catch (error) {
+    logger.error(`Error fetching ${docId} from Firestore:`, error);
+  }
+  // Fallback
+  return type === "plea"
+    ? "You are an expert moderator for a Christian accountability support app. Block inappropriate context. Only reply ALLOW or BLOCK. {message}"
+    : "You are an expert moderator for a Christian encouragement system. Only reply ALLOW or BLOCK. {message}";
+}

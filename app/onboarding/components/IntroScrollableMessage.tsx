@@ -1,15 +1,13 @@
 // components/IntroScrollableMessage.tsx
+import { useTheme } from "@/hooks/ThemeContext";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { ThemedText } from "../../../components/ThemedText";
-import { Colors } from "../../../constants/Colors";
-import { useColorScheme } from "../../../hooks/useColorScheme";
 
 export function IntroScrollableMessage() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const messageText = [
     "I'm someone who struggled with porn addiction for years. I know the shame, the isolation, and the cycle that feels impossible to break.",

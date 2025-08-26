@@ -1,5 +1,4 @@
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { StreakCardContent } from "./StreakCardContent";
@@ -27,8 +26,7 @@ export function StreakCard({
   onPressIn,
   onPressOut,
 }: StreakCardProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   // If we have modal bridge props, make it touchable
   if (onPress && buttonRef) {

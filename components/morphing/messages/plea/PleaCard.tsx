@@ -1,6 +1,5 @@
 // components/messages/PleaCard.tsx
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -36,8 +35,7 @@ export function PleaCard({
   onPressIn,
   onPressOut,
 }: PleaCardProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const handlePress = () => {
     onPress();
@@ -60,7 +58,7 @@ export function PleaCard({
         style={[
           styles.card,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.cardBackground,
             borderColor: isUrgent ? colors.error : "transparent",
             shadowColor: colors.shadow,
           },
@@ -81,13 +79,13 @@ function getHoursAgo(date: Date, now: Date): number {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
+    padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 5,
     position: "relative",
   },
   urgentCard: {

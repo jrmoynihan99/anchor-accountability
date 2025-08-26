@@ -189,3 +189,22 @@ export async function markMessagesAsRead(threadId: string): Promise<void> {
     }
   }
 }
+
+// Mark encouragements as read for a plea
+export async function markEncouragementAsRead(pleaId: string): Promise<void> {
+  const currentUserId = auth.currentUser?.uid;
+  if (!currentUserId) throw new Error("User not authenticated");
+
+  const pleaRef = doc(db, "pleas", pleaId);
+
+  try {
+    // Reset unread count to 0 (similar to how markMessagesAsRead works)
+    await updateDoc(pleaRef, {
+      unreadEncouragementCount: 0,
+    });
+    console.log(`✅ Marked encouragements as read for plea ${pleaId}`);
+  } catch (error) {
+    console.error("❌ Error marking encouragements as read:", error);
+    throw error;
+  }
+}

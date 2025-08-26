@@ -1,10 +1,10 @@
 // components/messages/OpenToChatToggle.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
-import { StyleSheet, Switch, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 interface OpenToChatToggleProps {
   isOpen: boolean;
@@ -17,8 +17,7 @@ export function OpenToChatToggle({
   onToggle,
   user,
 }: OpenToChatToggleProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
@@ -62,16 +61,7 @@ export function OpenToChatToggle({
             )}
           </View>
         </View>
-        <Switch
-          value={isOpen}
-          onValueChange={onToggle}
-          trackColor={{
-            false: colors.textSecondary + "40", // 25% opacity
-            true: colors.tint + "80", // 50% opacity
-          }}
-          thumbColor={isOpen ? colors.tint : colors.textSecondary}
-          ios_backgroundColor={colors.textSecondary + "40"}
-        />
+        <ThemedToggle value={isOpen} onValueChange={onToggle} />
       </View>
     </View>
   );

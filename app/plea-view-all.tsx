@@ -4,13 +4,12 @@ import { PleaCard } from "@/components/morphing/messages/plea/PleaCard";
 import { PleaResponseModal } from "@/components/morphing/messages/plea/PleaResponseModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { usePendingPleas } from "@/hooks/usePendingPleas";
 import { BlurView } from "expo-blur";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -25,10 +24,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const MAX_PLEAS = 20; // Show latest 20 pleas
 
 export default function PleaViewAllScreen() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const { pendingPleas, loading, error } = usePendingPleas();
+
+  // Get the pleaId from navigation params for notification deep linking
+  const { openPleaId } = useLocalSearchParams<{ openPleaId?: string }>();
 
   // Timer for live updates
   const [now, setNow] = useState(() => new Date());
@@ -41,6 +42,26 @@ export default function PleaViewAllScreen() {
   const [selectedPleaId, setSelectedPleaId] = useState<string | null>(null);
   const selectedPlea =
     pendingPleas.find((p) => p.id === selectedPleaId) || null;
+
+  // Store refs to modal controls for each plea
+  const modalRefs = useRef<{ [key: string]: { open: () => void } }>({});
+
+  // Auto-open modal if openPleaId is provided (from notification)
+  useEffect(() => {
+    if (openPleaId && pendingPleas.length > 0 && !loading) {
+      const targetPlea = pendingPleas.find((p) => p.id === openPleaId);
+      if (targetPlea) {
+        // Small delay to ensure the screen is fully rendered
+        setTimeout(() => {
+          setSelectedPleaId(openPleaId);
+          // Trigger the modal open using the stored ref
+          if (modalRefs.current[openPleaId]) {
+            modalRefs.current[openPleaId].open();
+          }
+        }, 500);
+      }
+    }
+  }, [openPleaId, pendingPleas, loading]);
 
   const handleBack = () => {
     router.back();
@@ -63,13 +84,13 @@ export default function PleaViewAllScreen() {
   return (
     <GestureHandlerRootView style={styles.gestureRoot}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
 
         {/* Header with blur effect */}
         <View style={styles.headerContainer}>
           <BlurView
             intensity={80}
-            tint={theme === "dark" ? "dark" : "light"}
+            tint={effectiveTheme === "dark" ? "dark" : "light"}
             style={styles.blurContainer}
           >
             {/* Status bar spacer */}
@@ -217,31 +238,36 @@ export default function PleaViewAllScreen() {
                       buttonRef,
                       handlePressIn,
                       handlePressOut,
-                    }) => (
-                      <>
-                        <PleaCard
-                          plea={plea}
-                          now={now}
-                          index={index}
-                          buttonRef={buttonRef}
-                          style={buttonAnimatedStyle}
-                          onPress={() => {
-                            setSelectedPleaId(plea.id);
-                            open();
-                          }}
-                          onPressIn={handlePressIn}
-                          onPressOut={handlePressOut}
-                        />
-                        <PleaResponseModal
-                          isVisible={isModalVisible}
-                          progress={progress}
-                          modalAnimatedStyle={modalAnimatedStyle}
-                          close={close}
-                          plea={selectedPlea}
-                          now={now}
-                        />
-                      </>
-                    )}
+                    }) => {
+                      // Store the open function for this plea for notification deep linking
+                      modalRefs.current[plea.id] = { open };
+
+                      return (
+                        <>
+                          <PleaCard
+                            plea={plea}
+                            now={now}
+                            index={index}
+                            buttonRef={buttonRef}
+                            style={buttonAnimatedStyle}
+                            onPress={() => {
+                              setSelectedPleaId(plea.id);
+                              open();
+                            }}
+                            onPressIn={handlePressIn}
+                            onPressOut={handlePressOut}
+                          />
+                          <PleaResponseModal
+                            isVisible={isModalVisible}
+                            progress={progress}
+                            modalAnimatedStyle={modalAnimatedStyle}
+                            close={close}
+                            plea={selectedPlea}
+                            now={now}
+                          />
+                        </>
+                      );
+                    }}
                   </ButtonModalTransitionBridge>
                 </Animated.View>
               ))}

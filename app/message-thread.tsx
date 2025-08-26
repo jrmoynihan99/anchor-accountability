@@ -1,19 +1,20 @@
-// app/message-thread.tsx
+// app/message-thread.tsx - Updated to handle notification deep linking
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import {
   auth,
   createThread,
+  db,
   markMessagesAsRead,
   sendMessage,
 } from "@/lib/firebase";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -34,15 +35,15 @@ import Animated, {
 } from "react-native-reanimated";
 
 export default function MessageThreadScreen() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
   const params = useLocalSearchParams();
 
   // Get thread info from params
   const threadId = params.threadId as string;
   const threadName = params.threadName as string;
   const otherUserId = params.otherUserId as string;
-  const pleaId = params.pleaId as string; // Add this line to get pleaId
+  const pleaId = params.pleaId as string;
+  const messageId = params.messageId as string; // For potential scrolling to specific message
   const isNewThread = params.isNewThread === "true";
 
   const [inputText, setInputText] = useState("");
@@ -51,12 +52,79 @@ export default function MessageThreadScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
 
+  // State for fetched thread data when coming from notification
+  const [fetchedThreadName, setFetchedThreadName] = useState<string>("");
+  const [fetchedOtherUserId, setFetchedOtherUserId] = useState<string>("");
+  const [loadingThreadData, setLoadingThreadData] = useState(false);
+
   const { messages, loading, error } = useThreadMessages(actualThreadId);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
   // Animated values for keyboard
   const keyboardHeight = useSharedValue(0);
+
+  // Fetch missing thread data if coming from notification
+  useEffect(() => {
+    const fetchThreadData = async () => {
+      // If we have threadName and otherUserId, no need to fetch
+      if (threadName && otherUserId) return;
+
+      // If we don't have threadId, can't fetch
+      if (!threadId || !currentUserId) return;
+
+      setLoadingThreadData(true);
+      try {
+        const threadDoc = await getDoc(doc(db, "threads", threadId));
+        if (threadDoc.exists()) {
+          const threadData = threadDoc.data();
+
+          // Determine which user is the "other" user
+          const otherUserIdFromThread =
+            threadData.userA === currentUserId
+              ? threadData.userB
+              : threadData.userA;
+
+          setFetchedOtherUserId(otherUserIdFromThread);
+
+          // Fetch other user's display name
+          const userDoc = await getDoc(doc(db, "users", otherUserIdFromThread));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setFetchedThreadName(
+              userData.displayName ||
+                `user-${otherUserIdFromThread.substring(0, 5)}`
+            );
+          } else {
+            setFetchedThreadName(
+              `user-${otherUserIdFromThread.substring(0, 5)}`
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch thread data:", error);
+      } finally {
+        setLoadingThreadData(false);
+      }
+    };
+
+    fetchThreadData();
+  }, [threadId, threadName, otherUserId, currentUserId]);
+
+  // Scroll to specific message if messageId is provided (future enhancement)
+  useEffect(() => {
+    if (messageId && messages.length > 0) {
+      // TODO: Implement scrolling to specific message
+      // For now, just scroll to bottom
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 500);
+    }
+  }, [messageId, messages]);
+
+  // Use fetched data as fallback
+  const displayThreadName = threadName || fetchedThreadName || "Unknown User";
+  const displayOtherUserId = otherUserId || fetchedOtherUserId;
 
   // Keyboard event listeners with native iOS timing
   useEffect(() => {
@@ -66,11 +134,10 @@ export default function MessageThreadScreen() {
         const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
         keyboardHeight.value = withTiming(event.endCoordinates.height, {
           duration: duration,
-          // iOS keyboard uses this exact curve - verified from iOS source
           easing:
             Platform.OS === "ios"
-              ? Easing.bezier(0.25, 0.1, 0.25, 1) // iOS "ease" curve
-              : Easing.bezier(0.25, 0.46, 0.45, 0.94), // Android fallback
+              ? Easing.bezier(0.25, 0.1, 0.25, 1)
+              : Easing.bezier(0.25, 0.46, 0.45, 0.94),
         });
       }
     );
@@ -83,8 +150,8 @@ export default function MessageThreadScreen() {
           duration: duration,
           easing:
             Platform.OS === "ios"
-              ? Easing.bezier(0.25, 0.1, 0.25, 1) // Same curve
-              : Easing.bezier(0.25, 0.46, 0.45, 0.94), // Android fallback
+              ? Easing.bezier(0.25, 0.1, 0.25, 1)
+              : Easing.bezier(0.25, 0.46, 0.45, 0.94),
         });
       }
     );
@@ -95,14 +162,13 @@ export default function MessageThreadScreen() {
     };
   }, []);
 
-  // Animated style for input container
+  // Animated styles
   const animatedInputStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: -keyboardHeight.value * 0.9 }],
     };
   });
 
-  // Animated style for messages container
   const animatedMessagesStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: -keyboardHeight.value * 0.9 }],
@@ -122,12 +188,11 @@ export default function MessageThreadScreen() {
 
   // Set up thread for new conversations
   useEffect(() => {
-    if (!currentUserId || !isNewThread || !otherUserId) return;
+    if (!currentUserId || !isNewThread || !displayOtherUserId) return;
 
     const setupNewThread = async () => {
       try {
-        // Pass pleaId to createThread - it will be undefined if not provided, which is fine
-        const newThreadId = await createThread(otherUserId, pleaId);
+        const newThreadId = await createThread(displayOtherUserId, pleaId);
         setActualThreadId(newThreadId);
       } catch (error) {
         console.error("Failed to create thread:", error);
@@ -136,7 +201,7 @@ export default function MessageThreadScreen() {
     };
 
     setupNewThread();
-  }, [currentUserId, isNewThread, otherUserId, pleaId]); // Add pleaId to dependency array
+  }, [currentUserId, isNewThread, displayOtherUserId, pleaId]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -161,18 +226,15 @@ export default function MessageThreadScreen() {
     setInputText("");
     setSending(true);
 
-    // Scroll to bottom immediately
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
     try {
       await sendMessage(actualThreadId, messageText);
-      // Remove the focus restoration - let TextInput maintain focus naturally
     } catch (error) {
       console.error("Failed to send message:", error);
       Alert.alert("Error", "Failed to send message. Please try again.");
-      // Restore the input text on error
       setInputText(messageText);
     } finally {
       setSending(false);
@@ -193,13 +255,13 @@ export default function MessageThreadScreen() {
     scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  if (loading) {
+  if (loading || loadingThreadData) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View
           style={[styles.container, { backgroundColor: colors.background }]}
         >
-          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
           <View style={styles.loadingContainer}>
             <ThemedText type="body" style={{ color: colors.textSecondary }}>
               Loading conversation...
@@ -216,7 +278,7 @@ export default function MessageThreadScreen() {
         <View
           style={[styles.container, { backgroundColor: colors.background }]}
         >
-          <StatusBar style={theme === "dark" ? "light" : "dark"} />
+          <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
           <View style={styles.loadingContainer}>
             <ThemedText type="body" style={{ color: colors.textSecondary }}>
               Error: {error}
@@ -238,32 +300,29 @@ export default function MessageThreadScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
 
-        {/* Messages - Full screen behind everything with keyboard animation */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
             ref={scrollViewRef}
             messages={messages}
             currentUserId={currentUserId}
             isNewThread={isNewThread}
-            threadName={threadName}
+            threadName={displayThreadName}
             colors={colors}
             onContentSizeChange={handleContentSizeChange}
           />
         </Animated.View>
 
-        {/* Floating Header */}
         <MessageThreadHeader
-          threadName={threadName}
+          threadName={displayThreadName}
           isTyping={isTyping}
           colors={colors}
           onBack={handleBack}
-          colorScheme={theme ?? "light"}
-          otherUserId={otherUserId}
+          colorScheme={effectiveTheme}
+          otherUserId={displayOtherUserId}
         />
 
-        {/* Floating Input - with smooth native-like animation */}
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
             ref={inputRef}
@@ -273,7 +332,7 @@ export default function MessageThreadScreen() {
             onFocus={handleInputFocus}
             colors={colors}
             disabled={sending}
-            colorScheme={theme ?? "light"}
+            colorScheme={effectiveTheme}
           />
         </Animated.View>
       </View>
@@ -286,9 +345,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
-  },
-  keyboardContainer: {
     flex: 1,
   },
   inputContainer: {

@@ -1,6 +1,5 @@
 // components/ui/BackButton.tsx
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
@@ -25,8 +24,7 @@ export function BackButton({
   iconColor,
   hapticFeedback = true,
 }: BackButtonProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const handlePress = () => {
     if (hapticFeedback) {

@@ -1,8 +1,7 @@
 // components/messages/chat/ThreadInfoModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -25,8 +24,7 @@ export function ThreadInfoModal({
   threadName,
   otherUserId,
 }: ThreadInfoModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
   // Button content (the info icon in its collapsed state)
   const buttonContent = (
@@ -155,7 +153,7 @@ export function ThreadInfoModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.iconCircleSecondaryBackground}
       buttonContentPadding={0}

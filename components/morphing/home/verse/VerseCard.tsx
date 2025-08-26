@@ -1,5 +1,4 @@
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { useVerseData } from "@/hooks/useVerseData";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
@@ -42,8 +41,7 @@ export function VerseCard({
   onPressOut,
   preloadedData, // If provided, use this instead of fetching
 }: VerseCardProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   // Only fetch data if preloadedData is not provided
   // This means today's card (which has preloadedData) won't hit the database

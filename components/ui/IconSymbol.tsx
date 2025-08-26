@@ -26,6 +26,8 @@ const MAPPING = {
   "checkmark.circle.fill": "check-circle",
   "xmark.circle.fill": "cancel",
   "flame.fill": "whatshot",
+  // 👇 ADD THIS
+  "megaphone.fill": "campaign", // "campaign" looks like a megaphone in MaterialIcons
 } as IconMapping;
 
 /**

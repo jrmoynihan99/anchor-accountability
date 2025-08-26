@@ -1,6 +1,5 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
 import React from "react";
 import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -50,8 +49,7 @@ export function BaseModal({
   buttonBorderColor = "transparent", // Default transparent border
   buttonBorderRadius = 0, // Default no border radius
 }: BaseModalProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const gestureY = useSharedValue(0);
 

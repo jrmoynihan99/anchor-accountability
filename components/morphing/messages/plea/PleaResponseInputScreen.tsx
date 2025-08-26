@@ -3,8 +3,7 @@ import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { OpenToChatToggle } from "./OpenToChatToggle";
@@ -31,8 +30,7 @@ export function PleaResponseInputScreen({
   isOpenToChat,
   onToggleOpenToChat,
 }: PleaResponseInputScreenProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   // Generate anonymous username from UID
   const anonymousUsername = `user-${plea.uid.substring(0, 5)}`;

@@ -1,7 +1,5 @@
-import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
@@ -16,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface FloatingPillNavigationProps {
   activeTab: string;
   onTabPress: (tab: string) => void;
+  showPleasNotification?: boolean;
+  showMessagesNotification?: boolean;
 }
 
 interface TabLayout {
@@ -23,48 +23,78 @@ interface TabLayout {
   width: number;
 }
 
+const CENTER_GAP = 90;
+const ICON_SIZE = 26;
+const PILL_RADIUS = 30;
+const CONTAINER_PADDING = 8;
+const TAB_GAP = 8;
+
+const LEFT_ICONS = [
+  { key: "index", icon: "house.fill" },
+  { key: "pleas", icon: "megaphone.fill" },
+];
+const RIGHT_ICONS = [
+  { key: "messages", icon: "message.fill" },
+  { key: "community", icon: "person.3.fill" },
+];
+
+// --- Notification Dot Component ---
+function NotificationDot({
+  color,
+  borderColor,
+}: {
+  color: string;
+  borderColor: string;
+}) {
+  return (
+    <View
+      style={{
+        position: "absolute",
+        top: -3,
+        right: -3,
+        width: 11,
+        height: 11,
+        borderRadius: 5.5,
+        backgroundColor: color,
+        borderWidth: 1.5,
+        borderColor,
+        zIndex: 2,
+      }}
+    />
+  );
+}
+
 export function FloatingPillNavigation({
   activeTab,
   onTabPress,
+  showPleasNotification,
+  showMessagesNotification,
 }: FloatingPillNavigationProps) {
   const insets = useSafeAreaInsets();
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
-
-  const tabs = [
-    { key: "index", label: "Home", icon: "house.fill" },
-    { key: "messages", label: "Messages", icon: "message.fill" },
-    { key: "community", label: "Community", icon: "person.3.fill" },
-  ];
-
-  // Track tab layouts for dynamic sizing
+  const { colors, effectiveTheme } = useTheme();
+  const ICONS = [...LEFT_ICONS, ...RIGHT_ICONS];
   const [tabLayouts, setTabLayouts] = useState<TabLayout[]>([]);
-
-  // Animation values
   const animatedX = useSharedValue(0);
   const animatedWidth = useSharedValue(0);
 
-  // Update animation when active tab changes or layouts are measured
   useEffect(() => {
-    const activeIndex = tabs.findIndex((tab) => tab.key === activeTab);
+    const activeIndex = ICONS.findIndex((tab) => tab.key === activeTab);
     const activeLayout = tabLayouts[activeIndex];
 
     if (activeLayout) {
       animatedX.value = withSpring(activeLayout.x, {
-        damping: 27,
-        stiffness: 350,
+        damping: 35,
+        stiffness: 500,
       });
       animatedWidth.value = withSpring(activeLayout.width, {
         damping: 27,
-        stiffness: 350,
+        stiffness: 500,
       });
     }
   }, [activeTab, tabLayouts]);
 
-  // Handle tab layout measurement
   const handleTabLayout = (index: number, event: LayoutChangeEvent) => {
     const { x, width } = event.nativeEvent.layout;
-
     setTabLayouts((prevLayouts) => {
       const newLayouts = [...prevLayouts];
       newLayouts[index] = { x, width };
@@ -72,7 +102,6 @@ export function FloatingPillNavigation({
     });
   };
 
-  // Animated style for the sliding pill
   const animatedPillStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: animatedX.value }],
@@ -85,7 +114,7 @@ export function FloatingPillNavigation({
       <View style={[styles.shadowParent, { shadowColor: colors.shadow }]}>
         <BlurView
           intensity={80}
-          tint={colorScheme === "dark" ? "dark" : "light"}
+          tint={effectiveTheme === "dark" ? "dark" : "light"}
           style={styles.roundedChild}
         >
           <View
@@ -106,8 +135,12 @@ export function FloatingPillNavigation({
               ]}
             />
 
-            {tabs.map((tab, index) => {
+            {/* LEFT ICONS */}
+            {LEFT_ICONS.map((tab, idx) => {
               const isActive = activeTab === tab.key;
+              const isLast = idx === LEFT_ICONS.length - 1;
+              // Notification on megaphone
+              const showNotif = tab.key === "pleas" && showPleasNotification;
               return (
                 <Pressable
                   key={tab.key}
@@ -115,30 +148,70 @@ export function FloatingPillNavigation({
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onTabPress(tab.key);
                   }}
-                  onLayout={(event) => handleTabLayout(index, event)}
+                  onLayout={(event) => handleTabLayout(idx, event)}
                   style={[
                     styles.tabButton,
-                    index === 0 && styles.firstTab,
-                    index === tabs.length - 1 && styles.lastTab,
+                    !isLast && { marginRight: TAB_GAP },
                   ]}
                 >
-                  <IconSymbol
-                    size={20}
-                    name={tab.icon as any}
-                    color={
-                      isActive ? colors.navActiveText : colors.tabIconDefault
-                    }
-                  />
-                  <ThemedText
-                    type="tab"
-                    style={{
-                      color: isActive
-                        ? colors.navActiveText
-                        : colors.tabIconDefault,
-                    }}
-                  >
-                    {tab.label}
-                  </ThemedText>
+                  <View style={{ position: "relative" }}>
+                    <IconSymbol
+                      size={ICON_SIZE}
+                      name={tab.icon as any}
+                      color={
+                        isActive ? colors.navActiveText : colors.tabIconDefault
+                      }
+                    />
+                    {showNotif ? (
+                      <NotificationDot
+                        color={colors.error}
+                        borderColor={colors.navActiveText}
+                      />
+                    ) : null}
+                  </View>
+                </Pressable>
+              );
+            })}
+
+            {/* CENTER GAP FOR CTA */}
+            <View style={{ width: CENTER_GAP }} />
+
+            {/* RIGHT ICONS */}
+            {RIGHT_ICONS.map((tab, idx) => {
+              const isActive = activeTab === tab.key;
+              const iconIndex = LEFT_ICONS.length + idx;
+              const isLast = idx === RIGHT_ICONS.length - 1;
+              // Notification on messages
+              const showNotif =
+                tab.key === "messages" && showMessagesNotification;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onTabPress(tab.key);
+                  }}
+                  onLayout={(event) => handleTabLayout(iconIndex, event)}
+                  style={[
+                    styles.tabButton,
+                    !isLast && { marginRight: TAB_GAP },
+                  ]}
+                >
+                  <View style={{ position: "relative" }}>
+                    <IconSymbol
+                      size={ICON_SIZE}
+                      name={tab.icon as any}
+                      color={
+                        isActive ? colors.navActiveText : colors.tabIconDefault
+                      }
+                    />
+                    {showNotif ? (
+                      <NotificationDot
+                        color={colors.error}
+                        borderColor={colors.navActiveText}
+                      />
+                    ) : null}
+                  </View>
                 </Pressable>
               );
             })}
@@ -149,8 +222,6 @@ export function FloatingPillNavigation({
   );
 }
 
-const PILL_RADIUS = 25;
-
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
@@ -159,50 +230,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1000,
   },
-  // Outermost: gets the shadow and radius, NO overflow
   shadowParent: {
     borderRadius: PILL_RADIUS,
     shadowOpacity: 0.35,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
     elevation: 5,
-    // No overflow here!
   },
-  // Inner: gets the border radius and overflow, no shadow
   roundedChild: {
     borderRadius: PILL_RADIUS,
-    overflow: "hidden", // ensures pill shape and content is clipped
+    overflow: "hidden",
   },
   pillContainer: {
     flexDirection: "row",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: CONTAINER_PADDING,
     borderRadius: PILL_RADIUS,
     borderWidth: 1,
+    // gap: TAB_GAP, // if supported by your RN version, you can use this instead of marginRight above
   },
   tabButton: {
-    flexDirection: "row",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
     justifyContent: "center",
-    gap: 6,
-    zIndex: 1, // Ensure buttons stay above the animated pill
+    zIndex: 1,
   },
   animatedPill: {
     position: "absolute",
-    top: 8,
+    top: 6,
     left: 0,
-    height: 36,
-    borderRadius: 20,
+    height: 46,
+    borderRadius: 23,
     zIndex: 0,
   },
-  firstTab: {
-    marginRight: 4,
-  },
-  lastTab: {
-    marginLeft: 4,
-  },
-  // Removed tabLabel style - now using Typography.styles.tab
 });

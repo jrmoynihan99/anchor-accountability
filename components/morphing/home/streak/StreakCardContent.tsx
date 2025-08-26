@@ -4,8 +4,7 @@ import { PartialAnimatedText } from "@/components/text-animation/PartialAnimated
 import { TransitioningText } from "@/components/text-animation/TransitioningText";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -32,8 +31,7 @@ export function StreakCardContent({
   onCheckIn,
   showButtons = true,
 }: StreakCardContentProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const currentStreak = getCurrentStreak(streakData);
   const personalBest = getPersonalBest(streakData);

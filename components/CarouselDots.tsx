@@ -1,5 +1,4 @@
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -12,8 +11,7 @@ export function CarouselDots({
   total: number;
   maxVisible?: number;
 }) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const half = Math.floor(maxVisible / 2);
   let start = Math.max(0, currentIndex - half);

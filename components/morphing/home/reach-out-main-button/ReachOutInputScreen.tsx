@@ -3,8 +3,7 @@ import { MessageInput } from "@/components/MessageInput";
 import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
@@ -28,8 +27,7 @@ export function ReachOutInputScreen({
   onContextChange,
   onSend,
 }: ReachOutInputScreenProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const handleSendPress = () => {
     // Trigger haptic feedback

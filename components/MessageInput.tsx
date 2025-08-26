@@ -1,7 +1,6 @@
 // components/ui/MessageInput.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 
@@ -24,8 +23,7 @@ export function MessageInput({
   showCharacterCount = true,
   showBorder = true, // Defaults to true for backward compatibility
 }: MessageInputProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   return (
     <View

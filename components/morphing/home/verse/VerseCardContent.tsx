@@ -1,7 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { CarouselDots } from "../../../CarouselDots";
@@ -27,8 +26,7 @@ export function VerseCardContent({
   total,
   showCarouselDots = true,
 }: VerseCardContentProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   if (loading) {
     return (

@@ -1,7 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -14,8 +13,7 @@ export function GuidedPrayerContent({
   showButtons = true,
   onBeginPrayer,
 }: GuidedPrayerContentProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const handleBeginPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

@@ -1,10 +1,9 @@
 // components/LoginHeader.tsx
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { BackButton } from "../../../components/BackButton";
 import { ThemedText } from "../../../components/ThemedText";
-import { Colors } from "../../../constants/Colors";
-import { useColorScheme } from "../../../hooks/useColorScheme";
 
 interface LoginHeaderProps {
   isSignUp: boolean;
@@ -12,8 +11,7 @@ interface LoginHeaderProps {
 }
 
 export function LoginHeader({ isSignUp, onBackPress }: LoginHeaderProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   return (
     <View style={styles.header}>

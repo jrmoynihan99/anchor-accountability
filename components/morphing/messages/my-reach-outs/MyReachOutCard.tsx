@@ -1,6 +1,5 @@
 // components/messages/MyReachOutCard.tsx
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -12,6 +11,7 @@ export interface MyReachOutData {
   createdAt: Date;
   encouragementCount: number;
   lastEncouragementAt?: Date;
+  unreadCount: number; // 👈 Add this line
 }
 
 interface MyReachOutCardProps {
@@ -35,8 +35,7 @@ export function MyReachOutCard({
   onPressIn,
   onPressOut,
 }: MyReachOutCardProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
 
   const handlePress = () => {
     // Haptic is handled by ButtonModalTransitionBridge.open()
@@ -56,7 +55,7 @@ export function MyReachOutCard({
         style={[
           styles.card,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.cardBackground,
             borderColor: "transparent",
             shadowColor: colors.shadow,
           },
@@ -71,13 +70,13 @@ export function MyReachOutCard({
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
+    padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 5,
     position: "relative",
   },
 });

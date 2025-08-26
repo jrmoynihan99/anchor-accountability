@@ -1,8 +1,7 @@
 // StreakCardModal.tsx - Refactored
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -31,16 +30,7 @@ export function StreakCardModal({
   streakData,
   onCheckIn,
 }: StreakCardModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
-
-  // DEBUG: Log what's in streakData
-  console.log("🔍 StreakCardModal: streakData received:", streakData);
-  streakData.forEach((entry, index) => {
-    console.log(
-      `🔍 StreakCardModal: Entry ${index}: ${entry.date} - ${entry.status}`
-    );
-  });
+  const { colors, effectiveTheme } = useTheme();
 
   // Helper functions for stats
   const getTotalDaysTracked = (data: StreakEntry[]) => {
@@ -320,7 +310,7 @@ export function StreakCardModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonContent={buttonContent}
     >

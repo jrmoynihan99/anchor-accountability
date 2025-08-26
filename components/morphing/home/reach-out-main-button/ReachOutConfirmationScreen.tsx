@@ -1,7 +1,6 @@
 // ReachOutConfirmationScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
@@ -25,12 +24,12 @@ export function ReachOutConfirmationScreen({
   onGuidedPrayer,
   onReadScripture, // Add this parameter
 }: ReachOutConfirmationScreenProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
   // Using the exact color that matches your hardcoded #3A2D28
   // This is colors.background in dark mode and colors.text in light mode
-  const mainTextColor = theme === "dark" ? colors.background : colors.text;
+  const mainTextColor =
+    effectiveTheme === "dark" ? colors.background : colors.text;
 
   const recommendedActions: RecommendedAction[] = [
     {

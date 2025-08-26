@@ -1,8 +1,7 @@
 // components/AnonymousBadge.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -26,8 +25,7 @@ export function AnonymousBadge({
   onPressOut,
   text = "100% anonymous",
 }: AnonymousBadgeProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "light"];
+  const { colors } = useTheme();
 
   // If we have modal bridge props, make it touchable
   if (onPress && buttonRef) {

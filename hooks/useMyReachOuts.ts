@@ -8,18 +8,27 @@ import {
   orderBy,
   query,
   Unsubscribe,
+  where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 
 const MAX_RECENT_REACH_OUTS = 20;
+
+// Encouragement stats cache (not for unreadCount!)
+type EncouragementStats = {
+  encouragementCount: number;
+  lastEncouragementAt?: Date;
+};
 
 export function useMyReachOuts() {
   const [myReachOuts, setMyReachOuts] = useState<MyReachOutData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep track of all active encouragement listeners so we can unsubscribe
+  // Encourage listeners for cleanup
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
+  // Track encouragement stats for each reach out (NOT unreadCount)
+  const encouragementStatsRef = useRef<Record<string, EncouragementStats>>({});
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -30,14 +39,10 @@ export function useMyReachOuts() {
 
     const currentUserId = auth.currentUser.uid;
 
-    // Clean up any old listeners before setting new ones
-    Object.values(encouragementListenersRef.current).forEach((unsub) =>
-      unsub()
-    );
-    encouragementListenersRef.current = {};
-
     const pleasQuery = query(
       collection(db, "pleas"),
+      where("uid", "==", currentUserId),
+      where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(MAX_RECENT_REACH_OUTS)
     );
@@ -46,68 +51,92 @@ export function useMyReachOuts() {
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
-        let reachOuts: MyReachOutData[] = [];
+        const currentReachOutIds = new Set(snapshot.docs.map((doc) => doc.id));
 
-        // Filter for current user's pleas and build initial array
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data();
-
-          // Only process pleas that belong to current user
-          if (data.uid === currentUserId) {
-            reachOuts.push({
-              id: doc.id,
-              message: data.message || "",
-              createdAt: data.createdAt?.toDate() || new Date(),
-              encouragementCount: 0, // will be set live below
-              lastEncouragementAt: undefined,
-            });
+        // Clean up subcollection listeners for deleted pleas
+        Object.keys(encouragementListenersRef.current).forEach((reachOutId) => {
+          if (!currentReachOutIds.has(reachOutId)) {
+            encouragementListenersRef.current[reachOutId]();
+            delete encouragementListenersRef.current[reachOutId];
+            delete encouragementStatsRef.current[reachOutId];
           }
         });
 
-        // For each of MY reach outs, set up a real-time encouragements listener
-        reachOuts.forEach((reachOut) => {
-          // If we already have a listener for this reach out, skip
-          if (encouragementListenersRef.current[reachOut.id]) return;
+        // Set up subcollection listeners (if not already)
+        snapshot.docs.forEach((doc) => {
+          const reachOutId = doc.id;
+          if (encouragementListenersRef.current[reachOutId]) return;
 
-          const encouragementsQuery = collection(
-            db,
-            "pleas",
-            reachOut.id,
-            "encouragements"
+          const encouragementsQuery = query(
+            collection(db, "pleas", reachOutId, "encouragements"),
+            where("status", "==", "approved")
           );
 
+          // Listen to subcollection to get encouragement stats (but not unreadCount)
           const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
             const encouragementCount = encSnap.size;
             let lastEncouragementAt: Date | undefined = undefined;
 
             if (encouragementCount > 0) {
-              // Sort encouragements by createdAt to get most recent
               const encouragements = encSnap.docs
                 .map((d) => d.data())
                 .filter((d) => !!d.createdAt)
                 .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-
               lastEncouragementAt = encouragements[0]?.createdAt?.toDate?.();
             }
 
-            // Update state for this reach out
-            setMyReachOuts((oldReachOuts) => {
-              const newReachOuts = oldReachOuts.map((r) =>
-                r.id === reachOut.id
-                  ? { ...r, encouragementCount, lastEncouragementAt }
+            // Update cached stats
+            encouragementStatsRef.current[reachOutId] = {
+              encouragementCount,
+              lastEncouragementAt,
+            };
+
+            // Patch the existing state to update only these fields
+            setMyReachOuts((oldReachOuts) =>
+              oldReachOuts.map((r) =>
+                r.id === reachOutId
+                  ? {
+                      ...r,
+                      encouragementCount,
+                      lastEncouragementAt,
+                      // NEVER patch unreadCount here!
+                    }
                   : r
-              );
-              // Sort by creation date, newest first
-              return newReachOuts.sort(
-                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-              );
-            });
+              )
+            );
           });
 
-          encouragementListenersRef.current[reachOut.id] = unsub;
+          encouragementListenersRef.current[reachOutId] = unsub;
         });
 
-        setMyReachOuts(reachOuts);
+        // Build the new reachOuts array using parent doc data + cached encouragement stats
+        const newReachOuts: MyReachOutData[] = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          const id = doc.id;
+          const encouragementStats = encouragementStatsRef.current[id] || {
+            encouragementCount: 0,
+            lastEncouragementAt: undefined,
+          };
+
+          return {
+            id,
+            message: data.message || "",
+            createdAt: data.createdAt?.toDate() || new Date(),
+            encouragementCount: encouragementStats.encouragementCount,
+            lastEncouragementAt: encouragementStats.lastEncouragementAt,
+            unreadCount: data.unreadEncouragementCount || 0, // ← always from parent doc!
+          };
+        });
+
+        setMyReachOuts(
+          newReachOuts.sort((a, b) => {
+            // 1. Sort by last encouragement received, descending
+            const aDate = a.lastEncouragementAt || a.createdAt;
+            const bDate = b.lastEncouragementAt || b.createdAt;
+            return bDate.getTime() - aDate.getTime();
+          })
+        );
+
         setError(null);
         setLoading(false);
       },
@@ -124,6 +153,7 @@ export function useMyReachOuts() {
         unsub()
       );
       encouragementListenersRef.current = {};
+      encouragementStatsRef.current = {};
     };
   }, [auth.currentUser]);
 

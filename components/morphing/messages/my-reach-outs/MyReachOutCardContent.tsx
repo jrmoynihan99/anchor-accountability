@@ -1,30 +1,25 @@
 // components/messages/MyReachOutCardContent.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { MyReachOutData } from "./MyReachOutCard";
 
 interface MyReachOutCardContentProps {
   reachOut: MyReachOutData;
-  now: Date; // <--- accept now from parent
+  now: Date;
 }
 
 export function MyReachOutCardContent({
   reachOut,
-  now, // <--- get from props
+  now,
 }: MyReachOutCardContentProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
   const timeAgo = getTimeAgo(reachOut.createdAt, now);
   const lastEncouragementAgo = reachOut.lastEncouragementAt
     ? getTimeAgo(reachOut.lastEncouragementAt, now)
     : null;
-
-  // Determine if this reach out needs attention (no encouragements yet)
-  const needsAttention = reachOut.encouragementCount === 0;
 
   return (
     <>
@@ -52,6 +47,18 @@ export function MyReachOutCardContent({
         </View>
 
         <View style={styles.stats}>
+          {reachOut.unreadCount > 0 && (
+            <View
+              style={[styles.unreadBadge, { backgroundColor: colors.tint }]}
+            >
+              <ThemedText
+                type="caption"
+                style={[styles.unreadCount, { color: colors.white }]}
+              >
+                {reachOut.unreadCount > 99 ? "99+" : reachOut.unreadCount}
+              </ThemedText>
+            </View>
+          )}
           <View style={styles.statItem}>
             <IconSymbol
               name="message.fill"
@@ -60,11 +67,9 @@ export function MyReachOutCardContent({
             />
             <ThemedText
               type="captionMedium"
-              style={[
-                {
-                  color: colors.textSecondary,
-                },
-              ]}
+              style={{
+                color: colors.textSecondary,
+              }}
             >
               {reachOut.encouragementCount}
             </ThemedText>
@@ -72,7 +77,6 @@ export function MyReachOutCardContent({
         </View>
       </View>
 
-      {/* Only show message container if there's a message */}
       {reachOut.message && reachOut.message.trim() && (
         <View style={styles.messageContainer}>
           <ThemedText
@@ -197,7 +201,21 @@ const styles = StyleSheet.create({
   },
   stats: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 12,
+  },
+  unreadBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    marginRight: 0,
+  },
+  unreadCount: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   statItem: {
     flexDirection: "row",

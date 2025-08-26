@@ -59,7 +59,11 @@ export async function savePushTokenToFirestore() {
       userRef,
       {
         expoPushToken: token,
-        wantsToHelp: true, // Update as needed
+        notificationPreferences: {
+          pleas: true,
+          encouragements: true,
+          messages: true,
+        },
       },
       { merge: true }
     );

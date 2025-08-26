@@ -1,8 +1,13 @@
 // components/messages/MyReachOutModal.tsx
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
+import { useTheme } from "@/hooks/ThemeContext";
+import { db, markEncouragementAsRead } from "@/lib/firebase";
+import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
@@ -37,8 +42,7 @@ export function MyReachOutModal({
   reachOut,
   now,
 }: MyReachOutModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
   const [encouragements, setEncouragements] = useState<EncouragementData[]>([]);
   const [loadingEncouragements, setLoadingEncouragements] = useState(false);
 
@@ -51,8 +55,12 @@ export function MyReachOutModal({
 
     setLoadingEncouragements(true);
 
+    // 👈 Mark encouragements as read when modal opens
+    markEncouragementAsRead(reachOut.id).catch(console.error);
+
     const encouragementsQuery = query(
       collection(db, "pleas", reachOut.id, "encouragements"),
+      where("status", "==", "approved"), // ← Only approved!
       orderBy("createdAt", "desc")
     );
 
@@ -111,10 +119,10 @@ export function MyReachOutModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
-      buttonBackgroundColor={colors.background}
-      buttonContentPadding={16}
+      buttonBackgroundColor={colors.cardBackground}
+      buttonContentPadding={20}
       buttonBorderWidth={1}
       buttonBorderColor="transparent"
       buttonBorderRadius={16}

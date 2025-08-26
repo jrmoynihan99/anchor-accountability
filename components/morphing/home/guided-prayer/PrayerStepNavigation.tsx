@@ -1,7 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { PrayerStep, getNextStep, getPreviousStep } from "./prayerUtils";
@@ -19,8 +18,7 @@ export function PrayerStepNavigation({
   onClose,
   prayerColor,
 }: PrayerStepNavigationProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const previousStep = getPreviousStep(currentStep);
   const nextStep = getNextStep(currentStep);

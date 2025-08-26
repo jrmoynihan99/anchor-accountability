@@ -1,10 +1,9 @@
+import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StatusBar, StyleSheet, View } from "react-native";
-import { Colors } from "../../constants/Colors";
-import { useColorScheme } from "../../hooks/useColorScheme";
 import { IntroContinueButton } from "./components/IntroContinueButton";
 import { IntroFeaturesCard } from "./components/IntroFeaturesCard";
 import { IntroHeader } from "./components/IntroHeader";
@@ -17,8 +16,7 @@ export default function IntroScreen() {
     router.push("/onboarding/login");
   };
 
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   return (
     <View

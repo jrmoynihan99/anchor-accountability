@@ -1,4 +1,4 @@
-// hooks/usePendingPleas.ts
+// hooks/usePendingPleas.ts - PROPERLY FIXED VERSION
 import { PleaData } from "@/components/morphing/messages/plea/PleaCard";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -8,10 +8,10 @@ import {
   orderBy,
   query,
   Unsubscribe,
+  where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 
-// How many pleas to fetch
 const MAX_RECENT_PLEAS = 20;
 
 export function usePendingPleas() {
@@ -21,6 +21,10 @@ export function usePendingPleas() {
 
   // Keep track of all active encouragement listeners so we can unsubscribe
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
+  // Keep track of the current plea base data (without encouragement counts)
+  const currentPleasRef = useRef<
+    Map<string, Omit<PleaData, "encouragementCount" | "hasUserResponded">>
+  >(new Map());
 
   useEffect(() => {
     if (!auth.currentUser) {
@@ -29,14 +33,9 @@ export function usePendingPleas() {
       return;
     }
 
-    // Clean up any old listeners before setting new ones
-    Object.values(encouragementListenersRef.current).forEach((unsub) =>
-      unsub()
-    );
-    encouragementListenersRef.current = {};
-
     const pleasQuery = query(
       collection(db, "pleas"),
+      where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(MAX_RECENT_PLEAS)
     );
@@ -46,47 +45,74 @@ export function usePendingPleas() {
       pleasQuery,
       (snapshot) => {
         const currentUserId = auth.currentUser?.uid;
-        let pleas: PleaData[] = [];
 
-        // Optionally filter out current user's pleas
-        // .filter(doc => doc.data().uid !== currentUserId)
+        // Get the current plea IDs from the snapshot
+        const currentPleaIds = new Set(snapshot.docs.map((doc) => doc.id));
+
+        // Clean up listeners for pleas that are no longer in the result set
+        Object.keys(encouragementListenersRef.current).forEach((pleaId) => {
+          if (!currentPleaIds.has(pleaId)) {
+            encouragementListenersRef.current[pleaId]();
+            delete encouragementListenersRef.current[pleaId];
+            currentPleasRef.current.delete(pleaId);
+          }
+        });
+
+        // Update the base plea data
+        const newPleasMap = new Map<
+          string,
+          Omit<PleaData, "encouragementCount" | "hasUserResponded">
+        >();
+
         snapshot.docs.forEach((doc) => {
           const data = doc.data();
-          pleas.push({
+          const pleaBase = {
             id: doc.id,
             message: data.message || "",
             uid: data.uid,
             createdAt: data.createdAt?.toDate() || new Date(),
-            encouragementCount: 0, // will be set live below
-            hasUserResponded: false,
-          });
+          };
+          newPleasMap.set(doc.id, pleaBase);
         });
 
-        // For each plea, set up a real-time encouragements listener
-        pleas.forEach((plea) => {
-          // If we already have a listener for this plea, skip
-          if (encouragementListenersRef.current[plea.id]) return;
+        currentPleasRef.current = newPleasMap;
 
-          const encouragementsQuery = collection(
-            db,
-            "pleas",
-            plea.id,
-            "encouragements"
+        // Set up encouragement listeners for any new pleas
+        snapshot.docs.forEach((doc) => {
+          const pleaId = doc.id;
+
+          // Only set up listener if we don't already have one
+          if (encouragementListenersRef.current[pleaId]) {
+            return;
+          }
+
+          const encouragementsQuery = query(
+            collection(db, "pleas", pleaId, "encouragements"),
+            where("status", "==", "approved")
           );
+
           const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
             const encouragementCount = encSnap.size;
             const hasUserResponded = encSnap.docs.some(
               (doc) => doc.data().helperUid === currentUserId
             );
 
-            // Update state for this plea
+            // Update state using the current base plea data
             setPendingPleas((oldPleas) => {
-              const newPleas = oldPleas.map((p) =>
-                p.id === plea.id
-                  ? { ...p, encouragementCount, hasUserResponded }
-                  : p
-              );
-              // Sort as you did before: lowest count first, then oldest first
+              const pleaBase = currentPleasRef.current.get(pleaId);
+              if (!pleaBase) return oldPleas; // Plea no longer exists
+
+              // Remove old version of this plea and add updated version
+              const otherPleas = oldPleas.filter((p) => p.id !== pleaId);
+              const updatedPlea: PleaData = {
+                ...pleaBase,
+                encouragementCount,
+                hasUserResponded,
+              };
+
+              const newPleas = [...otherPleas, updatedPlea];
+
+              // Sort: lowest count first, then oldest first
               return newPleas.sort((a, b) => {
                 if (a.encouragementCount !== b.encouragementCount) {
                   return a.encouragementCount - b.encouragementCount;
@@ -95,10 +121,15 @@ export function usePendingPleas() {
               });
             });
           });
-          encouragementListenersRef.current[plea.id] = unsub;
+
+          encouragementListenersRef.current[pleaId] = unsub;
         });
 
-        setPendingPleas(pleas);
+        // Remove pleas from state that are no longer in the current set
+        setPendingPleas((oldPleas) =>
+          oldPleas.filter((plea) => currentPleaIds.has(plea.id))
+        );
+
         setError(null);
         setLoading(false);
       },
@@ -115,6 +146,7 @@ export function usePendingPleas() {
         unsub()
       );
       encouragementListenersRef.current = {};
+      currentPleasRef.current.clear();
     };
   }, [auth.currentUser]);
 

@@ -1,7 +1,6 @@
-// ReachOutModal.tsx - Refactored to use ThemedText
+// components/morphing/home/reach-out-main-button/ReachOutModal.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { auth, db } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -24,7 +23,8 @@ interface ReachOutModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   onGuidedPrayer?: () => void;
-  onReadScripture?: () => void; // Add this new prop
+  onReadScripture?: () => void;
+  ctaButtonContent?: React.ReactNode; // NEW!
 }
 
 type ScreenType = "input" | "confirmation";
@@ -35,15 +35,14 @@ export function ReachOutModal({
   modalAnimatedStyle,
   close,
   onGuidedPrayer,
-  onReadScripture, // Add this parameter
+  onReadScripture,
+  ctaButtonContent,
 }: ReachOutModalProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
   const screenTransition = useSharedValue(0); // 0 = input, 1 = confirmation
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
-  // Reset state only when modal becomes invisible
   useEffect(() => {
     if (!isVisible) {
       const timer = setTimeout(() => {
@@ -55,7 +54,6 @@ export function ReachOutModal({
     }
   }, [isVisible]);
 
-  // Handle sending the message
   const handleSendMessage = async () => {
     const user = auth.currentUser;
     if (!user) {
@@ -66,11 +64,11 @@ export function ReachOutModal({
     try {
       await addDoc(collection(db, "pleas"), {
         uid: user.uid,
-        message: contextMessage || "", // Default to empty string if none
+        message: contextMessage || "",
         createdAt: serverTimestamp(),
+        status: "pending",
       });
 
-      // Show confirmation screen
       screenTransition.value = withTiming(1, {
         duration: 300,
         easing: Easing.out(Easing.quad),
@@ -78,11 +76,10 @@ export function ReachOutModal({
       setCurrentScreen("confirmation");
     } catch (error) {
       console.error("Error sending plea:", error);
-      // TODO: Show user-friendly error toast if desired
     }
   };
 
-  // Screen transition animations
+  // Animations
   const inputScreenStyle = useAnimatedStyle(() => ({
     transform: [
       {
@@ -121,8 +118,8 @@ export function ReachOutModal({
     ),
   }));
 
-  // Button content (what shows during the transition)
-  const buttonContent = (
+  // Default (pilled) button content for morphing
+  const defaultButtonContent = (
     <View style={styles.pillButtonTouchable}>
       <View style={styles.pillTextContainer}>
         <Ionicons
@@ -153,7 +150,6 @@ export function ReachOutModal({
   // Modal content
   const modalContent = (
     <View style={styles.screenContainer}>
-      {/* Input Screen */}
       <Animated.View
         style={[
           styles.screenWrapper,
@@ -168,7 +164,6 @@ export function ReachOutModal({
         />
       </Animated.View>
 
-      {/* Confirmation Screen */}
       <Animated.View
         style={[
           styles.screenWrapper,
@@ -179,7 +174,7 @@ export function ReachOutModal({
         <ReachOutConfirmationScreen
           onClose={close}
           onGuidedPrayer={onGuidedPrayer}
-          onReadScripture={onReadScripture} // Pass the new prop through
+          onReadScripture={onReadScripture}
         />
       </Animated.View>
     </View>
@@ -191,10 +186,10 @@ export function ReachOutModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.tint}
-      buttonContent={buttonContent}
-      buttonContentOpacityRange={[0, 0.1]} // Custom range for ReachOut
+      buttonContent={ctaButtonContent || defaultButtonContent}
+      buttonContentOpacityRange={[0, 0.1]}
     >
       {modalContent}
     </BaseModal>

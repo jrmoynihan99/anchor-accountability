@@ -7,13 +7,12 @@ import {
 import { MyReachOutModal } from "@/components/morphing/messages/my-reach-outs/MyReachOutModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { BlurView } from "expo-blur";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -28,10 +27,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const MAX_REACH_OUTS = 20; // Show latest 20 reach outs
 
 export default function MyReachOutsAllScreen() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const { myReachOuts, loading, error } = useMyReachOuts();
+
+  // Get the pleaId from navigation params for notification deep linking
+  const { openPleaId } = useLocalSearchParams<{ openPleaId?: string }>();
 
   // Timer for live updates
   const [now, setNow] = useState(() => new Date());
@@ -43,6 +44,26 @@ export default function MyReachOutsAllScreen() {
   // Modal state
   const [selectedReachOut, setSelectedReachOut] =
     useState<MyReachOutData | null>(null);
+
+  // Store refs to modal controls for each reach out
+  const modalRefs = useRef<{ [key: string]: { open: () => void } }>({});
+
+  // Auto-open modal if openPleaId is provided (from notification)
+  useEffect(() => {
+    if (openPleaId && myReachOuts.length > 0 && !loading) {
+      const targetReachOut = myReachOuts.find((r) => r.id === openPleaId);
+      if (targetReachOut) {
+        // Small delay to ensure the screen is fully rendered
+        setTimeout(() => {
+          setSelectedReachOut(targetReachOut);
+          // Trigger the modal open using the stored ref
+          if (modalRefs.current[openPleaId]) {
+            modalRefs.current[openPleaId].open();
+          }
+        }, 500);
+      }
+    }
+  }, [openPleaId, myReachOuts, loading]);
 
   const handleBack = () => {
     router.back();
@@ -58,13 +79,13 @@ export default function MyReachOutsAllScreen() {
   return (
     <GestureHandlerRootView style={styles.gestureRoot}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar style={theme === "dark" ? "light" : "dark"} />
+        <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
 
         {/* Header with blur effect */}
         <View style={styles.headerContainer}>
           <BlurView
             intensity={80}
-            tint={theme === "dark" ? "dark" : "light"}
+            tint={effectiveTheme === "dark" ? "dark" : "light"}
             style={styles.blurContainer}
           >
             {/* Status bar spacer */}
@@ -207,35 +228,40 @@ export default function MyReachOutsAllScreen() {
                       buttonRef,
                       handlePressIn,
                       handlePressOut,
-                    }) => (
-                      <>
-                        <MyReachOutCard
-                          reachOut={reachOut}
-                          index={index}
-                          buttonRef={buttonRef}
-                          style={buttonAnimatedStyle}
-                          now={now}
-                          onPress={() => {
-                            setSelectedReachOut(reachOut);
-                            open();
-                          }}
-                          onPressIn={handlePressIn}
-                          onPressOut={handlePressOut}
-                        />
-                        <MyReachOutModal
-                          isVisible={isModalVisible}
-                          progress={progress}
-                          modalAnimatedStyle={modalAnimatedStyle}
-                          close={close}
-                          reachOut={
-                            myReachOuts.find(
-                              (r) => r.id === selectedReachOut?.id
-                            ) ?? selectedReachOut
-                          }
-                          now={now}
-                        />
-                      </>
-                    )}
+                    }) => {
+                      // Store the open function for this reach out for notification deep linking
+                      modalRefs.current[reachOut.id] = { open };
+
+                      return (
+                        <>
+                          <MyReachOutCard
+                            reachOut={reachOut}
+                            index={index}
+                            buttonRef={buttonRef}
+                            style={buttonAnimatedStyle}
+                            now={now}
+                            onPress={() => {
+                              setSelectedReachOut(reachOut);
+                              open();
+                            }}
+                            onPressIn={handlePressIn}
+                            onPressOut={handlePressOut}
+                          />
+                          <MyReachOutModal
+                            isVisible={isModalVisible}
+                            progress={progress}
+                            modalAnimatedStyle={modalAnimatedStyle}
+                            close={close}
+                            reachOut={
+                              myReachOuts.find(
+                                (r) => r.id === selectedReachOut?.id
+                              ) ?? selectedReachOut
+                            }
+                            now={now}
+                          />
+                        </>
+                      );
+                    }}
                   </ButtonModalTransitionBridge>
                 </Animated.View>
               ))}

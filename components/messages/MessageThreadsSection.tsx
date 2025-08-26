@@ -1,8 +1,7 @@
 // components/messages/MessageThreadsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -10,8 +9,7 @@ import { MessageThreadsHeader } from "./MessageThreadsHeader";
 import { ThreadItem } from "./ThreadItem";
 
 export function MessageThreadsSection() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
   // Timer for updating relative timestamps
@@ -87,7 +85,8 @@ export function MessageThreadsSection() {
             type="caption"
             style={[styles.emptySubtext, { color: colors.textSecondary }]}
           >
-            When someone starts a chat with you, it will appear here
+            When you start a chat with someone, or someone starts a chat with
+            you, it will appear here
           </ThemedText>
         </View>
       ) : (

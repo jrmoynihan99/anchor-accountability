@@ -20,8 +20,7 @@ import {
   View,
 } from "react-native";
 import { ThemedText } from "../../../components/ThemedText";
-import { Colors } from "../../../constants/Colors";
-import { useColorScheme } from "../../../hooks/useColorScheme";
+import { useTheme } from "../../../hooks/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
 import { auth } from "../../../lib/firebase";
 import { setHasOnboarded } from "../../../lib/onboarding";
@@ -51,8 +50,7 @@ export function LoginForm({
   showPassword,
   setShowPassword,
 }: LoginFormProps) {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   const completeOnboarding = async () => {
     try {

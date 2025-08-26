@@ -1,7 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
@@ -20,8 +19,7 @@ export function AnonymousBadgeModal({
   modalAnimatedStyle,
   close,
 }: AnonymousBadgeModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
   // Button content that shows during the transition (just icon + text)
   const buttonContent = (
@@ -44,7 +42,7 @@ export function AnonymousBadgeModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.modalCardBackground}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.2]}

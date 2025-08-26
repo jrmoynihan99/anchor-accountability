@@ -1,4 +1,5 @@
 // login.tsx
+import { useTheme } from "@/hooks/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -15,8 +16,6 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from "react-native-reanimated";
-import { Colors } from "../../constants/Colors";
-import { useColorScheme } from "../../hooks/useColorScheme";
 import { LoginForm } from "./components/LoginForm";
 import { LoginHeader } from "./components/LoginHeader";
 
@@ -27,8 +26,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
+  const { colors } = useTheme();
 
   // Smooth keyboard animation
   const keyboard = useAnimatedKeyboard();

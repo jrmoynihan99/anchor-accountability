@@ -1,8 +1,7 @@
 // components/messages/MyReachOutsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
@@ -17,21 +16,20 @@ import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { MyReachOutCard, MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutModal } from "./MyReachOutModal";
 
-const PREVIEW_LIMIT = 3; // Only show 3 reach outs on main messages screen
+const PREVIEW_LIMIT = 4; // Only show 3 reach outs on main messages screen
 
 export function MyReachOutsSection() {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors } = useTheme();
   const { myReachOuts, loading, error } = useMyReachOuts();
 
-  // ==== ADD TIMER STATE HERE ====
+  // Timer for live "time ago" updates
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
 
-  // State for selected reach out for modal
+  // State for which reach out is open in modal
   const [selectedReachOut, setSelectedReachOut] =
     useState<MyReachOutData | null>(null);
 
@@ -42,15 +40,7 @@ export function MyReachOutsSection() {
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.sectionCard,
-          {
-            backgroundColor: colors.cardBackground,
-            shadowColor: colors.shadow,
-          },
-        ]}
-      >
+      <View style={styles.sectionContainer}>
         <SectionHeader colors={colors} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="small" color={colors.textSecondary} />
@@ -67,15 +57,7 @@ export function MyReachOutsSection() {
 
   if (error) {
     return (
-      <View
-        style={[
-          styles.sectionCard,
-          {
-            backgroundColor: colors.cardBackground,
-            shadowColor: colors.shadow,
-          },
-        ]}
-      >
+      <View style={styles.sectionContainer}>
         <SectionHeader colors={colors} />
         <View style={styles.emptyContainer}>
           <IconSymbol
@@ -99,15 +81,7 @@ export function MyReachOutsSection() {
   const hasMoreReachOuts = myReachOuts.length > PREVIEW_LIMIT;
 
   return (
-    <View
-      style={[
-        styles.sectionCard,
-        {
-          backgroundColor: colors.cardBackground,
-          shadowColor: colors.shadow,
-        },
-      ]}
-    >
+    <View style={styles.sectionContainer}>
       <SectionHeader colors={colors} totalCount={myReachOuts.length} />
 
       {myReachOuts.length === 0 ? (
@@ -128,7 +102,7 @@ export function MyReachOutsSection() {
             type="caption"
             style={[styles.emptySubtext, { color: colors.textSecondary }]}
           >
-            When you need support, reach out using the button on the Home tab
+            When you need support, reach out using the shield button below
           </ThemedText>
         </View>
       ) : (
@@ -157,7 +131,7 @@ export function MyReachOutsSection() {
                       index={index}
                       buttonRef={buttonRef}
                       style={buttonAnimatedStyle}
-                      now={now} // PASS NOW
+                      now={now}
                       onPress={() => {
                         setSelectedReachOut(reachOut);
                         open();
@@ -175,7 +149,7 @@ export function MyReachOutsSection() {
                           (r) => r.id === selectedReachOut?.id
                         ) ?? selectedReachOut
                       }
-                      now={now} // PASS NOW TO MODAL
+                      now={now}
                     />
                   </>
                 )}
@@ -253,21 +227,19 @@ function SectionHeader({
   );
 }
 
+// --- Flat, no card, no background, no shadow styles ---
 const styles = StyleSheet.create({
-  sectionCard: {
-    padding: 20,
-    borderRadius: 20,
+  sectionContainer: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
     marginBottom: 32,
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 5,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16,
+    paddingHorizontal: 4,
   },
   headerLeft: {
     flexDirection: "row",
@@ -331,6 +303,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     justifyContent: "center",
     marginTop: 16,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 5,
   },
   viewAllText: {
     // Typography.styles.button handled by ThemedText type="button"

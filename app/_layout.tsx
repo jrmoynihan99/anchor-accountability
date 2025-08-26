@@ -1,10 +1,5 @@
 // app/_layout.tsx
 import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import {
   Stack,
   router,
   useRootNavigationState,
@@ -16,7 +11,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNotificationHandler } from "@/hooks/useNotificationHandler";
 import { ensureSignedIn } from "@/lib/auth";
 import { getHasOnboarded } from "@/lib/onboarding";
 
@@ -28,6 +23,9 @@ import {
   useFonts as useSpectralFonts,
 } from "@expo-google-fonts/spectral";
 import * as Notifications from "expo-notifications";
+
+// 👇 Import your ThemeProvider and useTheme
+import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
 
 // 👇 Set foreground notification handler before React renders
 Notifications.setNotificationHandler({
@@ -41,83 +39,12 @@ Notifications.setNotificationHandler({
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
-  const segments = useSegments();
-  const navigationState = useRootNavigationState();
-
-  const [spectralLoaded] = useSpectralFonts({
-    Spectral_400Regular,
-    Spectral_700Bold,
-    Spectral_700Bold_Italic,
-  });
-
-  // Check if we're in the auth group
-  const inAuthGroup = segments[0] === "onboarding";
-
-  useEffect(() => {
-    if (!spectralLoaded || !navigationState?.key) return;
-
-    const checkAuth = async () => {
-      try {
-        console.log("Checking onboarding status...");
-        const hasCompleted = await getHasOnboarded();
-        console.log("Has completed:", hasCompleted);
-
-        // If onboarding is complete, ensure Firebase auth
-        if (hasCompleted) {
-          console.log("Onboarding complete, ensuring Firebase auth...");
-          await ensureSignedIn();
-          console.log("Firebase auth ensured");
-        }
-
-        if (!isNavigationReady) {
-          setIsNavigationReady(true);
-          await SplashScreen.hideAsync();
-        }
-
-        // Only navigate if we're not already in the right place
-        if (hasCompleted && inAuthGroup) {
-          console.log("Redirecting to tabs...");
-          router.replace("/(tabs)");
-        } else if (!hasCompleted && !inAuthGroup) {
-          console.log("Redirecting to onboarding...");
-          router.replace("/onboarding/intro");
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        if (!isNavigationReady) {
-          setIsNavigationReady(true);
-          await SplashScreen.hideAsync();
-        }
-        router.replace("/onboarding/intro");
-      }
-    };
-
-    checkAuth();
-  }, [spectralLoaded, navigationState?.key, isNavigationReady]);
-
-  if (!spectralLoaded || !isNavigationReady) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
-        }}
-      >
-        <ActivityIndicator
-          size="large"
-          color={colorScheme === "dark" ? "#fff" : "#667eea"}
-        />
-      </View>
-    );
-  }
+// 👇 A wrapper so we can use useTheme inside
+function ThemedStack() {
+  const { effectiveTheme } = useTheme();
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
@@ -157,7 +84,84 @@ export default function RootLayout() {
         />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
+      {/* 👇 Dynamically set StatusBar style based on palette/mode */}
+      <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const [isNavigationReady, setIsNavigationReady] = useState(false);
+  const segments = useSegments();
+  const navigationState = useRootNavigationState();
+
+  // Add notification handler
+  useNotificationHandler();
+
+  const [spectralLoaded] = useSpectralFonts({
+    Spectral_400Regular,
+    Spectral_700Bold,
+    Spectral_700Bold_Italic,
+  });
+
+  // Check if we're in the auth group
+  const inAuthGroup = segments[0] === "onboarding";
+
+  useEffect(() => {
+    if (!spectralLoaded || !navigationState?.key) return;
+
+    const checkAuth = async () => {
+      try {
+        const hasCompleted = await getHasOnboarded();
+
+        // If onboarding is complete, ensure Firebase auth
+        if (hasCompleted) {
+          await ensureSignedIn();
+        }
+
+        if (!isNavigationReady) {
+          setIsNavigationReady(true);
+          await SplashScreen.hideAsync();
+        }
+
+        // Only navigate if we're not already in the right place
+        if (hasCompleted && inAuthGroup) {
+          router.replace("/(tabs)");
+        } else if (!hasCompleted && !inAuthGroup) {
+          router.replace("/onboarding/intro");
+        }
+      } catch (error) {
+        if (!isNavigationReady) {
+          setIsNavigationReady(true);
+          await SplashScreen.hideAsync();
+        }
+        router.replace("/onboarding/intro");
+      }
+    };
+
+    checkAuth();
+    // eslint-disable-next-line
+  }, [spectralLoaded, navigationState?.key, isNavigationReady]);
+
+  if (!spectralLoaded || !isNavigationReady) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#fff", // Or some fallback color
+        }}
+      >
+        <ActivityIndicator size="large" color="#667eea" />
+      </View>
+    );
+  }
+
+  // 👇 Wrap app in your ThemeProvider!
+  return (
+    <ThemeProvider>
+      <ThemedStack />
     </ThemeProvider>
   );
 }

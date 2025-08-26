@@ -1,6 +1,5 @@
 // components/messages/PleaResponseModal.tsx
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from "@/hooks/ThemeContext";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -37,8 +36,7 @@ export function PleaResponseModal({
   plea,
   now,
 }: PleaResponseModalProps) {
-  const theme = useColorScheme();
-  const colors = Colors[theme ?? "dark"];
+  const { colors, effectiveTheme } = useTheme();
 
   // Screen logic
   const [screen, setScreen] = useState<ScreenType>("input");
@@ -125,8 +123,9 @@ export function PleaResponseModal({
       await addDoc(collection(db, "pleas", plea.id, "encouragements"), {
         helperUid: auth.currentUser.uid,
         message: encouragementText.trim(),
-        openToChat: isOpenToChat, // Changed from OpenToChat to openToChat
+        openToChat: isOpenToChat,
         createdAt: serverTimestamp(),
+        status: "pending",
       });
 
       setEncouragementText("");
@@ -173,10 +172,10 @@ export function PleaResponseModal({
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
       close={close}
-      theme={theme ?? "dark"}
+      theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
-      buttonBackgroundColor={colors.background}
-      buttonContentPadding={16}
+      buttonBackgroundColor={colors.cardBackground}
+      buttonContentPadding={20}
       buttonBorderWidth={isUrgent ? 1.5 : 1}
       buttonBorderColor={isUrgent ? colors.error : "transparent"}
       buttonBorderRadius={16}
