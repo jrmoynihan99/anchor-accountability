@@ -1,89 +1,98 @@
 // components/community/CreatePostFAB.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
-import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CreatePostModal } from "./CreatePostModal";
+import { EdgeInsets } from "react-native-safe-area-context";
 
-export function CreatePostFAB() {
+interface CreatePostFABProps {
+  onPress: () => void;
+  buttonRef?: any;
+  style?: any;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  insets: EdgeInsets;
+}
+
+export function CreatePostFAB({
+  onPress,
+  buttonRef,
+  style,
+  onPressIn,
+  onPressOut,
+  insets,
+}: CreatePostFABProps) {
   const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const [showModal, setShowModal] = useState(false);
   const scale = useSharedValue(1);
-  const rotation = useSharedValue(0);
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  };
 
-    // Animate button
-    rotation.value = withSpring(rotation.value + 45);
-    scale.value = withTiming(0.9, { duration: 100 }, () => {
-      scale.value = withSpring(1);
-    });
+  const handlePressIn = () => {
+    if (onPressIn) onPressIn();
+    scale.value = withTiming(0.95, { duration: 100 });
+  };
 
-    setShowModal(true);
+  const handlePressOut = () => {
+    if (onPressOut) onPressOut();
+    scale.value = withTiming(1, { duration: 100 });
   };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }, { rotate: `${rotation.value}deg` }],
+    transform: [{ scale: scale.value }],
   }));
 
   return (
-    <>
+    <TouchableOpacity
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={buttonRef ? 1 : 0.9}
+      style={[
+        styles.fabContainer,
+        {
+          bottom: insets.bottom + 100,
+        },
+      ]}
+    >
       <Animated.View
+        ref={buttonRef}
         style={[
           styles.fab,
-          animatedStyle,
           {
             backgroundColor: colors.buttonBackground,
             shadowColor: colors.shadow,
-            bottom: insets.bottom + 100,
           },
+          animatedStyle,
+          style, // This will contain the transition animation styles
         ]}
       >
-        <TouchableOpacity
-          style={styles.fabButton}
-          onPress={handlePress}
-          activeOpacity={0.9}
-        >
-          <IconSymbol name="plus" size={28} color={colors.white} />
-        </TouchableOpacity>
+        <IconSymbol name="plus" size={28} color={colors.white} />
       </Animated.View>
-
-      <CreatePostModal
-        isVisible={showModal}
-        onClose={() => {
-          setShowModal(false);
-          rotation.value = withSpring(0);
-        }}
-      />
-    </>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  fab: {
+  fabContainer: {
     position: "absolute",
     right: 24,
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
     shadowOpacity: 0.3,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
     elevation: 8,
-  },
-  fabButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });

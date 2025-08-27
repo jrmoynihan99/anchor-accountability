@@ -43,10 +43,8 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       status: "read", // For now, all messages are considered read
     });
 
-    // Calculate header height (safe area + header content)
-    const headerHeight = insets.top + 56; // Status bar + header content
-    // Calculate input height (input content + safe area) - updated for smaller input
-    const inputHeight = 60 + insets.bottom; // Reduced from 80
+    // Calculate input height to add bottom padding
+    const inputHeight = 60 + insets.bottom;
 
     return (
       <ScrollView
@@ -55,12 +53,13 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
         contentContainerStyle={[
           styles.messagesContent,
           {
-            paddingTop: headerHeight,
-            paddingBottom: inputHeight,
+            paddingBottom: inputHeight + 16, // Add padding for the input + some extra space
           },
         ]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={onContentSizeChange}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
       >
         {messages.length === 0 ? (
           <EmptyMessagesState

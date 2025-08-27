@@ -1,4 +1,4 @@
-// app/message-thread.tsx - Updated to handle notification deep linking
+// app/message-thread.tsx - Hybrid approach with smooth keyboard animations
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
@@ -43,7 +43,7 @@ export default function MessageThreadScreen() {
   const threadName = params.threadName as string;
   const otherUserId = params.otherUserId as string;
   const pleaId = params.pleaId as string;
-  const messageId = params.messageId as string; // For potential scrolling to specific message
+  const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
   const [inputText, setInputText] = useState("");
@@ -61,16 +61,66 @@ export default function MessageThreadScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Animated values for keyboard
+  // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
+
+  // Keyboard event listeners with smooth animations
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (event) => {
+        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
+        keyboardHeight.value = withTiming(event.endCoordinates.height, {
+          duration: duration,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      (event) => {
+        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
+        keyboardHeight.value = withTiming(0, {
+          duration: duration,
+          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        });
+      }
+    );
+
+    // Also listen for keyboardDidHide to catch interactive dismissal
+    const keyboardDidHide = Keyboard.addListener("keyboardDidHide", (event) => {
+      // Force animation to 0 if somehow missed by keyboardWillHide
+      keyboardHeight.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+      });
+    });
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+      keyboardDidHide.remove();
+    };
+  }, []);
+
+  // Animated styles for smooth transitions
+  const animatedInputStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: -keyboardHeight.value }],
+    };
+  });
+
+  const animatedMessagesStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: -keyboardHeight.value }],
+    };
+  });
 
   // Fetch missing thread data if coming from notification
   useEffect(() => {
     const fetchThreadData = async () => {
-      // If we have threadName and otherUserId, no need to fetch
       if (threadName && otherUserId) return;
-
-      // If we don't have threadId, can't fetch
       if (!threadId || !currentUserId) return;
 
       setLoadingThreadData(true);
@@ -79,7 +129,6 @@ export default function MessageThreadScreen() {
         if (threadDoc.exists()) {
           const threadData = threadDoc.data();
 
-          // Determine which user is the "other" user
           const otherUserIdFromThread =
             threadData.userA === currentUserId
               ? threadData.userB
@@ -87,7 +136,6 @@ export default function MessageThreadScreen() {
 
           setFetchedOtherUserId(otherUserIdFromThread);
 
-          // Fetch other user's display name
           const userDoc = await getDoc(doc(db, "users", otherUserIdFromThread));
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -111,11 +159,9 @@ export default function MessageThreadScreen() {
     fetchThreadData();
   }, [threadId, threadName, otherUserId, currentUserId]);
 
-  // Scroll to specific message if messageId is provided (future enhancement)
+  // Scroll to specific message if messageId is provided
   useEffect(() => {
     if (messageId && messages.length > 0) {
-      // TODO: Implement scrolling to specific message
-      // For now, just scroll to bottom
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 500);
@@ -125,55 +171,6 @@ export default function MessageThreadScreen() {
   // Use fetched data as fallback
   const displayThreadName = threadName || fetchedThreadName || "Unknown User";
   const displayOtherUserId = otherUserId || fetchedOtherUserId;
-
-  // Keyboard event listeners with native iOS timing
-  useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (event) => {
-        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        keyboardHeight.value = withTiming(event.endCoordinates.height, {
-          duration: duration,
-          easing:
-            Platform.OS === "ios"
-              ? Easing.bezier(0.25, 0.1, 0.25, 1)
-              : Easing.bezier(0.25, 0.46, 0.45, 0.94),
-        });
-      }
-    );
-
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      (event) => {
-        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        keyboardHeight.value = withTiming(0, {
-          duration: duration,
-          easing:
-            Platform.OS === "ios"
-              ? Easing.bezier(0.25, 0.1, 0.25, 1)
-              : Easing.bezier(0.25, 0.46, 0.45, 0.94),
-        });
-      }
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
-  }, []);
-
-  // Animated styles
-  const animatedInputStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
-    };
-  });
-
-  const animatedMessagesStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
-    };
-  });
 
   // Get current user ID
   useEffect(() => {
@@ -244,7 +241,7 @@ export default function MessageThreadScreen() {
   const handleInputFocus = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    }, 300); // Slightly longer delay to account for keyboard animation
   };
 
   const handleBack = () => {
@@ -302,6 +299,15 @@ export default function MessageThreadScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
 
+        <MessageThreadHeader
+          threadName={displayThreadName}
+          isTyping={isTyping}
+          colors={colors}
+          onBack={handleBack}
+          colorScheme={effectiveTheme}
+          otherUserId={displayOtherUserId}
+        />
+
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
             ref={scrollViewRef}
@@ -313,15 +319,6 @@ export default function MessageThreadScreen() {
             onContentSizeChange={handleContentSizeChange}
           />
         </Animated.View>
-
-        <MessageThreadHeader
-          threadName={displayThreadName}
-          isTyping={isTyping}
-          colors={colors}
-          onBack={handleBack}
-          colorScheme={effectiveTheme}
-          otherUserId={displayOtherUserId}
-        />
 
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
@@ -352,7 +349,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
   },
   loadingContainer: {
     flex: 1,

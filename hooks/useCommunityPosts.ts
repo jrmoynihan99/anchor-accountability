@@ -8,6 +8,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  QueryDocumentSnapshot,
   startAfter,
   where,
 } from "firebase/firestore";
@@ -21,6 +22,9 @@ export function useCommunityPosts() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+
+  // Used to force effect refresh for pull-to-refresh logic
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Keep track of the last document for pagination
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
@@ -134,7 +138,7 @@ export function useCommunityPosts() {
       }
       listenerSetupRef.current = false;
     };
-  }, [auth.currentUser]);
+  }, [auth.currentUser, refreshKey]); // <-- include refreshKey!
 
   // Load more posts (pagination)
   const loadMore = async () => {
@@ -172,7 +176,7 @@ export function useCommunityPosts() {
         setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
 
         const morePosts = await Promise.all(
-          snapshot.docs.map(async (doc) => {
+          snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
             const data = doc.data();
             const postId = doc.id;
 
@@ -231,8 +235,6 @@ export function useCommunityPosts() {
 
   // Refresh function for pull-to-refresh
   const refresh = async () => {
-    listenerSetupRef.current = false;
-    lastDocRef.current = null;
     setHasMore(true);
     setPosts([]);
     setLoading(true);
@@ -242,8 +244,11 @@ export function useCommunityPosts() {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
+    lastDocRef.current = null;
+    listenerSetupRef.current = false;
 
-    // The useEffect will handle re-setting up the listener
+    // Bump the refreshKey to force effect to run again!
+    setRefreshKey((k) => k + 1);
   };
 
   return {

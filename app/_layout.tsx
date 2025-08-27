@@ -72,16 +72,6 @@ function ThemedStack() {
             presentation: "card",
           }}
         />
-        <Stack.Screen
-          name="modal"
-          options={{
-            presentation: "modal",
-            headerShown: false,
-            animation: "slide_from_bottom",
-            gestureEnabled: true,
-            gestureDirection: "vertical",
-          }}
-        />
         <Stack.Screen name="+not-found" />
       </Stack>
       {/* 👇 Dynamically set StatusBar style based on palette/mode */}

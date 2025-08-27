@@ -46,7 +46,7 @@ export const MessageInput = forwardRef<
                 styles.inputWrapper,
                 {
                   backgroundColor: colors.textInputBackground,
-                  borderColor: colors.border, // More visible border
+                  borderColor: colors.border,
                 },
               ]}
             >
@@ -57,6 +57,7 @@ export const MessageInput = forwardRef<
                 placeholderTextColor={colors.textSecondary}
                 value={inputText}
                 onChangeText={onInputChange}
+                onFocus={onFocus}
                 multiline
                 maxLength={1000}
                 submitBehavior="newline"
@@ -95,8 +96,7 @@ MessageInput.displayName = "MessageInput";
 
 const styles = StyleSheet.create({
   inputContainer: {
-    // Remove absolute positioning - parent handles it now
-    zIndex: 1000,
+    // No absolute positioning - now part of flex layout
   },
   blurContainer: {
     overflow: "hidden",

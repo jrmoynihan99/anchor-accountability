@@ -1,5 +1,6 @@
 // components/community/CommunityPostList.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useCommunityPosts } from "@/hooks/useCommunityPosts";
@@ -11,21 +12,15 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import Animated, { LinearTransition } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CommunityPostCard } from "./CommunityPostCard";
+import { ViewPostModal } from "./ViewPostModal";
 import { CommunityPost } from "./types";
 
-export function CommunityPostList() {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const { posts, loading, loadingMore, error, hasMore, loadMore, refresh } =
-    useCommunityPosts();
-
-  const renderPost = ({ item }: { item: CommunityPost }) => (
-    <CommunityPostCard post={item} />
-  );
-
-  const renderHeader = () => (
+// --- Section Header (for ListHeaderComponent)
+function SectionHeader({ colors }: { colors: any }) {
+  return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
         <View
@@ -53,6 +48,60 @@ export function CommunityPostList() {
       </View>
     </View>
   );
+}
+
+export function CommunityPostList() {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { posts, loading, loadingMore, error, loadMore, refresh } =
+    useCommunityPosts();
+
+  // 🚨 NO SELECTED POST STATE NEEDED!
+
+  const renderPost = ({ item }: { item: CommunityPost }) => (
+    <Animated.View
+      key={item.id}
+      layout={LinearTransition.duration(250)}
+      style={{ width: "100%" }}
+    >
+      <ButtonModalTransitionBridge
+        buttonBorderRadius={16}
+        modalBorderRadius={28}
+        modalWidthPercent={0.95}
+        modalHeightPercent={0.8}
+      >
+        {({
+          open,
+          close,
+          isModalVisible,
+          progress,
+          buttonAnimatedStyle,
+          modalAnimatedStyle,
+          buttonRef,
+          handlePressIn,
+          handlePressOut,
+        }) => (
+          <>
+            <CommunityPostCard
+              post={item}
+              buttonRef={buttonRef}
+              style={buttonAnimatedStyle}
+              onPress={open} // <-- Only open the bridge modal!
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+            />
+            <ViewPostModal
+              isVisible={isModalVisible}
+              progress={progress}
+              modalAnimatedStyle={modalAnimatedStyle}
+              close={close}
+              post={item}
+            />
+          </>
+        )}
+      </ButtonModalTransitionBridge>
+    </Animated.View>
+  );
 
   const renderEmpty = () => {
     if (loading) {
@@ -68,7 +117,6 @@ export function CommunityPostList() {
         </View>
       );
     }
-
     if (error) {
       return (
         <View style={styles.centerContainer}>
@@ -86,7 +134,6 @@ export function CommunityPostList() {
         </View>
       );
     }
-
     return (
       <View style={styles.emptyContainer}>
         <IconSymbol
@@ -111,22 +158,19 @@ export function CommunityPostList() {
     );
   };
 
-  const renderFooter = () => {
-    if (!loadingMore) return null;
-
-    return (
+  const renderFooter = () =>
+    loadingMore ? (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={colors.textSecondary} />
       </View>
-    );
-  };
+    ) : null;
 
   return (
     <FlatList
       data={posts}
       renderItem={renderPost}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={renderHeader}
+      ListHeaderComponent={<SectionHeader colors={colors} />}
       ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[
@@ -134,6 +178,7 @@ export function CommunityPostList() {
         {
           paddingTop: insets.top + 20,
           paddingBottom: insets.bottom + 120,
+          paddingHorizontal: 24,
         },
         posts.length === 0 && styles.emptyContentContainer,
       ]}
