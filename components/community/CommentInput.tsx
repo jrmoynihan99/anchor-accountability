@@ -49,7 +49,6 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
     }));
 
     const handleSubmit = async () => {
-      console.log("Send button pressed!");
       if (!canSend) return;
 
       const success = await onSubmit(comment.trim());

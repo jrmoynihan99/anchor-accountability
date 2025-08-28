@@ -1,7 +1,7 @@
 // hooks/useNotificationHandler.ts
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type RejectionModalParams = {
   type: "plea" | "post";
@@ -11,32 +11,59 @@ type RejectionModalParams = {
 
 interface NotificationHandlerOptions {
   openRejectionModal?: (params: RejectionModalParams) => void;
+  currentThreadId?: string | null; // Add current thread tracking
+  currentPleaId?: string | null; // Add current plea tracking
 }
 
 /**
  * Handles push notification responses globally.
- * @param options Optional callbacks for handling special notification types (e.g., openRejectionModal)
+ * @param options Optional callbacks for handling special notification types and current thread info
  */
 export function useNotificationHandler(
   options: NotificationHandlerOptions = {}
 ) {
-  const { openRejectionModal } = options;
+  const { openRejectionModal, currentThreadId, currentPleaId } = options;
+  const lastHandledNotificationId = useRef<string | null>(null);
 
   useEffect(() => {
-    // Handle notification when app is in foreground (e.g., show banner/badge/etc)
+    // Handle notification when app is in foreground
     const foregroundSubscription =
       Notifications.addNotificationReceivedListener((notification) => {
-        // Optionally, show a custom banner or badge here if you want.
-        // You could handle "rejection" type here as well for immediate modals in the foreground,
-        // but usually only handle notification taps in background/terminated.
-        // console.log("Notification received in foreground:", notification);
+        const { data } = notification.request.content;
+
+        // If this is a message notification and user is already in that thread,
+        // don't show the banner
+        if (data?.threadId && currentThreadId === data.threadId) {
+          return;
+        }
+
+        // If this is an encouragement notification and user is viewing that plea,
+        // don't show the banner
+        if (
+          data?.type === "encouragement" &&
+          data?.pleaId &&
+          currentPleaId === data.pleaId
+        ) {
+          return;
+        }
+
+        // For all other cases, the default behavior will show the banner
+        // (this is controlled by the notification handler we set up in _layout.tsx)
       });
 
     // Handle notification tap (backgrounded or closed)
     const responseSubscription =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const { data } = response.notification.request.content;
-        handleNotificationData(data);
+        const notificationId = response.notification.request.identifier;
+
+        // Prevent handling the same notification multiple times
+        if (lastHandledNotificationId.current === notificationId) {
+          return;
+        }
+
+        lastHandledNotificationId.current = notificationId;
+        handleNotificationData(data, notificationId);
       });
 
     // Handle app launch from notification (cold start)
@@ -44,9 +71,16 @@ export function useNotificationHandler(
       const response = await Notifications.getLastNotificationResponseAsync();
       if (response) {
         const { data } = response.notification.request.content;
+        const notificationId = response.notification.request.identifier;
+
         // Add a small delay to ensure navigation is ready before navigating or showing modal
         setTimeout(() => {
-          handleNotificationData(data);
+          if (lastHandledNotificationId.current === notificationId) {
+            return;
+          }
+
+          lastHandledNotificationId.current = notificationId;
+          handleNotificationData(data, notificationId);
         }, 1000);
       }
     };
@@ -59,8 +93,10 @@ export function useNotificationHandler(
     };
 
     // ----- HANDLER -----
-    function handleNotificationData(data: any) {
-      if (!data) return;
+    function handleNotificationData(data: any, notificationId: string) {
+      if (!data) {
+        return;
+      }
 
       // 1. New: Moderation rejection for plea or post
       if (
@@ -95,6 +131,11 @@ export function useNotificationHandler(
           });
         }
       } else if (data.threadId) {
+        // If user is already in this thread, don't navigate
+        if (currentThreadId === data.threadId) {
+          return;
+        }
+
         router.push({
           pathname: "/message-thread",
           params: { threadId: data.threadId, messageId: data.messageId },
@@ -102,5 +143,5 @@ export function useNotificationHandler(
       }
     }
     // -----
-  }, [openRejectionModal]);
+  }, [openRejectionModal, currentThreadId, currentPleaId]);
 }

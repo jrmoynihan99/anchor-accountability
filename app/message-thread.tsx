@@ -4,6 +4,7 @@ import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useThread } from "@/hooks/ThreadContext"; // Add this import
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import {
   auth,
@@ -36,6 +37,7 @@ import Animated, {
 
 export default function MessageThreadScreen() {
   const { colors, effectiveTheme } = useTheme();
+  const { setCurrentThreadId } = useThread(); // Add this hook
   const params = useLocalSearchParams();
 
   // Get thread info from params
@@ -63,6 +65,30 @@ export default function MessageThreadScreen() {
 
   // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
+
+  // Set current thread when component mounts and clear when unmounting
+  useEffect(() => {
+    if (actualThreadId) {
+      setCurrentThreadId(actualThreadId);
+    }
+
+    // Clear current thread when leaving this screen
+    return () => {
+      setCurrentThreadId(null);
+
+      // Mark any remaining messages as read when leaving
+      if (actualThreadId) {
+        markMessagesAsRead(actualThreadId).catch(console.error);
+      }
+    };
+  }, [actualThreadId, setCurrentThreadId]);
+
+  // Update current thread when actualThreadId changes (for new threads)
+  useEffect(() => {
+    if (actualThreadId) {
+      setCurrentThreadId(actualThreadId);
+    }
+  }, [actualThreadId, setCurrentThreadId]);
 
   // Keyboard event listeners with smooth animations
   useEffect(() => {

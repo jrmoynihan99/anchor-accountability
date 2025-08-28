@@ -1,5 +1,6 @@
 // components/messages/MyReachOutModal.tsx
 import { useTheme } from "@/hooks/ThemeContext";
+import { useThread } from "@/hooks/ThreadContext"; // Add this import
 import { db, markEncouragementAsRead } from "@/lib/firebase";
 import {
   collection,
@@ -8,7 +9,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
@@ -43,8 +44,24 @@ export function MyReachOutModal({
   now,
 }: MyReachOutModalProps) {
   const { colors, effectiveTheme } = useTheme();
+  const { setCurrentPleaId } = useThread();
   const [encouragements, setEncouragements] = useState<EncouragementData[]>([]);
   const [loadingEncouragements, setLoadingEncouragements] = useState(false);
+  const componentId = useRef(Math.random().toString(36).substr(2, 9));
+
+  // Track when modal is open/closed and which plea is being viewed
+  useEffect(() => {
+    if (isVisible && reachOut) {
+      setCurrentPleaId(reachOut.id);
+    } else {
+      setCurrentPleaId(null);
+    }
+
+    // Clear plea ID when component unmounts
+    return () => {
+      setCurrentPleaId(null);
+    };
+  }, [isVisible, reachOut, setCurrentPleaId]);
 
   // Fetch encouragements when modal opens and reachOut changes
   useEffect(() => {
