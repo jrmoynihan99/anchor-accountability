@@ -1,8 +1,7 @@
 // components/community/CommunityPostCard.tsx
 import { useTheme } from "@/hooks/ThemeContext";
-import { usePostActions } from "@/hooks/usePostActions";
 import { auth } from "@/lib/firebase";
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
 import { CommunityPostCardContent } from "./CommunityPostCardContent";
@@ -15,6 +14,10 @@ interface CommunityPostCardProps {
   onPress?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
+  isLiked?: boolean;
+  likeCount?: number;
+  onLikePress?: () => void;
+  actionLoading?: boolean;
 }
 
 export function CommunityPostCard({
@@ -24,25 +27,17 @@ export function CommunityPostCard({
   onPress,
   onPressIn,
   onPressOut,
+  isLiked,
+  likeCount,
+  onLikePress,
+  actionLoading,
 }: CommunityPostCardProps) {
   const { colors } = useTheme();
-  const { toggleLike, actionLoading } = usePostActions();
-  const [isLiked, setIsLiked] = useState(post.hasUserLiked || false);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
-
   const isOwnPost = auth.currentUser?.uid === post.uid;
 
-  const handleLike = async (e: any) => {
+  const handleLike = (e: any) => {
     e.stopPropagation?.();
-
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-
-    const success = await toggleLike(post.id, isLiked);
-    if (!success) {
-      setIsLiked(isLiked);
-      setLikeCount(post.likeCount);
-    }
+    onLikePress?.();
   };
 
   return (
@@ -62,7 +57,7 @@ export function CommunityPostCard({
             shadowColor: colors.shadow,
             borderColor: colors.cardBorder || "transparent",
           },
-          style, // This is where the ButtonModalTransitionBridge passes its animated style!
+          style,
         ]}
       >
         <CommunityPostCardContent
@@ -71,7 +66,7 @@ export function CommunityPostCard({
           isLiked={isLiked}
           likeCount={likeCount}
           onLikePress={handleLike}
-          actionLoading={actionLoading === `like-${post.id}`}
+          actionLoading={actionLoading}
           showReadMoreHint={true}
         />
       </Animated.View>

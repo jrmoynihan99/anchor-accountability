@@ -115,12 +115,14 @@ export function PostCommentsSection({
         <View
           style={[
             styles.commentCount,
-            { backgroundColor: colors.inputBackground || colors.background },
+            {
+              borderColor: colors.border,
+            },
           ]}
         >
           <IconSymbol
             name="message"
-            size={16}
+            size={18}
             color={colors.textSecondary}
             style={{ marginRight: 4 }}
           />
@@ -157,9 +159,10 @@ const styles = StyleSheet.create({
   commentCount: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
   },
   commentsContainer: {
     paddingBottom: 20,

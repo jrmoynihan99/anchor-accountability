@@ -74,6 +74,32 @@ const getRecentContent = async (daysToFetch = 7) => {
   }
 };
 
+// --- EXPO PUSH NOTIFICATION HELPER (AXIOS VERSION) --- //
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
+
+async function sendExpoPushNotification(to, title, body, data = {}) {
+  const message = {
+    to,
+    sound: "default",
+    title,
+    body,
+    data,
+    // priority: "high",
+  };
+
+  try {
+    const res = await axios.post(EXPO_PUSH_URL, [message], {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.data?.errors) {
+      logger.error("Expo push error:", res.data.errors);
+    }
+    return res.data;
+  } catch (e) {
+    logger.error("Failed to send Expo push:", e);
+  }
+}
+
 const getPrompt = async () => {
   try {
     const doc = await admin
@@ -710,6 +736,9 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
   const plea = snap.data();
   const message = (plea?.message || "").trim();
 
+  // Log incoming fields
+  logger.info(`[moderatePlea] Message: "${message}"`);
+
   // If message/context is blank, auto-approve
   if (!message) {
     await snap.ref.update({ status: "approved" });
@@ -722,6 +751,7 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
   try {
     const modResult = await openai.moderations.create({ input: message });
     flagged = modResult.results[0].flagged;
+    logger.info(`[moderatePlea] OpenAI Moderation flagged: ${flagged}`);
   } catch (e) {
     logger.error("OpenAI Moderation API failed, skipping to GPT fallback.", e);
   }
@@ -731,7 +761,9 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
   if (!flagged) {
     try {
       const filteringPrompt = await getFilteringPrompt("plea");
+      logger.info(`[moderatePlea] Using prompt: ${filteringPrompt}`);
       const promptText = filteringPrompt.replace("{message}", message);
+      logger.info(`[moderatePlea] Sending prompt text: ${promptText}`);
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "system", content: promptText }],
@@ -739,6 +771,7 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
         max_tokens: 3,
       });
       const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderatePlea] GPT result: ${result}`);
       gptFlagged = result !== "ALLOW";
     } catch (err) {
       logger.error("GPT moderation failed:", err);
@@ -753,6 +786,35 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
     status: newStatus,
     unreadEncouragementCount: 0, // 👈 Add this line
   });
+
+  // --- NEW: Send push notification on REJECTION ---
+  if (newStatus === "rejected") {
+    try {
+      const userSnap = await admin
+        .firestore()
+        .collection("users")
+        .doc(plea.uid)
+        .get();
+      const userData = userSnap.data();
+      const expoPushToken = userData?.expoPushToken;
+      if (expoPushToken && expoPushToken.startsWith("ExponentPushToken")) {
+        const title = "Your plea for help was not approved";
+        const body =
+          "We couldn't approve your request. Please make sure it follows our community guidelines.";
+        const data = {
+          type: "rejection",
+          itemType: "plea",
+          pleaId: snap.id,
+          message: message,
+        };
+        await sendExpoPushNotification(expoPushToken, title, body, data);
+      } else {
+        logger.warn(`No expoPushToken for user ${plea.uid}`);
+      }
+    } catch (err) {
+      logger.error("Error sending push notification for rejected plea:", err);
+    }
+  }
 });
 
 exports.moderateEncouragement = onDocumentCreated(
@@ -809,9 +871,168 @@ exports.moderateEncouragement = onDocumentCreated(
   }
 );
 
+// Add these two functions to your existing index.js
+
+exports.moderatePost = onDocumentCreated(
+  "communityPosts/{postId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const post = snap.data();
+    const title = (post?.title || "").trim();
+    const content = (post?.content || "").trim();
+    const combinedText = `${title} ${content}`.trim();
+
+    // Log incoming fields
+    logger.info(
+      `[moderatePost] Title: "${title}" | Content: "${content}" | Combined: "${combinedText}"`
+    );
+
+    // If both title and content are blank, auto-reject
+    if (!combinedText) {
+      await snap.ref.update({ status: "rejected" });
+      logger.info(`Post ${snap.id} was blank, auto-rejected.`);
+      return;
+    }
+
+    // 1. OpenAI Moderation API
+    let flagged = false;
+    try {
+      const modResult = await openai.moderations.create({
+        input: combinedText,
+      });
+      flagged = modResult.results[0].flagged;
+      logger.info(`[moderatePost] OpenAI Moderation flagged: ${flagged}`);
+    } catch (e) {
+      logger.error(
+        "OpenAI Moderation API failed, skipping to GPT fallback.",
+        e
+      );
+    }
+
+    // 2. GPT moderation with Firestore prompt
+    let gptFlagged = false;
+    if (!flagged) {
+      try {
+        const filteringPrompt = await getFilteringPrompt("post");
+        logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
+        const promptText = filteringPrompt.replace("{message}", combinedText);
+        logger.info(`[moderatePost] Sending prompt text: ${promptText}`);
+        const gptCheck = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "system", content: promptText }],
+          temperature: 0,
+          max_tokens: 3,
+        });
+        const result = gptCheck.choices[0].message.content.trim();
+        logger.info(`[moderatePost] GPT result: ${result}`);
+        gptFlagged = result !== "ALLOW";
+      } catch (err) {
+        logger.error("GPT moderation failed:", err);
+        gptFlagged = true;
+      }
+    }
+
+    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for post ${snap.id}: ${newStatus}`);
+
+    await snap.ref.update({ status: newStatus });
+
+    // --- NEW: Send push notification on REJECTION ---
+    if (newStatus === "rejected") {
+      try {
+        const userSnap = await admin
+          .firestore()
+          .collection("users")
+          .doc(post.uid)
+          .get();
+        const userData = userSnap.data();
+        const expoPushToken = userData?.expoPushToken;
+        if (expoPushToken && expoPushToken.startsWith("ExponentPushToken")) {
+          const title = "Your post was not approved";
+          const body =
+            "We couldn't approve your post. Please make sure it follows our community guidelines.";
+          const data = {
+            type: "rejection",
+            itemType: "post",
+            postId: snap.id,
+            message: combinedText,
+          };
+          await sendExpoPushNotification(expoPushToken, title, body, data);
+        } else {
+          logger.warn(`No expoPushToken for user ${post.uid}`);
+        }
+      } catch (err) {
+        logger.error("Error sending push notification for rejected post:", err);
+      }
+    }
+  }
+);
+
+exports.moderateComment = onDocumentCreated(
+  "communityPosts/{postId}/comments/{commentId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const comment = snap.data();
+    const content = (comment?.content || "").trim();
+
+    // If content is blank, auto-reject
+    if (!content) {
+      await snap.ref.update({ status: "rejected" });
+      logger.info(`Comment ${snap.id} was blank, auto-rejected.`);
+      return;
+    }
+
+    // 1. OpenAI Moderation API
+    let flagged = false;
+    try {
+      const modResult = await openai.moderations.create({ input: content });
+      flagged = modResult.results[0].flagged;
+    } catch (e) {
+      logger.error(
+        "OpenAI Moderation API failed, skipping to GPT fallback.",
+        e
+      );
+    }
+
+    // 2. GPT moderation with Firestore prompt
+    let gptFlagged = false;
+    if (!flagged) {
+      try {
+        const filteringPrompt = await getFilteringPrompt("comment");
+        const promptText = filteringPrompt.replace("{message}", content);
+        const gptCheck = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "system", content: promptText }],
+          temperature: 0,
+          max_tokens: 3,
+        });
+        const result = gptCheck.choices[0].message.content.trim();
+        gptFlagged = result !== "ALLOW";
+      } catch (err) {
+        logger.error("GPT moderation failed:", err);
+        gptFlagged = true;
+      }
+    }
+
+    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for comment ${snap.id}: ${newStatus}`);
+
+    await snap.ref.update({ status: newStatus });
+  }
+);
+
 async function getFilteringPrompt(type = "plea") {
-  const docId =
-    type === "plea" ? "pleaFilteringPrompt" : "encouragementFilteringPrompt";
+  const docMap = {
+    plea: "pleaFilteringPrompt",
+    encouragement: "encouragementFilteringPrompt",
+    post: "postFilteringPrompt",
+    comment: "commentFilteringPrompt",
+  };
+
+  const docId = docMap[type] || "pleaFilteringPrompt";
+
   try {
     const doc = await admin.firestore().collection("config").doc(docId).get();
     if (doc.exists) {
@@ -820,8 +1041,16 @@ async function getFilteringPrompt(type = "plea") {
   } catch (error) {
     logger.error(`Error fetching ${docId} from Firestore:`, error);
   }
-  // Fallback
-  return type === "plea"
-    ? "You are an expert moderator for a Christian accountability support app. Block inappropriate context. Only reply ALLOW or BLOCK. {message}"
-    : "You are an expert moderator for a Christian encouragement system. Only reply ALLOW or BLOCK. {message}";
+
+  // Fallback prompts
+  const fallbacks = {
+    plea: "You are an expert moderator for a Christian accountability support app. Block inappropriate context. Only reply ALLOW or BLOCK. {message}",
+    encouragement:
+      "You are an expert moderator for a Christian encouragement system. Only reply ALLOW or BLOCK. {message}",
+    post: "You are an expert moderator for a Christian community forum. Block trolling, spam, hate speech, or inappropriate content. Only reply ALLOW or BLOCK. {message}",
+    comment:
+      "You are an expert moderator for community comments. Block trolling, spam, or inappropriate responses. Only reply ALLOW or BLOCK. {message}",
+  };
+
+  return fallbacks[type] || fallbacks.plea;
 }

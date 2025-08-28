@@ -1,7 +1,6 @@
 // components/community/ViewPostModal.tsx
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { useTheme } from "@/hooks/ThemeContext";
-import { usePostActions } from "@/hooks/usePostActions";
 import { usePostComments } from "@/hooks/usePostComments";
 import { auth } from "@/lib/firebase";
 import React, { useRef, useState } from "react";
@@ -9,6 +8,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { CommentInput, CommentInputRef } from "./CommentInput";
 import { CommunityPostCardContent } from "./CommunityPostCardContent";
 import { PostCommentsSection } from "./PostCommentsSection";
+import { PostDetailView } from "./PostDetailView";
 import { CommunityPost } from "./types";
 
 interface ViewPostModalProps {
@@ -17,6 +17,10 @@ interface ViewPostModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   post: CommunityPost | null;
+  isLiked?: boolean;
+  likeCount?: number;
+  onLikePress?: () => void;
+  actionLoading?: boolean;
 }
 
 export function ViewPostModal({
@@ -25,49 +29,40 @@ export function ViewPostModal({
   modalAnimatedStyle,
   close,
   post,
+  isLiked,
+  likeCount,
+  onLikePress,
+  actionLoading,
 }: ViewPostModalProps) {
   const { colors, effectiveTheme } = useTheme();
-  const { toggleLike, actionLoading } = usePostActions();
   const { comments, loading, error, posting, postComment, toggleCommentLike } =
     usePostComments(post?.id || null);
 
-  const [isLiked, setIsLiked] = useState(post?.hasUserLiked || false);
-  const [likeCount, setLikeCount] = useState(post?.likeCount || 0);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-
   const commentInputRef = useRef<CommentInputRef>(null);
 
   if (!post) return null;
 
   const isOwnPost = auth.currentUser?.uid === post.uid;
 
-  const handleLike = async (e: any) => {
+  const handleLike = (e: any) => {
     e?.stopPropagation?.();
-
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-
-    const success = await toggleLike(post.id, isLiked);
-    if (!success) {
-      setIsLiked(isLiked);
-      setLikeCount(post.likeCount);
-    }
+    onLikePress?.();
   };
 
   const handlePostComment = async (content: string) => {
     const success = await postComment(content, replyingTo);
     if (success) {
-      setReplyingTo(null); // Clear reply state
+      setReplyingTo(null);
     }
     return success;
   };
 
   const handleReplyToComment = (commentId: string) => {
     setReplyingTo(commentId);
-    // Auto-focus the input when replying
     setTimeout(() => {
       commentInputRef.current?.focus();
-    }, 100); // Small delay to ensure state is updated
+    }, 100);
   };
 
   const handleCancelReply = () => {
@@ -103,20 +98,19 @@ export function ViewPostModal({
           style={styles.scrollContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
         >
           {/* Full Post Content */}
           <View
             style={[styles.postSection, { borderBottomColor: colors.border }]}
           >
-            <CommunityPostCardContent
+            <PostDetailView
               post={post}
               isOwnPost={isOwnPost}
               isLiked={isLiked}
               likeCount={likeCount}
               onLikePress={handleLike}
-              actionLoading={actionLoading === `like-${post.id}`}
-              showReadMoreHint={false}
+              actionLoading={actionLoading}
             />
           </View>
 
@@ -131,7 +125,7 @@ export function ViewPostModal({
           />
         </ScrollView>
 
-        {/* Comment Input - Sticky at bottom */}
+        {/* Comment Input - Sticky at bottom of modal */}
         <CommentInput
           ref={commentInputRef}
           onSubmit={handlePostComment}
@@ -161,7 +155,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 32,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   postSection: {
     paddingHorizontal: 8,

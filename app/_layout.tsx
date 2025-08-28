@@ -11,7 +11,11 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import "react-native-reanimated";
 
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+import { RejectionModal } from "@/components/RejectionModal";
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
+import { useRejectionModalController } from "@/hooks/useRejectionModal";
 import { ensureSignedIn } from "@/lib/auth";
 import { getHasOnboarded } from "@/lib/onboarding";
 
@@ -85,8 +89,11 @@ export default function RootLayout() {
   const segments = useSegments();
   const navigationState = useRootNavigationState();
 
-  // Add notification handler
-  useNotificationHandler();
+  // 👇 Set up the rejection modal controller (Reanimated + state)
+  const rejectionModal = useRejectionModalController();
+
+  // 👇 Pass open handler to notification handler so rejections can trigger the modal
+  useNotificationHandler({ openRejectionModal: rejectionModal.open });
 
   const [spectralLoaded] = useSpectralFonts({
     Spectral_400Regular,
@@ -135,23 +142,34 @@ export default function RootLayout() {
 
   if (!spectralLoaded || !isNavigationReady) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#fff", // Or some fallback color
-        }}
-      >
-        <ActivityIndicator size="large" color="#667eea" />
-      </View>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            backgroundColor: "#fff", // Or some fallback color
+          }}
+        >
+          <ActivityIndicator size="large" color="#667eea" />
+        </View>
+      </GestureHandlerRootView>
     );
   }
 
-  // 👇 Wrap app in your ThemeProvider!
+  // 👇 Wrap app in GestureHandlerRootView for global gestures
   return (
-    <ThemeProvider>
-      <ThemedStack />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <ThemedStack />
+        <RejectionModal
+          isVisible={rejectionModal.visible}
+          close={rejectionModal.close}
+          type={rejectionModal.type}
+          message={rejectionModal.message}
+          reason={rejectionModal.reason}
+        />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -4,7 +4,8 @@ import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTr
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useCommunityPosts } from "@/hooks/useCommunityPosts";
-import React from "react";
+import { usePostActions } from "@/hooks/usePostActions";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -55,8 +56,55 @@ export function CommunityPostList() {
   const insets = useSafeAreaInsets();
   const { posts, loading, loadingMore, error, loadMore, refresh } =
     useCommunityPosts();
+  const { toggleLike, actionLoading } = usePostActions();
 
-  // 🚨 NO SELECTED POST STATE NEEDED!
+  // Parent state for managing like states across card and modal
+  const [postStates, setPostStates] = useState<
+    Record<string, { isLiked: boolean; likeCount: number }>
+  >({});
+
+  // Initialize state when posts load
+  useEffect(() => {
+    const initialStates: Record<
+      string,
+      { isLiked: boolean; likeCount: number }
+    > = {};
+    posts.forEach((post) => {
+      initialStates[post.id] = {
+        isLiked: post.hasUserLiked ?? false,
+        likeCount: post.likeCount ?? 0,
+      };
+    });
+    setPostStates(initialStates);
+  }, [posts]);
+
+  // Like handler
+  const handleLike = async (postId: string) => {
+    const currentState = postStates[postId];
+    if (!currentState) return;
+
+    // Optimistic update
+    setPostStates((prev) => ({
+      ...prev,
+      [postId]: {
+        isLiked: !currentState.isLiked,
+        likeCount: currentState.isLiked
+          ? currentState.likeCount - 1
+          : currentState.likeCount + 1,
+      },
+    }));
+
+    // Call your existing toggleLike function
+    const success = await toggleLike(postId, currentState.isLiked);
+
+    // Revert on failure
+    if (!success) {
+      setPostStates((prev) => ({
+        ...prev,
+        [postId]: currentState,
+      }));
+    }
+  };
 
   const renderPost = ({ item }: { item: CommunityPost }) => (
     <Animated.View
@@ -86,9 +134,13 @@ export function CommunityPostList() {
               post={item}
               buttonRef={buttonRef}
               style={buttonAnimatedStyle}
-              onPress={open} // <-- Only open the bridge modal!
+              onPress={open}
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
+              isLiked={postStates[item.id]?.isLiked ?? item.hasUserLiked}
+              likeCount={postStates[item.id]?.likeCount ?? item.likeCount}
+              onLikePress={() => handleLike(item.id)}
+              actionLoading={actionLoading === `like-${item.id}`}
             />
             <ViewPostModal
               isVisible={isModalVisible}
@@ -96,6 +148,10 @@ export function CommunityPostList() {
               modalAnimatedStyle={modalAnimatedStyle}
               close={close}
               post={item}
+              isLiked={postStates[item.id]?.isLiked ?? item.hasUserLiked}
+              likeCount={postStates[item.id]?.likeCount ?? item.likeCount}
+              onLikePress={() => handleLike(item.id)}
+              actionLoading={actionLoading === `like-${item.id}`}
             />
           </>
         )}
