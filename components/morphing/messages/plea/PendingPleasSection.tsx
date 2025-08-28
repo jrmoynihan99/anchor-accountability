@@ -17,7 +17,7 @@ import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { PleaCard } from "./PleaCard";
 import { PleaResponseModal } from "./PleaResponseModal";
 
-const PREVIEW_LIMIT = 4;
+const PREVIEW_LIMIT = 3;
 
 export function PendingPleasSection() {
   const { colors } = useTheme();

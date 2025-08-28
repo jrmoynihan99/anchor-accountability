@@ -16,7 +16,7 @@ import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { MyReachOutCard, MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutModal } from "./MyReachOutModal";
 
-const PREVIEW_LIMIT = 4; // Only show 3 reach outs on main messages screen
+const PREVIEW_LIMIT = 3; // Only show 3 reach outs on main messages screen
 
 export function MyReachOutsSection() {
   const { colors } = useTheme();
