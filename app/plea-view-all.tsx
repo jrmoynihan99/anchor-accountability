@@ -46,22 +46,30 @@ export default function PleaViewAllScreen() {
   // Store refs to modal controls for each plea
   const modalRefs = useRef<{ [key: string]: { open: () => void } }>({});
 
-  // Auto-open modal if openPleaId is provided (from notification)
+  // In /app/plea-view-all.tsx
+
+  const [handledPleaId, setHandledPleaId] = useState<string | null>(null);
+
+  // Prevent double opening
   useEffect(() => {
-    if (openPleaId && pendingPleas.length > 0 && !loading) {
+    if (
+      openPleaId &&
+      pendingPleas.length > 0 &&
+      !loading &&
+      openPleaId !== handledPleaId // <-- Only run if new/unhandled
+    ) {
       const targetPlea = pendingPleas.find((p) => p.id === openPleaId);
       if (targetPlea) {
-        // Small delay to ensure the screen is fully rendered
         setTimeout(() => {
           setSelectedPleaId(openPleaId);
-          // Trigger the modal open using the stored ref
           if (modalRefs.current[openPleaId]) {
             modalRefs.current[openPleaId].open();
           }
+          setHandledPleaId(openPleaId); // Mark as handled!
         }, 500);
       }
     }
-  }, [openPleaId, pendingPleas, loading]);
+  }, [openPleaId, pendingPleas, loading, handledPleaId]);
 
   const handleBack = () => {
     router.back();
