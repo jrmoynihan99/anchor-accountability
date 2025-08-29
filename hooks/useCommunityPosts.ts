@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 
-const POSTS_PER_PAGE = 20;
+const POSTS_PER_PAGE = 10;
 
 export function useCommunityPosts() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);

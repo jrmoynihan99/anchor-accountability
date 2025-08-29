@@ -59,7 +59,8 @@ export default function MessageThreadScreen() {
   const [fetchedOtherUserId, setFetchedOtherUserId] = useState<string>("");
   const [loadingThreadData, setLoadingThreadData] = useState(false);
 
-  const { messages, loading, error } = useThreadMessages(actualThreadId);
+  const { messages, loading, error, loadingMore, hasMore, loadMoreMessages } =
+    useThreadMessages(actualThreadId);
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -343,6 +344,9 @@ export default function MessageThreadScreen() {
             threadName={displayThreadName}
             colors={colors}
             onContentSizeChange={handleContentSizeChange}
+            loadingMore={loadingMore}
+            hasMore={hasMore}
+            onLoadMore={loadMoreMessages}
           />
         </Animated.View>
 

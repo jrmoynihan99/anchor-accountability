@@ -4,6 +4,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React, {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
@@ -15,8 +16,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PostComment } from "./types";
+
+interface UserCommentStatus {
+  status: "pending" | "approved" | "rejected";
+  commentId: string;
+  createdAt: Date;
+}
 
 interface CommentInputProps {
   onSubmit: (content: string) => Promise<boolean>;
@@ -24,6 +37,8 @@ interface CommentInputProps {
   replyingTo: string | null;
   replyingToComment?: PostComment;
   onCancelReply: () => void;
+  userCommentStatus?: UserCommentStatus | null;
+  onDismissCommentStatus?: () => void;
 }
 
 export interface CommentInputRef {
@@ -32,7 +47,15 @@ export interface CommentInputRef {
 
 export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
   (
-    { onSubmit, posting, replyingTo, replyingToComment, onCancelReply },
+    {
+      onSubmit,
+      posting,
+      replyingTo,
+      replyingToComment,
+      onCancelReply,
+      userCommentStatus,
+      onDismissCommentStatus,
+    },
     ref
   ) => {
     const { colors, effectiveTheme } = useTheme();
@@ -40,12 +63,45 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
     const [comment, setComment] = useState("");
     const inputRef = useRef<TextInput>(null);
 
+    // Animation values
+    const indicatorHeight = useSharedValue(0);
+    const indicatorOpacity = useSharedValue(0);
+
     const canSend = comment.trim().length > 0 && !posting;
 
     useImperativeHandle(ref, () => ({
       focus: () => {
         inputRef.current?.focus();
       },
+    }));
+
+    // Determine what should be shown
+    const shouldShowReply = replyingTo && replyingToComment;
+    const shouldShowStatus = userCommentStatus && !shouldShowReply;
+    const shouldShowAnyIndicator = shouldShowReply || shouldShowStatus;
+
+    // Animate indicator visibility
+    useEffect(() => {
+      if (shouldShowAnyIndicator) {
+        indicatorHeight.value = withSpring(40, {
+          damping: 15,
+          stiffness: 150,
+        });
+        indicatorOpacity.value = withTiming(1, { duration: 200 });
+      } else {
+        indicatorHeight.value = withSpring(0, {
+          damping: 15,
+          stiffness: 150,
+        });
+        indicatorOpacity.value = withTiming(0, { duration: 200 });
+      }
+    }, [shouldShowReply, shouldShowStatus]);
+
+    // Animated style for the indicator container
+    const indicatorAnimatedStyle = useAnimatedStyle(() => ({
+      height: indicatorHeight.value,
+      opacity: indicatorOpacity.value,
+      overflow: "hidden",
     }));
 
     const handleSubmit = async () => {
@@ -58,6 +114,38 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
       }
     };
 
+    const getStatusContent = () => {
+      if (!userCommentStatus) return null;
+
+      switch (userCommentStatus.status) {
+        case "pending":
+          return {
+            icon: "clock.fill" as const,
+            text: "Your comment is pending approval",
+            color: colors.achievement,
+            showSpinner: true,
+          };
+        case "approved":
+          return {
+            icon: "checkmark.circle.fill" as const,
+            text: "Your comment is posted",
+            color: colors.success,
+            showSpinner: false,
+          };
+        case "rejected":
+          return {
+            icon: "exclamationmark.triangle.fill" as const,
+            text: "Your comment was rejected",
+            color: colors.error,
+            showSpinner: false,
+          };
+        default:
+          return null;
+      }
+    };
+
+    const statusContent = getStatusContent();
+
     return (
       <View style={styles.inputContainer}>
         <View style={styles.container}>
@@ -66,47 +154,97 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
               styles.inputContent,
               {
                 borderTopColor: colors.border,
-                paddingBottom: 8, // Removed insets.bottom + removed background color
+                paddingBottom: 8,
               },
             ]}
           >
-            {/* Reply Indicator */}
-            {replyingTo && replyingToComment && (
-              <View
-                style={[
-                  styles.replyIndicator,
-                  {
-                    backgroundColor:
-                      colors.inputBackground || colors.background,
-                  },
-                ]}
-              >
-                <View style={styles.replyIndicatorContent}>
-                  <IconSymbol
-                    name="arrowshape.turn.up.left"
-                    size={14}
-                    color={colors.tint}
-                  />
-                  <ThemedText
-                    type="caption"
-                    style={[styles.replyingToText, { color: colors.tint }]}
-                  >
-                    Replying to {replyingToComment.authorUsername}
-                  </ThemedText>
-                </View>
-                <TouchableOpacity
-                  style={styles.cancelReplyButton}
-                  onPress={onCancelReply}
-                  hitSlop={8}
+            {/* Animated Indicator Container - always rendered for smooth animations */}
+            <Animated.View style={indicatorAnimatedStyle}>
+              {shouldShowReply && (
+                <View
+                  style={[
+                    styles.indicator,
+                    {
+                      backgroundColor:
+                        colors.inputBackground || colors.background,
+                    },
+                  ]}
                 >
-                  <IconSymbol
-                    name="xmark"
-                    size={12}
-                    color={colors.textSecondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
+                  <View style={styles.indicatorContent}>
+                    <IconSymbol
+                      name="arrowshape.turn.up.left"
+                      size={14}
+                      color={colors.tint}
+                    />
+                    <ThemedText
+                      type="caption"
+                      style={[styles.indicatorText, { color: colors.tint }]}
+                    >
+                      Replying to {replyingToComment.authorUsername}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={onCancelReply}
+                    hitSlop={8}
+                  >
+                    <IconSymbol
+                      name="xmark"
+                      size={12}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {shouldShowStatus && statusContent && (
+                <View
+                  style={[
+                    styles.indicator,
+                    {
+                      backgroundColor:
+                        colors.inputBackground || colors.background,
+                    },
+                  ]}
+                >
+                  <View style={styles.indicatorContent}>
+                    {statusContent.showSpinner ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={statusContent.color}
+                        style={{ width: 14, height: 14 }}
+                      />
+                    ) : (
+                      <IconSymbol
+                        name={statusContent.icon}
+                        size={14}
+                        color={statusContent.color}
+                      />
+                    )}
+                    <ThemedText
+                      type="caption"
+                      style={[
+                        styles.indicatorText,
+                        { color: statusContent.color },
+                      ]}
+                    >
+                      {statusContent.text}
+                    </ThemedText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={onDismissCommentStatus}
+                    hitSlop={8}
+                  >
+                    <IconSymbol
+                      name="xmark"
+                      size={12}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </Animated.View>
 
             {/* Input Wrapper */}
             <View
@@ -180,7 +318,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  replyIndicator: {
+  indicator: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -189,16 +327,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 8,
   },
-  replyIndicatorContent: {
+  indicatorContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
   },
-  replyingToText: {
-    fontSize: 12,
-    fontWeight: "500",
+  indicatorText: {
+    // Remove custom styles - ThemedText will handle typography
   },
-  cancelReplyButton: {
+  cancelButton: {
     padding: 4,
   },
   inputWrapper: {

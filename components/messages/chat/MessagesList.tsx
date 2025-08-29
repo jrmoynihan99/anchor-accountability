@@ -1,6 +1,7 @@
 // components/messages/MessagesList.tsx
-import React, { forwardRef } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ThemedText } from "@/components/ThemedText";
+import React, { forwardRef, useRef } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   FadeInDown,
   LinearTransition,
@@ -17,6 +18,9 @@ interface MessagesListProps {
   threadName?: string;
   colors: any;
   onContentSizeChange: () => void;
+  loadingMore?: boolean;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
@@ -28,10 +32,14 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       threadName,
       colors,
       onContentSizeChange,
+      loadingMore = false,
+      hasMore = false,
+      onLoadMore,
     },
     ref
   ) => {
     const insets = useSafeAreaInsets();
+    const scrollPositionRef = useRef(0);
 
     const convertMessageForDisplay = (msg: any): Message => ({
       id: msg.id,
@@ -46,6 +54,44 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
     // Calculate input height to add bottom padding
     const inputHeight = 60 + insets.bottom;
 
+    const handleScroll = (event: any) => {
+      const { contentOffset, contentSize, layoutMeasurement } =
+        event.nativeEvent;
+      scrollPositionRef.current = contentOffset.y;
+
+      // Check if user scrolled to top (for loading older messages)
+      if (contentOffset.y <= 50 && hasMore && !loadingMore && onLoadMore) {
+        onLoadMore();
+      }
+    };
+
+    const renderLoadingHeader = () => {
+      if (!loadingMore && !hasMore) return null;
+
+      return (
+        <View style={styles.loadingHeader}>
+          {loadingMore ? (
+            <>
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+              <ThemedText
+                type="caption"
+                style={[styles.loadingText, { color: colors.textSecondary }]}
+              >
+                Loading older messages...
+              </ThemedText>
+            </>
+          ) : hasMore ? (
+            <ThemedText
+              type="caption"
+              style={[styles.loadingText, { color: colors.textSecondary }]}
+            >
+              Scroll up to load older messages
+            </ThemedText>
+          ) : null}
+        </View>
+      );
+    };
+
     return (
       <ScrollView
         ref={ref}
@@ -58,9 +104,13 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
         ]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={onContentSizeChange}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
       >
+        {renderLoadingHeader()}
+
         {messages.length === 0 ? (
           <EmptyMessagesState
             isNewThread={isNewThread}
@@ -108,5 +158,13 @@ const styles = StyleSheet.create({
     padding: 16,
     flexGrow: 1,
     justifyContent: "flex-end",
+  },
+  loadingHeader: {
+    alignItems: "center",
+    paddingVertical: 16,
+    gap: 8,
+  },
+  loadingText: {
+    opacity: 0.7,
   },
 });

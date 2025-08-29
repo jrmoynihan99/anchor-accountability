@@ -3,7 +3,16 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { CommentItem } from "./CommentItem";
 import { PostComment } from "./types";
 
@@ -17,6 +26,28 @@ interface PostCommentsSectionProps {
   ) => Promise<boolean>;
   onReplyToComment: (commentId: string) => void;
   replyingTo: string | null;
+  hasMore: boolean;
+  loadingMore: boolean;
+  loadMore: () => void;
+}
+
+// --- Animation wrapper for comment entry ---
+function AnimatedCommentItem({
+  children,
+  index,
+}: {
+  children: React.ReactNode;
+  index: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInDown}
+      layout={LinearTransition.duration(250)}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 
 export function PostCommentsSection({
@@ -26,6 +57,9 @@ export function PostCommentsSection({
   onToggleCommentLike,
   onReplyToComment,
   replyingTo,
+  hasMore,
+  loadingMore,
+  loadMore,
 }: PostCommentsSectionProps) {
   const { colors } = useTheme();
 
@@ -91,15 +125,45 @@ export function PostCommentsSection({
       );
     }
 
-    return comments.map((comment) => (
-      <CommentItem
-        key={comment.id}
-        comment={comment}
-        onToggleCommentLike={onToggleCommentLike}
-        onReplyToComment={onReplyToComment}
-        isReplyingTo={replyingTo === comment.id}
-      />
-    ));
+    return (
+      <>
+        {comments.map((comment, index) => (
+          <AnimatedCommentItem key={comment.id} index={index}>
+            <CommentItem
+              comment={comment}
+              onToggleCommentLike={onToggleCommentLike}
+              onReplyToComment={onReplyToComment}
+              isReplyingTo={replyingTo === comment.id}
+            />
+          </AnimatedCommentItem>
+        ))}
+        {hasMore && (
+          <View style={{ alignItems: "center", marginVertical: 8 }}>
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.inputBackground || colors.background,
+                paddingVertical: 8,
+                paddingHorizontal: 24,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                opacity: loadingMore ? 0.7 : 1,
+              }}
+              onPress={loadMore}
+              disabled={loadingMore}
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+              ) : (
+                <ThemedText type="captionMedium" style={{ color: colors.tint }}>
+                  View More Comments
+                </ThemedText>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+      </>
+    );
   };
 
   return (

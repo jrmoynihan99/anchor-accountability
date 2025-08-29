@@ -7,9 +7,11 @@ import {
   deleteDoc,
   doc,
   increment,
+  limit,
   onSnapshot,
   orderBy,
   query,
+  QueryDocumentSnapshot,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -17,113 +19,41 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
+interface UserCommentStatus {
+  status: "pending" | "approved" | "rejected";
+  commentId: string;
+  createdAt: Date;
+}
+
 export function usePostComments(postId: string | null) {
-  const [comments, setComments] = useState<PostComment[]>([]);
+  const [allComments, setAllComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
+  const [userCommentStatus, setUserCommentStatus] =
+    useState<UserCommentStatus | null>(null);
 
-  // Fetch comments and set up real-time listener
+  // --- REAL-TIME COMMENT LISTENER (all approved comments) ---
   useEffect(() => {
     if (!postId || !auth.currentUser) {
-      setComments([]);
+      setAllComments([]);
       setLoading(false);
       return;
     }
+    setLoading(true);
 
-    const currentUserId = auth.currentUser.uid;
-
-    // Query for approved comments only
     const commentsQuery = query(
       collection(db, "communityPosts", postId, "comments"),
       where("status", "==", "approved"),
-      orderBy("createdAt", "asc") // Oldest first for conversation flow
+      orderBy("createdAt", "asc")
     );
 
     const unsubscribe = onSnapshot(
       commentsQuery,
       async (snapshot) => {
         try {
-          // Process comments and organize into parent/reply structure
-          const allComments = await Promise.all(
-            snapshot.docs.map(async (docSnap) => {
-              const data = docSnap.data();
-              const commentId = docSnap.id;
-
-              // Check if current user has liked this comment
-              let hasUserLiked = false;
-              try {
-                const likeRef = doc(
-                  db,
-                  "communityPosts",
-                  postId,
-                  "comments",
-                  commentId,
-                  "likes",
-                  currentUserId
-                );
-                const likeSnap = await new Promise<boolean>((resolve) => {
-                  const unsub = onSnapshot(likeRef, (snap) => {
-                    resolve(snap.exists());
-                    unsub();
-                  });
-                });
-                hasUserLiked = likeSnap;
-              } catch (err) {
-                console.error("Error checking comment like:", err);
-              }
-
-              const authorUsername = `user-${data.uid.substring(0, 5)}`;
-
-              return {
-                id: commentId,
-                uid: data.uid,
-                content: data.content,
-                createdAt: data.createdAt?.toDate() || new Date(),
-                parentCommentId: data.parentCommentId || null,
-                likeCount: data.likeCount || 0,
-                status: data.status,
-                hasUserLiked,
-                authorUsername,
-                replies: [], // Will be populated below
-              } as PostComment;
-            })
-          );
-
-          // Organize comments into parent/reply structure
-          const parentComments: PostComment[] = [];
-          const commentMap = new Map<string, PostComment>();
-
-          // First pass: create map
-          allComments.forEach((comment) => {
-            commentMap.set(comment.id, comment);
-          });
-
-          // Second pass: organize hierarchy
-          allComments.forEach((comment) => {
-            if (comment.parentCommentId === null) {
-              // Top-level comment
-              parentComments.push(comment);
-            } else {
-              // Reply to another comment
-              const parent = commentMap.get(comment.parentCommentId);
-              if (parent) {
-                parent.replies = parent.replies || [];
-                parent.replies.push(comment);
-              }
-            }
-          });
-
-          // Sort replies by date
-          parentComments.forEach((comment) => {
-            if (comment.replies && comment.replies.length > 0) {
-              comment.replies.sort(
-                (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-              );
-            }
-          });
-
-          setComments(parentComments);
+          const commentsData = await processComments(snapshot.docs, postId);
+          setAllComments(commentsData);
           setError(null);
         } catch (err) {
           console.error("Error processing comments:", err);
@@ -139,12 +69,130 @@ export function usePostComments(postId: string | null) {
       }
     );
 
+    return () => unsubscribe();
+  }, [postId, auth.currentUser]);
+
+  // ---- userCommentStatus logic (unchanged) ----
+  useEffect(() => {
+    if (!postId || !auth.currentUser) {
+      setUserCommentStatus(null);
+      return;
+    }
+    const userCommentsQuery = query(
+      collection(db, "communityPosts", postId, "comments"),
+      where("uid", "==", auth.currentUser.uid),
+      orderBy("createdAt", "desc"),
+      limit(1)
+    );
+
+    const unsubscribe = onSnapshot(
+      userCommentsQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const doc = snapshot.docs[0];
+          const data = doc.data();
+          setUserCommentStatus({
+            status: data.status as "pending" | "approved" | "rejected",
+            commentId: doc.id,
+            createdAt: data.createdAt?.toDate() || new Date(),
+          });
+        } else {
+          setUserCommentStatus(null);
+        }
+      },
+      (err) => {
+        console.error("Error listening to user comment status:", err);
+      }
+    );
     return () => {
       unsubscribe();
     };
   }, [postId, auth.currentUser]);
 
-  // Post a new comment
+  useEffect(() => {
+    if (userCommentStatus?.status === "approved") {
+      const timer = setTimeout(() => {
+        setUserCommentStatus(null);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [userCommentStatus?.status]);
+
+  // ---- Organize parent/replies tree as before ----
+  async function processComments(
+    docs: QueryDocumentSnapshot[],
+    postId: string
+  ): Promise<PostComment[]> {
+    const currentUserId = auth.currentUser?.uid || "";
+
+    const allComments = await Promise.all(
+      docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        const commentId = docSnap.id;
+        // Check if current user has liked this comment
+        let hasUserLiked = false;
+        try {
+          const likeRef = doc(
+            db,
+            "communityPosts",
+            postId,
+            "comments",
+            commentId,
+            "likes",
+            currentUserId
+          );
+          const likeSnap = await new Promise<boolean>((resolve) => {
+            const unsub = onSnapshot(likeRef, (snap) => {
+              resolve(snap.exists());
+              unsub();
+            });
+          });
+          hasUserLiked = likeSnap;
+        } catch (err) {
+          // Fail silently
+        }
+
+        const authorUsername = `user-${data.uid.substring(0, 5)}`;
+        return {
+          id: commentId,
+          uid: data.uid,
+          content: data.content,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          parentCommentId: data.parentCommentId || null,
+          likeCount: data.likeCount || 0,
+          status: data.status,
+          hasUserLiked,
+          authorUsername,
+          replies: [],
+        } as PostComment;
+      })
+    );
+    // Now, organize into parent/reply structure
+    const parentComments: PostComment[] = [];
+    const commentMap = new Map<string, PostComment>();
+    allComments.forEach((comment) => commentMap.set(comment.id, comment));
+    allComments.forEach((comment) => {
+      if (comment.parentCommentId === null) {
+        parentComments.push(comment);
+      } else {
+        const parent = commentMap.get(comment.parentCommentId);
+        if (parent) {
+          parent.replies = parent.replies || [];
+          parent.replies.push(comment);
+        }
+      }
+    });
+    parentComments.forEach((comment) => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        );
+      }
+    });
+    return parentComments;
+  }
+
+  // ---- Comment actions ----
   const postComment = async (
     content: string,
     parentCommentId: string | null = null
@@ -177,12 +225,6 @@ export function usePostComments(postId: string | null) {
         commentData
       );
 
-      // Update comment count on post
-      const postRef = doc(db, "communityPosts", postId);
-      await updateDoc(postRef, {
-        commentCount: increment(1),
-      });
-
       console.log("Comment posted with ID:", docRef.id);
       return true;
     } catch (err) {
@@ -194,7 +236,6 @@ export function usePostComments(postId: string | null) {
     }
   };
 
-  // Toggle like on a comment
   const toggleCommentLike = async (
     commentId: string,
     currentlyLiked: boolean
@@ -247,7 +288,6 @@ export function usePostComments(postId: string | null) {
     }
   };
 
-  // Delete own comment
   const deleteComment = async (commentId: string): Promise<boolean> => {
     if (!auth.currentUser || !postId) {
       setError("You must be logged in to delete comments");
@@ -262,11 +302,9 @@ export function usePostComments(postId: string | null) {
         "comments",
         commentId
       );
-
-      // Could implement soft delete instead
       await deleteDoc(commentRef);
 
-      // Update comment count
+      // Update comment count on parent post
       const postRef = doc(db, "communityPosts", postId);
       await updateDoc(postRef, {
         commentCount: increment(-1),
@@ -280,13 +318,20 @@ export function usePostComments(postId: string | null) {
     }
   };
 
+  // Dismiss user comment status feedback
+  const dismissCommentStatus = () => {
+    setUserCommentStatus(null);
+  };
+
   return {
-    comments,
+    allComments, // <- This is the full, real-time parent/reply tree
     loading,
     error,
     posting,
     postComment,
     toggleCommentLike,
     deleteComment,
+    userCommentStatus,
+    dismissCommentStatus,
   };
 }

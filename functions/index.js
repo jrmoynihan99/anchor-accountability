@@ -1019,7 +1019,19 @@ exports.moderateComment = onDocumentCreated(
     const newStatus = flagged || gptFlagged ? "rejected" : "approved";
     logger.info(`Moderation result for comment ${snap.id}: ${newStatus}`);
 
+    // Update comment status
     await snap.ref.update({ status: newStatus });
+
+    // Increment comment count only if approved
+    if (newStatus === "approved") {
+      const postRef = admin
+        .firestore()
+        .doc(`communityPosts/${event.params.postId}`);
+      await postRef.update({
+        commentCount: admin.firestore.FieldValue.increment(1),
+      });
+      logger.info(`Comment count incremented for post ${event.params.postId}`);
+    }
   }
 );
 

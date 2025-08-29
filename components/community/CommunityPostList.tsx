@@ -13,7 +13,10 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CommunityPostCard } from "./CommunityPostCard";
 import { ViewPostModal } from "./ViewPostModal";
@@ -48,6 +51,25 @@ function SectionHeader({ colors }: { colors: any }) {
         </View>
       </View>
     </View>
+  );
+}
+
+// --- Animation wrapper for post entry ---
+function AnimatedPostItem({
+  children,
+  index,
+}: {
+  children: React.ReactNode;
+  index: number;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInDown}
+      layout={LinearTransition.duration(250)}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </Animated.View>
   );
 }
 
@@ -106,12 +128,14 @@ export function CommunityPostList() {
     }
   };
 
-  const renderPost = ({ item }: { item: CommunityPost }) => (
-    <Animated.View
-      key={item.id}
-      layout={LinearTransition.duration(250)}
-      style={{ width: "100%" }}
-    >
+  const renderPost = ({
+    item,
+    index,
+  }: {
+    item: CommunityPost;
+    index: number;
+  }) => (
+    <AnimatedPostItem index={index}>
       <ButtonModalTransitionBridge
         buttonBorderRadius={16}
         modalBorderRadius={28}
@@ -156,7 +180,7 @@ export function CommunityPostList() {
           </>
         )}
       </ButtonModalTransitionBridge>
-    </Animated.View>
+    </AnimatedPostItem>
   );
 
   const renderEmpty = () => {

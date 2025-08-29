@@ -2,9 +2,14 @@
 import { db } from "@/lib/firebase";
 import {
   collection,
+  endBefore,
+  getDocs,
+  limit,
+  limitToLast,
   onSnapshot,
   orderBy,
   query,
+  QueryDocumentSnapshot,
   Timestamp,
   Unsubscribe,
 } from "firebase/firestore";
@@ -19,12 +24,18 @@ export interface MessageData {
   readBy: string[];
 }
 
+const MESSAGES_PER_PAGE = 30;
+
 export function useThreadMessages(threadId: string | null) {
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   const unsubscribeRef = useRef<Unsubscribe | null>(null);
+  const oldestDocRef = useRef<QueryDocumentSnapshot | null>(null);
+  const listenerSetupRef = useRef(false);
 
   useEffect(() => {
     if (!threadId) {
@@ -33,28 +44,55 @@ export function useThreadMessages(threadId: string | null) {
       return;
     }
 
+    // Reset pagination state
+    listenerSetupRef.current = false;
+    oldestDocRef.current = null;
+    setHasMore(true);
+
     // Clean up existing listener
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
 
+    // Set up real-time listener for most recent messages
     const messagesRef = collection(db, "threads", threadId, "messages");
-    const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"));
+    const recentMessagesQuery = query(
+      messagesRef,
+      orderBy("createdAt", "desc"),
+      limit(MESSAGES_PER_PAGE)
+    );
 
     const unsubscribe = onSnapshot(
-      messagesQuery,
+      recentMessagesQuery,
       (snapshot) => {
-        const messagesData = snapshot.docs.map(
-          (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as MessageData)
-        );
+        if (!snapshot.empty) {
+          const messagesData = snapshot.docs.map(
+            (doc) =>
+              ({
+                id: doc.id,
+                ...doc.data(),
+              } as MessageData)
+          );
 
-        setMessages(messagesData);
+          // Reverse to show oldest first (normal chat order)
+          const sortedMessages = messagesData.reverse();
+
+          setMessages(sortedMessages);
+
+          // Keep track of the oldest document for pagination
+          oldestDocRef.current = snapshot.docs[snapshot.docs.length - 1];
+
+          // Check if we have more messages to load
+          setHasMore(snapshot.docs.length === MESSAGES_PER_PAGE);
+        } else {
+          setMessages([]);
+          setHasMore(false);
+        }
+
         setError(null);
         setLoading(false);
+        listenerSetupRef.current = true;
       },
       (err) => {
         console.error("Error listening to messages:", err);
@@ -68,9 +106,74 @@ export function useThreadMessages(threadId: string | null) {
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
+      listenerSetupRef.current = false;
     };
   }, [threadId]);
 
-  return { messages, loading, error };
+  // Load older messages (pagination)
+  const loadMoreMessages = async () => {
+    if (
+      !threadId ||
+      !oldestDocRef.current ||
+      loadingMore ||
+      !hasMore ||
+      !listenerSetupRef.current
+    ) {
+      return;
+    }
+
+    setLoadingMore(true);
+
+    try {
+      const messagesRef = collection(db, "threads", threadId, "messages");
+      const olderMessagesQuery = query(
+        messagesRef,
+        orderBy("createdAt", "desc"),
+        endBefore(oldestDocRef.current),
+        limitToLast(MESSAGES_PER_PAGE)
+      );
+
+      const snapshot = await getDocs(olderMessagesQuery);
+
+      if (!snapshot.empty) {
+        const olderMessages = snapshot.docs.map(
+          (doc) =>
+            ({
+              id: doc.id,
+              ...doc.data(),
+            } as MessageData)
+        );
+
+        // Reverse to maintain chronological order
+        const sortedOlderMessages = olderMessages.reverse();
+
+        // Prepend older messages to existing messages
+        setMessages((prev) => [...sortedOlderMessages, ...prev]);
+
+        // Update the oldest document reference
+        oldestDocRef.current = snapshot.docs[snapshot.docs.length - 1];
+
+        // Check if there are more messages
+        setHasMore(snapshot.docs.length === MESSAGES_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (err) {
+      console.error("Error loading more messages:", err);
+      setError("Failed to load more messages");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  return {
+    messages,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMoreMessages,
+  };
 }
