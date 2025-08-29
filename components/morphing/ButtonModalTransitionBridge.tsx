@@ -14,7 +14,8 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export interface ButtonModalTransitionBridgeProps {
   children: (args: {
-    open: () => void;
+    open: () => void; // unchanged
+    openOriginless: () => void; // NEW: force slide-up fallback
     close: (velocity?: number) => void;
     isModalVisible: boolean;
     progress: Animated.SharedValue<number>;
@@ -29,7 +30,7 @@ export interface ButtonModalTransitionBridgeProps {
   modalHeightPercent?: number;
   modalBorderRadius?: number;
   buttonBorderRadius?: number;
-  buttonFadeThreshold?: number; // New prop for custom fade-in timing
+  buttonFadeThreshold?: number;
 }
 
 export function ButtonModalTransitionBridge({
@@ -38,7 +39,7 @@ export function ButtonModalTransitionBridge({
   modalHeightPercent = 0.7,
   modalBorderRadius = 28,
   buttonBorderRadius = 20,
-  buttonFadeThreshold = 0.1, // Default to 0.1 (10%)
+  buttonFadeThreshold = 0.05,
 }: ButtonModalTransitionBridgeProps) {
   // --- State & refs ---
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -55,10 +56,11 @@ export function ButtonModalTransitionBridge({
   const pressScale = useSharedValue(1);
   const keyboardOffset = useSharedValue(0);
 
+  // openMode: 0 = morph from button, 1 = originless slide-up
+  const openMode = useSharedValue<0 | 1>(0);
+
   // --- Keyboard handling ---
   useEffect(() => {
-    // Alternative with the exact iOS keyboard animation curve
-
     const showSubscription = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
@@ -71,10 +73,9 @@ export function ButtonModalTransitionBridge({
           if (overlap > 0) {
             keyboardOffset.value = withTiming(-overlap - 20, {
               duration: Platform.OS === "ios" ? event.duration : 250,
-              // Exact iOS keyboard animation curve
               easing:
                 Platform.OS === "ios"
-                  ? Easing.bezier(0.25, 0.46, 0.45, 0.94) // iOS UIView animation curve
+                  ? Easing.bezier(0.25, 0.46, 0.45, 0.94)
                   : Easing.bezier(0.22, 1, 0.36, 1),
             });
           }
@@ -87,10 +88,9 @@ export function ButtonModalTransitionBridge({
       (event) => {
         keyboardOffset.value = withTiming(0, {
           duration: Platform.OS === "ios" ? event.duration : 250,
-          // Exact iOS keyboard animation curve
           easing:
             Platform.OS === "ios"
-              ? Easing.bezier(0.25, 0.46, 0.45, 0.94) // iOS UIView animation curve
+              ? Easing.bezier(0.25, 0.46, 0.45, 0.94)
               : Easing.bezier(0.22, 1, 0.36, 1),
         });
       }
@@ -132,8 +132,31 @@ export function ButtonModalTransitionBridge({
     }
   };
 
-  // --- Modal open ---
+  // --- Helpers ---
+  const targetWidth = screenWidth * modalWidthPercent;
+  const targetHeight = screenHeight * modalHeightPercent;
+  const targetLeft = (screenWidth * (1 - modalWidthPercent)) / 2;
+  const targetTop = (screenHeight - targetHeight) / 2;
+
+  // --- Modal open (morph-first, auto-fallback if no origin) ---
   const open = () => {
+    // If we don't have a measured origin, use originless slide-up fallback
+    const hasOrigin = buttonLayout.width > 0 && buttonLayout.height > 0;
+    openMode.value = hasOrigin ? 0 : 1;
+
+    setIsModalVisible(true);
+    requestAnimationFrame(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      progress.value = withTiming(1, {
+        duration: 400,
+        easing: Easing.bezier(0.22, 1, 0.36, 1),
+      });
+    });
+  };
+
+  // --- Modal open (force originless) ---
+  const openOriginless = () => {
+    openMode.value = 1; // force slide-up mode
     setIsModalVisible(true);
     requestAnimationFrame(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -146,7 +169,6 @@ export function ButtonModalTransitionBridge({
 
   // --- Modal close ---
   const close = (velocity = 0) => {
-    // Reset keyboard offset when closing
     keyboardOffset.value = 0;
 
     const currentProgress = progress.value;
@@ -167,7 +189,7 @@ export function ButtonModalTransitionBridge({
     } else {
       progress.value = withTiming(
         0,
-        { duration: 200, easing: Easing.bezier(0.4, 0, 1, 1) },
+        { duration: 220, easing: Easing.bezier(0.4, 0, 1, 1) },
         (finished) => {
           if (finished) runOnJS(setIsModalVisible)(false);
         }
@@ -176,11 +198,6 @@ export function ButtonModalTransitionBridge({
   };
 
   // --- Animated styles ---
-  const targetWidth = screenWidth * modalWidthPercent;
-  const targetHeight = screenHeight * modalHeightPercent;
-  const targetLeft = (screenWidth * (1 - modalWidthPercent)) / 2;
-  const targetTop = (screenHeight - targetHeight) / 2;
-
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       progress.value,
@@ -192,6 +209,26 @@ export function ButtonModalTransitionBridge({
   }));
 
   const modalAnimatedStyle = useAnimatedStyle(() => {
+    // originless slide-up mode
+    if (openMode.value === 1) {
+      const y = interpolate(
+        progress.value,
+        [0, 1],
+        [screenHeight, targetTop + keyboardOffset.value]
+      );
+
+      return {
+        position: "absolute",
+        width: targetWidth,
+        height: targetHeight,
+        left: targetLeft,
+        transform: [{ translateY: y }],
+        borderRadius: modalBorderRadius,
+        overflow: "hidden",
+      };
+    }
+
+    // morph-from-button mode (original behavior)
     const width = interpolate(
       progress.value,
       [0, 1],
@@ -210,13 +247,14 @@ export function ButtonModalTransitionBridge({
     const top = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.y, targetTop + keyboardOffset.value] // Add keyboard offset here
+      [buttonLayout.y, targetTop + keyboardOffset.value]
     );
     const borderRadius = interpolate(
       progress.value,
       [0, 1],
       [buttonBorderRadius, modalBorderRadius]
     );
+
     return {
       position: "absolute",
       width,
@@ -228,9 +266,9 @@ export function ButtonModalTransitionBridge({
     };
   });
 
-  // --- Render ---
   return children({
     open,
+    openOriginless, // <- NEW
     close,
     isModalVisible,
     progress,

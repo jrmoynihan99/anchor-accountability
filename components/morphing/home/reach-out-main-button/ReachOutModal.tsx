@@ -22,9 +22,7 @@ interface ReachOutModalProps {
   progress: Animated.SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
-  onGuidedPrayer?: () => void;
-  onReadScripture?: () => void;
-  ctaButtonContent?: React.ReactNode; // NEW!
+  ctaButtonContent?: React.ReactNode;
 }
 
 type ScreenType = "input" | "confirmation";
@@ -34,8 +32,6 @@ export function ReachOutModal({
   progress,
   modalAnimatedStyle,
   close,
-  onGuidedPrayer,
-  onReadScripture,
   ctaButtonContent,
 }: ReachOutModalProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
@@ -171,11 +167,7 @@ export function ReachOutModal({
           confirmationScreenStyle,
         ]}
       >
-        <ReachOutConfirmationScreen
-          onClose={close}
-          onGuidedPrayer={onGuidedPrayer}
-          onReadScripture={onReadScripture}
-        />
+        <ReachOutConfirmationScreen onClose={close} />
       </Animated.View>
     </View>
   );

@@ -12,11 +12,28 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { MyReachOutCard, MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutModal } from "./MyReachOutModal";
 
 const PREVIEW_LIMIT = 3; // Only show 3 reach outs on main messages screen
+
+// --- Animation wrapper for reach-out entry ---
+function AnimatedReachOutItem({ children }: { children: React.ReactNode }) {
+  return (
+    <Animated.View
+      entering={FadeInDown}
+      layout={LinearTransition.duration(250)}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
 
 export function MyReachOutsSection() {
   const { colors } = useTheme();
@@ -109,53 +126,54 @@ export function MyReachOutsSection() {
         <>
           <View style={styles.reachOutsContainer}>
             {displayedReachOuts.map((reachOut, index) => (
-              <ButtonModalTransitionBridge
-                key={reachOut.id}
-                buttonBorderRadius={16}
-                modalBorderRadius={28}
-              >
-                {({
-                  open,
-                  close,
-                  isModalVisible,
-                  progress,
-                  buttonAnimatedStyle,
-                  modalAnimatedStyle,
-                  buttonRef,
-                  handlePressIn,
-                  handlePressOut,
-                }) => (
-                  <>
-                    <MyReachOutCard
-                      reachOut={reachOut}
-                      index={index}
-                      buttonRef={buttonRef}
-                      style={buttonAnimatedStyle}
-                      now={now}
-                      onPress={() => {
-                        setSelectedReachOut(reachOut);
-                        open();
-                      }}
-                      onPressIn={handlePressIn}
-                      onPressOut={handlePressOut}
-                    />
-                    {isModalVisible && (
-                      <MyReachOutModal
-                        isVisible={isModalVisible}
-                        progress={progress}
-                        modalAnimatedStyle={modalAnimatedStyle}
-                        close={close}
-                        reachOut={
-                          myReachOuts.find(
-                            (r) => r.id === selectedReachOut?.id
-                          ) ?? selectedReachOut
-                        }
+              <AnimatedReachOutItem key={reachOut.id}>
+                <ButtonModalTransitionBridge
+                  buttonBorderRadius={16}
+                  modalBorderRadius={28}
+                >
+                  {({
+                    open,
+                    close,
+                    isModalVisible,
+                    progress,
+                    buttonAnimatedStyle,
+                    modalAnimatedStyle,
+                    buttonRef,
+                    handlePressIn,
+                    handlePressOut,
+                  }) => (
+                    <>
+                      <MyReachOutCard
+                        reachOut={reachOut}
+                        index={index}
+                        buttonRef={buttonRef}
+                        style={buttonAnimatedStyle}
                         now={now}
+                        onPress={() => {
+                          setSelectedReachOut(reachOut);
+                          open();
+                        }}
+                        onPressIn={handlePressIn}
+                        onPressOut={handlePressOut}
                       />
-                    )}
-                  </>
-                )}
-              </ButtonModalTransitionBridge>
+                      {isModalVisible && (
+                        <MyReachOutModal
+                          isVisible={isModalVisible}
+                          progress={progress}
+                          modalAnimatedStyle={modalAnimatedStyle}
+                          close={close}
+                          reachOut={
+                            myReachOuts.find(
+                              (r) => r.id === selectedReachOut?.id
+                            ) ?? selectedReachOut
+                          }
+                          now={now}
+                        />
+                      )}
+                    </>
+                  )}
+                </ButtonModalTransitionBridge>
+              </AnimatedReachOutItem>
             ))}
           </View>
 

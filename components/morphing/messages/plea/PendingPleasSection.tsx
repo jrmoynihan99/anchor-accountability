@@ -12,12 +12,28 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated, { LinearTransition } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { ButtonModalTransitionBridge } from "../../ButtonModalTransitionBridge";
 import { PleaCard } from "./PleaCard";
 import { PleaResponseModal } from "./PleaResponseModal";
 
 const PREVIEW_LIMIT = 3;
+
+// --- Animation wrapper for plea entry ---
+function AnimatedPleaItem({ children }: { children: React.ReactNode }) {
+  return (
+    <Animated.View
+      entering={FadeInDown}
+      layout={LinearTransition.duration(300)}
+      style={{ width: "100%" }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
 
 export function PendingPleasSection() {
   const { colors } = useTheme();
@@ -123,11 +139,7 @@ export function PendingPleasSection() {
         <>
           <View style={styles.pleasContainer}>
             {displayedPleas.map((plea, index) => (
-              <Animated.View
-                key={plea.id}
-                layout={LinearTransition.duration(300)}
-                style={{ width: "100%" }}
-              >
+              <AnimatedPleaItem key={plea.id}>
                 <ButtonModalTransitionBridge
                   buttonBorderRadius={16}
                   modalBorderRadius={28}
@@ -172,7 +184,7 @@ export function PendingPleasSection() {
                     </>
                   )}
                 </ButtonModalTransitionBridge>
-              </Animated.View>
+              </AnimatedPleaItem>
             ))}
           </View>
 

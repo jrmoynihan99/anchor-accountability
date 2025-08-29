@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
+import * as Haptics from "expo-haptics";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { PrayerStep, getNextStep, getPreviousStep } from "./prayerUtils";
@@ -149,7 +150,15 @@ export function PrayerStepNavigation({
               styles.halfButton,
               { backgroundColor: prayerColor },
             ]}
-            onPress={onClose}
+            onPress={async () => {
+              // Haptic on Amen
+              try {
+                await Haptics.notificationAsync(
+                  Haptics.NotificationFeedbackType.Success
+                );
+              } catch {}
+              onClose();
+            }}
             activeOpacity={0.85}
           >
             <IconSymbol
@@ -170,7 +179,7 @@ export function PrayerStepNavigation({
       )}
 
       {/* Prayer Steps Indicator */}
-      <View style={styles.stepsIndicator}>
+      <View className="stepsIndicator" style={styles.stepsIndicator}>
         {(["intro", "breathing", "reflection", "complete"] as PrayerStep[]).map(
           (step) => (
             <View
@@ -220,7 +229,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginVertical: 8,
   },
-  // text styles now handled by ThemedText (type="button")
   stepsIndicator: {
     flexDirection: "row",
     justifyContent: "center",

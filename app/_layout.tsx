@@ -1,6 +1,7 @@
 // app/_layout.tsx
 import { RejectionModal } from "@/components/RejectionModal";
-import { ThreadProvider, useThread } from "@/hooks/ThreadContext"; // Add this
+import { ModalIntentProvider } from "@/context/ModalIntentContext";
+import { ThreadProvider, useThread } from "@/context/ThreadContext"; // Add this
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
 import { useRejectionModalController } from "@/hooks/useRejectionModal";
 import { ensureSignedIn } from "@/lib/auth";
@@ -229,9 +230,11 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <ThreadProvider>
-          <AppContent />
-        </ThreadProvider>
+        <ModalIntentProvider>
+          <ThreadProvider>
+            <AppContent />
+          </ThreadProvider>
+        </ModalIntentProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

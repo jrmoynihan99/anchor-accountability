@@ -1,15 +1,15 @@
 // ReachOutConfirmationScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface ReachOutConfirmationScreenProps {
   onClose: () => void;
-  onGuidedPrayer?: () => void;
-  onReadScripture?: () => void; // Add this new prop
 }
 
 interface RecommendedAction {
@@ -21,28 +21,42 @@ interface RecommendedAction {
 
 export function ReachOutConfirmationScreen({
   onClose,
-  onGuidedPrayer,
-  onReadScripture, // Add this parameter
 }: ReachOutConfirmationScreenProps) {
   const { colors, effectiveTheme } = useTheme();
+  const { setModalIntent } = useModalIntent();
 
-  // Using the exact color that matches your hardcoded #3A2D28
-  // This is colors.background in dark mode and colors.text in light mode
+  // Main color for icons/titles based on theme
   const mainTextColor =
     effectiveTheme === "dark" ? colors.background : colors.text;
+
+  // Handler for "Read Scripture"
+  const handleReadScripture = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setModalIntent("verse");
+    router.push("/(tabs)");
+    onClose?.();
+  };
+
+  // Handler for "Guided Prayer"
+  const handleGuidedPrayer = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setModalIntent("guidedPrayer");
+    router.push("/(tabs)");
+    onClose?.();
+  };
 
   const recommendedActions: RecommendedAction[] = [
     {
       icon: "book",
       title: "Read Scripture",
       subtitle: "Find peace in God's word",
-      action: onReadScripture, // Now this has an action!
+      action: handleReadScripture,
     },
     {
       icon: "heart",
       title: "Guided Prayer",
       subtitle: "Connect with God",
-      action: onGuidedPrayer,
+      action: handleGuidedPrayer,
     },
     {
       icon: "walk",
@@ -53,9 +67,7 @@ export function ReachOutConfirmationScreen({
   ];
 
   const handleDonePress = () => {
-    // Trigger haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Call the original onClose function
     onClose();
   };
 
@@ -70,14 +82,11 @@ export function ReachOutConfirmationScreen({
         <Ionicons name="checkmark-circle" size={40} color={mainTextColor} />
         <ThemedText
           type="titleLarge"
-          style={[
-            styles.title,
-            {
-              color: mainTextColor,
-              marginTop: 12,
-              textAlign: "center",
-            },
-          ]}
+          style={{
+            color: mainTextColor,
+            marginTop: 12,
+            textAlign: "center",
+          }}
         >
           Message Sent!
         </ThemedText>
@@ -85,31 +94,25 @@ export function ReachOutConfirmationScreen({
 
       <ThemedText
         type="body"
-        style={[
-          styles.description,
-          {
-            color: colors.textMuted,
-            lineHeight: 22,
-            textAlign: "center",
-            marginBottom: 24,
-          },
-        ]}
+        style={{
+          color: colors.textMuted,
+          lineHeight: 22,
+          textAlign: "center",
+          marginBottom: 24,
+        }}
       >
-        Your anonymous request has been sent to the community. Sit tight -
+        Your anonymous request has been sent to the community. Sit tight –
         people will be responding with encouragement soon.
       </ThemedText>
 
       <View style={styles.recommendationsContainer}>
         <ThemedText
           type="captionMedium"
-          style={[
-            styles.recommendationsTitle,
-            {
-              color: mainTextColor,
-              marginBottom: 16,
-              textAlign: "center",
-            },
-          ]}
+          style={{
+            color: mainTextColor,
+            marginBottom: 16,
+            textAlign: "center",
+          }}
         >
           While you wait:
         </ThemedText>
@@ -148,22 +151,18 @@ export function ReachOutConfirmationScreen({
                 <View style={styles.recommendationText}>
                   <ThemedText
                     type="body"
-                    style={[
-                      styles.recommendationTitle,
-                      {
-                        color: mainTextColor,
-                        marginBottom: 2,
-                      },
-                    ]}
+                    style={{
+                      color: mainTextColor,
+                      marginBottom: 2,
+                    }}
                   >
                     {action.title}
                   </ThemedText>
                   <ThemedText
                     type="caption"
-                    style={[
-                      styles.recommendationSubtitle,
-                      { color: colors.textMuted },
-                    ]}
+                    style={{
+                      color: colors.textMuted,
+                    }}
                   >
                     {action.subtitle}
                   </ThemedText>
@@ -204,22 +203,18 @@ export function ReachOutConfirmationScreen({
                 <View style={styles.recommendationText}>
                   <ThemedText
                     type="body"
-                    style={[
-                      styles.recommendationTitle,
-                      {
-                        color: mainTextColor,
-                        marginBottom: 2,
-                      },
-                    ]}
+                    style={{
+                      color: mainTextColor,
+                      marginBottom: 2,
+                    }}
                   >
                     {action.title}
                   </ThemedText>
                   <ThemedText
                     type="caption"
-                    style={[
-                      styles.recommendationSubtitle,
-                      { color: colors.textMuted },
-                    ]}
+                    style={{
+                      color: colors.textMuted,
+                    }}
                   >
                     {action.subtitle}
                   </ThemedText>
@@ -234,10 +229,7 @@ export function ReachOutConfirmationScreen({
         style={[styles.doneButton, { backgroundColor: mainTextColor }]}
         onPress={handleDonePress}
       >
-        <ThemedText
-          type="buttonLarge"
-          style={[styles.doneButtonText, { color: colors.white }]}
-        >
+        <ThemedText type="buttonLarge" style={{ color: colors.white }}>
           Done
         </ThemedText>
       </TouchableOpacity>
@@ -258,18 +250,9 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 16,
   },
-  title: {
-    // Typography styles moved to Typography.styles.titleLarge + inline styles
-  },
-  description: {
-    // Typography styles moved to Typography.styles.body + inline styles
-  },
   recommendationsContainer: {
     width: "100%",
     marginBottom: 12,
-  },
-  recommendationsTitle: {
-    // Typography styles moved to Typography.styles.xl + inline styles
   },
   recommendationCard: {
     borderWidth: 1,
@@ -290,12 +273,6 @@ const styles = StyleSheet.create({
   recommendationText: {
     flex: 1,
   },
-  recommendationTitle: {
-    // Typography styles moved to Typography.styles.body + inline styles
-  },
-  recommendationSubtitle: {
-    // Typography styles moved to Typography.styles.caption
-  },
   doneButton: {
     borderRadius: 16,
     padding: 18,
@@ -303,8 +280,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 0,
-  },
-  doneButtonText: {
-    // Typography styles moved to Typography.styles.buttonLarge
   },
 });

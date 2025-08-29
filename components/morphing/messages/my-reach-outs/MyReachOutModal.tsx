@@ -1,6 +1,6 @@
 // components/messages/MyReachOutModal.tsx
+import { useThread } from "@/context/ThreadContext"; // Add this import
 import { useTheme } from "@/hooks/ThemeContext";
-import { useThread } from "@/hooks/ThreadContext"; // Add this import
 import { db, markEncouragementAsRead } from "@/lib/firebase";
 import {
   collection,

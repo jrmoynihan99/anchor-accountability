@@ -21,7 +21,10 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { LinearTransition } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAX_REACH_OUTS = 20; // Show latest 20 reach outs
@@ -32,7 +35,12 @@ export default function MyReachOutsAllScreen() {
   const { myReachOuts, loading, error } = useMyReachOuts();
 
   // Get the pleaId from navigation params for notification deep linking
-  const { openPleaId } = useLocalSearchParams<{ openPleaId?: string }>();
+  const { openPleaId, originless } = useLocalSearchParams<{
+    openPleaId?: string;
+    originless?: string;
+  }>();
+
+  const useOriginless = originless === "1" || originless === "true";
 
   // Timer for live updates
   const [now, setNow] = useState(() => new Date());
@@ -46,24 +54,32 @@ export default function MyReachOutsAllScreen() {
     useState<MyReachOutData | null>(null);
 
   // Store refs to modal controls for each reach out
-  const modalRefs = useRef<{ [key: string]: { open: () => void } }>({});
+  const modalRefs = useRef<{
+    [key: string]: { open: () => void; openOriginless?: () => void };
+  }>({});
 
+  // Auto-open modal if openPleaId is provided (from notification)
   // Auto-open modal if openPleaId is provided (from notification)
   useEffect(() => {
     if (openPleaId && myReachOuts.length > 0 && !loading) {
       const targetReachOut = myReachOuts.find((r) => r.id === openPleaId);
       if (targetReachOut) {
-        // Small delay to ensure the screen is fully rendered
+        // Small delay to ensure the screen is fully rendered and refs are set
         setTimeout(() => {
           setSelectedReachOut(targetReachOut);
-          // Trigger the modal open using the stored ref
-          if (modalRefs.current[openPleaId]) {
-            modalRefs.current[openPleaId].open();
+          const controls = modalRefs.current[openPleaId];
+
+          if (!controls) return;
+
+          if (useOriginless && controls.openOriginless) {
+            controls.openOriginless(); // 👈 notification → slide-up fallback
+          } else {
+            controls.open(); // normal path
           }
         }, 500);
       }
     }
-  }, [openPleaId, myReachOuts, loading]);
+  }, [openPleaId, useOriginless, myReachOuts, loading]);
 
   const handleBack = () => {
     router.back();
@@ -211,6 +227,7 @@ export default function MyReachOutsAllScreen() {
               {displayedReachOuts.map((reachOut, index) => (
                 <Animated.View
                   key={reachOut.id}
+                  entering={FadeInDown}
                   layout={LinearTransition.duration(300)}
                   style={{ width: "100%" }}
                 >
@@ -220,6 +237,7 @@ export default function MyReachOutsAllScreen() {
                   >
                     {({
                       open,
+                      openOriginless, // 👈 NEW
                       close,
                       isModalVisible,
                       progress,
@@ -229,8 +247,8 @@ export default function MyReachOutsAllScreen() {
                       handlePressIn,
                       handlePressOut,
                     }) => {
-                      // Store the open function for this reach out for notification deep linking
-                      modalRefs.current[reachOut.id] = { open };
+                      // Store the open functions for notification deep linking
+                      modalRefs.current[reachOut.id] = { open, openOriginless }; // 👈 store both
 
                       return (
                         <>
@@ -242,7 +260,7 @@ export default function MyReachOutsAllScreen() {
                             now={now}
                             onPress={() => {
                               setSelectedReachOut(reachOut);
-                              open();
+                              open(); // user taps → keep morph animation
                             }}
                             onPressIn={handlePressIn}
                             onPressOut={handlePressOut}

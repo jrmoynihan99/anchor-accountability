@@ -676,6 +676,9 @@ exports.sendMessageNotification = onDocumentCreated(
     // Find recipient(s)
     const recipients = [userA, userB].filter((uid) => uid !== senderUid);
 
+    // 🔹 Generate pseudo-username from UID
+    const senderName = `user-${senderUid.substring(0, 5)}`;
+
     // For each recipient, check notification preferences
     for (const recipientUid of recipients) {
       const userDoc = await admin
@@ -686,7 +689,6 @@ exports.sendMessageNotification = onDocumentCreated(
       if (!userDoc.exists) continue;
 
       const userData = userDoc.data();
-      // Default to true if not set (optional: up to you)
       const wantsMessages = userData.notificationPreferences?.messages ?? true;
       const expoPushToken = userData.expoPushToken;
 
@@ -695,7 +697,6 @@ exports.sendMessageNotification = onDocumentCreated(
         expoPushToken &&
         expoPushToken.startsWith("ExponentPushToken")
       ) {
-        // Send push notification
         try {
           await axios.post(
             "https://exp.host/--/api/v2/push/send",
@@ -703,11 +704,8 @@ exports.sendMessageNotification = onDocumentCreated(
               {
                 to: expoPushToken,
                 sound: "default",
-                title: "New Message",
-                body:
-                  text && text.length
-                    ? text.slice(0, 100)
-                    : "You have a new message.",
+                title: senderName, // 👈 pseudo username
+                body: text && text.length ? text.slice(0, 100) : "",
                 data: {
                   threadId,
                   messageId: snap.id,

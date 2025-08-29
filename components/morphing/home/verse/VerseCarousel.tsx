@@ -23,6 +23,13 @@ export interface VerseCarouselRef {
   openTodayInContext: () => void;
 }
 
+// 🔧 Store both morph + originless controls per item
+type ModalControls = {
+  open: () => void;
+  openOriginless?: () => void; // NEW
+  close: (velocity?: number) => void;
+};
+
 export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
   const verseDays = [-6, -5, -4, -3, -2, -1, 0]; // 0 = today
   const todayIndex = verseDays.indexOf(0); // should be 6
@@ -35,12 +42,7 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
   );
 
   // Store refs to each modal controller
-  const modalControlsRef = useRef<
-    Array<{
-      open: () => void;
-      close: (velocity?: number) => void;
-    }>
-  >([]);
+  const modalControlsRef = useRef<ModalControls[]>([]); // 🔧 typed
 
   // Selected verse for modal display
   const [selectedVerseData, setSelectedVerseData] = useState<{
@@ -69,8 +71,12 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
         initialView: "context",
       });
 
-      if (modalControlsRef.current[todayIndex]) {
-        modalControlsRef.current[todayIndex].open();
+      const controls = modalControlsRef.current[todayIndex];
+      // Prefer originless fallback when opened programmatically
+      if (controls?.openOriginless) {
+        controls.openOriginless();
+      } else if (controls?.open) {
+        controls.open(); // graceful fallback if not yet available
       }
     },
   }));
@@ -106,6 +112,7 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
               <ButtonModalTransitionBridge>
                 {({
                   open,
+                  openOriginless, // 👈 NEW
                   close,
                   isModalVisible,
                   progress,
@@ -115,7 +122,12 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
                   handlePressIn,
                   handlePressOut,
                 }) => {
-                  modalControlsRef.current[index] = { open, close };
+                  // Save both open variants so the ref can choose originless for global intent
+                  modalControlsRef.current[index] = {
+                    open,
+                    openOriginless,
+                    close,
+                  };
 
                   return (
                     <>
@@ -138,7 +150,7 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
                             index,
                             initialView: "verse",
                           });
-                          open();
+                          open(); // tap → keep the morph-from-card animation
                         }}
                         onPressIn={handlePressIn}
                         onPressOut={handlePressOut}

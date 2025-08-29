@@ -121,7 +121,7 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
         case "pending":
           return {
             icon: "clock.fill" as const,
-            text: "Your comment is pending approval",
+            text: "Your comment is pending",
             color: colors.achievement,
             showSpinner: true,
           };

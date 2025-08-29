@@ -116,18 +116,27 @@ export function useNotificationHandler(
         if (data.type === "encouragement") {
           router.push({
             pathname: "/my-reachouts-all",
-            params: { openPleaId: data.pleaId },
+            params: {
+              openPleaId: data.pleaId,
+              originless: "1", // 👈 tell the screen to use slide-up
+            },
           });
         } else if (data.type === "plea") {
           router.push({
             pathname: "/plea-view-all",
-            params: { openPleaId: data.pleaId },
+            params: {
+              openPleaId: data.pleaId,
+              originless: "1", // 👈 tell the screen to use slide-up
+            },
           });
         } else {
           // Fallback for unknown types, route to plea-view-all
           router.push({
             pathname: "/plea-view-all",
-            params: { openPleaId: data.pleaId },
+            params: {
+              openPleaId: data.pleaId,
+              originless: "1", // 👈 tell the screen to use slide-up
+            },
           });
         }
       } else if (data.threadId) {

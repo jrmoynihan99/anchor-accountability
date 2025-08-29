@@ -3,8 +3,8 @@ import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
+import { useThread } from "@/context/ThreadContext"; // Add this import
 import { useTheme } from "@/hooks/ThemeContext";
-import { useThread } from "@/hooks/ThreadContext"; // Add this import
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import {
   auth,

@@ -18,7 +18,11 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { LinearTransition } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  LinearTransition,
+} from "react-native-reanimated";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAX_PLEAS = 20; // Show latest 20 pleas
@@ -29,7 +33,12 @@ export default function PleaViewAllScreen() {
   const { pendingPleas, loading, error } = usePendingPleas();
 
   // Get the pleaId from navigation params for notification deep linking
-  const { openPleaId } = useLocalSearchParams<{ openPleaId?: string }>();
+  const { openPleaId, originless } = useLocalSearchParams<{
+    openPleaId?: string;
+    originless?: string;
+  }>();
+
+  const useOriginless = originless === "1" || originless === "true";
 
   // Timer for live updates
   const [now, setNow] = useState(() => new Date());
@@ -44,32 +53,41 @@ export default function PleaViewAllScreen() {
     pendingPleas.find((p) => p.id === selectedPleaId) || null;
 
   // Store refs to modal controls for each plea
-  const modalRefs = useRef<{ [key: string]: { open: () => void } }>({});
+  const modalRefs = useRef<{
+    [key: string]: { open: () => void; openOriginless?: () => void };
+  }>({});
 
   // In /app/plea-view-all.tsx
 
   const [handledPleaId, setHandledPleaId] = useState<string | null>(null);
 
   // Prevent double opening
+  // Prevent double opening
   useEffect(() => {
     if (
       openPleaId &&
       pendingPleas.length > 0 &&
       !loading &&
-      openPleaId !== handledPleaId // <-- Only run if new/unhandled
+      openPleaId !== handledPleaId
     ) {
       const targetPlea = pendingPleas.find((p) => p.id === openPleaId);
       if (targetPlea) {
         setTimeout(() => {
           setSelectedPleaId(openPleaId);
-          if (modalRefs.current[openPleaId]) {
-            modalRefs.current[openPleaId].open();
+          const controls = modalRefs.current[openPleaId];
+          if (!controls) return;
+
+          if (useOriginless && controls.openOriginless) {
+            controls.openOriginless(); // 👈 notification → slide-up
+          } else {
+            controls.open(); // normal morph
           }
-          setHandledPleaId(openPleaId); // Mark as handled!
+
+          setHandledPleaId(openPleaId);
         }, 500);
       }
     }
-  }, [openPleaId, pendingPleas, loading, handledPleaId]);
+  }, [openPleaId, useOriginless, pendingPleas, loading, handledPleaId]);
 
   const handleBack = () => {
     router.back();
@@ -227,6 +245,7 @@ export default function PleaViewAllScreen() {
               {displayedPleas.map((plea, index) => (
                 <Animated.View
                   key={plea.id}
+                  entering={FadeInDown}
                   layout={LinearTransition.duration(300)}
                   style={{ width: "100%" }}
                 >
@@ -238,6 +257,7 @@ export default function PleaViewAllScreen() {
                   >
                     {({
                       open,
+                      openOriginless, // 👈 NEW
                       close,
                       isModalVisible,
                       progress,
@@ -247,8 +267,8 @@ export default function PleaViewAllScreen() {
                       handlePressIn,
                       handlePressOut,
                     }) => {
-                      // Store the open function for this plea for notification deep linking
-                      modalRefs.current[plea.id] = { open };
+                      // Store both open variants for deep linking
+                      modalRefs.current[plea.id] = { open, openOriginless }; // 👈 store both
 
                       return (
                         <>
@@ -260,7 +280,7 @@ export default function PleaViewAllScreen() {
                             style={buttonAnimatedStyle}
                             onPress={() => {
                               setSelectedPleaId(plea.id);
-                              open();
+                              open(); // user taps → keep morph animation
                             }}
                             onPressIn={handlePressIn}
                             onPressOut={handlePressOut}

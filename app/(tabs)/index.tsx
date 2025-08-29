@@ -10,6 +10,7 @@ import {
   VerseCarousel,
   VerseCarouselRef,
 } from "@/components/morphing/home/verse/VerseCarousel";
+import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { savePushTokenToFirestore } from "@/hooks/usePushNotifications";
 import { useStreakData } from "@/hooks/useStreakData";
@@ -30,6 +31,25 @@ export default function HomeScreen() {
 
   // Add ref for VerseCarousel
   const verseCarouselRef = useRef<VerseCarouselRef>(null);
+
+  // --- Modal Intent context handling ---
+  const { modalIntent, setModalIntent } = useModalIntent();
+
+  useEffect(() => {
+    if (modalIntent === "guidedPrayer") {
+      setTimeout(() => {
+        if (guidedPrayerOpenRef.current) guidedPrayerOpenRef.current();
+        setModalIntent(null); // clear after use
+      }, 500);
+    }
+    if (modalIntent === "verse") {
+      setTimeout(() => {
+        if (verseCarouselRef.current)
+          verseCarouselRef.current.openTodayInContext();
+        setModalIntent(null); // clear after use
+      }, 500);
+    }
+  }, [modalIntent, setModalIntent]);
 
   useEffect(() => {
     savePushTokenToFirestore();
@@ -80,24 +100,6 @@ export default function HomeScreen() {
     );
   };
 
-  const handleOpenGuidedPrayer = () => {
-    if (reachOutCloseRef.current) reachOutCloseRef.current();
-    setTimeout(() => {
-      if (guidedPrayerOpenRef.current) guidedPrayerOpenRef.current();
-    }, 200);
-  };
-
-  // Add new handler for opening verse modal from ReachOut
-  const handleOpenVerseModal = () => {
-    if (reachOutCloseRef.current) reachOutCloseRef.current();
-
-    setTimeout(() => {
-      if (verseCarouselRef.current) {
-        verseCarouselRef.current.openTodayInContext();
-      }
-    }, 200);
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
@@ -144,8 +146,6 @@ export default function HomeScreen() {
                   progress={progress}
                   modalAnimatedStyle={modalAnimatedStyle}
                   close={close}
-                  onGuidedPrayer={handleOpenGuidedPrayer}
-                  onReadScripture={handleOpenVerseModal} // Add this new prop
                 />
               </>
             );
@@ -191,6 +191,7 @@ export default function HomeScreen() {
         <ButtonModalTransitionBridge>
           {({
             open,
+            openOriginless, // 👈 NEW
             close,
             isModalVisible,
             progress,
@@ -200,17 +201,18 @@ export default function HomeScreen() {
             handlePressIn,
             handlePressOut,
           }) => {
-            guidedPrayerOpenRef.current = open;
+            // Use originless opener for programmatic global-intent opens
+            guidedPrayerOpenRef.current = openOriginless; // 👈 NEW
 
             return (
               <>
                 <GuidedPrayer
                   buttonRef={buttonRef}
                   style={buttonAnimatedStyle}
-                  onPress={open}
+                  onPress={open} // tap → morph from card (unchanged)
                   onPressIn={handlePressIn}
                   onPressOut={handlePressOut}
-                  onBeginPrayer={open}
+                  onBeginPrayer={open} // tap from inside → morph (unchanged)
                 />
                 <GuidedPrayerModal
                   isVisible={isModalVisible}
