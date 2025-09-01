@@ -14,9 +14,20 @@ export function VerseParagraph({
   colors,
   activeVerse,
 }: VerseParagraphProps) {
-  // Match lines that start with a verse number (e.g., "17 Therefore...")
-  const match = line.match(/^(\d+)(\s+)(.*)$/);
+  // --- HANDLE INDENTED (POETRY) LINE ---
+  if (line.startsWith("<<INDENT>>")) {
+    return (
+      <ThemedText
+        type="body"
+        style={[styles.indentedText, { color: colors.textSecondary }]}
+      >
+        {line.replace(/^<<INDENT>>\s?/, "")}
+      </ThemedText>
+    );
+  }
 
+  // --- MATCH VERSE NUMBER ---
+  const match = line.match(/^(\d+)(\s+)(.*)$/);
   if (match) {
     const [, verseNumber, , text] = match;
     const isActive = text.trim() === activeVerse?.trim();
@@ -40,17 +51,30 @@ export function VerseParagraph({
         </ThemedText>
       </View>
     );
-  } else {
-    // Fallback for non-verse-numbered lines
+  }
+
+  // --- HEADER DETECTION ---
+  const isHeader = line.trim().length > 0 && !/^\d+\s/.test(line);
+  if (isHeader) {
     return (
       <ThemedText
-        type="body"
-        style={[styles.paragraphText, { color: colors.textSecondary }]}
+        type="title"
+        style={[styles.headerText, { color: colors.tint, textAlign: "center" }]}
       >
         {line.trim()}
       </ThemedText>
     );
   }
+
+  // --- FALLBACK PARAGRAPH ---
+  return (
+    <ThemedText
+      type="body"
+      style={[styles.paragraphText, { color: colors.textSecondary }]}
+    >
+      {line.trim()}
+    </ThemedText>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -70,9 +94,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
+  // --- HEADER STYLE ---
+  headerText: {
+    fontSize: 19,
+    fontWeight: "bold",
+    marginTop: 18,
+    marginBottom: 10,
+    letterSpacing: 0.5,
+  },
   paragraphText: {
     marginBottom: 10,
     fontSize: 16,
     lineHeight: 22,
+  },
+  // --- INDENTED/POETRY STYLE ---
+  indentedText: {
+    fontSize: 16,
+    lineHeight: 22,
+    marginLeft: 24,
+    marginBottom: 6,
   },
 });

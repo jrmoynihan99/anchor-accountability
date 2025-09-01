@@ -52,20 +52,12 @@ export interface StreakEntry {
 }
 
 // ================== DATE UTILITY FUNCTIONS ==================
-export const getYesterday = () => {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday.toISOString().split("T")[0];
-};
+export const getYesterday = () => getLocalDateString(-1);
 
-export const isYesterday = (dateStr: string) => dateStr === getYesterday();
+export const isYesterday = (dateStr: string) =>
+  dateStr === getLocalDateString(-1);
 
-export const isToday = (dateStr: string) => {
-  const today = new Date();
-  const [year, month, day] = dateStr.split("-").map(Number);
-  const checkDate = new Date(year, month - 1, day);
-  return today.toDateString() === checkDate.toDateString();
-};
+export const isToday = (dateStr: string) => dateStr === getLocalDateString(0);
 
 export const formatDate = (dateStr: string) => {
   const [year, month, day] = dateStr.split("-").map(Number);
@@ -187,3 +179,13 @@ export const getFailureMessage = (
       : STRINGS.ENCOURAGE_RELAPSE_EARLIER_DAY;
   }
 };
+
+export function getLocalDateString(offset = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  // Get YYYY-MM-DD string in local time
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

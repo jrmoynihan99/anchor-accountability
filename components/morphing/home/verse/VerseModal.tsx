@@ -133,7 +133,7 @@ export function VerseModal({
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    marginTop: 40,
+    marginTop: 12,
   },
   noContentContainer: {
     flex: 1,

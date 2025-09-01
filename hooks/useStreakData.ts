@@ -10,18 +10,15 @@ import {
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
+import { getLocalDateString } from "@/components/morphing/home/streak/streakUtils"; // use your actual import path
 
 // Helper to get YYYY-MM-DD string for a date offset
-const getDate = (offset: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().split("T")[0];
-};
+const getDate = getLocalDateString;
 
 export function useStreakData() {
   const [streakData, setStreakData] = useState<StreakEntry[]>([]);
   const [user, setUser] = useState(auth.currentUser);
-  const lastCheckedDate = useRef<string>(getDate(0)); // Track when we last checked the date
+  const lastCheckedDate = useRef<string>(getLocalDateString(0)); // Track when we last checked the date
 
   // Listen to auth state changes
   useEffect(() => {
@@ -42,8 +39,8 @@ export function useStreakData() {
   const ensureRecentDaysExist = async (uid: string) => {
     console.log(`🔍 ensureRecentDaysExist: Current user UID:`, uid);
 
-    const today = getDate(0);
-    const yesterday = getDate(-1);
+    const today = getLocalDateString(0);
+    const yesterday = getLocalDateString(-1);
 
     console.log(`🔍 ensureRecentDaysExist: Today's date:`, today);
     console.log(`🔍 ensureRecentDaysExist: Yesterday's date:`, yesterday);

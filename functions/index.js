@@ -13,6 +13,7 @@ const { OpenAI } = require("openai");
 const admin = require("firebase-admin");
 const fetch = require("node-fetch"); // ADD THIS LINE
 const axios = require("axios");
+const cheerio = require("cheerio");
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -149,75 +150,84 @@ const parseBibleReference = (reference) => {
   };
 };
 
-// ADD THIS: Function to get chapter text from Bible API
-const getChapterText = async (reference) => {
+async function getChapterText(reference) {
+  let bookAndChapter = reference;
+  const match = reference.match(/^(.+?)\s+(\d+)(?::\d+)?$/);
+  if (match) {
+    bookAndChapter = `${match[1]} ${match[2]}`;
+  }
+  const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(
+    bookAndChapter
+  )}&version=ESV`;
+
   try {
-    logger.info(`Fetching chapter text for reference: ${reference}`);
-
-    const { book, chapter } = parseBibleReference(reference);
-
-    // Build the API request for the full chapter
-    const passage = `${book} ${chapter}`;
-    const url = `${
-      BIBLE_API_CONFIG.baseUrl
-    }/passage/text/?q=${encodeURIComponent(
-      passage
-    )}&include-headings=false&include-footnotes=false&include-verse-numbers=true&include-short-copyright=false`;
-
-    logger.info(`Making request to ESV API: ${url}`);
-
-    const response = await fetch(url, {
+    const { data: html } = await axios.get(url, {
       headers: {
-        Authorization: `Token ${BIBLE_API_CONFIG.apiKey}`,
-        "Content-Type": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
       },
     });
+    const $ = cheerio.load(html);
 
-    if (!response.ok) {
-      throw new Error(
-        `Bible API error: ${response.status} ${response.statusText}`
-      );
-    }
+    // Get all lines (headers, verses, poetic lines)
+    let lines = [];
+    $(
+      ".passage-text .text, .passage-text .chapter-0, .passage-text .chapter-1, .passage-text h3, .passage-text h2"
+    ).each((i, el) => {
+      let isIndented = $(el).parents(".indent-1").length > 0;
+      let text = $(el).text().trim();
 
-    const data = await response.json();
-    logger.info(`ESV API response received for ${passage}`);
+      // Clean up line: remove crossrefs, footnotes, etc.
+      text = text
+        .replace(/\([A-Z]{1,3}\)/g, "")
+        .replace(/\[[a-z]{1,2}\]/g, "")
+        .replace(/([.,;])([A-Z]{1,3})/g, "$1")
+        .replace(/[ \t]+$/g, "")
+        .replace(/^\s+/, "");
 
-    // ESV API returns the text in the `passages` array
-    if (data.passages && data.passages.length > 0) {
-      const rawText = data.passages[0].trim();
-      const lines = rawText.split("\n").filter((line) => line.trim() !== "");
-
-      // Remove the chapter title if it's the first line (e.g., "John 3")
-      if (lines[0] === `${book} ${chapter}`) {
-        lines.shift();
+      if (text) {
+        if (isIndented) text = "<<INDENT>> " + text;
+        lines.push(text);
       }
+    });
 
-      const chapterText = lines.join("\n");
-      logger.info(
-        `Successfully fetched ${chapterText.length} characters of chapter text`
-      );
-
-      return {
-        chapterText: chapterText,
-        chapterReference: `${book} ${chapter}`,
-        bibleVersion: BIBLE_API_CONFIG.version,
-      };
-    } else {
-      throw new Error("No passage text returned from ESV API");
+    // Deduplicate consecutive lines
+    let deduped = [];
+    for (let i = 0; i < lines.length; i++) {
+      if (i === 0 || lines[i] !== lines[i - 1]) {
+        deduped.push(lines[i]);
+      }
     }
-  } catch (error) {
-    logger.error("Error fetching chapter text:", error);
 
-    // Fallback: return placeholder text
+    // Replace the first number with "1" ONLY if the first non-header line is a verse
+    for (let i = 0; i < deduped.length; i++) {
+      if (/^\d+\s+/.test(deduped[i])) {
+        deduped[i] = deduped[i].replace(/^\d+/, "1");
+        break;
+      }
+      // If it's a header, skip
+    }
+
+    const passage = deduped.join("\n");
+
+    if (passage.length > 100) {
+      return {
+        chapterText: passage,
+        chapterReference: bookAndChapter,
+        bibleVersion: "ESV",
+      };
+    }
+    throw new Error("Passage too short / not found");
+  } catch (err) {
     return {
-      chapterText: `Chapter text for ${reference} could not be loaded. Please check your internet connection and try again. You can read this chapter at https://www.biblegateway.com/passage/?search=${encodeURIComponent(
-        reference
+      chapterText: `Chapter text for ${bookAndChapter} could not be loaded. Please read at https://www.biblegateway.com/passage/?search=${encodeURIComponent(
+        bookAndChapter
       )}&version=ESV`,
-      chapterReference: reference,
+      chapterReference: bookAndChapter,
       bibleVersion: "Error",
     };
   }
-};
+}
 
 // MODIFY THIS: Enhanced generate daily content function
 const generateDailyContent = async (targetDate) => {
@@ -402,8 +412,7 @@ exports.createContentNow = onRequest(async (request, response) => {
   try {
     logger.info("Manual content creation triggered");
 
-    const targetDate = getDateWithOffset(2);
-    const dateString = formatDate(targetDate);
+    const dateString = request.query.date || formatDate(getDateWithOffset(2));
 
     logger.info(`Creating enhanced content for ${dateString}`);
 
@@ -784,35 +793,6 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
     status: newStatus,
     unreadEncouragementCount: 0, // 👈 Add this line
   });
-
-  // --- NEW: Send push notification on REJECTION ---
-  if (newStatus === "rejected") {
-    try {
-      const userSnap = await admin
-        .firestore()
-        .collection("users")
-        .doc(plea.uid)
-        .get();
-      const userData = userSnap.data();
-      const expoPushToken = userData?.expoPushToken;
-      if (expoPushToken && expoPushToken.startsWith("ExponentPushToken")) {
-        const title = "Your plea for help was not approved";
-        const body =
-          "We couldn't approve your request. Please make sure it follows our community guidelines.";
-        const data = {
-          type: "rejection",
-          itemType: "plea",
-          pleaId: snap.id,
-          message: message,
-        };
-        await sendExpoPushNotification(expoPushToken, title, body, data);
-      } else {
-        logger.warn(`No expoPushToken for user ${plea.uid}`);
-      }
-    } catch (err) {
-      logger.error("Error sending push notification for rejected plea:", err);
-    }
-  }
 });
 
 exports.moderateEncouragement = onDocumentCreated(
@@ -935,35 +915,6 @@ exports.moderatePost = onDocumentCreated(
     logger.info(`Moderation result for post ${snap.id}: ${newStatus}`);
 
     await snap.ref.update({ status: newStatus });
-
-    // --- NEW: Send push notification on REJECTION ---
-    if (newStatus === "rejected") {
-      try {
-        const userSnap = await admin
-          .firestore()
-          .collection("users")
-          .doc(post.uid)
-          .get();
-        const userData = userSnap.data();
-        const expoPushToken = userData?.expoPushToken;
-        if (expoPushToken && expoPushToken.startsWith("ExponentPushToken")) {
-          const title = "Your post was not approved";
-          const body =
-            "We couldn't approve your post. Please make sure it follows our community guidelines.";
-          const data = {
-            type: "rejection",
-            itemType: "post",
-            postId: snap.id,
-            message: combinedText,
-          };
-          await sendExpoPushNotification(expoPushToken, title, body, data);
-        } else {
-          logger.warn(`No expoPushToken for user ${post.uid}`);
-        }
-      } catch (err) {
-        logger.error("Error sending push notification for rejected post:", err);
-      }
-    }
   }
 );
 
@@ -1064,3 +1015,61 @@ async function getFilteringPrompt(type = "plea") {
 
   return fallbacks[type] || fallbacks.plea;
 }
+
+exports.generateStreakDocsScheduled = onSchedule("0 2 * * *", async (event) => {
+  logger.info("Starting scheduled streak doc creation for all users...");
+  const db = admin.firestore();
+  const usersSnap = await db.collection("users").get();
+
+  // Helper to format YYYY-MM-DD in UTC
+  const getUtcDateString = (offset = 0) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + offset);
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getUtcDateString(0);
+  const twoDaysAhead = getUtcDateString(2);
+
+  for (const userDoc of usersSnap.docs) {
+    const uid = userDoc.id;
+    const streakRef = db.collection("users").doc(uid).collection("streak");
+
+    // Find latest streak doc (if any)
+    const streakSnap = await streakRef.orderBy("date", "desc").limit(1).get();
+    let lastDate = null;
+    if (!streakSnap.empty) {
+      lastDate = streakSnap.docs[0].id;
+    } else {
+      // If never streaked before, backfill the last 2 days
+      lastDate = getUtcDateString(-2);
+    }
+
+    // Backfill from day after last doc up to twoDaysAhead
+    let fillStart = new Date(lastDate);
+    fillStart.setUTCDate(fillStart.getUTCDate() + 1);
+    let curr = new Date(fillStart);
+    const end = new Date(twoDaysAhead);
+
+    while (curr <= end) {
+      const yyyy = curr.getUTCFullYear();
+      const mm = String(curr.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(curr.getUTCDate()).padStart(2, "0");
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      const docRef = streakRef.doc(dateStr);
+
+      // Only create if missing
+      const existing = await docRef.get();
+      if (!existing.exists) {
+        await docRef.set({ status: "pending" }, { merge: true });
+        logger.info(`Created streak doc for ${uid}: ${dateStr}`);
+      }
+      curr.setUTCDate(curr.getUTCDate() + 1);
+    }
+  }
+
+  logger.info("✅ Finished scheduled streak doc creation for all users.");
+});

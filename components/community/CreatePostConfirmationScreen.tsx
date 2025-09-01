@@ -31,7 +31,7 @@ export function CreatePostConfirmationScreen() {
           textAlign: "center",
         }}
       >
-        Your post has been submitted and will appear soon!
+        Your post has been created!
       </ThemedText>
     </View>
   );

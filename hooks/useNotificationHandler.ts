@@ -3,14 +3,7 @@ import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 
-type RejectionModalParams = {
-  type: "plea" | "post";
-  message?: string;
-  reason?: string;
-};
-
 interface NotificationHandlerOptions {
-  openRejectionModal?: (params: RejectionModalParams) => void;
   currentThreadId?: string | null; // Add current thread tracking
   currentPleaId?: string | null; // Add current plea tracking
 }
@@ -22,7 +15,7 @@ interface NotificationHandlerOptions {
 export function useNotificationHandler(
   options: NotificationHandlerOptions = {}
 ) {
-  const { openRejectionModal, currentThreadId, currentPleaId } = options;
+  const { currentThreadId, currentPleaId } = options;
   const lastHandledNotificationId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -98,19 +91,6 @@ export function useNotificationHandler(
         return;
       }
 
-      // 1. New: Moderation rejection for plea or post
-      if (
-        data.type === "rejection" &&
-        typeof openRejectionModal === "function"
-      ) {
-        openRejectionModal({
-          type: data.itemType as "plea" | "post",
-          message: data.message,
-          reason: data.reason,
-        });
-        return;
-      }
-
       // 2. Existing logic for app routing
       if (data.pleaId) {
         if (data.type === "encouragement") {
@@ -152,5 +132,5 @@ export function useNotificationHandler(
       }
     }
     // -----
-  }, [openRejectionModal, currentThreadId, currentPleaId]);
+  }, [currentThreadId, currentPleaId]);
 }
