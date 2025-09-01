@@ -621,7 +621,7 @@ async function sendEncouragementNotificationToPleaOwner(
   const plea = pleaDoc.data();
 
   // Don't notify the sender of the encouragement
-  if (plea.uid === encouragement.helperUid) return;
+  //if (plea.uid === encouragement.helperUid) return;
 
   // Fetch the user who created the plea
   const userDoc = await admin

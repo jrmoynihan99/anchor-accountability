@@ -199,12 +199,15 @@ export function ButtonModalTransitionBridge({
 
   // --- Animated styles ---
   const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      progress.value,
-      [0, buttonFadeThreshold],
-      [1, 0],
-      "clamp"
-    ),
+    opacity:
+      openMode.value === 1
+        ? 1 // Keep button visible during slide-up
+        : interpolate(
+            progress.value,
+            [0, buttonFadeThreshold],
+            [1, 0],
+            "clamp"
+          ),
     transform: [{ scale: pressScale.value }],
   }));
 

@@ -7,7 +7,13 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ReachOutInputScreenProps {
   contextMessage: string;
@@ -23,6 +29,7 @@ export function ReachOutInputScreen({
   const { colors } = useTheme();
 
   const handleSendPress = () => {
+    Keyboard.dismiss();
     // Trigger haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Call the original onSend function
