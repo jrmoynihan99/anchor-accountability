@@ -1,7 +1,7 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -19,17 +19,16 @@ interface BaseModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   theme: "light" | "dark";
-  backgroundColor: string; // Solid background color for button content
-  buttonContent: React.ReactNode; // What shows during the button transition state
-  children: React.ReactNode; // Modal content
-  buttonContentOpacityRange?: [number, number]; // Custom opacity range for button content
-  closeButtonColor?: string; // Custom close button color
-  // New props for button styling compatibility
-  buttonBackgroundColor?: string; // Background color for the button content container
-  buttonContentPadding?: number; // Padding for button content (defaults to 16 for PleaCard)
-  buttonBorderWidth?: number; // Border width to account for content positioning
-  buttonBorderColor?: string; // Border color for the button content
-  buttonBorderRadius?: number; // Border radius for the button content
+  backgroundColor: string;
+  buttonContent: React.ReactNode;
+  children: React.ReactNode;
+  buttonContentOpacityRange?: [number, number];
+  closeButtonColor?: string;
+  buttonBackgroundColor?: string;
+  buttonContentPadding?: number;
+  buttonBorderWidth?: number;
+  buttonBorderColor?: string;
+  buttonBorderRadius?: number;
 }
 
 export function BaseModal({
@@ -41,23 +40,32 @@ export function BaseModal({
   backgroundColor,
   buttonContent,
   children,
-  buttonContentOpacityRange = [0, 0.3], // Default range
-  closeButtonColor, // Will use default from colors if not provided
-  buttonBackgroundColor, // Use this for button content background if provided
-  buttonContentPadding = 20, // Default padding, but PleaCard uses 16
-  buttonBorderWidth = 0, // Default no border
-  buttonBorderColor = "transparent", // Default transparent border
-  buttonBorderRadius = 0, // Default no border radius
+  buttonContentOpacityRange = [0, 0.3],
+  closeButtonColor,
+  buttonBackgroundColor,
+  buttonContentPadding = 20,
+  buttonBorderWidth = 0,
+  buttonBorderColor = "transparent",
+  buttonBorderRadius = 0,
 }: BaseModalProps) {
   const { colors } = useTheme();
-
   const gestureY = useSharedValue(0);
 
-  // Use provided colors or fallback to defaults
+  // Simple fix: render BlurView on next frame
+  const [blurReady, setBlurReady] = useState(false);
+
+  useEffect(() => {
+    if (isVisible) {
+      // 100ms delay ensures BlurView initializes properly
+      setTimeout(() => setBlurReady(true), 100);
+    } else {
+      setBlurReady(false);
+    }
+  }, [isVisible]);
+
   const buttonColor = closeButtonColor || colors.closeButtonText;
   const buttonBgColor = buttonBackgroundColor || backgroundColor;
 
-  // Drag-to-close (swipe UP to close)
   const panGesture = Gesture.Pan()
     .onStart(() => {
       gestureY.value = 0;
@@ -91,7 +99,6 @@ export function BaseModal({
       }
     });
 
-  // Animation styles
   const overlayStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 1], [0, 0.4]),
   }));
@@ -145,7 +152,7 @@ export function BaseModal({
       <Animated.View
         style={[modalAnimatedStyle, { overflow: "hidden", zIndex: 20 }]}
       >
-        {/* Solid background (fades out) - uses buttonBackgroundColor for button content */}
+        {/* Solid background */}
         <Animated.View
           style={[
             StyleSheet.absoluteFill,
@@ -154,26 +161,43 @@ export function BaseModal({
           ]}
         />
 
-        {/* BlurView background (fades in) */}
-        <Animated.View style={[StyleSheet.absoluteFill, blurBackgroundStyle]}>
-          <BlurView
-            intensity={24}
-            tint={theme === "dark" ? "dark" : "light"}
-            style={StyleSheet.absoluteFill}
-          >
-            <View
-              style={[
-                styles.blurBackground,
-                {
-                  backgroundColor: `${backgroundColor}B8`,
-                  borderColor: colors.modalCardBorder,
-                },
-              ]}
-            />
-          </BlurView>
-        </Animated.View>
+        {/* BlurView - render after next frame */}
+        {blurReady && (
+          <Animated.View style={[StyleSheet.absoluteFill, blurBackgroundStyle]}>
+            <BlurView
+              intensity={50}
+              tint={theme === "dark" ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            >
+              <View
+                style={[
+                  styles.blurBackground,
+                  {
+                    backgroundColor: `${backgroundColor}B8`,
+                    borderColor: colors.modalCardBorder,
+                  },
+                ]}
+              />
+            </BlurView>
+          </Animated.View>
+        )}
 
-        {/* Button Content (shows during transition) */}
+        {/* Fallback background (very brief, until blur renders) */}
+        {!blurReady && (
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              blurBackgroundStyle,
+              {
+                backgroundColor: `${backgroundColor}DD`,
+                borderWidth: 1,
+                borderColor: colors.modalCardBorder,
+              },
+            ]}
+          />
+        )}
+
+        {/* Button Content */}
         <Animated.View
           style={[
             styles.buttonContentContainer,

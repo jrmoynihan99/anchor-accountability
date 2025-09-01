@@ -12,7 +12,6 @@ import {
 } from "@/components/morphing/home/verse/VerseCarousel";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { savePushTokenToFirestore } from "@/hooks/usePushNotifications";
 import { useStreakData } from "@/hooks/useStreakData";
 import { auth } from "@/lib/firebase";
 import { StatusBar } from "expo-status-bar";
@@ -50,10 +49,6 @@ export default function HomeScreen() {
       }, 500);
     }
   }, [modalIntent, setModalIntent]);
-
-  useEffect(() => {
-    savePushTokenToFirestore();
-  }, []);
 
   // Debug logging for authentication and data
   useEffect(() => {
