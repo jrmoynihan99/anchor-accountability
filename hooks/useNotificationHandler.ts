@@ -1,4 +1,5 @@
 // hooks/useNotificationHandler.ts
+import { globalModalManager } from "@/hooks/useGlobalModalManager";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
@@ -90,6 +91,9 @@ export function useNotificationHandler(
       if (!data) {
         return;
       }
+
+      // Close any open modals before navigating
+      globalModalManager.closeAllModals();
 
       // 2. Existing logic for app routing
       if (data.pleaId) {

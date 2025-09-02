@@ -1,3 +1,4 @@
+import { useModalRegistration } from "@/hooks/useGlobalModalManager";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, Keyboard, Platform } from "react-native";
@@ -58,6 +59,39 @@ export function ButtonModalTransitionBridge({
 
   // openMode: 0 = morph from button, 1 = originless slide-up
   const openMode = useSharedValue<0 | 1>(0);
+
+  // --- Modal close ---
+  const close = (velocity = 0) => {
+    keyboardOffset.value = 0;
+
+    const currentProgress = progress.value;
+    const remainingDistance = currentProgress;
+    if (Math.abs(velocity) > 100) {
+      const progressVelocity = Math.abs(velocity) / 150;
+      const duration = Math.max(
+        80,
+        Math.min(600, (remainingDistance / progressVelocity) * 1000)
+      );
+      progress.value = withTiming(
+        0,
+        { duration, easing: Easing.out(Easing.quad) },
+        (finished) => {
+          if (finished) runOnJS(setIsModalVisible)(false);
+        }
+      );
+    } else {
+      progress.value = withTiming(
+        0,
+        { duration: 220, easing: Easing.bezier(0.4, 0, 1, 1) },
+        (finished) => {
+          if (finished) runOnJS(setIsModalVisible)(false);
+        }
+      );
+    }
+  };
+
+  // Register this modal with the global manager when it's visible
+  useModalRegistration(isModalVisible, close);
 
   // --- Keyboard handling ---
   useEffect(() => {
@@ -165,36 +199,6 @@ export function ButtonModalTransitionBridge({
         easing: Easing.bezier(0.22, 1, 0.36, 1),
       });
     });
-  };
-
-  // --- Modal close ---
-  const close = (velocity = 0) => {
-    keyboardOffset.value = 0;
-
-    const currentProgress = progress.value;
-    const remainingDistance = currentProgress;
-    if (Math.abs(velocity) > 100) {
-      const progressVelocity = Math.abs(velocity) / 150;
-      const duration = Math.max(
-        80,
-        Math.min(600, (remainingDistance / progressVelocity) * 1000)
-      );
-      progress.value = withTiming(
-        0,
-        { duration, easing: Easing.out(Easing.quad) },
-        (finished) => {
-          if (finished) runOnJS(setIsModalVisible)(false);
-        }
-      );
-    } else {
-      progress.value = withTiming(
-        0,
-        { duration: 220, easing: Easing.bezier(0.4, 0, 1, 1) },
-        (finished) => {
-          if (finished) runOnJS(setIsModalVisible)(false);
-        }
-      );
-    }
   };
 
   // --- Animated styles ---
