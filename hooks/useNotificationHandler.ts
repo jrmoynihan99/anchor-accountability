@@ -1,7 +1,7 @@
 // hooks/useNotificationHandler.ts
 import { globalModalManager } from "@/hooks/useGlobalModalManager";
 import * as Notifications from "expo-notifications";
-import { router } from "expo-router";
+import { router, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
 
 interface NotificationHandlerOptions {
@@ -18,6 +18,10 @@ export function useNotificationHandler(
 ) {
   const { currentThreadId, currentPleaId } = options;
   const lastHandledNotificationId = useRef<string | null>(null);
+  const segments = useSegments();
+  const isOnReachOutsScreen = segments.some(
+    (segment: string) => segment === "my-reachouts-all"
+  );
 
   useEffect(() => {
     // Handle notification when app is in foreground
@@ -31,12 +35,14 @@ export function useNotificationHandler(
           return;
         }
 
-        // If this is an encouragement notification and user is viewing that plea,
-        // don't show the banner
+        // If this is an encouragement notification and either:
+        // 1. User is viewing that specific plea, OR
+        // 2. User is on the my-reachouts-all screen
+        // Then don't show the banner
         if (
           data?.type === "encouragement" &&
           data?.pleaId &&
-          currentPleaId === data.pleaId
+          (currentPleaId === data.pleaId || isOnReachOutsScreen)
         ) {
           return;
         }
