@@ -83,23 +83,27 @@ export function ReachOutInputScreen({
         minHeight={120}
       />
 
-      <TouchableOpacity
-        style={[styles.sendButton, { backgroundColor: colors.text }]}
-        onPress={handleSendPress}
-      >
-        <IconSymbol
-          name="paperplane"
-          size={20}
-          color={colors.white}
-          style={{ marginRight: 8 }}
-        />
-        <ThemedText
-          type="buttonLarge"
-          style={[styles.sendButtonText, { color: colors.white }]}
+      {/* Wrap send button so taps can't be stolen to dismiss keyboard */}
+      <View onStartShouldSetResponder={() => true}>
+        <TouchableOpacity
+          style={[styles.sendButton, { backgroundColor: colors.text }]}
+          onPress={handleSendPress}
+          onPressIn={(e) => e.stopPropagation()}
         >
-          Send Request
-        </ThemedText>
-      </TouchableOpacity>
+          <IconSymbol
+            name="paperplane"
+            size={20}
+            color={colors.white}
+            style={{ marginRight: 8 }}
+          />
+          <ThemedText
+            type="buttonLarge"
+            style={[styles.sendButtonText, { color: colors.white }]}
+          >
+            Send Request
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
 
       {/* Anonymous Badge - Using the component */}
       <View style={{ marginTop: 12 }}>

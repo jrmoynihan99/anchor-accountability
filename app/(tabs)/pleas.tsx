@@ -24,6 +24,8 @@ export default function PleasScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
       >
         {/* Pending Requests Section */}
         <PendingPleasSection />

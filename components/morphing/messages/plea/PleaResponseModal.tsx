@@ -4,7 +4,7 @@ import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -115,6 +115,7 @@ export function PleaResponseModal({
 
   // Send encouragement handler
   const handleSendEncouragement = async () => {
+    Keyboard.dismiss();
     if (!encouragementText.trim() || !auth.currentUser) return;
     setIsSending(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

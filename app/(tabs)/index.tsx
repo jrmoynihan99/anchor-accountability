@@ -108,6 +108,8 @@ export default function HomeScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
       >
         {/* Add ref to VerseCarousel */}
         <VerseCarousel ref={verseCarouselRef} />

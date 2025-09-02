@@ -5,7 +5,13 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Keyboard,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { OpenToChatToggle } from "./OpenToChatToggle";
 import { PleaData } from "./PleaCard";
 
@@ -230,7 +236,10 @@ export function PleaResponseInputScreen({
               },
               isSending && styles.sendButtonDisabled,
             ]}
-            onPress={onSend}
+            onPress={() => {
+              Keyboard.dismiss();
+              onSend();
+            }}
             disabled={!encouragementText.trim() || isSending}
             activeOpacity={0.8}
           >
