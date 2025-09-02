@@ -189,3 +189,27 @@ export function getLocalDateString(offset = 0) {
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
+// Return local "YYYY-MM-DD" for today (alias)
+export const getToday = () => getLocalDateString(0);
+
+// True if the date string is after today (local)
+export const isAfterToday = (dateStr: string) => dateStr > getToday();
+
+// Filter out any entries beyond today (local)
+export const filterUpToToday = (data: StreakEntry[]) =>
+  data.filter((e) => e.date <= getToday());
+
+// Pretty label with weekday, month short, day (local)
+export const formatDateWithWeekday = (
+  dateStr: string,
+  locale: string | string[] = "en-US"
+) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString(locale, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+};

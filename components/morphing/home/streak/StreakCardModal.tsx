@@ -9,8 +9,11 @@ import { BaseModal } from "../../BaseModal";
 import { StreakCardContent } from "./StreakCardContent";
 import {
   type StreakEntry,
+  filterUpToToday,
+  formatDateWithWeekday,
   getCurrentStreak,
   getPersonalBest,
+  isToday,
 } from "./streakUtils";
 
 interface StreakCardModalProps {
@@ -161,18 +164,14 @@ export function StreakCardModal({
       </View>
 
       {/* Recent Activity */}
+      {/* Recent Activity */}
       <ThemedText
         type="title"
-        style={[
-          styles.sectionTitle,
-          {
-            color: colors.text,
-            marginBottom: 16,
-          },
-        ]}
+        style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}
       >
         Recent Activity
       </ThemedText>
+
       <View
         style={[
           styles.activityContainer,
@@ -187,67 +186,50 @@ export function StreakCardModal({
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
         >
-          {streakData
-            .slice(-14) // Show more entries since it's scrollable
-            .reverse()
-            .map((entry, index) => (
+          {(() => {
+            // Only show entries up to (and including) today (local)
+            const visible = filterUpToToday(streakData);
+
+            // Last 14, newest first in UI
+            const last14 = visible.slice(-14);
+            const items = [...last14].reverse();
+
+            return items.map((entry, index) => (
               <View
                 key={entry.date}
                 style={[
                   styles.activityItem,
                   { borderBottomColor: colors.modalCardBorder },
-                  index === streakData.slice(-14).length - 1 &&
-                    styles.lastActivityItem,
+                  index === items.length - 1 && styles.lastActivityItem,
                 ]}
               >
                 <ThemedText
                   type="caption"
                   style={[styles.activityDate, { color: colors.textSecondary }]}
                 >
-                  {(() => {
-                    const [year, month, day] = entry.date
-                      .split("-")
-                      .map(Number);
-                    const date = new Date(year, month - 1, day);
-                    return date.toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    });
-                  })()}
+                  {formatDateWithWeekday(entry.date)}
                 </ThemedText>
-                {entry.status === "pending" ? (
-                  (() => {
-                    const today = new Date().toISOString().split("T")[0];
-                    const isToday = entry.date === today;
 
-                    if (isToday) {
-                      return (
-                        <ThemedText
-                          type="caption"
-                          style={[
-                            {
-                              color: colors.textSecondary,
-                              fontStyle: "italic",
-                            },
-                          ]}
-                        >
-                          In Progress
-                        </ThemedText>
-                      );
-                    } else {
-                      // For past pending dates - awaiting check-in
-                      return (
-                        <IconSymbol
-                          name="clock.badge.questionmark"
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      );
-                    }
-                  })()
+                {entry.status === "pending" ? (
+                  // Only today shows "In Progress"; past pending shows clock icon
+                  isToday(entry.date) ? (
+                    <ThemedText
+                      type="caption"
+                      style={{
+                        color: colors.textSecondary,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      In Progress
+                    </ThemedText>
+                  ) : (
+                    <IconSymbol
+                      name="clock.badge.questionmark"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  )
                 ) : (
-                  // Success/fail icons as before
                   <IconSymbol
                     name={
                       entry.status === "success"
@@ -261,7 +243,8 @@ export function StreakCardModal({
                   />
                 )}
               </View>
-            ))}
+            ));
+          })()}
         </ScrollView>
       </View>
 

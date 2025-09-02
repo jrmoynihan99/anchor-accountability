@@ -23,7 +23,7 @@ export function AnonymousBadge({
   onPress,
   onPressIn,
   onPressOut,
-  text = "100% anonymous",
+  text = "What's this?",
 }: AnonymousBadgeProps) {
   const { colors } = useTheme();
 
@@ -46,7 +46,7 @@ export function AnonymousBadge({
           activeOpacity={0.8}
         >
           <IconSymbol
-            name="eye.slash"
+            name="questionmark.circle"
             size={14}
             color={colors.textSecondary}
             style={{ marginRight: 6 }}

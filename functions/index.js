@@ -514,13 +514,15 @@ async function sendHelpNotificationToHelpers(plea, pleaId) {
 
     usersSnap.forEach((doc) => {
       const data = doc.data();
+
       if (
         data.expoPushToken &&
         typeof data.expoPushToken === "string" &&
         data.expoPushToken.startsWith("ExponentPushToken")
       ) {
         // Don't notify the sender of the plea
-        if (data.uid && data.uid === uid) return;
+        // FIND ME if (doc.id === uid) return;
+
         tokens.push(data.expoPushToken);
       }
     });
@@ -621,7 +623,7 @@ async function sendEncouragementNotificationToPleaOwner(
   const plea = pleaDoc.data();
 
   // Don't notify the sender of the encouragement
-  //if (plea.uid === encouragement.helperUid) return;
+  // FIND ME if (plea.uid === encouragement.helperUid) return;
 
   // Fetch the user who created the plea
   const userDoc = await admin
