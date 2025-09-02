@@ -58,12 +58,21 @@ export default function MyReachOutsAllScreen() {
     [key: string]: { open: () => void; openOriginless?: () => void };
   }>({});
 
-  // Auto-open modal if openPleaId is provided (from notification)
+  // Track if we've already processed this notification
+  const processedNotificationRef = useRef<string | null>(null);
+
   // Auto-open modal if openPleaId is provided (from notification)
   useEffect(() => {
-    if (openPleaId && myReachOuts.length > 0 && !loading) {
+    if (
+      openPleaId &&
+      myReachOuts.length > 0 &&
+      !loading &&
+      processedNotificationRef.current !== openPleaId
+    ) {
       const targetReachOut = myReachOuts.find((r) => r.id === openPleaId);
       if (targetReachOut) {
+        processedNotificationRef.current = openPleaId; // Mark as processed
+
         // Small delay to ensure the screen is fully rendered and refs are set
         setTimeout(() => {
           setSelectedReachOut(targetReachOut);
@@ -79,7 +88,7 @@ export default function MyReachOutsAllScreen() {
         }, 500);
       }
     }
-  }, [openPleaId, useOriginless, myReachOuts, loading]);
+  }, [openPleaId, useOriginless, myReachOuts, loading]); // 👈 Removed selectedReachOut dependency
 
   const handleBack = () => {
     router.back();

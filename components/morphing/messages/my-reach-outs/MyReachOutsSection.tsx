@@ -156,20 +156,18 @@ export function MyReachOutsSection() {
                         onPressIn={handlePressIn}
                         onPressOut={handlePressOut}
                       />
-                      {isModalVisible && (
-                        <MyReachOutModal
-                          isVisible={isModalVisible}
-                          progress={progress}
-                          modalAnimatedStyle={modalAnimatedStyle}
-                          close={close}
-                          reachOut={
-                            myReachOuts.find(
-                              (r) => r.id === selectedReachOut?.id
-                            ) ?? selectedReachOut
-                          }
-                          now={now}
-                        />
-                      )}
+                      <MyReachOutModal
+                        isVisible={isModalVisible}
+                        progress={progress}
+                        modalAnimatedStyle={modalAnimatedStyle}
+                        close={close}
+                        reachOut={
+                          myReachOuts.find(
+                            (r) => r.id === selectedReachOut?.id
+                          ) ?? selectedReachOut
+                        }
+                        now={now}
+                      />
                     </>
                   )}
                 </ButtonModalTransitionBridge>

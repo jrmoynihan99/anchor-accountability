@@ -171,16 +171,14 @@ export function PendingPleasSection() {
                         onPressIn={handlePressIn}
                         onPressOut={handlePressOut}
                       />
-                      {isModalVisible && (
-                        <PleaResponseModal
-                          isVisible={isModalVisible}
-                          progress={progress}
-                          modalAnimatedStyle={modalAnimatedStyle}
-                          close={close}
-                          plea={selectedPlea}
-                          now={now}
-                        />
-                      )}
+                      <PleaResponseModal
+                        isVisible={isModalVisible}
+                        progress={progress}
+                        modalAnimatedStyle={modalAnimatedStyle}
+                        close={close}
+                        plea={selectedPlea}
+                        now={now}
+                      />
                     </>
                   )}
                 </ButtonModalTransitionBridge>
