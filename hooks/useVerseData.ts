@@ -14,6 +14,14 @@ interface VerseData {
   loading: boolean;
 }
 
+// Helper function to get date string in local timezone
+function getLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function useVerseData(offsetDays: number = 0): VerseData {
   const [loading, setLoading] = useState(true);
   const [verse, setVerse] = useState<string | null>(null);
@@ -27,7 +35,8 @@ export function useVerseData(offsetDays: number = 0): VerseData {
   const date = new Date(today);
   date.setDate(today.getDate() + offsetDays);
 
-  const dateId = date.toISOString().split("T")[0];
+  // Use local timezone date instead of UTC
+  const dateId = getLocalDateString(date);
   const formattedDate = date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",

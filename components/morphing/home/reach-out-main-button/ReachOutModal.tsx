@@ -1,6 +1,7 @@
 // components/morphing/home/reach-out-main-button/ReachOutModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useMyReachOuts } from "@/hooks/useMyReachOuts"; // ADD THIS LINE
 import { auth, db } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -23,6 +24,7 @@ import { BaseModal } from "../../BaseModal";
 import { ReachOutConfirmationScreen } from "./ReachOutConfirmationScreen";
 import { ReachOutInputScreen } from "./ReachOutInputScreen";
 import { ReachOutPendingScreen } from "./ReachOutPendingScreen";
+import { ReachOutRateLimitedScreen } from "./ReachOutRateLimitedScreen"; // ADD THIS LINE
 import { ReachOutRejectedScreen } from "./ReachOutRejectedScreen";
 
 interface ReachOutModalProps {
@@ -33,7 +35,38 @@ interface ReachOutModalProps {
   ctaButtonContent?: React.ReactNode;
 }
 
-type ScreenType = "input" | "pending" | "confirmation" | "rejected";
+type ScreenType =
+  | "input"
+  | "pending"
+  | "confirmation"
+  | "rejected"
+  | "rateLimited"; // ADD rateLimited
+
+// ADD THIS FUNCTION
+function checkReachOutRateLimit(myReachOuts: any[]) {
+  const now = new Date();
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+
+  const recentReachOuts = myReachOuts.filter(
+    (reachOut) => reachOut.createdAt >= fiveMinutesAgo
+  );
+
+  if (recentReachOuts.length >= 2) {
+    const oldestRecent = recentReachOuts.reduce((oldest, current) =>
+      current.createdAt < oldest.createdAt ? current : oldest
+    );
+
+    const waitTimeMs =
+      oldestRecent.createdAt.getTime() + 5 * 60 * 1000 - now.getTime();
+
+    return {
+      isRateLimited: true,
+      waitTimeMs: Math.max(0, waitTimeMs),
+    };
+  }
+
+  return { isRateLimited: false, waitTimeMs: 0 };
+}
 
 export function ReachOutModal({
   isVisible,
@@ -48,6 +81,24 @@ export function ReachOutModal({
   const screenTransition = useSharedValue(0);
   const { colors, effectiveTheme } = useTheme();
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  // ADD THIS LINE
+  const { myReachOuts } = useMyReachOuts();
+
+  // Check rate limit when modal opens
+  useEffect(() => {
+    if (isVisible) {
+      // Only check rate limit if we have data and we're starting fresh
+      if (myReachOuts.length >= 0) {
+        // Check when we have data (even if empty array)
+        const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
+        if (rateLimitInfo.isRateLimited) {
+          setCurrentScreen("rateLimited");
+          screenTransition.value = 1; // Start with rate limited screen showing
+        }
+      }
+    }
+  }, [isVisible]); // ONLY depend on isVisible
 
   // Reset modal state when closed
   useEffect(() => {
@@ -197,6 +248,22 @@ export function ReachOutModal({
             onClose={close}
             onRetry={handleRetry}
             originalMessage={contextMessage}
+          />
+        );
+      case "rateLimited": // ADD THIS CASE WITH CALLBACK
+        const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
+        return (
+          <ReachOutRateLimitedScreen
+            waitTimeMs={rateLimitInfo.waitTimeMs}
+            onClose={close}
+            onTimeExpired={() => {
+              // When timer expires, transition back to input screen
+              screenTransition.value = withTiming(0, {
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+              });
+              setCurrentScreen("input");
+            }}
           />
         );
       default:

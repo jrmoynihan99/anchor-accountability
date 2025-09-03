@@ -1,7 +1,9 @@
+// components/morphing/home/create-post-main-button/CreatePostModal.tsx
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useCreatePost } from "@/hooks/useCreatePost";
+import { usePostRateLimit } from "@/hooks/usePostRateLimit"; // ADD THIS LINE
 import { auth, db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
@@ -16,11 +18,17 @@ import Animated, {
 import { CreatePostConfirmationScreen } from "./CreatePostConfirmationScreen";
 import { CreatePostInputScreen } from "./CreatePostInputScreen";
 import { CreatePostPendingScreen } from "./CreatePostPendingScreen";
+import { CreatePostRateLimitedScreen } from "./CreatePostRateLimitedScreen"; // ADD THIS LINE
 import { CreatePostRejectedScreen } from "./CreatePostRejectedScreen";
 
 export type PostCategory = "testimonies" | "resources" | "questions" | "other";
 
-type ScreenType = "input" | "pending" | "confirmation" | "rejected";
+type ScreenType =
+  | "input"
+  | "pending"
+  | "confirmation"
+  | "rejected"
+  | "rateLimited"; // ADD rateLimited
 
 interface CreatePostModalProps {
   isVisible: boolean;
@@ -38,6 +46,9 @@ export function CreatePostModal({
   const { colors, effectiveTheme } = useTheme();
   const { createPost, creating, error } = useCreatePost();
 
+  // ADD THIS LINE - Get rate limit info
+  const rateLimitInfo = usePostRateLimit();
+
   // Screen logic
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
@@ -50,6 +61,16 @@ export function CreatePostModal({
   const [selectedCategories, setSelectedCategories] = useState<PostCategory[]>(
     []
   );
+
+  // ADD THIS - Check rate limit when modal opens
+  useEffect(() => {
+    if (isVisible) {
+      if (rateLimitInfo.isRateLimited) {
+        setCurrentScreen("rateLimited");
+        screenTransition.value = 1; // Start with rate limited screen showing
+      }
+    }
+  }, [isVisible]); // Only depend on isVisible
 
   // Reset state when closed
   useEffect(() => {
@@ -259,6 +280,21 @@ export function CreatePostModal({
             onRetry={handleRetry}
             originalTitle={title}
             originalContent={content}
+          />
+        );
+      case "rateLimited": // ADD THIS CASE
+        return (
+          <CreatePostRateLimitedScreen
+            waitTimeMs={rateLimitInfo.waitTimeMs}
+            onClose={close}
+            onTimeExpired={() => {
+              // When timer expires, transition back to input screen
+              screenTransition.value = withTiming(0, {
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+              });
+              setCurrentScreen("input");
+            }}
           />
         );
       default:
