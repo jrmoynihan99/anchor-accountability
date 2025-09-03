@@ -23,7 +23,7 @@ export function AnonymousBadge({
   onPress,
   onPressIn,
   onPressOut,
-  text = "What's this?",
+  text = "100% Anonymous",
 }: AnonymousBadgeProps) {
   const { colors } = useTheme();
 

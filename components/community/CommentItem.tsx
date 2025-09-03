@@ -36,7 +36,9 @@ export function CommentItem({
   const isOwnComment = auth.currentUser?.uid === comment.uid;
   const hasReplies = comment.replies && comment.replies.length > 0;
 
-  const handleLike = async () => {
+  const handleLike = async (e: any) => {
+    e?.stopPropagation?.(); // Prevent keyboard dismissal
+
     const originalLiked = isLiked;
     const originalCount = likeCount;
 
@@ -50,6 +52,21 @@ export function CommentItem({
       setIsLiked(originalLiked);
       setLikeCount(originalCount);
     }
+  };
+
+  const handleReply = (e: any) => {
+    e?.stopPropagation?.(); // Prevent keyboard dismissal
+    onReplyToComment(comment.id);
+  };
+
+  const handleShowReplies = (e: any) => {
+    e?.stopPropagation?.(); // Prevent keyboard dismissal
+    setShowReplies(true);
+  };
+
+  const handleHideReplies = (e: any) => {
+    e?.stopPropagation?.(); // Prevent keyboard dismissal
+    setShowReplies(false);
   };
 
   const timeAgo = getTimeAgo(comment.createdAt);
@@ -120,10 +137,11 @@ export function CommentItem({
             </View>
           </View>
 
-          {/* Inline Like Button */}
+          {/* Inline Like Button - Prevent keyboard dismissal */}
           <TouchableOpacity
             style={styles.inlineLikeButton}
             onPress={handleLike}
+            onPressIn={(e) => e.stopPropagation()} // Prevent keyboard dismissal
             activeOpacity={0.75}
             hitSlop={8}
           >
@@ -153,7 +171,7 @@ export function CommentItem({
           {comment.content}
         </ThemedText>
 
-        {/* Reply Button (only for top-level comments) */}
+        {/* Reply Button (only for top-level comments) - Prevent keyboard dismissal */}
         {!isReply && (
           <View style={styles.replyButtonContainer}>
             <TouchableOpacity
@@ -168,7 +186,8 @@ export function CommentItem({
                   borderColor: colors.tint + "33",
                 },
               ]}
-              onPress={() => onReplyToComment(comment.id)}
+              onPress={handleReply}
+              onPressIn={(e) => e.stopPropagation()} // Prevent keyboard dismissal
               activeOpacity={0.75}
               hitSlop={8}
             >
@@ -197,7 +216,8 @@ export function CommentItem({
             {!showReplies ? (
               <TouchableOpacity
                 style={styles.showRepliesButton}
-                onPress={() => setShowReplies(true)}
+                onPress={handleShowReplies}
+                onPressIn={(e) => e.stopPropagation()} // Prevent keyboard dismissal
                 activeOpacity={0.7}
               >
                 <View
@@ -218,7 +238,8 @@ export function CommentItem({
               <View style={styles.repliesContainer}>
                 <TouchableOpacity
                   style={styles.hideRepliesButton}
-                  onPress={() => setShowReplies(false)}
+                  onPress={handleHideReplies}
+                  onPressIn={(e) => e.stopPropagation()} // Prevent keyboard dismissal
                   activeOpacity={0.7}
                 >
                   <View

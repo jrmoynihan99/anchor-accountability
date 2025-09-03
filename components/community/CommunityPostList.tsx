@@ -263,6 +263,8 @@ export function CommunityPostList() {
         posts.length === 0 && styles.emptyContentContainer,
       ]}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled" // Add this
+      keyboardDismissMode="interactive"
       refreshControl={
         <RefreshControl
           refreshing={loading && posts.length > 0}

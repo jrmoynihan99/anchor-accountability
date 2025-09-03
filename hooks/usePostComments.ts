@@ -17,7 +17,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface UserCommentStatus {
   status: "pending" | "approved" | "rejected";
@@ -32,6 +32,9 @@ export function usePostComments(postId: string | null) {
   const [posting, setPosting] = useState(false);
   const [userCommentStatus, setUserCommentStatus] =
     useState<UserCommentStatus | null>(null);
+
+  // Track dismissed statuses to prevent re-showing
+  const dismissedStatusesRef = useRef(new Set<string>());
 
   // --- REAL-TIME COMMENT LISTENER (all approved comments) ---
   useEffect(() => {
@@ -72,12 +75,13 @@ export function usePostComments(postId: string | null) {
     return () => unsubscribe();
   }, [postId, auth.currentUser]);
 
-  // ---- userCommentStatus logic (unchanged) ----
+  // ---- userCommentStatus logic with fix for re-showing ----
   useEffect(() => {
     if (!postId || !auth.currentUser) {
       setUserCommentStatus(null);
       return;
     }
+
     const userCommentsQuery = query(
       collection(db, "communityPosts", postId, "comments"),
       where("uid", "==", auth.currentUser.uid),
@@ -91,9 +95,20 @@ export function usePostComments(postId: string | null) {
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
           const data = doc.data();
+          const commentId = doc.id;
+          const status = data.status as "pending" | "approved" | "rejected";
+
+          // Don't re-show already dismissed approved statuses
+          if (
+            status === "approved" &&
+            dismissedStatusesRef.current.has(commentId)
+          ) {
+            return;
+          }
+
           setUserCommentStatus({
-            status: data.status as "pending" | "approved" | "rejected",
-            commentId: doc.id,
+            status,
+            commentId,
             createdAt: data.createdAt?.toDate() || new Date(),
           });
         } else {
@@ -109,14 +124,23 @@ export function usePostComments(postId: string | null) {
     };
   }, [postId, auth.currentUser]);
 
+  // Auto-dismiss approved status and track dismissal
   useEffect(() => {
     if (userCommentStatus?.status === "approved") {
       const timer = setTimeout(() => {
+        dismissedStatusesRef.current.add(userCommentStatus.commentId);
         setUserCommentStatus(null);
       }, 3500);
       return () => clearTimeout(timer);
     }
-  }, [userCommentStatus?.status]);
+  }, [userCommentStatus?.status, userCommentStatus?.commentId]);
+
+  // Reset dismissed statuses when post changes
+  useEffect(() => {
+    if (postId) {
+      dismissedStatusesRef.current.clear();
+    }
+  }, [postId]);
 
   // ---- Organize parent/replies tree as before ----
   async function processComments(
@@ -318,8 +342,11 @@ export function usePostComments(postId: string | null) {
     }
   };
 
-  // Dismiss user comment status feedback
+  // Dismiss user comment status feedback and track dismissal
   const dismissCommentStatus = () => {
+    if (userCommentStatus) {
+      dismissedStatusesRef.current.add(userCommentStatus.commentId);
+    }
     setUserCommentStatus(null);
   };
 
