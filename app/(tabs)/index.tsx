@@ -1,4 +1,3 @@
-// app/(tabs)/index.tsx
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { GuidedPrayer } from "@/components/morphing/home/guided-prayer/GuidedPrayer";
 import { GuidedPrayerModal } from "@/components/morphing/home/guided-prayer/GuidedPrayerModal";
@@ -14,17 +13,15 @@ import {
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useStreakData } from "@/hooks/useStreakData";
-import { useTabFadeAnimation } from "@/hooks/useTabFadeAnimation";
 import { auth } from "@/lib/firebase";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
-import { Animated, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const fadeStyle = useTabFadeAnimation();
 
   const { streakData, updateStreakStatus } = useStreakData();
 
@@ -101,132 +98,130 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
-      <Animated.View style={[{ flex: 1 }, fadeStyle]}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top,
-              paddingBottom: insets.bottom + 120,
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="always"
-          keyboardDismissMode="interactive"
-        >
-          {/* Add ref to VerseCarousel */}
-          <VerseCarousel ref={verseCarouselRef} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top,
+            paddingBottom: insets.bottom + 120,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
+      >
+        {/* Add ref to VerseCarousel */}
+        <VerseCarousel ref={verseCarouselRef} />
 
-          {/* ---- Reach Out ---- */}
-          <ButtonModalTransitionBridge>
-            {({
-              open,
-              close,
-              isModalVisible,
-              progress,
-              buttonAnimatedStyle,
-              modalAnimatedStyle,
-              buttonRef,
-              handlePressIn,
-              handlePressOut,
-            }) => {
-              reachOutCloseRef.current = close;
+        {/* ---- Reach Out ---- */}
+        <ButtonModalTransitionBridge>
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => {
+            reachOutCloseRef.current = close;
 
-              return (
-                <>
-                  <ReachOutButton
-                    buttonRef={buttonRef}
-                    style={buttonAnimatedStyle}
-                    onPress={open}
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                  />
-                  <ReachOutModal
-                    isVisible={isModalVisible}
-                    progress={progress}
-                    modalAnimatedStyle={modalAnimatedStyle}
-                    close={close}
-                  />
-                </>
-              );
-            }}
-          </ButtonModalTransitionBridge>
-
-          {/* ---- Streak Card ---- */}
-          <ButtonModalTransitionBridge>
-            {({
-              open,
-              close,
-              isModalVisible,
-              progress,
-              buttonAnimatedStyle,
-              modalAnimatedStyle,
-              buttonRef,
-              handlePressIn,
-              handlePressOut,
-            }) => (
+            return (
               <>
-                <StreakCard
-                  streakData={streakData}
-                  onCheckIn={handleStreakCheckIn}
+                <ReachOutButton
                   buttonRef={buttonRef}
                   style={buttonAnimatedStyle}
                   onPress={open}
                   onPressIn={handlePressIn}
                   onPressOut={handlePressOut}
                 />
-                <StreakCardModal
+                <ReachOutModal
                   isVisible={isModalVisible}
                   progress={progress}
                   modalAnimatedStyle={modalAnimatedStyle}
                   close={close}
-                  streakData={streakData}
-                  onCheckIn={handleStreakCheckIn}
                 />
               </>
-            )}
-          </ButtonModalTransitionBridge>
+            );
+          }}
+        </ButtonModalTransitionBridge>
 
-          {/* ---- Guided Prayer ---- */}
-          <ButtonModalTransitionBridge>
-            {({
-              open,
-              openOriginless, // 👈 NEW
-              close,
-              isModalVisible,
-              progress,
-              buttonAnimatedStyle,
-              modalAnimatedStyle,
-              buttonRef,
-              handlePressIn,
-              handlePressOut,
-            }) => {
-              // Use originless opener for programmatic global-intent opens
-              guidedPrayerOpenRef.current = openOriginless; // 👈 NEW
+        {/* ---- Streak Card ---- */}
+        <ButtonModalTransitionBridge>
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => (
+            <>
+              <StreakCard
+                streakData={streakData}
+                onCheckIn={handleStreakCheckIn}
+                buttonRef={buttonRef}
+                style={buttonAnimatedStyle}
+                onPress={open}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+              />
+              <StreakCardModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+                streakData={streakData}
+                onCheckIn={handleStreakCheckIn}
+              />
+            </>
+          )}
+        </ButtonModalTransitionBridge>
 
-              return (
-                <>
-                  <GuidedPrayer
-                    buttonRef={buttonRef}
-                    style={buttonAnimatedStyle}
-                    onPress={open} // tap → morph from card (unchanged)
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    onBeginPrayer={open} // tap from inside → morph (unchanged)
-                  />
-                  <GuidedPrayerModal
-                    isVisible={isModalVisible}
-                    progress={progress}
-                    modalAnimatedStyle={modalAnimatedStyle}
-                    close={close}
-                  />
-                </>
-              );
-            }}
-          </ButtonModalTransitionBridge>
-        </ScrollView>
-      </Animated.View>
+        {/* ---- Guided Prayer ---- */}
+        <ButtonModalTransitionBridge>
+          {({
+            open,
+            openOriginless, // 👈 NEW
+            close,
+            isModalVisible,
+            progress,
+            buttonAnimatedStyle,
+            modalAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => {
+            // Use originless opener for programmatic global-intent opens
+            guidedPrayerOpenRef.current = openOriginless; // 👈 NEW
+
+            return (
+              <>
+                <GuidedPrayer
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open} // tap → morph from card (unchanged)
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                  onBeginPrayer={open} // tap from inside → morph (unchanged)
+                />
+                <GuidedPrayerModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            );
+          }}
+        </ButtonModalTransitionBridge>
+      </ScrollView>
     </View>
   );
 }
