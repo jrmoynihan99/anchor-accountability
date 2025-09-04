@@ -1,7 +1,7 @@
 // components/morphing/home/reach-out-main-button/ReachOutModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useMyReachOuts } from "@/hooks/useMyReachOuts"; // ADD THIS LINE
+import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { auth, db } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import {
@@ -24,7 +24,7 @@ import { BaseModal } from "../../BaseModal";
 import { ReachOutConfirmationScreen } from "./ReachOutConfirmationScreen";
 import { ReachOutInputScreen } from "./ReachOutInputScreen";
 import { ReachOutPendingScreen } from "./ReachOutPendingScreen";
-import { ReachOutRateLimitedScreen } from "./ReachOutRateLimitedScreen"; // ADD THIS LINE
+import { ReachOutRateLimitedScreen } from "./ReachOutRateLimitedScreen";
 import { ReachOutRejectedScreen } from "./ReachOutRejectedScreen";
 
 interface ReachOutModalProps {
@@ -32,7 +32,17 @@ interface ReachOutModalProps {
   progress: Animated.SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+
+  /** If provided, overrides any built-in button content (kept for backward-compat). */
   ctaButtonContent?: React.ReactNode;
+
+  /** Choose built-in morph target if you don't pass ctaButtonContent. */
+  buttonVariant?: "pill" | "circle";
+
+  /** Circle variant knobs (ignored for pill): */
+  buttonSize?: number; // default 70
+  iconSize?: number; // default 38
+  borderWidth?: number; // default 1
 }
 
 type ScreenType =
@@ -40,9 +50,9 @@ type ScreenType =
   | "pending"
   | "confirmation"
   | "rejected"
-  | "rateLimited"; // ADD rateLimited
+  | "rateLimited";
 
-// ADD THIS FUNCTION
+// --- Rate limit helper ---
 function checkReachOutRateLimit(myReachOuts: any[]) {
   const now = new Date();
   const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
@@ -55,16 +65,10 @@ function checkReachOutRateLimit(myReachOuts: any[]) {
     const oldestRecent = recentReachOuts.reduce((oldest, current) =>
       current.createdAt < oldest.createdAt ? current : oldest
     );
-
     const waitTimeMs =
       oldestRecent.createdAt.getTime() + 5 * 60 * 1000 - now.getTime();
-
-    return {
-      isRateLimited: true,
-      waitTimeMs: Math.max(0, waitTimeMs),
-    };
+    return { isRateLimited: true, waitTimeMs: Math.max(0, waitTimeMs) };
   }
-
   return { isRateLimited: false, waitTimeMs: 0 };
 }
 
@@ -74,6 +78,10 @@ export function ReachOutModal({
   modalAnimatedStyle,
   close,
   ctaButtonContent,
+  buttonVariant = "pill",
+  buttonSize = 70,
+  iconSize = 38,
+  borderWidth = 1,
 }: ReachOutModalProps) {
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
@@ -81,24 +89,19 @@ export function ReachOutModal({
   const screenTransition = useSharedValue(0);
   const { colors, effectiveTheme } = useTheme();
   const unsubscribeRef = useRef<(() => void) | null>(null);
-
-  // ADD THIS LINE
   const { myReachOuts } = useMyReachOuts();
 
   // Check rate limit when modal opens
   useEffect(() => {
     if (isVisible) {
-      // Only check rate limit if we have data and we're starting fresh
-      if (myReachOuts.length >= 0) {
-        // Check when we have data (even if empty array)
-        const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
-        if (rateLimitInfo.isRateLimited) {
-          setCurrentScreen("rateLimited");
-          screenTransition.value = 1; // Start with rate limited screen showing
-        }
+      const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
+      if (rateLimitInfo.isRateLimited) {
+        setCurrentScreen("rateLimited");
+        screenTransition.value = 1;
       }
     }
-  }, [isVisible]); // ONLY depend on isVisible
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
 
   // Reset modal state when closed
   useEffect(() => {
@@ -108,7 +111,6 @@ export function ReachOutModal({
         setContextMessage("");
         setCurrentPleaId(null);
         screenTransition.value = 0;
-        // Clean up any existing listener
         if (unsubscribeRef.current) {
           unsubscribeRef.current();
           unsubscribeRef.current = null;
@@ -116,7 +118,7 @@ export function ReachOutModal({
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [isVisible]);
+  }, [isVisible, screenTransition]);
 
   // Clean up listener on unmount
   useEffect(() => {
@@ -141,49 +143,30 @@ export function ReachOutModal({
       console.error("No user logged in");
       return;
     }
-
     try {
-      // First transition to pending screen
       transitionToScreen("pending");
-
-      // Create the plea document
       const docRef = await addDoc(collection(db, "pleas"), {
         uid: user.uid,
         message: contextMessage || "",
         createdAt: serverTimestamp(),
         status: "pending",
       });
-
       setCurrentPleaId(docRef.id);
 
-      // Set up real-time listener for status changes
-      const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (doc) => {
-        if (doc.exists()) {
-          const data = doc.data();
-          const status = data.status;
-
-          console.log(`Plea ${docRef.id} status updated to: ${status}`);
-
-          if (status === "approved") {
-            transitionToScreen("confirmation");
-          } else if (status === "rejected") {
-            transitionToScreen("rejected");
-          }
-          // If still "pending", stay on pending screen
-        }
+      const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (snap) => {
+        if (!snap.exists()) return;
+        const status = snap.data().status;
+        if (status === "approved") transitionToScreen("confirmation");
+        else if (status === "rejected") transitionToScreen("rejected");
       });
-
-      // Store the unsubscribe function
       unsubscribeRef.current = unsubscribe;
     } catch (error) {
       console.error("Error sending plea:", error);
-      // On error, go back to input screen
       transitionToScreen("input");
     }
   };
 
   const handleRetry = () => {
-    // Clean up current listener
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
@@ -196,7 +179,7 @@ export function ReachOutModal({
     setCurrentScreen("input");
   };
 
-  // Animation styles - back to your original simple approach
+  // --- Animations for the two-layer screen swap ---
   const inputScreenStyle = useAnimatedStyle(() => ({
     transform: [
       {
@@ -235,44 +218,8 @@ export function ReachOutModal({
     ),
   }));
 
-  // Render the appropriate screen based on currentScreen state
-  const renderActiveScreen = () => {
-    switch (currentScreen) {
-      case "pending":
-        return <ReachOutPendingScreen />;
-      case "confirmation":
-        return <ReachOutConfirmationScreen onClose={close} />;
-      case "rejected":
-        return (
-          <ReachOutRejectedScreen
-            onClose={close}
-            onRetry={handleRetry}
-            originalMessage={contextMessage}
-          />
-        );
-      case "rateLimited": // ADD THIS CASE WITH CALLBACK
-        const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
-        return (
-          <ReachOutRateLimitedScreen
-            waitTimeMs={rateLimitInfo.waitTimeMs}
-            onClose={close}
-            onTimeExpired={() => {
-              // When timer expires, transition back to input screen
-              screenTransition.value = withTiming(0, {
-                duration: 300,
-                easing: Easing.out(Easing.quad),
-              });
-              setCurrentScreen("input");
-            }}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
-  // Default button content for morphing
-  const defaultButtonContent = (
+  // --- Built-in morph targets (used ONLY if ctaButtonContent is not provided) ---
+  const PillCTAContent = (
     <View style={styles.pillButtonTouchable}>
       <View style={styles.pillTextContainer}>
         <Ionicons
@@ -300,10 +247,85 @@ export function ReachOutModal({
     </View>
   );
 
-  // Modal content with all screens
+  const CircleCTAContent = (
+    // Force the morph mount to be the exact rect of the real button.
+    <View
+      style={{
+        width: buttonSize,
+        height: buttonSize,
+        alignSelf: "center", // <- center in any wider parent
+        // No margin/padding here. Keep it a clean box.
+      }}
+      pointerEvents="none"
+    >
+      <View
+        style={[
+          styles.circleContainer,
+          {
+            width: buttonSize,
+            height: buttonSize,
+            borderRadius: buttonSize / 2,
+            backgroundColor: colors.tint,
+            borderColor: colors.navBorder,
+            borderWidth,
+            shadowColor: colors.shadow,
+            shadowOpacity: 0.35,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 12,
+            elevation: 5,
+          },
+        ]}
+      >
+        <Ionicons
+          name="shield-checkmark"
+          size={iconSize}
+          color={colors.white}
+        />
+      </View>
+    </View>
+  );
+
+  const builtInButtonContent =
+    buttonVariant === "circle" ? CircleCTAContent : PillCTAContent;
+
+  // --- Screens ---
+  const renderActiveScreen = () => {
+    switch (currentScreen) {
+      case "pending":
+        return <ReachOutPendingScreen />;
+      case "confirmation":
+        return <ReachOutConfirmationScreen onClose={close} />;
+      case "rejected":
+        return (
+          <ReachOutRejectedScreen
+            onClose={close}
+            onRetry={handleRetry}
+            originalMessage={contextMessage}
+          />
+        );
+      case "rateLimited": {
+        const rateLimitInfo = checkReachOutRateLimit(myReachOuts);
+        return (
+          <ReachOutRateLimitedScreen
+            waitTimeMs={rateLimitInfo.waitTimeMs}
+            onClose={close}
+            onTimeExpired={() => {
+              screenTransition.value = withTiming(0, {
+                duration: 300,
+                easing: Easing.out(Easing.quad),
+              });
+              setCurrentScreen("input");
+            }}
+          />
+        );
+      }
+      default:
+        return null;
+    }
+  };
+
   const modalContent = (
     <View style={styles.screenContainer}>
-      {/* Input Screen - Always rendered */}
       <Animated.View
         style={[
           styles.screenWrapper,
@@ -318,7 +340,6 @@ export function ReachOutModal({
         />
       </Animated.View>
 
-      {/* Active Screen - Conditionally rendered based on currentScreen */}
       {currentScreen !== "input" && (
         <Animated.View
           style={[
@@ -341,7 +362,7 @@ export function ReachOutModal({
       close={close}
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.tint}
-      buttonContent={ctaButtonContent || defaultButtonContent}
+      buttonContent={ctaButtonContent || builtInButtonContent}
       buttonContentOpacityRange={[0, 0.1]}
     >
       {modalContent}
@@ -359,6 +380,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
+  },
+  circleContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   screenContainer: {
     flex: 1,

@@ -108,9 +108,7 @@ export default function TabLayout() {
       />
 
       {/* Floating main CTA (with morph/transition modal) */}
-      <ButtonModalTransitionBridge
-        buttonBorderRadius={35} // perfectly matches the circle
-      >
+      <ButtonModalTransitionBridge buttonBorderRadius={35}>
         {({
           open,
           close,
@@ -135,15 +133,10 @@ export default function TabLayout() {
               progress={progress}
               modalAnimatedStyle={modalAnimatedStyle}
               close={close}
-              ctaButtonContent={
-                <FloatingMainCTAButton
-                  // For morphing back (should match appearance/size)
-                  onPress={() => {}}
-                  size={70}
-                  iconSize={38}
-                  borderWidth={1}
-                />
-              }
+              buttonVariant="circle"
+              buttonSize={70}
+              iconSize={38}
+              borderWidth={1}
             />
           </>
         )}
