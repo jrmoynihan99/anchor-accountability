@@ -187,6 +187,8 @@ export default function PleaViewAllScreen() {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           {loading ? (
             <View style={styles.loadingContainer}>

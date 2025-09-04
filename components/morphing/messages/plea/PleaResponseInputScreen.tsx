@@ -275,7 +275,7 @@ export function PleaResponseInputScreen({
 const styles = StyleSheet.create({
   // Layout and structural styles only - NO text styling
   scrollContainer: { flex: 1 },
-  scrollContent: { padding: 8, paddingTop: 42, paddingBottom: 32 },
+  scrollContent: { padding: 0, paddingTop: 42, paddingBottom: 32 },
 
   // Header Card Styles
   headerCard: {

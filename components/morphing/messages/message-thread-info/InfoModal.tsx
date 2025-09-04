@@ -2,8 +2,17 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useReportCheck } from "@/hooks/useReportCheck";
+import { auth, db } from "@/lib/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 
@@ -25,6 +34,35 @@ export function ThreadInfoModal({
   otherUserId,
 }: ThreadInfoModalProps) {
   const { colors, effectiveTheme } = useTheme();
+  const { hasReported, isLoading } = useReportCheck(otherUserId);
+
+  const handleReportUser = async () => {
+    const currentUserId = auth.currentUser?.uid;
+    if (!currentUserId) {
+      Alert.alert("Error", "You must be signed in to report users");
+      return;
+    }
+
+    if (hasReported) {
+      Alert.alert(
+        "Already Reported",
+        "You have already reported this user recently."
+      );
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, "reports"), {
+        reportedUserId: otherUserId,
+        reporterUserId: currentUserId,
+        timestamp: serverTimestamp(),
+      });
+
+      Alert.alert("Report Submitted", "Thank you for your report.");
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit report. Please try again.");
+    }
+  };
 
   // Button content (the info icon in its collapsed state)
   const buttonContent = (
@@ -103,20 +141,27 @@ export function ThreadInfoModal({
           <TouchableOpacity
             style={[
               styles.reportButton,
-              { backgroundColor: colors.error || colors.tint },
+              {
+                backgroundColor: hasReported
+                  ? colors.textSecondary
+                  : colors.error || colors.tint,
+                opacity: hasReported || isLoading ? 0.6 : 1,
+              },
             ]}
             activeOpacity={0.8}
-            onPress={() => {
-              // TODO: Hook up report functionality
-              console.log("Report user pressed");
-            }}
+            onPress={handleReportUser}
+            disabled={hasReported || isLoading}
           >
-            <IconSymbol name="flag" size={16} color={colors.white} />
+            <IconSymbol
+              name={hasReported ? "checkmark" : "flag"}
+              size={16}
+              color={colors.white}
+            />
             <ThemedText
               type="caption"
               style={[styles.reportButtonText, { color: colors.white }]}
             >
-              Report User
+              {hasReported ? "Already Reported" : "Report User"}
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -225,10 +270,10 @@ const styles = StyleSheet.create({
   reportButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20, // Increased from 16
-    paddingVertical: 14, // Increased from 10
-    borderRadius: 10, // Slightly larger radius
-    gap: 8, // Increased gap between icon and text
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+    gap: 8,
   },
   reportButtonText: {
     fontWeight: "600",
