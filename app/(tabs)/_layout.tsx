@@ -1,6 +1,7 @@
 // app/(tabs)/_layout.tsx
 import { FloatingPillNavigation } from "@/components/FloatingPillNavigation";
 import { HapticTab } from "@/components/HapticTab";
+import { NotificationPermissionModal } from "@/components/NotificationPermissionModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { FloatingMainCTAButton } from "@/components/morphing/home/reach-out-main-button/FloatingMainCTAButton";
 import { ReachOutModal } from "@/components/morphing/home/reach-out-main-button/ReachOutModal";
@@ -10,6 +11,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
+import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useThreads } from "@/hooks/useThreads";
 import { Tabs, useRouter, useSegments } from "expo-router";
 import React from "react";
@@ -23,6 +25,10 @@ export default function TabLayout() {
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
   const { threads } = useThreads();
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
+
+  // Notification permission management
+  const { shouldShowModal, handlePermissionResult, closeModal } =
+    useNotificationPermission();
 
   // Get the current active tab
   const lastSegment = segments[segments.length - 1];
@@ -175,6 +181,13 @@ export default function TabLayout() {
           </>
         )}
       </ButtonModalTransitionBridge>
+
+      {/* Notification Permission Modal */}
+      <NotificationPermissionModal
+        isVisible={shouldShowModal}
+        onClose={closeModal}
+        onPermissionResult={handlePermissionResult}
+      />
     </GestureHandlerRootView>
   );
 }

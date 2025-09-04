@@ -2,7 +2,6 @@
 import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
 import { AnonymousBadgeModal } from "@/components/morphing/anonymous-badge/AnonymousBadgeModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { savePushTokenToFirestore } from "@/hooks/usePushNotifications";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -55,7 +54,6 @@ export function LoginForm({
   const completeOnboarding = async () => {
     try {
       await setHasOnboarded();
-      await savePushTokenToFirestore();
       router.replace("/(tabs)");
     } catch (error) {
       console.error("Error saving onboarding status:", error);

@@ -1,4 +1,5 @@
 // lib/auth.ts
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -22,6 +23,29 @@ export async function ensureSignedIn() {
     }
   } catch (error) {
     console.error("Error with anonymous sign in:", error);
+    throw error;
+  }
+}
+
+export function isAnonymousUser(): boolean {
+  return auth.currentUser?.isAnonymous ?? false;
+}
+
+export async function signOut() {
+  try {
+    console.log("🔄 Starting sign out process...");
+    console.log("Current user before signOut:", auth.currentUser?.uid);
+
+    await auth.signOut();
+    console.log("✅ Firebase auth.signOut() completed");
+    console.log("Current user after signOut:", auth.currentUser?.uid);
+
+    await AsyncStorage.removeItem("hasCompletedOnboarding");
+    console.log("✅ AsyncStorage onboarding flag cleared");
+
+    console.log("🎉 Sign out process completed successfully");
+  } catch (error) {
+    console.error("❌ Error during sign out:", error);
     throw error;
   }
 }

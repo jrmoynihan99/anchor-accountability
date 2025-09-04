@@ -3,6 +3,7 @@ import * as Notifications from "expo-notifications";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { Alert, Linking } from "react-native";
 import { savePushTokenToFirestore } from "./usePushNotifications";
 
 export interface NotificationPreferences {
@@ -13,6 +14,7 @@ export interface NotificationPreferences {
 
 export interface NotificationState {
   systemPermissionGranted: boolean;
+  systemPermissionDenied: boolean;
   hasExpoPushToken: boolean;
   preferences: NotificationPreferences;
   loading: boolean;
@@ -22,6 +24,7 @@ export interface NotificationState {
 export function useNotificationPreferences() {
   const [state, setState] = useState<NotificationState>({
     systemPermissionGranted: false,
+    systemPermissionDenied: false,
     hasExpoPushToken: false,
     preferences: {
       pleas: false,
@@ -42,6 +45,7 @@ export function useNotificationPreferences() {
       // Check system permissions
       const { status } = await Notifications.getPermissionsAsync();
       const systemPermissionGranted = status === "granted";
+      const systemPermissionDenied = status === "denied";
 
       // Check user document for expoPushToken and preferences
       const uid = auth.currentUser?.uid;
@@ -49,6 +53,7 @@ export function useNotificationPreferences() {
         setState((prev) => ({
           ...prev,
           systemPermissionGranted,
+          systemPermissionDenied,
           hasExpoPushToken: false,
           loading: false,
         }));
@@ -68,6 +73,7 @@ export function useNotificationPreferences() {
 
       setState({
         systemPermissionGranted,
+        systemPermissionDenied,
         hasExpoPushToken,
         preferences,
         loading: false,
@@ -87,7 +93,28 @@ export function useNotificationPreferences() {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
-      // This will request permissions and save token if granted
+      // Check current permission status first
+      const { status: currentStatus } =
+        await Notifications.getPermissionsAsync();
+
+      if (currentStatus === "denied") {
+        // Permissions were explicitly denied - guide to settings
+        Alert.alert(
+          "Notifications Disabled",
+          "You previously declined notifications. To enable them:\n\n1. Open iPhone Settings\n2. Find this app\n3. Tap Notifications\n4. Turn on Allow Notifications",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => Linking.openSettings(),
+            },
+          ]
+        );
+        setState((prev) => ({ ...prev, loading: false }));
+        return false;
+      }
+
+      // Continue with normal flow for undetermined/granted status
       await savePushTokenToFirestore();
 
       // Reload state to reflect changes

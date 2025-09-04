@@ -5,8 +5,24 @@ import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
-export function PrivacySection() {
+interface PrivacySectionProps {
+  onNavigateToContent?: (title: string, content: string) => void;
+}
+
+export function PrivacySection({ onNavigateToContent }: PrivacySectionProps) {
   const { colors } = useTheme();
+
+  const handlePrivacyPress = () => {
+    if (onNavigateToContent) {
+      onNavigateToContent("Privacy Policy", "privacy");
+    }
+  };
+
+  const handleTermsPress = () => {
+    if (onNavigateToContent) {
+      onNavigateToContent("Terms of Service", "terms");
+    }
+  };
 
   return (
     <View style={styles.sectionCard}>
@@ -17,7 +33,7 @@ export function PrivacySection() {
         </ThemedText>
       </View>
 
-      <TouchableOpacity style={styles.settingItem}>
+      <TouchableOpacity style={styles.settingItem} onPress={handlePrivacyPress}>
         <ThemedText type="body" style={styles.settingLabel}>
           Privacy Policy
         </ThemedText>
@@ -28,7 +44,7 @@ export function PrivacySection() {
         />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.settingItem}>
+      <TouchableOpacity style={styles.settingItem} onPress={handleTermsPress}>
         <ThemedText type="body" style={styles.settingLabel}>
           Terms of Service
         </ThemedText>

@@ -5,8 +5,18 @@ import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
-export function AboutSection() {
+interface AboutSectionProps {
+  onNavigateToContent?: (title: string, content: string) => void;
+}
+
+export function AboutSection({ onNavigateToContent }: AboutSectionProps) {
   const { colors } = useTheme();
+
+  const handleWhyWePress = () => {
+    if (onNavigateToContent) {
+      onNavigateToContent("Why I Made This", "about");
+    }
+  };
 
   return (
     <View style={styles.sectionCard}>
@@ -31,9 +41,9 @@ export function AboutSection() {
         </ThemedText>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.settingItem}>
+      <TouchableOpacity style={styles.settingItem} onPress={handleWhyWePress}>
         <ThemedText type="body" style={styles.settingLabel}>
-          Help & Support
+          Why I Made This
         </ThemedText>
         <IconSymbol
           name="chevron.right"

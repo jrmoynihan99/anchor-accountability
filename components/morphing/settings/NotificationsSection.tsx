@@ -20,9 +20,35 @@ export function NotificationsSection() {
     error: notificationError,
     shouldShowEnableButton,
     shouldShowPreferences,
+    systemPermissionDenied,
     enableNotifications,
     updatePreference,
   } = useNotificationPreferences();
+
+  const handleEnablePress = async () => {
+    await enableNotifications();
+  };
+
+  const getEnableButtonText = () => {
+    if (systemPermissionDenied) {
+      return "Open Settings";
+    }
+    return "Enable Notifications";
+  };
+
+  const getEnableButtonIcon = () => {
+    if (systemPermissionDenied) {
+      return "gear";
+    }
+    return "bell.badge";
+  };
+
+  const getEnableDescription = () => {
+    if (systemPermissionDenied) {
+      return "Notifications are disabled in your device settings. Tap to open Settings and enable them manually.";
+    }
+    return "Enable push notifications to receive alerts for new incoming help requests, encouragements, and messages.";
+  };
 
   return (
     <View style={styles.sectionCard}>
@@ -54,22 +80,32 @@ export function NotificationsSection() {
             darkColor={colors.textSecondary}
             style={styles.enableDescription}
           >
-            Enable push notifications to receive alerts for new incoming help
-            requests, encouragements, and messages.
+            {getEnableDescription()}
           </ThemedText>
           <TouchableOpacity
-            style={[styles.enableButton, { backgroundColor: colors.tint }]}
-            onPress={enableNotifications}
+            style={[
+              styles.enableButton,
+              {
+                backgroundColor: systemPermissionDenied
+                  ? colors.textSecondary
+                  : colors.tint,
+              },
+            ]}
+            onPress={handleEnablePress}
             activeOpacity={0.8}
           >
-            <IconSymbol name="bell.badge" size={18} color={colors.background} />
+            <IconSymbol
+              name={getEnableButtonIcon()}
+              size={18}
+              color={colors.background}
+            />
             <ThemedText
               type="bodyMedium"
               lightColor={colors.background}
               darkColor={colors.background}
               style={styles.enableButtonText}
             >
-              Enable Notifications
+              {getEnableButtonText()}
             </ThemedText>
           </TouchableOpacity>
         </View>
