@@ -2,10 +2,11 @@ import { useModalRegistration } from "@/hooks/useGlobalModalManager";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, Keyboard, Platform } from "react-native";
-import Animated, {
+import {
   Easing,
   interpolate,
   runOnJS,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -19,7 +20,7 @@ export interface ButtonModalTransitionBridgeProps {
     openOriginless: () => void; // NEW: force slide-up fallback
     close: (velocity?: number) => void;
     isModalVisible: boolean;
-    progress: Animated.SharedValue<number>;
+    progress: SharedValue<number>;
     buttonAnimatedStyle: any;
     modalAnimatedStyle: any;
     buttonRef: React.Ref<any>;

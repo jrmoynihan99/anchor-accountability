@@ -13,12 +13,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
+import { SharedValue } from "react-native-reanimated";
 
 interface ThreadInfoModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   threadName: string;

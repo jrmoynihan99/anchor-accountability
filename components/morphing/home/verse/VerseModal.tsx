@@ -4,17 +4,17 @@ import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { ContextView } from "./ContextView";
 import { VerseCardContent } from "./VerseCardContent";
 import { VerseView } from "./VerseView";
+import { SharedValue } from "react-native-reanimated";
 
 type ModalView = "verse" | "context";
 
 interface VerseModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   verse: string | null;

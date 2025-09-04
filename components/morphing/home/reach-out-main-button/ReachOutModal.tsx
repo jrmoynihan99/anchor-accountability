@@ -16,6 +16,7 @@ import { StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -29,7 +30,7 @@ import { ReachOutRejectedScreen } from "./ReachOutRejectedScreen";
 
 interface ReachOutModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 

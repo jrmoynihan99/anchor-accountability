@@ -11,12 +11,12 @@ import {
 } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { EncouragementsList } from "./EncouragementsList";
 import { MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutCardContent } from "./MyReachOutCardContent";
 import { MyReachOutModalHeader } from "./MyReachOutModalHeader";
+import { SharedValue } from "react-native-reanimated";
 
 interface EncouragementData {
   id: string;
@@ -28,7 +28,7 @@ interface EncouragementData {
 
 interface MyReachOutModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   reachOut: MyReachOutData | null;

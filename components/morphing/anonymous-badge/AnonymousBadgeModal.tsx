@@ -3,12 +3,11 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../BaseModal";
 
 interface AnonymousBadgeModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 }

@@ -32,7 +32,7 @@ type ScreenType =
 
 interface CreatePostModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 }

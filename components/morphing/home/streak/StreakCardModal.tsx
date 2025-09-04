@@ -4,7 +4,6 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { StreakCardContent } from "./StreakCardContent";
 import {
@@ -18,7 +17,7 @@ import {
 
 interface StreakCardModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   streakData: StreakEntry[];

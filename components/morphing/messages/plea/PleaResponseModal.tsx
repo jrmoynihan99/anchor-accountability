@@ -19,7 +19,7 @@ import { PleaResponseInputScreen } from "./PleaResponseInputScreen";
 
 interface PleaResponseModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   plea: PleaData | null;

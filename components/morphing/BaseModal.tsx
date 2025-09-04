@@ -8,6 +8,7 @@ import Animated, {
   Easing,
   interpolate,
   runOnJS,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -15,7 +16,7 @@ import Animated, {
 
 interface BaseModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   theme: "light" | "dark";

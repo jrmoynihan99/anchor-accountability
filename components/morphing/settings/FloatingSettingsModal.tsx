@@ -7,6 +7,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -22,7 +23,7 @@ import { TextContentView } from "./TextContentView";
 
 interface FloatingSettingsModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 }

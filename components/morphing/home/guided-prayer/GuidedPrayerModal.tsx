@@ -6,7 +6,6 @@ import * as Haptics from "expo-haptics";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { GuidedPrayerContent } from "./GuidedPrayerContent";
 import { PrayerStepNavigation } from "./PrayerStepNavigation";
@@ -15,7 +14,7 @@ import { PRAYER_STEPS, PrayerStep, getNextStep } from "./prayerUtils";
 
 interface GuidedPrayerModalProps {
   isVisible: boolean;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
 }
