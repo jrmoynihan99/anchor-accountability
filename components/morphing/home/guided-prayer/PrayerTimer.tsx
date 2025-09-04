@@ -78,7 +78,6 @@ export function PrayerTimer({
         {formatTime(timeRemaining)}
       </ThemedText>
       <View style={[styles.timerProgress, { backgroundColor: `${color}33` }]}>
-        {" "}
         {/* 20% opacity */}
         <Animated.View
           style={[
