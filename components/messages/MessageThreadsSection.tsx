@@ -5,10 +5,18 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { MessageThreadsHeader } from "./MessageThreadsHeader";
+import { SectionHeader } from "./MessageThreadsHeader";
 import { ThreadItem } from "./ThreadItem";
 
-export function MessageThreadsSection() {
+interface MessageThreadsSectionProps {
+  scrollY: any; // SharedValue<number> but keeping it simple
+  onScroll: (event: any) => void;
+}
+
+export function MessageThreadsSection({
+  scrollY,
+  onScroll,
+}: MessageThreadsSectionProps) {
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
@@ -22,7 +30,7 @@ export function MessageThreadsSection() {
   if (loading) {
     return (
       <View style={styles.section}>
-        <MessageThreadsHeader colors={colors} threadsCount={0} loading={true} />
+        <SectionHeader threadsCount={0} loading={true} />
         <View style={styles.emptyContainer}>
           <IconSymbol
             name="clock"
@@ -44,7 +52,7 @@ export function MessageThreadsSection() {
   if (error) {
     return (
       <View style={styles.section}>
-        <MessageThreadsHeader colors={colors} threadsCount={0} error={error} />
+        <SectionHeader threadsCount={0} error={error} />
         <View style={styles.emptyContainer}>
           <IconSymbol
             name="exclamationmark.triangle"
@@ -65,7 +73,7 @@ export function MessageThreadsSection() {
 
   return (
     <View style={styles.section}>
-      <MessageThreadsHeader colors={colors} threadsCount={threads.length} />
+      <SectionHeader threadsCount={threads.length} />
 
       {threads.length === 0 ? (
         <View style={styles.emptyContainer}>

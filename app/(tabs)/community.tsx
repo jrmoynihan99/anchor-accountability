@@ -1,4 +1,5 @@
 // app/(tabs)/community.tsx
+import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { CommunityPostList } from "@/components/community/CommunityPostList";
 import { CreatePostFAB } from "@/components/community/CreatePostFAB";
 import { CreatePostModal } from "@/components/community/CreatePostModal";
@@ -7,6 +8,10 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import {
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function CommunityScreen() {
@@ -14,12 +19,25 @@ export default function CommunityScreen() {
   const insets = useSafeAreaInsets();
   const [selectedPost, setSelectedPost] = useState<any>(null); // For future use
 
+  // Scroll animation values
+  const scrollY = useSharedValue(0);
+
+  // Scroll handler
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
 
       {/* Post List */}
-      <CommunityPostList />
+      <CommunityPostList scrollY={scrollY} onScroll={scrollHandler} />
+
+      {/* Sticky Header */}
+      <CommunityHeader scrollY={scrollY} />
 
       {/* Floating Action Button with Modal Transition */}
       <ButtonModalTransitionBridge
@@ -68,11 +86,5 @@ export default function CommunityScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
   },
 });

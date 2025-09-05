@@ -1,4 +1,4 @@
-// components/messages/MessageThreadsHeader.tsx
+// components/community/CommunityHeader.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -19,29 +19,8 @@ const STICKY_HEADER_HEIGHT = 44;
 const SCROLL_THRESHOLD = 80;
 
 // --- Large Section Header (for ListHeaderComponent)
-interface SectionHeaderProps {
-  threadsCount: number;
-  loading?: boolean;
-  error?: string | null;
-}
-
-export function SectionHeader({
-  threadsCount,
-  loading = false,
-  error = null,
-}: SectionHeaderProps) {
+export function SectionHeader() {
   const { colors } = useTheme();
-
-  const getSubtitleText = () => {
-    if (loading) return "Loading conversations...";
-    if (error) return "Error loading conversations";
-    if (threadsCount > 0) {
-      return `${threadsCount} ongoing conversation${
-        threadsCount === 1 ? "" : "s"
-      }`;
-    }
-    return "No conversations yet";
-  };
 
   return (
     <View style={styles.header}>
@@ -52,20 +31,20 @@ export function SectionHeader({
             { backgroundColor: colors.iconCircleBackground },
           ]}
         >
-          <IconSymbol name="message" size={20} color={colors.icon} />
+          <IconSymbol name="person.2" size={20} color={colors.icon} />
         </View>
         <View style={styles.headerText}>
           <ThemedText
             type="title"
             style={[styles.headerTitle, { color: colors.text }]}
           >
-            Message Threads
+            Community
           </ThemedText>
           <ThemedText
             type="caption"
             style={[styles.headerSubtitle, { color: colors.textSecondary }]}
           >
-            {getSubtitleText()}
+            Share testimonies, resources, and support
           </ThemedText>
         </View>
       </View>
@@ -94,6 +73,7 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
         tint={colors.isDark ? "dark" : "light"}
         style={StyleSheet.absoluteFillObject}
       />
+      {/* REMOVED: backgroundColor from stickyHeaderContent - this was causing the strip effect */}
       <View style={styles.stickyHeaderContent}>
         <View style={styles.stickyHeaderLeft}>
           <View
@@ -102,13 +82,13 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
               { backgroundColor: colors.iconCircleBackground },
             ]}
           >
-            <IconSymbol name="message" size={16} color={colors.icon} />
+            <IconSymbol name="person.2" size={16} color={colors.icon} />
           </View>
           <ThemedText
             type="subtitleSemibold"
             style={[styles.stickyHeaderTitle, { color: colors.text }]}
           >
-            Message Threads
+            Community
           </ThemedText>
         </View>
       </View>
@@ -116,20 +96,12 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
   );
 }
 
-// --- Main MessageThreadsHeader Component
-interface MessageThreadsHeaderProps {
+// --- Main CommunityHeader Component
+interface CommunityHeaderProps {
   scrollY: SharedValue<number>;
-  threadsCount: number;
-  loading?: boolean;
-  error?: string | null;
 }
 
-export function MessageThreadsHeader({
-  scrollY,
-  threadsCount,
-  loading = false,
-  error = null,
-}: MessageThreadsHeaderProps) {
+export function CommunityHeader({ scrollY }: CommunityHeaderProps) {
   // Sticky header animation style
   const stickyHeaderAnimatedStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
@@ -237,7 +209,7 @@ const styles = StyleSheet.create({
 });
 
 // Export constants for use in other components
-export const MESSAGE_HEADER_CONSTANTS = {
+export const COMMUNITY_HEADER_CONSTANTS = {
   HEADER_HEIGHT,
   STICKY_HEADER_HEIGHT,
   SCROLL_THRESHOLD,

@@ -8,7 +8,6 @@ import { usePostActions } from "@/hooks/usePostActions";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   RefreshControl,
   StyleSheet,
   View,
@@ -16,43 +15,13 @@ import {
 import Animated, {
   FadeInDown,
   LinearTransition,
+  SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { COMMUNITY_HEADER_CONSTANTS, SectionHeader } from "./CommunityHeader";
 import { CommunityPostCard } from "./CommunityPostCard";
 import { ViewPostModal } from "./ViewPostModal";
 import { CommunityPost } from "./types";
-
-// --- Section Header (for ListHeaderComponent)
-function SectionHeader({ colors }: { colors: any }) {
-  return (
-    <View style={styles.header}>
-      <View style={styles.headerLeft}>
-        <View
-          style={[
-            styles.iconCircle,
-            { backgroundColor: colors.iconCircleBackground },
-          ]}
-        >
-          <IconSymbol name="person.2" size={20} color={colors.icon} />
-        </View>
-        <View style={styles.headerText}>
-          <ThemedText
-            type="title"
-            style={[styles.headerTitle, { color: colors.text }]}
-          >
-            Community
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={[styles.headerSubtitle, { color: colors.textSecondary }]}
-          >
-            Share testimonies, resources, and support
-          </ThemedText>
-        </View>
-      </View>
-    </View>
-  );
-}
 
 // --- Animation wrapper for post entry ---
 function AnimatedPostItem({
@@ -73,7 +42,15 @@ function AnimatedPostItem({
   );
 }
 
-export function CommunityPostList() {
+interface CommunityPostListProps {
+  scrollY: SharedValue<number>;
+  onScroll: (event: any) => void;
+}
+
+export function CommunityPostList({
+  scrollY,
+  onScroll,
+}: CommunityPostListProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { posts, loading, loadingMore, error, loadMore, refresh } =
@@ -246,11 +223,11 @@ export function CommunityPostList() {
     ) : null;
 
   return (
-    <FlatList
+    <Animated.FlatList
       data={posts}
       renderItem={renderPost}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={<SectionHeader colors={colors} />}
+      ListHeaderComponent={<SectionHeader />}
       ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[
@@ -263,13 +240,18 @@ export function CommunityPostList() {
         posts.length === 0 && styles.emptyContentContainer,
       ]}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled" // Add this
+      keyboardShouldPersistTaps="handled"
       keyboardDismissMode="interactive"
+      onScroll={onScroll}
+      scrollEventThrottle={16}
       refreshControl={
         <RefreshControl
           refreshing={loading && posts.length > 0}
           onRefresh={refresh}
           tintColor={colors.textSecondary}
+          progressViewOffset={
+            insets.top + COMMUNITY_HEADER_CONSTANTS.STICKY_HEADER_HEIGHT
+          }
         />
       }
       onEndReached={loadMore}
@@ -284,36 +266,6 @@ const styles = StyleSheet.create({
   },
   emptyContentContainer: {
     flexGrow: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  headerText: {
-    flex: 1,
-  },
-  headerTitle: {
-    lineHeight: 22,
-  },
-  headerSubtitle: {
-    marginTop: 1,
-    opacity: 0.8,
   },
   centerContainer: {
     flex: 1,
