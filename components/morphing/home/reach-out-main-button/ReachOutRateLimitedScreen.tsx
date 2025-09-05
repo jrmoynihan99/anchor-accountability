@@ -69,7 +69,7 @@ export function ReachOutRateLimitedScreen({
             { backgroundColor: colors.warning + "20" },
           ]}
         >
-          <Ionicons name="time" size={40} color={colors.warning} />
+          <Ionicons name="time" size={40} color={colors.text} />
         </View>
         <ThemedText
           type="titleLarge"
@@ -89,7 +89,7 @@ export function ReachOutRateLimitedScreen({
         type="body"
         style={[
           {
-            color: colors.textMuted,
+            color: colors.text,
             lineHeight: 22,
             textAlign: "center",
             marginBottom: 32,
@@ -104,7 +104,7 @@ export function ReachOutRateLimitedScreen({
       <View
         style={[
           styles.countdownContainer,
-          { backgroundColor: colors.cardBackground },
+          { backgroundColor: colors.navBackground },
         ]}
       >
         <ThemedText
@@ -126,7 +126,7 @@ export function ReachOutRateLimitedScreen({
         style={[styles.closeButton, { backgroundColor: colors.text }]}
         onPress={handleClosePress}
       >
-        <ThemedText type="buttonLarge" style={[{ color: colors.white }]}>
+        <ThemedText type="buttonLarge" style={[{ color: colors.background }]}>
           Close
         </ThemedText>
       </TouchableOpacity>

@@ -59,7 +59,7 @@ export function ReachOutButton({
           style={[
             styles.subduedText,
             {
-              color: colors.whiteTranslucent,
+              color: colors.white,
               letterSpacing: 0.2,
             },
           ]}

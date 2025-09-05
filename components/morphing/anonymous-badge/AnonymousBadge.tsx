@@ -53,7 +53,7 @@ export function AnonymousBadge({
           />
           <ThemedText
             type="badge"
-            style={[styles.anonymousBadgeText, { color: colors.textSecondary }]}
+            style={[styles.anonymousBadgeText, { color: colors.text }]}
           >
             {text}
           </ThemedText>
@@ -76,12 +76,12 @@ export function AnonymousBadge({
       <IconSymbol
         name="eye.slash"
         size={14}
-        color={colors.textSecondary}
+        color={colors.text}
         style={{ marginRight: 6 }}
       />
       <ThemedText
         type="badge"
-        style={[styles.anonymousBadgeText, { color: colors.textSecondary }]}
+        style={[styles.anonymousBadgeText, { color: colors.text }]}
       >
         {text}
       </ThemedText>

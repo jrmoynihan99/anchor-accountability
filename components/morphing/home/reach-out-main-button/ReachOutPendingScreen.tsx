@@ -10,8 +10,7 @@ export function ReachOutPendingScreen() {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   // Main color for icons/titles based on theme
-  const mainTextColor =
-    effectiveTheme === "dark" ? colors.background : colors.text;
+  const mainTextColor = effectiveTheme === "dark" ? colors.text : colors.text;
 
   // Spinning animation for the loader
   useEffect(() => {
@@ -58,7 +57,7 @@ export function ReachOutPendingScreen() {
           style={[
             styles.description,
             {
-              color: colors.textMuted,
+              color: mainTextColor,
               lineHeight: 22,
               textAlign: "center",
               marginTop: 12,

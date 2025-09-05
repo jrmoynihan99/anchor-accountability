@@ -20,8 +20,7 @@ export function ReachOutRejectedScreen({
   const { colors, effectiveTheme } = useTheme();
 
   // Main color for icons/titles based on theme
-  const mainTextColor =
-    effectiveTheme === "dark" ? colors.background : colors.text;
+  const mainTextColor = effectiveTheme === "dark" ? colors.text : colors.text;
 
   const handleRetryPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

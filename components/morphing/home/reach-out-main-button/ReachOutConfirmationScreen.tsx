@@ -26,8 +26,7 @@ export function ReachOutConfirmationScreen({
   const { setModalIntent } = useModalIntent();
 
   // Main color for icons/titles based on theme
-  const mainTextColor =
-    effectiveTheme === "dark" ? colors.background : colors.text;
+  const mainTextColor = effectiveTheme === "dark" ? colors.text : colors.text;
 
   // Handler for "Read Scripture"
   const handleReadScripture = () => {
@@ -95,7 +94,7 @@ export function ReachOutConfirmationScreen({
       <ThemedText
         type="body"
         style={{
-          color: colors.textMuted,
+          color: mainTextColor,
           lineHeight: 22,
           textAlign: "center",
           marginBottom: 24,
@@ -161,7 +160,7 @@ export function ReachOutConfirmationScreen({
                   <ThemedText
                     type="caption"
                     style={{
-                      color: colors.textMuted,
+                      color: colors.textSecondary,
                     }}
                   >
                     {action.subtitle}
@@ -170,7 +169,7 @@ export function ReachOutConfirmationScreen({
                 <Ionicons
                   name="chevron-forward"
                   size={20}
-                  color={colors.textMuted}
+                  color={colors.textSecondary}
                 />
               </TouchableOpacity>
             );
@@ -226,10 +225,13 @@ export function ReachOutConfirmationScreen({
       </View>
 
       <TouchableOpacity
-        style={[styles.doneButton, { backgroundColor: mainTextColor }]}
+        style={[
+          styles.doneButton,
+          { backgroundColor: colors.secondaryButtonBackground },
+        ]}
         onPress={handleDonePress}
       >
-        <ThemedText type="buttonLarge" style={{ color: colors.white }}>
+        <ThemedText type="buttonLarge" style={{ color: colors.background }}>
           Done
         </ThemedText>
       </TouchableOpacity>

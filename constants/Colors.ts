@@ -241,8 +241,8 @@ export const Colors = {
   palette3: {
     light: {
       // --- Text Colors ---
-      text: "#4A4A4A", // Charcoal gray
-      textSecondary: "#7A7A7A", // Medium gray
+      text: "#292929ff", // Charcoal gray
+      textSecondary: "#505050ff", // Medium gray
       textMuted: "rgba(74, 74, 74, 0.6)",
 
       background: "#FAFAFA", // Very light gray

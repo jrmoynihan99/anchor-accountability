@@ -64,7 +64,7 @@ export function ReachOutInputScreen({
         style={[
           styles.description,
           {
-            color: colors.textMuted,
+            color: colors.text,
             lineHeight: 22,
             textAlign: "center",
             marginBottom: 24,
@@ -86,19 +86,22 @@ export function ReachOutInputScreen({
       {/* Wrap send button so taps can't be stolen to dismiss keyboard */}
       <View onStartShouldSetResponder={() => true}>
         <TouchableOpacity
-          style={[styles.sendButton, { backgroundColor: colors.text }]}
+          style={[
+            styles.sendButton,
+            { backgroundColor: colors.secondaryButtonBackground },
+          ]}
           onPress={handleSendPress}
           onPressIn={(e) => e.stopPropagation()}
         >
           <IconSymbol
             name="paperplane"
             size={20}
-            color={colors.white}
+            color={colors.background}
             style={{ marginRight: 8 }}
           />
           <ThemedText
             type="buttonLarge"
-            style={[styles.sendButtonText, { color: colors.white }]}
+            style={[styles.sendButtonText, { color: colors.background }]}
           >
             Send Request
           </ThemedText>

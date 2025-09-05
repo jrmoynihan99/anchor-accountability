@@ -239,8 +239,8 @@ export function ReachOutModal({
       </View>
       <ThemedText
         type="body"
-        lightColor={colors.whiteTranslucent}
-        darkColor={colors.whiteTranslucent}
+        lightColor={colors.white}
+        darkColor={colors.white}
         style={{ letterSpacing: 0.2 }}
       >
         Get anonymous help

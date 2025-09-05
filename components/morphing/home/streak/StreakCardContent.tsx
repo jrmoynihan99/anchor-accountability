@@ -209,7 +209,7 @@ export function StreakCardContent({
               style={[
                 styles.encouragement,
                 {
-                  color: colors.icon,
+                  color: colors.textSecondary,
                   opacity: 0.8,
                   marginTop: 6,
                 },
@@ -289,7 +289,7 @@ export function StreakCardContent({
               style={[
                 styles.encouragement,
                 {
-                  color: colors.icon,
+                  color: colors.textSecondary,
                   opacity: 0.8,
                   marginTop: 6,
                 },
@@ -380,7 +380,7 @@ export function StreakCardContent({
             style={[
               styles.encouragement,
               {
-                color: colors.icon,
+                color: colors.textSecondary,
                 marginBottom: 10,
                 opacity: 0.8,
                 marginTop: 6,
@@ -406,7 +406,7 @@ export function StreakCardContent({
         style={[
           styles.description,
           {
-            color: colors.icon,
+            color: colors.textSecondary,
             lineHeight: 22,
             marginBottom: 18,
             opacity: 0.95,

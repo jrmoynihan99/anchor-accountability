@@ -64,15 +64,30 @@ export function PleaCardContent({ plea, now }: PleaCardContentProps) {
               </ThemedText>
               <UserStreakDisplay userId={plea.uid} size="small" />
             </View>
-            <ThemedText
-              type="caption"
-              style={[
-                styles.timestamp,
-                { color: isUrgent ? colors.error : colors.textSecondary },
-              ]}
-            >
-              {timeAgo}
-            </ThemedText>
+            <View style={styles.timestampRow}>
+              <ThemedText
+                type="caption"
+                style={[
+                  styles.timestamp,
+                  { color: isUrgent ? colors.error : colors.textSecondary },
+                ]}
+              >
+                {timeAgo}
+              </ThemedText>
+              {isUrgent && (
+                <>
+                  <View
+                    style={[styles.bullet, { backgroundColor: colors.error }]}
+                  />
+                  <ThemedText
+                    type="caption"
+                    style={[styles.needsAttention, { color: colors.error }]}
+                  >
+                    Needs attention
+                  </ThemedText>
+                </>
+              )}
+            </View>
           </View>
         </View>
 
@@ -197,9 +212,23 @@ const styles = StyleSheet.create({
   username: {
     lineHeight: 18,
   },
-  timestamp: {
+  timestampRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginTop: 1,
+  },
+  timestamp: {
     opacity: 0.8,
+  },
+  bullet: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+  },
+  needsAttention: {
+    opacity: 0.8,
+    fontWeight: "500",
   },
   stats: {
     flexDirection: "row",

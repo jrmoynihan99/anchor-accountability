@@ -4,6 +4,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { StreakCardContent } from "./StreakCardContent";
 import {
@@ -246,43 +247,6 @@ export function StreakCardModal({
           })()}
         </ScrollView>
       </View>
-
-      {/* Motivational Quote */}
-      <View
-        style={[
-          styles.quoteContainer,
-          {
-            backgroundColor: colors.modalCardBackground,
-            borderColor: colors.modalCardBorder,
-          },
-        ]}
-      >
-        <ThemedText
-          type="quoteText"
-          style={[
-            styles.quote,
-            {
-              color: colors.text,
-              textAlign: "center",
-              marginBottom: 8,
-            },
-          ]}
-        >
-          "Progress, not perfection."
-        </ThemedText>
-        <ThemedText
-          type="caption"
-          style={[
-            styles.quoteAuthor,
-            {
-              color: colors.textSecondary,
-              textAlign: "center",
-            },
-          ]}
-        >
-          Keep going, one day at a time.
-        </ThemedText>
-      </View>
     </ScrollView>
   );
 
@@ -376,18 +340,5 @@ const styles = StyleSheet.create({
   },
   activityDate: {
     // Typography styles moved to Typography.styles.caption
-  },
-  quoteContainer: {
-    borderWidth: 1,
-    padding: 20,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  quote: {
-    // Typography styles moved to Typography.styles.quoteText + inline styles
-  },
-  quoteAuthor: {
-    // Typography styles moved to Typography.styles.caption + inline styles
   },
 });
