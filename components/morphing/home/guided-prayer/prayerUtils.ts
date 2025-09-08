@@ -16,14 +16,13 @@ export const PRAYER_STEPS: Record<PrayerStep, PrayerStepConfig> = {
     duration: null,
   },
   breathing: {
-    title: "Breathe Deeply",
+    title: "Find Silence",
     subtitle: "60 seconds",
-    content:
-      "Focus on your breath. Inhale slowly for 4 counts, hold for 4, then exhale for 6. Feel God's presence with each breath.",
+    content: "Slow down, and try your best to make space in your mind for God.",
     duration: 60,
   },
   reflection: {
-    title: "Prayer & Reflection",
+    title: "Prayer",
     subtitle: "60 seconds",
     content:
       "Lord, grant me strength to overcome temptation. Help me find peace in Your presence and wisdom in Your guidance. I trust in Your love and forgiveness.",
@@ -33,7 +32,7 @@ export const PRAYER_STEPS: Record<PrayerStep, PrayerStepConfig> = {
     title: "Prayer Complete",
     subtitle: "Well done",
     content:
-      "May this moment of prayer stay with you throughout your day. Remember, you are loved and supported.",
+      "May this moment of prayer stay with you throughout your day. Reach out if you are feeling tempted.",
     duration: null,
   },
 };
