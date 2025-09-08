@@ -1,10 +1,19 @@
+// Updated MessagesList.tsx - Minimal changes for Android
 // components/messages/MessagesList.tsx
 import { ThemedText } from "@/components/ThemedText";
 import React, { forwardRef, useRef } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import Animated, {
   FadeInDown,
   LinearTransition,
+  SharedValue,
+  useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyMessagesState } from "./EmptyMessagesState";
@@ -21,6 +30,7 @@ interface MessagesListProps {
   loadingMore?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
+  keyboardHeight?: SharedValue<number>; // For Android contentInset simulation
 }
 
 export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
@@ -35,10 +45,13 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       loadingMore = false,
       hasMore = false,
       onLoadMore,
+      keyboardHeight,
     },
     ref
   ) => {
     const insets = useSafeAreaInsets();
+    const HEADER_HEIGHT = 60; // Match to your header's real height
+    const paddingTop = insets.top + HEADER_HEIGHT;
     const scrollPositionRef = useRef(0);
 
     const convertMessageForDisplay = (msg: any): Message => ({
@@ -48,19 +61,39 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       timestamp: msg.createdAt.toDate
         ? msg.createdAt.toDate()
         : new Date(msg.createdAt),
-      status: "read", // For now, all messages are considered read
+      status: "read",
     });
 
-    // Calculate input height to add bottom padding
+    // Calculate input height
     const inputHeight = 60 + insets.bottom;
+
+    // For Android: Add padding at the top to simulate contentInset behavior
+    const animatedContentStyle = useAnimatedStyle(() => {
+      if (Platform.OS === "android" && keyboardHeight) {
+        return {
+          paddingTop: keyboardHeight.value, // Add scrollable space at top
+        };
+      }
+      return {};
+    });
 
     const handleScroll = (event: any) => {
       const { contentOffset, contentSize, layoutMeasurement } =
         event.nativeEvent;
       scrollPositionRef.current = contentOffset.y;
 
-      // Check if user scrolled to top (for loading older messages)
-      if (contentOffset.y <= 50 && hasMore && !loadingMore && onLoadMore) {
+      // Adjust the threshold for Android when we have keyboard padding
+      const threshold =
+        Platform.OS === "android" && keyboardHeight
+          ? 50 + (keyboardHeight.value || 0)
+          : 50;
+
+      if (
+        contentOffset.y <= threshold &&
+        hasMore &&
+        !loadingMore &&
+        onLoadMore
+      ) {
         onLoadMore();
       }
     };
@@ -96,19 +129,26 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       <ScrollView
         ref={ref}
         style={styles.messagesContainer}
-        contentContainerStyle={[
-          styles.messagesContent,
-          {
-            paddingBottom: inputHeight + 16, // Add padding for the input + some extra space
-          },
-        ]}
         showsVerticalScrollIndicator={false}
         onContentSizeChange={onContentSizeChange}
         onScroll={handleScroll}
         scrollEventThrottle={100}
         keyboardDismissMode="interactive"
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustContentInsets={false}
+        contentContainerStyle={[
+          styles.messagesContent,
+          {
+            paddingBottom: inputHeight + 16,
+            paddingTop,
+          },
+        ]}
       >
+        {/* For Android: Add animated padding at top */}
+        {Platform.OS === "android" && (
+          <Animated.View style={animatedContentStyle} />
+        )}
+
         {renderLoadingHeader()}
 
         {messages.length === 0 ? (
@@ -125,7 +165,7 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
               (messages[index - 1] &&
                 firebaseMessage.createdAt.toMillis() -
                   messages[index - 1].createdAt.toMillis() >
-                  300000); // 5 minutes
+                  300000);
 
             return (
               <Animated.View

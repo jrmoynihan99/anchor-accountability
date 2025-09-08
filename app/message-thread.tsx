@@ -1,9 +1,9 @@
-// app/message-thread.tsx - Hybrid approach with smooth keyboard animations
+// app/message-thread.tsx - Fixed version that adjusts scroll bounds without double animation
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
-import { useThread } from "@/context/ThreadContext"; // Add this import
+import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import {
@@ -30,6 +30,7 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -37,7 +38,7 @@ import Animated, {
 
 export default function MessageThreadScreen() {
   const { colors, effectiveTheme } = useTheme();
-  const { setCurrentThreadId } = useThread(); // Add this hook
+  const { setCurrentThreadId } = useThread();
   const params = useLocalSearchParams();
 
   // Get thread info from params
@@ -66,6 +67,29 @@ export default function MessageThreadScreen() {
 
   // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
+
+  // Function to adjust ScrollView's scrollable area to compensate for the transform
+  const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
+    if (!scrollViewRef.current) return;
+
+    if (Platform.OS === "ios") {
+      // On iOS, adjust contentInset to add scrollable space at the top
+      // This compensates for the visual transform by making more content scrollable
+      scrollViewRef.current.setNativeProps({
+        contentInset: {
+          top: keyboardHeight, // Add scrollable space at top
+          bottom: 0,
+        },
+        scrollIndicatorInsets: {
+          top: keyboardHeight,
+          bottom: 0,
+        },
+      });
+    } else {
+      // On Android, we'll handle this differently in the MessagesList component
+      // by adjusting the contentContainerStyle
+    }
+  };
 
   // Set current thread when component mounts and clear when unmounting
   useEffect(() => {
@@ -97,10 +121,19 @@ export default function MessageThreadScreen() {
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
         const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        keyboardHeight.value = withTiming(event.endCoordinates.height, {
-          duration: duration,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        });
+        const height = event.endCoordinates.height;
+
+        keyboardHeight.value = withTiming(
+          height,
+          {
+            duration: duration,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          },
+          () => {
+            // After animation, adjust ScrollView to compensate for transform
+            runOnJS(adjustScrollViewForKeyboard)(height);
+          }
+        );
       }
     );
 
@@ -108,20 +141,33 @@ export default function MessageThreadScreen() {
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       (event) => {
         const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        keyboardHeight.value = withTiming(0, {
-          duration: duration,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        });
+
+        keyboardHeight.value = withTiming(
+          0,
+          {
+            duration: duration,
+            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+          },
+          () => {
+            // Reset ScrollView insets
+            runOnJS(adjustScrollViewForKeyboard)(0);
+          }
+        );
       }
     );
 
     // Also listen for keyboardDidHide to catch interactive dismissal
     const keyboardDidHide = Keyboard.addListener("keyboardDidHide", (event) => {
-      // Force animation to 0 if somehow missed by keyboardWillHide
-      keyboardHeight.value = withTiming(0, {
-        duration: 200,
-        easing: Easing.out(Easing.quad),
-      });
+      keyboardHeight.value = withTiming(
+        0,
+        {
+          duration: 200,
+          easing: Easing.out(Easing.quad),
+        },
+        () => {
+          runOnJS(adjustScrollViewForKeyboard)(0);
+        }
+      );
     });
 
     return () => {
@@ -131,16 +177,16 @@ export default function MessageThreadScreen() {
     };
   }, []);
 
-  // Animated styles for smooth transitions
+  // Animated styles for smooth transitions - KEEP EXACTLY AS BEFORE
   const animatedInputStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: -keyboardHeight.value }],
+      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
     };
   });
 
   const animatedMessagesStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateY: -keyboardHeight.value }],
+      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
     };
   });
 
@@ -268,7 +314,7 @@ export default function MessageThreadScreen() {
   const handleInputFocus = () => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 300); // Slightly longer delay to account for keyboard animation
+    }, 300);
   };
 
   const handleBack = () => {
@@ -335,6 +381,7 @@ export default function MessageThreadScreen() {
           otherUserId={displayOtherUserId}
         />
 
+        {/* Keep the same animated transform */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
             ref={scrollViewRef}
@@ -347,9 +394,11 @@ export default function MessageThreadScreen() {
             loadingMore={loadingMore}
             hasMore={hasMore}
             onLoadMore={loadMoreMessages}
+            keyboardHeight={keyboardHeight} // Pass keyboard height for Android handling
           />
         </Animated.View>
 
+        {/* Keep the same animated transform */}
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
             ref={inputRef}

@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "flex-end",
-    borderRadius: 20,
+    borderRadius: 30,
     borderWidth: 1,
     paddingLeft: 14,
     paddingRight: 6,
@@ -124,9 +124,9 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   sendButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 6,
