@@ -1,4 +1,4 @@
-// hooks/usePendingPleas.ts - PROPERLY FIXED VERSION
+// hooks/usePendingPleas.ts - FILTERS OUT CURRENT USER'S OWN PLEAS
 import { PleaData } from "@/components/morphing/messages/plea/PleaCard";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -33,6 +33,8 @@ export function usePendingPleas() {
       return;
     }
 
+    const currentUserId = auth.currentUser.uid;
+
     const pleasQuery = query(
       collection(db, "pleas"),
       where("status", "==", "approved"),
@@ -44,8 +46,6 @@ export function usePendingPleas() {
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
-        const currentUserId = auth.currentUser?.uid;
-
         // Get the current plea IDs from the snapshot
         const currentPleaIds = new Set(snapshot.docs.map((doc) => doc.id));
 
@@ -66,6 +66,9 @@ export function usePendingPleas() {
 
         snapshot.docs.forEach((doc) => {
           const data = doc.data();
+          // --- SKIP if it's the current user's own plea ---
+          if (data.uid === currentUserId) return;
+
           const pleaBase = {
             id: doc.id,
             message: data.message || "",
@@ -80,6 +83,9 @@ export function usePendingPleas() {
         // Set up encouragement listeners for any new pleas
         snapshot.docs.forEach((doc) => {
           const pleaId = doc.id;
+          const data = doc.data();
+          // --- Don't create listeners for your own pleas ---
+          if (data.uid === currentUserId) return;
 
           // Only set up listener if we don't already have one
           if (encouragementListenersRef.current[pleaId]) {
@@ -101,6 +107,9 @@ export function usePendingPleas() {
             setPendingPleas((oldPleas) => {
               const pleaBase = currentPleasRef.current.get(pleaId);
               if (!pleaBase) return oldPleas; // Plea no longer exists
+
+              // --- FILTER: Don't add/update current user's own plea ---
+              if (pleaBase.uid === currentUserId) return oldPleas;
 
               // Remove old version of this plea and add updated version
               const otherPleas = oldPleas.filter((p) => p.id !== pleaId);
@@ -126,8 +135,11 @@ export function usePendingPleas() {
         });
 
         // Remove pleas from state that are no longer in the current set
-        setPendingPleas((oldPleas) =>
-          oldPleas.filter((plea) => currentPleaIds.has(plea.id))
+        setPendingPleas(
+          (oldPleas) =>
+            oldPleas
+              .filter((plea) => currentPleaIds.has(plea.id))
+              .filter((plea) => plea.uid !== currentUserId) // <--- FILTER!
         );
 
         setError(null);
@@ -150,5 +162,9 @@ export function usePendingPleas() {
     };
   }, [auth.currentUser]);
 
-  return { pendingPleas, loading, error };
+  return {
+    pendingPleas, // These are ALREADY filtered!
+    loading,
+    error,
+  };
 }
