@@ -1,6 +1,7 @@
 // components/messages/MyReachOutModal.tsx
 import { useThread } from "@/context/ThreadContext"; // Add this import
 import { useTheme } from "@/hooks/ThemeContext";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { db, markEncouragementAsRead } from "@/lib/firebase";
 import {
   collection,
@@ -11,12 +12,12 @@ import {
 } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { EncouragementsList } from "./EncouragementsList";
 import { MyReachOutData } from "./MyReachOutCard";
 import { MyReachOutCardContent } from "./MyReachOutCardContent";
 import { MyReachOutModalHeader } from "./MyReachOutModalHeader";
-import { SharedValue } from "react-native-reanimated";
 
 interface EncouragementData {
   id: string;
@@ -48,6 +49,7 @@ export function MyReachOutModal({
   const [encouragements, setEncouragements] = useState<EncouragementData[]>([]);
   const [loadingEncouragements, setLoadingEncouragements] = useState(false);
   const componentId = useRef(Math.random().toString(36).substr(2, 9));
+  const { refreshUnreadCount } = useUnreadCount();
 
   // Track when modal is open/closed and which plea is being viewed
   useEffect(() => {
@@ -73,7 +75,10 @@ export function MyReachOutModal({
     setLoadingEncouragements(true);
 
     // 👈 Mark encouragements as read when modal opens
-    markEncouragementAsRead(reachOut.id).catch(console.error);
+    // 👈 Mark encouragements as read and refresh unread count when modal opens
+    markEncouragementAsRead(reachOut.id)
+      .then(() => refreshUnreadCount())
+      .catch(console.error);
 
     const encouragementsQuery = query(
       collection(db, "pleas", reachOut.id, "encouragements"),

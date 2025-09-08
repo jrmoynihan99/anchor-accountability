@@ -635,6 +635,8 @@ async function sendEncouragementNotificationToPleaOwner(
 
   // Only notify if they want encouragement notifications and have a token
   if (user?.expoPushToken && user?.notificationPreferences?.encouragements) {
+    const totalUnread = await getTotalUnreadForUser(plea.uid);
+
     const notification = {
       to: user.expoPushToken,
       sound: "default",
@@ -642,9 +644,10 @@ async function sendEncouragementNotificationToPleaOwner(
       body: encouragement.message?.length
         ? `"${encouragement.message.slice(0, 100)}"`
         : "Someone sent encouragement. Tap to view.",
+      badge: totalUnread, // <-- add this!
       data: {
         pleaId: pleaRef.id,
-        type: "encouragement", // 👈 ADD THIS FLAG
+        type: "encouragement",
       },
     };
 
@@ -709,14 +712,18 @@ exports.sendMessageNotification = onDocumentCreated(
         expoPushToken.startsWith("ExponentPushToken")
       ) {
         try {
+          // Get unread count for recipient
+          const totalUnread = await getTotalUnreadForUser(recipientUid);
+
           await axios.post(
             "https://exp.host/--/api/v2/push/send",
             [
               {
                 to: expoPushToken,
                 sound: "default",
-                title: senderName, // 👈 pseudo username
+                title: senderName,
                 body: text && text.length ? text.slice(0, 100) : "",
+                badge: totalUnread, // <-- add this!
                 data: {
                   threadId,
                   messageId: snap.id,
@@ -727,6 +734,7 @@ exports.sendMessageNotification = onDocumentCreated(
               headers: { "Content-Type": "application/json" },
             }
           );
+
           console.log(`✅ Sent message notification to ${recipientUid}`);
         } catch (err) {
           console.error(
@@ -1075,3 +1083,44 @@ exports.generateStreakDocsScheduled = onSchedule("0 2 * * *", async (event) => {
 
   logger.info("✅ Finished scheduled streak doc creation for all users.");
 });
+
+async function getTotalUnreadForUser(uid) {
+  // --- Messages ---
+  let messageUnread = 0;
+
+  // UserA side
+  const threadsA = await admin
+    .firestore()
+    .collection("threads")
+    .where("userA", "==", uid)
+    .get();
+
+  threadsA.forEach((doc) => {
+    messageUnread += doc.data().userA_unreadCount || 0;
+  });
+
+  // UserB side
+  const threadsB = await admin
+    .firestore()
+    .collection("threads")
+    .where("userB", "==", uid)
+    .get();
+
+  threadsB.forEach((doc) => {
+    messageUnread += doc.data().userB_unreadCount || 0;
+  });
+
+  // --- Encouragements ---
+  let encouragementUnread = 0;
+  const pleasSnap = await admin
+    .firestore()
+    .collection("pleas")
+    .where("uid", "==", uid)
+    .get();
+
+  pleasSnap.forEach((doc) => {
+    encouragementUnread += doc.data().unreadEncouragementCount || 0;
+  });
+
+  return messageUnread + encouragementUnread;
+}

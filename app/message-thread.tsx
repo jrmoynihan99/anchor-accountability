@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import {
   auth,
   createThread,
@@ -62,6 +63,7 @@ export default function MessageThreadScreen() {
 
   const { messages, loading, error, loadingMore, hasMore, loadMoreMessages } =
     useThreadMessages(actualThreadId);
+  const { refreshUnreadCount } = useUnreadCount();
   const scrollViewRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
 
@@ -100,10 +102,10 @@ export default function MessageThreadScreen() {
     // Clear current thread when leaving this screen
     return () => {
       setCurrentThreadId(null);
-
-      // Mark any remaining messages as read when leaving
       if (actualThreadId) {
-        markMessagesAsRead(actualThreadId).catch(console.error);
+        markMessagesAsRead(actualThreadId)
+          .then(() => refreshUnreadCount())
+          .catch(console.error);
       }
     };
   }, [actualThreadId, setCurrentThreadId]);
@@ -285,9 +287,11 @@ export default function MessageThreadScreen() {
   // Mark messages as read when screen loads
   useEffect(() => {
     if (actualThreadId && !isNewThread) {
-      markMessagesAsRead(actualThreadId).catch(console.error);
+      markMessagesAsRead(actualThreadId)
+        .then(() => refreshUnreadCount())
+        .catch(console.error);
     }
-  }, [actualThreadId, isNewThread]);
+  }, [actualThreadId, isNewThread, refreshUnreadCount]);
 
   const handleSendMessage = async () => {
     if (inputText.trim().length === 0 || !currentUserId || sending) return;
