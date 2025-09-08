@@ -521,7 +521,7 @@ async function sendHelpNotificationToHelpers(plea, pleaId) {
         data.expoPushToken.startsWith("ExponentPushToken")
       ) {
         // Don't notify the sender of the plea
-        // FIND ME if (doc.id === uid) return;
+        if (doc.id === uid) return;
 
         tokens.push(data.expoPushToken);
       }
@@ -623,7 +623,7 @@ async function sendEncouragementNotificationToPleaOwner(
   const plea = pleaDoc.data();
 
   // Don't notify the sender of the encouragement
-  // FIND ME if (plea.uid === encouragement.helperUid) return;
+  if (plea.uid === encouragement.helperUid) return;
 
   // Fetch the user who created the plea
   const userDoc = await admin
