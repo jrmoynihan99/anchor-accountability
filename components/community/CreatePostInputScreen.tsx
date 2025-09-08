@@ -130,6 +130,7 @@ export function CreatePostInputScreen({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
     >
       {/* Header */}
       <View style={styles.modalHeader}>

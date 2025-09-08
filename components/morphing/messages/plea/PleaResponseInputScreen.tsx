@@ -92,6 +92,7 @@ export function PleaResponseInputScreen({
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
     >
       {/* Combined Header and Context Card */}
       <View

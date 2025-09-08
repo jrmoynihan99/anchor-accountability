@@ -40,6 +40,7 @@ export function ReachOutInputScreen({
     <ScrollView
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="interactive"
     >
       {/* Header with Icon */}
       <View style={styles.modalHeader}>
