@@ -152,7 +152,10 @@ export function BaseModal({
       {/* Modal Card */}
       <Animated.View
         style={[modalAnimatedStyle, { overflow: "hidden", zIndex: 20 }]}
+        pointerEvents="box-none"
       >
+        {/* Invisible touch blocker to prevent overlay taps from closing modal */}
+        <View style={StyleSheet.absoluteFill} pointerEvents="auto" />
         {/* Solid background */}
         <Animated.View
           style={[
@@ -215,36 +218,39 @@ export function BaseModal({
           {buttonContent}
         </Animated.View>
 
-        {/* Modal Content */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.modalContent, modalContentStyle]}>
-            <TouchableOpacity
-              onPress={() => close()}
-              style={[
-                styles.closeButton,
-                { backgroundColor: colors.closeButtonBackground },
-              ]}
-              hitSlop={16}
-              activeOpacity={0.7}
-            >
-              <IconSymbol
-                name="xmark"
-                size={18}
-                weight="light"
-                color={buttonColor}
-              />
-            </TouchableOpacity>
-
-            {children}
-
-            <View
-              style={[
-                styles.bottomDragIndicator,
-                { backgroundColor: colors.dragIndicator },
-              ]}
+        {/* Modal Content - WITHOUT GestureDetector */}
+        <Animated.View style={[styles.modalContent, modalContentStyle]}>
+          <TouchableOpacity
+            onPress={() => close()}
+            style={[
+              styles.closeButton,
+              { backgroundColor: colors.closeButtonBackground },
+            ]}
+            hitSlop={16}
+            activeOpacity={0.7}
+          >
+            <IconSymbol
+              name="xmark"
+              size={18}
+              weight="light"
+              color={buttonColor}
             />
-          </Animated.View>
-        </GestureDetector>
+          </TouchableOpacity>
+
+          {children}
+
+          {/* GestureDetector ONLY wraps the drag indicator area */}
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={styles.dragIndicatorContainer}>
+              <View
+                style={[
+                  styles.bottomDragIndicator,
+                  { backgroundColor: colors.dragIndicator },
+                ]}
+              />
+            </Animated.View>
+          </GestureDetector>
+        </Animated.View>
       </Animated.View>
     </Modal>
   );
@@ -280,12 +286,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  bottomDragIndicator: {
+  dragIndicatorContainer: {
     position: "absolute",
-    bottom: 12,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingBottom: 12,
+  },
+  bottomDragIndicator: {
     width: 200,
     height: 4,
     borderRadius: 2,
-    alignSelf: "center",
   },
 });

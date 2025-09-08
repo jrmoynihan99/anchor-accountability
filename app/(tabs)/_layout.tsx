@@ -108,7 +108,11 @@ export default function TabLayout() {
       />
 
       {/* Floating main CTA (with morph/transition modal) */}
-      <ButtonModalTransitionBridge buttonBorderRadius={35}>
+      <ButtonModalTransitionBridge
+        buttonBorderRadius={35}
+        modalWidthPercent={0.9}
+        modalHeightPercent={0.75}
+      >
         {({
           open,
           close,
