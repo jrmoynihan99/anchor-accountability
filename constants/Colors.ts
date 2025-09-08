@@ -66,10 +66,10 @@ export const Colors = {
       textMuted: "rgba(241, 237, 230, 0.6)", // Muted text for placeholders, disabled states, etc.
 
       background: "#3A2D28", // Dark Brown
-      tint: "#CBAD8D", // Tan (keeping consistent accent)
+      tint: "#A48374", // Tan (keeping consistent accent)
       icon: "#D1C7BD", // Soft Taupe
       tabIconDefault: "#D1C7BD",
-      tabIconSelected: "#CBAD8D",
+      tabIconSelected: "#A48374",
 
       // --- UI Elements ---
       cardBackground: "#4A3D35", // Slightly lighter than background for cards
@@ -98,7 +98,7 @@ export const Colors = {
       overlayBackground: "rgba(0, 0, 0, 0.6)", // Darker overlay for better contrast
       modalCardBackground: "rgba(74, 61, 53, 0.8)", // Using cardBackground with opacity
       modalCardBorder: "rgba(93, 78, 67, 0.5)", // Using border color with opacity
-      textInputBackground: "rgba(74, 61, 53, 0.8)", // Darker input background
+      textInputBackground: "rgba(0, 0, 0, 0.2)", // Darker input background
       textInputBorder: "rgba(93, 78, 67, 0.3)", // Darker input border
 
       // --- Come Back Tomorrow Banner ---
@@ -118,49 +118,48 @@ export const Colors = {
     },
   },
 
-  // Cool, oceanic palette - blues and teals
   palette2: {
     light: {
       // --- Text Colors ---
-      text: "#2C3E50", // Deep Blue-Gray
-      textSecondary: "#5D6D7E", // Cool gray
-      textMuted: "rgba(44, 62, 80, 0.6)",
+      text: "#24394D", // Midpoint between original #2C3E50 and deep #1B2631
+      textSecondary: "#516B7A", // Between #5D6D7E and #34495E
+      textMuted: "rgba(36, 57, 77, 0.6)",
 
-      background: "#F8FAFB", // Very light blue-gray
-      tint: "#3498DB", // Ocean blue
-      icon: "#5DADE2", // Light blue
-      tabIconDefault: "#5DADE2",
-      tabIconSelected: "#3498DB",
+      background: "#F6F9FB", // Between original #F8FAFB and deeper #F4F6F8
+      tint: "#2E86C1", // Between original #3498DB and deep #2471A3
+      icon: "#4699D3", // Between original #5DADE2 and deep #3498DB
+      tabIconDefault: "#4699D3",
+      tabIconSelected: "#2E86C1",
 
       // --- UI Elements ---
-      cardBackground: "#EBF5FB", // Very light blue
-      border: "#D6EAF8", // Light blue border
-      buttonBackground: "#3498DB", // Ocean blue
-      secondaryButtonBackground: "#2C3E50", // Deep blue-gray
+      cardBackground: "#E9F4F9", // Between original #EBF5FB and deep #E8F4FD
+      border: "#D0E4F0", // Between original #D6EAF8 and deep #AED6F1
+      buttonBackground: "#2E86C1", // Midpoint blue
+      secondaryButtonBackground: "#24394D", // Midpoint navy
       shadow: "#000",
 
       // --- Navigation ---
       navBackground: "rgba(255, 255, 255, 0.1)",
       navBorder: "rgba(255, 255, 255, 0.2)",
       navActiveText: "#FFFFFF",
-      messageInputBackground: "rgba(248, 250, 251, 0.1)",
+      messageInputBackground: "rgba(246, 249, 251, 0.1)",
 
       // --- Status Colors ---
-      success: "#27AE60", // Green
-      error: "#E74C3C", // Red
-      achievement: "#F39C12", // Orange
+      success: "#28B463", // Between original #27AE60 and deep #229954
+      error: "#CD3C2E", // Between original #E74C3C and deep #C0392B
+      achievement: "#E67E22", // Keep original as it was good
 
       // --- Specialty Colors ---
-      fireColor: "#E67E22", // Orange
-      iconCircleBackground: "#EBF5FB", // Light blue background
-      iconCircleSecondaryBackground: "rgba(44, 62, 80, 0.1)",
+      fireColor: "#E67E22", // Keep original
+      iconCircleBackground: "#E9F4F9", // Match cardBackground
+      iconCircleSecondaryBackground: "rgba(36, 57, 77, 0.1)",
 
       // --- Overlay & Modal Colors ---
       overlayBackground: "rgba(0, 0, 0, 0.4)",
       modalCardBackground: "rgba(255, 255, 255, 0.15)",
       modalCardBorder: "rgba(255, 255, 255, 0.2)",
       textInputBackground: "rgba(255, 255, 255, 0.6)",
-      textInputBorder: "rgba(44, 62, 80, 0.1)",
+      textInputBorder: "rgba(36, 57, 77, 0.1)",
 
       // --- Come Back Tomorrow Banner ---
       bannerBackground: "rgba(116, 116, 128, 0.08)",
@@ -168,10 +167,10 @@ export const Colors = {
 
       // --- Close Button ---
       closeButtonBackground: "rgba(0, 0, 0, 0.08)",
-      closeButtonText: "#2C3E50",
+      closeButtonText: "#24394D",
 
       // --- Drag Indicator ---
-      dragIndicator: "rgba(44, 62, 80, 0.3)",
+      dragIndicator: "rgba(36, 57, 77, 0.3)",
 
       // --- White variations ---
       white: "#FFFFFF",
@@ -180,56 +179,56 @@ export const Colors = {
 
     dark: {
       // --- Text Colors ---
-      text: "#ECF0F1", // Light blue-white
-      textSecondary: "#BDC3C7", // Light gray
-      textMuted: "rgba(236, 240, 241, 0.6)",
+      text: "#EAF3F8", // Between original #ECF0F1 and deep #E8F4FD
+      textSecondary: "#C4D3DC", // Between original #BDC3C7 and deep #AED6F1
+      textMuted: "rgba(234, 243, 248, 0.6)",
 
-      background: "#1C2833", // Dark blue-gray
-      tint: "#5DADE2", // Light blue
-      icon: "#AED6F1", // Very light blue
-      tabIconDefault: "#AED6F1",
-      tabIconSelected: "#5DADE2",
+      background: "#1f2f3eff", // Between original #1C2833 and deep #0B1426
+      tint: "#4699D3", // Midpoint blue
+      icon: "#96C9E6", // Between original #AED6F1 and deep #85C1E9
+      tabIconDefault: "#96C9E6",
+      tabIconSelected: "#4699D3",
 
       // --- UI Elements ---
-      cardBackground: "#273746", // Slightly lighter dark blue
-      border: "#34495E", // Medium blue-gray
-      buttonBackground: "#3498DB", // Ocean blue
-      secondaryButtonBackground: "#ECF0F1", // Light blue-white
+      cardBackground: "#253340", // Between original #273746 and deep #1B2631
+      border: "#414f5cff", // Between original #34495E and deep #2471A3
+      buttonBackground: "#2E86C1", // Midpoint blue
+      secondaryButtonBackground: "#EAF3F8", // Light text color
       shadow: "#000",
 
       // --- Navigation ---
       navBackground: "rgba(255, 255, 255, 0.1)",
       navBorder: "rgba(255, 255, 255, 0.2)",
       navActiveText: "#FFFFFF",
-      messageInputBackground: "rgba(28, 40, 51, 0.1)",
+      messageInputBackground: "rgba(31, 47, 62, 0.1)",
 
       // --- Status Colors ---
-      success: "#27AE60", // Green
-      error: "#E74C3C", // Red
-      achievement: "#F39C12", // Orange
+      success: "#28B463", // Midpoint green
+      error: "#CD3C2E", // Midpoint red
+      achievement: "#E67E22", // Keep original
 
       // --- Specialty Colors ---
-      fireColor: "#E67E22", // Orange
-      iconCircleBackground: "rgba(235, 245, 251, 0.2)",
-      iconCircleSecondaryBackground: "rgba(236, 240, 241, 0.15)",
+      fireColor: "#E67E22", // Keep original
+      iconCircleBackground: "rgba(234, 243, 248, 0.15)",
+      iconCircleSecondaryBackground: "rgba(234, 243, 248, 0.1)",
 
       // --- Overlay & Modal Colors ---
-      overlayBackground: "rgba(0, 0, 0, 0.6)",
-      modalCardBackground: "rgba(39, 55, 70, 0.8)",
-      modalCardBorder: "rgba(52, 73, 94, 0.5)",
-      textInputBackground: "rgba(39, 55, 70, 0.8)",
-      textInputBorder: "rgba(52, 73, 94, 0.3)",
+      overlayBackground: "rgba(0, 0, 0, 0.5)",
+      modalCardBackground: "rgba(37, 51, 64, 0.85)",
+      modalCardBorder: "rgba(255, 255, 255, 0.2)",
+      textInputBackground: "rgba(0, 0, 0, 0.25)",
+      textInputBorder: "rgba(45, 58, 46, 0.1)",
 
       // --- Come Back Tomorrow Banner ---
       bannerBackground: "rgba(116, 116, 128, 0.15)",
       bannerBorder: "rgba(116, 116, 128, 0.25)",
 
       // --- Close Button ---
-      closeButtonBackground: "rgba(236, 240, 241, 0.1)",
-      closeButtonText: "#ECF0F1",
+      closeButtonBackground: "rgba(234, 243, 248, 0.1)",
+      closeButtonText: "#EAF3F8",
 
       // --- Drag Indicator ---
-      dragIndicator: "rgba(236, 240, 241, 0.4)",
+      dragIndicator: "rgba(234, 243, 248, 0.35)",
 
       // --- White variations ---
       white: "#FFFFFF",
@@ -237,49 +236,49 @@ export const Colors = {
     },
   },
 
-  // Sophisticated purple and gray palette
+  // Forest & Sage palette
   palette3: {
     light: {
       // --- Text Colors ---
-      text: "#292929ff", // Charcoal gray
-      textSecondary: "#505050ff", // Medium gray
-      textMuted: "rgba(74, 74, 74, 0.6)",
+      text: "#2D3A2E", // Deep forest green
+      textSecondary: "#6B7A6F", // Muted sage
+      textMuted: "rgba(45, 58, 46, 0.6)",
 
-      background: "#FAFAFA", // Very light gray
-      tint: "#8E44AD", // Rich purple
-      icon: "#BB8FCE", // Light purple
-      tabIconDefault: "#BB8FCE",
-      tabIconSelected: "#8E44AD",
+      background: "#F7F9F7", // Very light sage
+      tint: "#7A9471", // Sage green
+      icon: "#A8B8A2", // Light sage
+      tabIconDefault: "#A8B8A2",
+      tabIconSelected: "#7A9471",
 
       // --- UI Elements ---
-      cardBackground: "#F4F4F4", // Light gray
-      border: "#E8E8E8", // Very light gray border
-      buttonBackground: "#8E44AD", // Rich purple
-      secondaryButtonBackground: "#4A4A4A", // Charcoal gray
+      cardBackground: "#EDF2ED", // Light sage background
+      border: "#DDE5DD", // Soft sage border
+      buttonBackground: "#7A9471", // Sage green
+      secondaryButtonBackground: "#2D3A2E", // Deep forest green
       shadow: "#000",
 
       // --- Navigation ---
       navBackground: "rgba(255, 255, 255, 0.1)",
       navBorder: "rgba(255, 255, 255, 0.2)",
       navActiveText: "#FFFFFF",
-      messageInputBackground: "rgba(250, 250, 250, 0.1)",
+      messageInputBackground: "rgba(247, 249, 247, 0.1)",
 
       // --- Status Colors ---
-      success: "#27AE60", // Green
-      error: "#E74C3C", // Red
-      achievement: "#F39C12", // Orange
+      success: "#4CAF50", // Green
+      error: "#E57373", // Red
+      achievement: "#FFD700", // Gold
 
       // --- Specialty Colors ---
-      fireColor: "#E67E22", // Orange
-      iconCircleBackground: "#F4F1F8", // Very light purple
-      iconCircleSecondaryBackground: "rgba(74, 74, 74, 0.1)",
+      fireColor: "#F47C1A", // Orange
+      iconCircleBackground: "#E8F0E8", // Very light sage
+      iconCircleSecondaryBackground: "rgba(45, 58, 46, 0.1)",
 
       // --- Overlay & Modal Colors ---
       overlayBackground: "rgba(0, 0, 0, 0.4)",
       modalCardBackground: "rgba(255, 255, 255, 0.15)",
       modalCardBorder: "rgba(255, 255, 255, 0.2)",
       textInputBackground: "rgba(255, 255, 255, 0.6)",
-      textInputBorder: "rgba(74, 74, 74, 0.1)",
+      textInputBorder: "rgba(45, 58, 46, 0.1)",
 
       // --- Come Back Tomorrow Banner ---
       bannerBackground: "rgba(116, 116, 128, 0.08)",
@@ -287,10 +286,10 @@ export const Colors = {
 
       // --- Close Button ---
       closeButtonBackground: "rgba(0, 0, 0, 0.08)",
-      closeButtonText: "#4A4A4A",
+      closeButtonText: "#2D3A2E",
 
       // --- Drag Indicator ---
-      dragIndicator: "rgba(74, 74, 74, 0.3)",
+      dragIndicator: "rgba(45, 58, 46, 0.3)",
 
       // --- White variations ---
       white: "#FFFFFF",
@@ -299,57 +298,155 @@ export const Colors = {
 
     dark: {
       // --- Text Colors ---
-      text: "#F8F9FA", // Almost white
-      textSecondary: "#D1D3D4", // Light gray
-      textMuted: "rgba(248, 249, 250, 0.6)",
+      text: "#E8F0E8", // Light sage white
+      textSecondary: "#C1CFC1", // Light sage gray
+      textMuted: "rgba(232, 240, 232, 0.6)",
 
-      background: "#2C2C2C", // Dark gray
-      tint: "#BB8FCE", // Light purple
-      icon: "#D7BDE2", // Very light purple
-      tabIconDefault: "#D7BDE2",
-      tabIconSelected: "#BB8FCE",
+      background: "#1F2B20", // Dark forest
+      tint: "#A8B8A2", // Light sage
+      icon: "#CBD5C9", // Very light sage
+      tabIconDefault: "#CBD5C9",
+      tabIconSelected: "#A8B8A2",
 
       // --- UI Elements ---
-      cardBackground: "#3A3A3A", // Medium dark gray
-      border: "#4A4A4A", // Charcoal gray
-      buttonBackground: "#8E44AD", // Rich purple
-      secondaryButtonBackground: "#F8F9FA", // Almost white
+      cardBackground: "#2A3A2B", // Medium forest
+      border: "#374A39", // Lighter forest
+      buttonBackground: "#7A9471", // Sage green
+      secondaryButtonBackground: "#E8F0E8", // Light sage white
       shadow: "#000",
 
       // --- Navigation ---
       navBackground: "rgba(255, 255, 255, 0.1)",
       navBorder: "rgba(255, 255, 255, 0.2)",
       navActiveText: "#FFFFFF",
-      messageInputBackground: "rgba(44, 44, 44, 0.1)",
+      messageInputBackground: "rgba(31, 43, 32, 0.1)",
 
       // --- Status Colors ---
-      success: "#27AE60", // Green
-      error: "#E74C3C", // Red
-      achievement: "#F39C12", // Orange
+      success: "#4CAF50", // Green
+      error: "#E57373", // Red
+      achievement: "#FFD700", // Gold
 
       // --- Specialty Colors ---
-      fireColor: "#E67E22", // Orange
-      iconCircleBackground: "rgba(244, 241, 248, 0.2)",
-      iconCircleSecondaryBackground: "rgba(248, 249, 250, 0.15)",
+      fireColor: "#F47C1A", // Orange
+      iconCircleBackground: "rgba(232, 240, 232, 0.2)",
+      iconCircleSecondaryBackground: "rgba(232, 240, 232, 0.15)",
 
       // --- Overlay & Modal Colors ---
       overlayBackground: "rgba(0, 0, 0, 0.6)",
-      modalCardBackground: "rgba(58, 58, 58, 0.8)",
-      modalCardBorder: "rgba(74, 74, 74, 0.5)",
-      textInputBackground: "rgba(58, 58, 58, 0.8)",
-      textInputBorder: "rgba(74, 74, 74, 0.3)",
+      modalCardBackground: "rgba(42, 58, 43, 0.8)",
+      modalCardBorder: "rgba(55, 74, 57, 0.5)",
+      textInputBackground: "rgba(0, 0, 0, 0.2)",
+      textInputBorder: "rgba(55, 74, 57, 0.3)",
 
       // --- Come Back Tomorrow Banner ---
       bannerBackground: "rgba(116, 116, 128, 0.15)",
       bannerBorder: "rgba(116, 116, 128, 0.25)",
 
       // --- Close Button ---
-      closeButtonBackground: "rgba(248, 249, 250, 0.1)",
-      closeButtonText: "#F8F9FA",
+      closeButtonBackground: "rgba(232, 240, 232, 0.1)",
+      closeButtonText: "#E8F0E8",
 
       // --- Drag Indicator ---
-      dragIndicator: "rgba(248, 249, 250, 0.4)",
+      dragIndicator: "rgba(232, 240, 232, 0.4)",
 
+      // --- White variations ---
+      white: "#FFFFFF",
+      whiteTranslucent: "rgba(255, 255, 255, 0.1)",
+    },
+  },
+
+  // Navy & Bronze palette
+  palette4: {
+    light: {
+      // --- Text Colors ---
+      text: "#1E293B", // Dark navy
+      textSecondary: "#64748B", // Slate gray
+      textMuted: "rgba(30, 41, 59, 0.6)",
+      background: "#F1F5F9", // Navy tinted light background
+      tint: "#C2730C", // Brighter bronze
+      icon: "#D4921E", // Lighter bronze
+      tabIconDefault: "#D4921E",
+      tabIconSelected: "#C2730C",
+      // --- UI Elements ---
+      cardBackground: "#E2E8F0", // Light navy tinted cards
+      border: "#CBD5E1", // Navy tinted border
+      buttonBackground: "#C2730C", // Brighter bronze
+      secondaryButtonBackground: "#1E293B", // Dark navy
+      shadow: "#000",
+      // --- Navigation ---
+      navBackground: "rgba(255, 255, 255, 0.1)",
+      navBorder: "rgba(255, 255, 255, 0.2)",
+      navActiveText: "#FFFFFF",
+      messageInputBackground: "rgba(241, 245, 249, 0.1)",
+      // --- Status Colors ---
+      success: "#4CAF50", // Green
+      error: "#E57373", // Red
+      achievement: "#FFD700", // Gold
+      // --- Specialty Colors ---
+      fireColor: "#F47C1A", // Orange
+      iconCircleBackground: "#F8F9FC", // Very light navy tint
+      iconCircleSecondaryBackground: "rgba(30, 41, 59, 0.1)",
+      // --- Overlay & Modal Colors ---
+      overlayBackground: "rgba(0, 0, 0, 0.4)",
+      modalCardBackground: "rgba(255, 255, 255, 0.15)",
+      modalCardBorder: "rgba(255, 255, 255, 0.2)",
+      textInputBackground: "rgba(255, 255, 255, 0.6)",
+      textInputBorder: "rgba(30, 41, 59, 0.1)",
+      // --- Come Back Tomorrow Banner ---
+      bannerBackground: "rgba(116, 116, 128, 0.08)",
+      bannerBorder: "rgba(116, 116, 128, 0.12)",
+      // --- Close Button ---
+      closeButtonBackground: "rgba(0, 0, 0, 0.08)",
+      closeButtonText: "#1E293B",
+      // --- Drag Indicator ---
+      dragIndicator: "rgba(30, 41, 59, 0.3)",
+      // --- White variations ---
+      white: "#FFFFFF",
+      whiteTranslucent: "rgba(255, 255, 255, 0.7)",
+    },
+    dark: {
+      // --- Text Colors ---
+      text: "#F1F5F9", // Light slate
+      textSecondary: "#CBD5E1", // Light slate gray
+      textMuted: "rgba(241, 245, 249, 0.6)",
+      background: "#0F1419", // Deep navy background
+      tint: "#D97706", // Lighter bronze
+      icon: "#E5A663", // Light bronze
+      tabIconDefault: "#E5A663",
+      tabIconSelected: "#D97706",
+      // --- UI Elements ---
+      cardBackground: "#1E2A3A", // Navy tinted cards
+      border: "#334454", // Navy border
+      buttonBackground: "#D97706", // Brighter bronze for dark mode
+      secondaryButtonBackground: "#F1F5F9", // Light slate
+      shadow: "#000",
+      // --- Navigation ---
+      navBackground: "rgba(255, 255, 255, 0.1)",
+      navBorder: "rgba(255, 255, 255, 0.2)",
+      navActiveText: "#FFFFFF",
+      messageInputBackground: "rgba(15, 20, 25, 0.1)",
+      // --- Status Colors ---
+      success: "#4CAF50", // Green
+      error: "#E57373", // Red
+      achievement: "#FFD700", // Gold
+      // --- Specialty Colors ---
+      fireColor: "#F47C1A", // Orange
+      iconCircleBackground: "rgba(241, 245, 249, 0.2)",
+      iconCircleSecondaryBackground: "rgba(241, 245, 249, 0.15)",
+      // --- Overlay & Modal Colors ---
+      overlayBackground: "rgba(0, 0, 0, 0.6)",
+      modalCardBackground: "rgba(30, 42, 58, 0.8)",
+      modalCardBorder: "rgba(51, 68, 84, 0.5)",
+      textInputBackground: "rgba(0, 0, 0, 0.2)",
+      textInputBorder: "rgba(51, 68, 84, 0.3)",
+      // --- Come Back Tomorrow Banner ---
+      bannerBackground: "rgba(116, 116, 128, 0.15)",
+      bannerBorder: "rgba(116, 116, 128, 0.25)",
+      // --- Close Button ---
+      closeButtonBackground: "rgba(241, 245, 249, 0.1)",
+      closeButtonText: "#F1F5F9",
+      // --- Drag Indicator ---
+      dragIndicator: "rgba(241, 245, 249, 0.4)",
       // --- White variations ---
       white: "#FFFFFF",
       whiteTranslucent: "rgba(255, 255, 255, 0.1)",

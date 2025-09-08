@@ -104,7 +104,7 @@ export function GuidedPrayerContent({
         style={[
           styles.description,
           {
-            color: colors.icon,
+            color: colors.textSecondary,
             marginBottom: 18,
             opacity: 0.9,
           },

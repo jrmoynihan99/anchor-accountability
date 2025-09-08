@@ -240,8 +240,9 @@ Let's beat this together. You're not alone.`,
     >
       <View
         style={[
-          styles.buttonContent,
+          styles.backgroundContainer,
           {
+            backgroundColor: colors.navBackground,
             borderColor: colors.navBorder,
             borderWidth: 1,
           },
@@ -250,7 +251,7 @@ Let's beat this together. You're not alone.`,
         <Ionicons
           name="settings-sharp"
           size={24}
-          color={colors.tabIconDefault}
+          color={colors.tabIconSelected}
         />
       </View>
     </BlurView>
@@ -318,6 +319,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: "transparent",
+  },
+  backgroundContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   buttonContent: {
     alignItems: "center",

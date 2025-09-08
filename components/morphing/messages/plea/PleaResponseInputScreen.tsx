@@ -6,6 +6,7 @@ import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import {
+  Alert,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -51,6 +52,38 @@ export function PleaResponseInputScreen({
     if (isUrgent) return colors.error;
     if (hasResponded) return colors.success;
     return colors.textSecondary;
+  };
+
+  const isButtonDisabled = !encouragementText.trim() || isSending;
+
+  const handleSendPress = () => {
+    if (isButtonDisabled) {
+      // Show popup when button is disabled
+      Alert.alert(
+        "Message Required",
+        "Please add your support message before sending.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    Keyboard.dismiss();
+    onSend();
+  };
+
+  // Create a muted version of the active color (reduce opacity)
+  const getButtonBackgroundColor = () => {
+    if (isButtonDisabled) {
+      return `${colors.buttonBackground}40`; // 25% opacity for muted effect
+    }
+    return colors.buttonBackground;
+  };
+
+  const getButtonTextColor = () => {
+    if (isButtonDisabled) {
+      return `${colors.white}80`; // Slightly muted white text
+    }
+    return colors.white;
   };
 
   return (
@@ -230,26 +263,28 @@ export function PleaResponseInputScreen({
             style={[
               styles.sendButton,
               {
-                backgroundColor: encouragementText.trim()
-                  ? colors.buttonBackground
-                  : colors.textSecondary,
+                backgroundColor: getButtonBackgroundColor(),
               },
-              isSending && styles.sendButtonDisabled,
             ]}
-            onPress={() => {
-              Keyboard.dismiss();
-              onSend();
-            }}
-            disabled={!encouragementText.trim() || isSending}
+            onPress={handleSendPress}
             activeOpacity={0.8}
           >
             {isSending ? (
               <IconSymbol name="arrow.up" size={20} color={colors.white} />
             ) : (
               <>
-                <IconSymbol name="heart.fill" size={18} color={colors.white} />
-                <ThemedText type="button" style={{ color: colors.white }}>
-                  Send Encouragement
+                <IconSymbol
+                  name="heart.fill"
+                  size={18}
+                  color={getButtonTextColor()}
+                />
+                <ThemedText
+                  type="button"
+                  style={{ color: getButtonTextColor() }}
+                >
+                  {isButtonDisabled
+                    ? "Type your message"
+                    : "Send Encouragement"}
                 </ThemedText>
               </>
             )}
@@ -400,9 +435,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-  },
-  sendButtonDisabled: {
-    opacity: 0.6,
   },
   alreadyRespondedContainer: {
     flexDirection: "row",

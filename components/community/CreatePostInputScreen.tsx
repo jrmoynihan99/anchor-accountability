@@ -1,14 +1,14 @@
+import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
-import React, { useRef } from "react";
+import React from "react";
 import {
   Alert,
   Keyboard,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -45,7 +45,6 @@ export function CreatePostInputScreen({
   onSubmit: () => void;
 }) {
   const { colors } = useTheme();
-  const contentInputRef = useRef<TextInput>(null);
 
   const handleToggleCategory = (cat: PostCategory) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -75,6 +74,56 @@ export function CreatePostInputScreen({
     onSubmit();
   };
 
+  // Check if button should be disabled - same logic as other components
+  const isButtonDisabled =
+    !title.trim() ||
+    !content.trim() ||
+    selectedCategories.length === 0 ||
+    creating;
+
+  // Get button colors - same logic as PleaResponseInputScreen
+  const getButtonBackgroundColor = () => {
+    if (isButtonDisabled) {
+      return `${colors.buttonBackground}90`; // 25% opacity for muted effect
+    }
+    return colors.buttonBackground;
+  };
+
+  const getButtonTextColor = () => {
+    if (isButtonDisabled) {
+      return `${colors.white}90`; // Slightly muted white text
+    }
+    return colors.white;
+  };
+
+  const handleButtonPress = () => {
+    if (isButtonDisabled) {
+      // Show appropriate popup based on what's missing
+      if (!title.trim()) {
+        Alert.alert("Title Required", "Please enter a title for your post.");
+      } else if (!content.trim()) {
+        Alert.alert(
+          "Content Required",
+          "Please enter some content for your post."
+        );
+      } else if (selectedCategories.length === 0) {
+        Alert.alert(
+          "Category Required",
+          "Please select at least one category."
+        );
+      }
+      return;
+    }
+
+    handlePressSubmit();
+  };
+
+  const getButtonText = () => {
+    if (creating) return "Creating Post...";
+    if (isButtonDisabled) return "Complete your post";
+    return "Share Post";
+  };
+
   return (
     <ScrollView
       style={styles.scrollContainer}
@@ -85,9 +134,9 @@ export function CreatePostInputScreen({
       {/* Header */}
       <View style={styles.modalHeader}>
         <IconSymbol
-          name="bubble.left.and.bubble.right"
+          name="bubble.left.and.bubble.right.fill"
           size={40}
-          color={colors.tint}
+          color={colors.icon}
         />
         <ThemedText
           type="titleLarge"
@@ -111,90 +160,49 @@ export function CreatePostInputScreen({
         </ThemedText>
       </View>
 
-      {/* Title Input */}
+      {/* Title Input - Using MessageInput */}
       <View style={styles.inputSection}>
         <ThemedText
           type="captionMedium"
-          style={{ color: colors.textSecondary }}
+          style={{ color: colors.textSecondary, marginBottom: 8 }}
         >
           TITLE
         </ThemedText>
-        <TextInput
-          style={[
-            styles.titleInput,
-            {
-              color: colors.text,
-              backgroundColor: colors.modalCardBackground,
-              borderColor: colors.modalCardBorder,
-            },
-          ]}
-          placeholder="Give your post a clear title..."
-          placeholderTextColor={colors.textSecondary}
+        <MessageInput
           value={title}
           onChangeText={setTitle}
+          placeholder="Give your post a clear title..."
           maxLength={100}
-          returnKeyType="next"
-          onSubmitEditing={() => contentInputRef.current?.focus()}
+          minHeight={48}
+          showCharacterCount={true}
+          showBorder={false}
         />
-        <ThemedText
-          type="caption"
-          style={{
-            color: colors.textSecondary,
-            alignSelf: "flex-end",
-            marginTop: 6,
-            opacity: 0.6,
-          }}
-        >
-          {title.length}/100
-        </ThemedText>
       </View>
 
-      {/* Content Input */}
+      {/* Content Input - Using MessageInput */}
       <View style={styles.inputSection}>
         <ThemedText
           type="captionMedium"
-          style={{ color: colors.textSecondary }}
+          style={{ color: colors.textSecondary, marginBottom: 8 }}
         >
           CONTENT
         </ThemedText>
-        <TextInput
-          ref={contentInputRef}
-          style={[
-            styles.contentInput,
-            {
-              color: colors.text,
-              backgroundColor: colors.modalCardBackground,
-              borderColor: colors.modalCardBorder,
-            },
-          ]}
-          placeholder="Share your story, resource, question, or words of encouragement..."
-          placeholderTextColor={colors.textSecondary}
+        <MessageInput
           value={content}
           onChangeText={setContent}
+          placeholder="Share your story, resource, question, or words of encouragement..."
           maxLength={MAX_CONTENT_LENGTH}
-          multiline
-          textAlignVertical="top"
-          autoCorrect
-          autoCapitalize="sentences"
+          minHeight={120}
+          showCharacterCount={true}
+          showBorder={false}
         />
-        <ThemedText
-          type="caption"
-          style={{
-            color: colors.textSecondary,
-            alignSelf: "flex-end",
-            marginTop: 6,
-            opacity: 0.6,
-          }}
-        >
-          {content.length}/{MAX_CONTENT_LENGTH}
-        </ThemedText>
       </View>
 
       {/* Category Selection */}
       <View style={styles.inputSection}>
         <ThemedText
           type="captionMedium"
-          style={{ color: colors.textSecondary }}
+          style={{ color: colors.textSecondary, marginBottom: 8 }}
         >
           CATEGORY (select all that apply)
         </ThemedText>
@@ -209,10 +217,10 @@ export function CreatePostInputScreen({
                   {
                     backgroundColor: selected
                       ? colors.tint
-                      : colors.modalCardBackground,
+                      : colors.textInputBackground,
                     borderColor: selected
                       ? colors.tint
-                      : colors.modalCardBorder,
+                      : colors.textInputBackground,
                   },
                 ]}
                 activeOpacity={0.8}
@@ -256,27 +264,25 @@ export function CreatePostInputScreen({
         </View>
       )}
 
-      {/* Submit Button */}
+      {/* Submit Button - Updated with same logic as other components */}
       <TouchableOpacity
         style={[
           styles.submitButton,
           {
-            backgroundColor: colors.text,
-            opacity: creating ? 0.6 : 1,
+            backgroundColor: getButtonBackgroundColor(),
           },
         ]}
-        onPress={handlePressSubmit}
-        disabled={creating}
+        onPress={handleButtonPress}
         activeOpacity={0.8}
       >
         <IconSymbol
           name="paperplane"
           size={20}
-          color={colors.white}
+          color={getButtonTextColor()}
           style={styles.submitIcon}
         />
-        <ThemedText type="buttonLarge" style={{ color: colors.white }}>
-          {creating ? "Creating Post..." : "Share Post"}
+        <ThemedText type="buttonLarge" style={{ color: getButtonTextColor() }}>
+          {getButtonText()}
         </ThemedText>
       </TouchableOpacity>
     </ScrollView>
@@ -288,28 +294,6 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 8, paddingTop: 42, paddingBottom: 32 },
   modalHeader: { alignItems: "center", marginTop: 20, marginBottom: 32 },
   inputSection: { marginBottom: 24 },
-  titleInput: {
-    minHeight: 48,
-    fontSize: 17,
-    fontWeight: "600",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  contentInput: {
-    minHeight: 120,
-    maxHeight: 200,
-    fontSize: 16,
-    fontWeight: "500",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    textAlignVertical: "top",
-  },
-
   categoriesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   categoryChip: {
     flexDirection: "row",
@@ -334,6 +318,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     marginBottom: 12,
+    marginTop: 24,
   },
   submitIcon: { marginRight: 8 },
 });

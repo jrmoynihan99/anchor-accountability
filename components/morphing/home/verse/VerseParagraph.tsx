@@ -34,7 +34,12 @@ export function VerseParagraph({
 
     return (
       <View style={styles.lineContainer}>
-        <Text style={[styles.verseNumber, { color: colors.tint }]}>
+        <Text
+          style={[
+            styles.verseNumber,
+            { color: colors.secondaryButtonBackground },
+          ]}
+        >
           {verseNumber}
         </Text>
         <ThemedText
@@ -59,7 +64,10 @@ export function VerseParagraph({
     return (
       <ThemedText
         type="title"
-        style={[styles.headerText, { color: colors.tint, textAlign: "center" }]}
+        style={[
+          styles.headerText,
+          { color: colors.secondaryButtonBackground, textAlign: "center" },
+        ]}
       >
         {line.trim()}
       </ThemedText>

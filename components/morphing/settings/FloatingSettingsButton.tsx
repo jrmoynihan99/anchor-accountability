@@ -38,35 +38,47 @@ export const FloatingSettingsButton = forwardRef<
       ]}
     >
       <BlurView
-        intensity={80}
+        intensity={40}
         tint={effectiveTheme === "dark" ? "dark" : "light"}
         style={[
           styles.blur,
           { width: SIZE, height: SIZE, borderRadius: SIZE / 2 },
         ]}
       >
-        <Pressable
+        <View
           style={[
-            styles.button,
+            styles.backgroundContainer,
             {
               width: SIZE,
               height: SIZE,
               borderRadius: SIZE / 2,
+              backgroundColor: colors.navBackground,
               borderColor: colors.navBorder,
               borderWidth: 1,
             },
           ]}
-          onPress={onPress}
-          onPressIn={onPressIn}
-          onPressOut={onPressOut}
-          hitSlop={12}
         >
-          <Ionicons
-            name="settings-sharp"
-            size={24}
-            color={colors.tabIconDefault}
-          />
-        </Pressable>
+          <Pressable
+            style={[
+              styles.button,
+              {
+                width: SIZE,
+                height: SIZE,
+                borderRadius: SIZE / 2,
+              },
+            ]}
+            onPress={onPress}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
+            hitSlop={12}
+          >
+            <Ionicons
+              name="settings-sharp"
+              size={24}
+              color={colors.tabIconSelected}
+            />
+          </Pressable>
+        </View>
       </BlurView>
     </Animated.View>
   );
@@ -87,6 +99,10 @@ const styles = StyleSheet.create({
   blur: {
     overflow: "hidden",
     backgroundColor: "transparent",
+  },
+  backgroundContainer: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   button: {
     alignItems: "center",

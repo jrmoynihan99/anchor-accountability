@@ -1,5 +1,6 @@
 // VerseView.tsx - Default verse display
 import { ThemedText } from "@/components/ThemedText";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -73,11 +74,17 @@ export function VerseView({
         ]}
         onPress={onReadInContext}
       >
+        <IconSymbol
+          name="book"
+          size={18}
+          color={colors.white}
+          style={{ marginRight: 8 }}
+        />
         <ThemedText
           type="buttonLarge"
           style={[styles.contextButtonText, { color: colors.white }]}
         >
-          📖 Read in Context
+          Read in Context
         </ThemedText>
       </TouchableOpacity>
     </View>

@@ -201,10 +201,14 @@ export function CommunityPostCardContent({
         {/* Read More hint (hide in modal) */}
         {showReadMoreHint && (
           <View style={styles.readMore}>
-            <ThemedText type="caption" style={{ color: colors.tint }}>
+            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
               Tap to read more
             </ThemedText>
-            <IconSymbol name="arrow.right" size={12} color={colors.tint} />
+            <IconSymbol
+              name="arrow.right"
+              size={12}
+              color={colors.textSecondary}
+            />
           </View>
         )}
       </View>

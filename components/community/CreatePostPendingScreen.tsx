@@ -64,8 +64,7 @@ export function CreatePostPendingScreen() {
             },
           ]}
         >
-          We're reviewing your post to ensure it meets our community standards.
-          This usually takes just a moment.
+          We're reviewing your post. This only takes a moment.
         </ThemedText>
 
         {/* Progress dots */}

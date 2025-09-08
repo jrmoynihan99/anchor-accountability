@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import { Keyboard, StyleSheet, View } from "react-native";
 import Animated, {
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,

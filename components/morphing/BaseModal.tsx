@@ -253,7 +253,7 @@ export function BaseModal({
 const styles = StyleSheet.create({
   blurBackground: {
     ...StyleSheet.absoluteFillObject,
-    borderWidth: 1,
+    borderWidth: 0,
   },
   buttonContentContainer: {
     position: "absolute",

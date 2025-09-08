@@ -10,12 +10,13 @@ import React, {
 } from "react";
 
 export type ThemeMode = "system" | "light" | "dark";
-export type ColorPalette = "palette1" | "palette2" | "palette3";
+export type ColorPalette = "palette1" | "palette2" | "palette3" | "palette4";
 
 interface ThemePreferences {
   themeMode: ThemeMode;
   colorPalette: ColorPalette;
 }
+
 const defaultPreferences: ThemePreferences = {
   themeMode: "system",
   colorPalette: "palette1",
@@ -65,7 +66,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  // --- ADD THESE: ---
   const getThemeDisplayText = () => {
     switch (preferences.themeMode) {
       case "system":
@@ -86,7 +86,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       case "palette2":
         return "Cool & Oceanic";
       case "palette3":
-        return "Elegant & Purple";
+        return "Forest & Sage";
+      case "palette4":
+        return "Navy & Bronze";
       default:
         return "Warm & Earthy";
     }
@@ -101,8 +103,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         colorPalette: preferences.colorPalette,
         setThemeMode,
         setColorPalette,
-        getThemeDisplayText, // <--- INCLUDE HERE!
-        getPaletteDisplayText, // <--- INCLUDE HERE!
+        getThemeDisplayText,
+        getPaletteDisplayText,
       }}
     >
       {children}

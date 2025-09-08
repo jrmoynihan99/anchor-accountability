@@ -115,7 +115,10 @@ export default function HomeScreen() {
         <VerseCarousel ref={verseCarouselRef} />
 
         {/* ---- Reach Out ---- */}
-        <ButtonModalTransitionBridge>
+        <ButtonModalTransitionBridge
+          modalWidthPercent={0.9}
+          modalHeightPercent={0.75}
+        >
           {({
             open,
             close,

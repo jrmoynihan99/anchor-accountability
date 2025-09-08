@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 32,
+    paddingTop: 12,
     paddingBottom: 120,
   },
   postSection: {

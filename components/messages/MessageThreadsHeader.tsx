@@ -75,7 +75,7 @@ export function SectionHeader({
 
 // --- Sticky Header Component
 function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
-  const { colors } = useTheme();
+  const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -91,8 +91,19 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
     >
       <BlurView
         intensity={80}
-        tint={colors.isDark ? "dark" : "light"}
+        tint={effectiveTheme === "dark" ? "dark" : "light"}
         style={StyleSheet.absoluteFillObject}
+      />
+      {/* Add navBackground color overlay */}
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            backgroundColor: colors.navBackground,
+            borderBottomWidth: 0,
+            borderBottomColor: colors.navBorder,
+          },
+        ]}
       />
       <View style={styles.stickyHeaderContent}>
         <View style={styles.stickyHeaderLeft}>

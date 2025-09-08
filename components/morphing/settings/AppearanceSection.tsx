@@ -14,14 +14,16 @@ const themeOptions = [
 const paletteOptions = [
   { label: "Warm & Earthy", value: "palette1" },
   { label: "Cool & Oceanic", value: "palette2" },
-  { label: "Elegant & Purple", value: "palette3" },
+  { label: "Forest & Sage", value: "palette3" },
+  { label: "Navy & Bronze", value: "palette4" },
 ];
 
 // Hardcoded swatch for each palette
 const paletteSwatches: Record<string, string> = {
   palette1: "#CBAD8D", // Warm & Earthy
   palette2: "#3498DB", // Cool & Oceanic
-  palette3: "#8E44AD", // Elegant & Purple
+  palette3: "#7A9471", // Forest & Sage
+  palette4: "#B45309", // Navy & Bronze
 };
 
 export function AppearanceSection() {

@@ -22,7 +22,7 @@ export function ThemedToggle({
       onValueChange={onValueChange}
       trackColor={{
         false: colors.tabIconDefault + "40",
-        true: colors.tint + "80",
+        true: colors.tint,
       }}
       thumbColor={colors.background}
       {...props}

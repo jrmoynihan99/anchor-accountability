@@ -11,6 +11,7 @@ import { Alert, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,

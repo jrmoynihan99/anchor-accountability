@@ -45,6 +45,7 @@ export function ContextView({
           size={36}
           iconSize={18}
           backgroundColor={colors.buttonBackground}
+          iconColor={colors.white}
         />
 
         <View style={{ flex: 1, alignItems: "center" }}>

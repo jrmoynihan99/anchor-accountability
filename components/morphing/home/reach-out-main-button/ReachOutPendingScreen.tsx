@@ -35,7 +35,7 @@ export function ReachOutPendingScreen() {
       <View style={styles.content}>
         {/* Animated Loading Spinner */}
         <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Ionicons name="hourglass" size={40} color={mainTextColor} />
+          <Ionicons name="sync" size={40} color={mainTextColor} />
         </Animated.View>
 
         <ThemedText
@@ -64,8 +64,7 @@ export function ReachOutPendingScreen() {
             },
           ]}
         >
-          We're reviewing your message to ensure it meets our community
-          guidelines. This usually takes just a few seconds.
+          We're reviewing your message. This only takes a moment.
         </ThemedText>
 
         {/* Optional: Progress dots */}

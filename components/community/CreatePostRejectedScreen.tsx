@@ -123,7 +123,10 @@ export function CreatePostRejectedScreen({
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: mainTextColor }]}
+          style={[
+            styles.retryButton,
+            { backgroundColor: colors.buttonBackground },
+          ]}
           onPress={handleRetryPress}
         >
           <Ionicons
