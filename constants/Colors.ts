@@ -215,7 +215,7 @@ export const Colors = {
       // --- Overlay & Modal Colors ---
       overlayBackground: "rgba(0, 0, 0, 0.5)",
       modalCardBackground: "rgba(37, 51, 64, 0.85)",
-      modalCardBorder: "rgba(255, 255, 255, 0.2)",
+      modalCardBorder: "rgba(65, 79, 92, 0.5)",
       textInputBackground: "rgba(0, 0, 0, 0.25)",
       textInputBorder: "rgba(45, 58, 46, 0.1)",
 
