@@ -194,41 +194,6 @@ export function LoginForm({
           </TouchableOpacity>
         </View>
 
-        {/* Anonymous Badge - Simple render */}
-        {/* Anonymous Badge - Interactive Modal */}
-        <ButtonModalTransitionBridge
-          modalWidthPercent={0.8}
-          modalHeightPercent={0.6}
-        >
-          {({
-            open,
-            close,
-            isModalVisible,
-            progress,
-            modalAnimatedStyle,
-            buttonAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => (
-            <>
-              <AnonymousBadge
-                buttonRef={buttonRef}
-                style={[buttonAnimatedStyle, { marginBottom: 12 }]} // apply margin directly
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-              />
-              <AnonymousBadgeModal
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-              />
-            </>
-          )}
-        </ButtonModalTransitionBridge>
-
         {/* Divider */}
         <View style={styles.dividerContainer}>
           <View
@@ -274,6 +239,40 @@ export function LoginForm({
             </TouchableOpacity>
           </BlurView>
         </View>
+
+        {/* Anonymous Badge - Interactive Modal */}
+        <ButtonModalTransitionBridge
+          modalWidthPercent={0.8}
+          modalHeightPercent={0.5}
+        >
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            modalAnimatedStyle,
+            buttonAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => (
+            <>
+              <AnonymousBadge
+                buttonRef={buttonRef}
+                style={[buttonAnimatedStyle, { marginBottom: 12 }]} // apply margin directly
+                onPress={open}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+              />
+              <AnonymousBadgeModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+              />
+            </>
+          )}
+        </ButtonModalTransitionBridge>
       </View>
 
       {/* Footer */}
@@ -363,6 +362,7 @@ const styles = StyleSheet.create({
   guestButtonContainer: {
     borderRadius: 16,
     borderWidth: 1,
+    marginBottom: 12,
     overflow: "hidden",
   },
   guestButton: {

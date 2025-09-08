@@ -35,7 +35,7 @@ export function IntroContinueButton({ onPress }: IntroContinueButtonProps) {
           style={[
             styles.continueButton,
             {
-              backgroundColor: colors.whiteTranslucent,
+              backgroundColor: colors.buttonBackground,
             },
           ]}
           onPress={handlePress}
@@ -43,11 +43,11 @@ export function IntroContinueButton({ onPress }: IntroContinueButtonProps) {
         >
           <ThemedText
             type="buttonLarge"
-            style={[styles.buttonText, { color: colors.icon }]}
+            style={[styles.buttonText, { color: colors.text }]}
           >
             Begin Your Journey
           </ThemedText>
-          <Ionicons name="arrow-forward" size={20} color={colors.icon} />
+          <Ionicons name="arrow-forward" size={20} color={colors.text} />
         </TouchableOpacity>
       </BlurView>
     </View>
@@ -58,14 +58,14 @@ const styles = StyleSheet.create({
   buttonShadow: {
     marginBottom: 50,
     marginHorizontal: 20,
+    shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   buttonContainer: {
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     overflow: "hidden",
   },
   continueButton: {

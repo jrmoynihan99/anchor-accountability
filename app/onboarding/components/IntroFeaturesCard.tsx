@@ -25,6 +25,7 @@ export function IntroFeaturesCard() {
           styles.featuresCard,
           {
             borderColor: colors.modalCardBorder,
+            shadowColor: colors.shadow,
           },
         ]}
       >
@@ -63,15 +64,16 @@ export function IntroFeaturesCard() {
 const styles = StyleSheet.create({
   featuresCardShadow: {
     marginBottom: 12,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
     elevation: 5,
   },
   featuresCard: {
     borderRadius: 20,
     padding: 20,
-    borderWidth: 1,
+    borderWidth: 0,
     overflow: "hidden",
   },
   featuresContainer: {
