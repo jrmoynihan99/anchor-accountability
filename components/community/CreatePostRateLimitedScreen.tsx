@@ -69,7 +69,7 @@ export function CreatePostRateLimitedScreen({
             { backgroundColor: colors.warning + "20" },
           ]}
         >
-          <Ionicons name="time" size={40} color={colors.warning} />
+          <Ionicons name="time" size={40} color={colors.text} />
         </View>
         <ThemedText
           type="titleLarge"
@@ -114,7 +114,7 @@ export function CreatePostRateLimitedScreen({
         </ThemedText>
         <ThemedText
           type="titleLarge"
-          style={[{ color: colors.warning, marginTop: 8, textAlign: "center" }]}
+          style={[{ color: colors.text, marginTop: 8, textAlign: "center" }]}
         >
           {formatTime(countdown)}
         </ThemedText>
@@ -125,7 +125,7 @@ export function CreatePostRateLimitedScreen({
         style={[styles.closeButton, { backgroundColor: colors.text }]}
         onPress={handleClosePress}
       >
-        <ThemedText type="buttonLarge" style={[{ color: colors.white }]}>
+        <ThemedText type="buttonLarge" style={[{ color: colors.background }]}>
           Close
         </ThemedText>
       </TouchableOpacity>

@@ -115,7 +115,7 @@ export function ReachOutRateLimitedScreen({
         </ThemedText>
         <ThemedText
           type="titleLarge"
-          style={[{ color: colors.warning, marginTop: 8, textAlign: "center" }]}
+          style={[{ color: colors.text, marginTop: 8, textAlign: "center" }]}
         >
           {formatTime(countdown)}
         </ThemedText>

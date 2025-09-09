@@ -40,7 +40,7 @@ export function PleaResponseRejectedScreen({
     >
       {/* Header with Icon */}
       <View style={styles.modalHeader}>
-        <Ionicons name="close-circle" size={40} color={colors.destructive} />
+        <Ionicons name="close-circle" size={40} color={colors.text} />
         <ThemedText
           type="titleLarge"
           style={{
@@ -104,7 +104,10 @@ export function PleaResponseRejectedScreen({
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: mainTextColor }]}
+          style={[
+            styles.retryButton,
+            { backgroundColor: colors.buttonBackground },
+          ]}
           onPress={handleRetryPress}
         >
           <Ionicons

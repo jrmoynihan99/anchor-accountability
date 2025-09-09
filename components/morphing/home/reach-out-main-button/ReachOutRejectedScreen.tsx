@@ -40,7 +40,7 @@ export function ReachOutRejectedScreen({
     >
       {/* Header with Icon */}
       <View style={styles.modalHeader}>
-        <Ionicons name="close-circle" size={40} color={colors.destructive} />
+        <Ionicons name="close-circle" size={40} color={colors.text} />
         <ThemedText
           type="titleLarge"
           style={{
@@ -104,16 +104,19 @@ export function ReachOutRejectedScreen({
       {/* Action Buttons */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: mainTextColor }]}
+          style={[
+            styles.retryButton,
+            { backgroundColor: colors.secondaryButtonBackground },
+          ]}
           onPress={handleRetryPress}
         >
           <Ionicons
             name="refresh"
             size={18}
-            color={colors.white}
+            color={colors.background}
             style={{ marginRight: 8 }}
           />
-          <ThemedText type="buttonLarge" style={{ color: colors.white }}>
+          <ThemedText type="buttonLarge" style={{ color: colors.background }}>
             Try Again
           </ThemedText>
         </TouchableOpacity>

@@ -42,7 +42,7 @@ export function CreatePostRejectedScreen({
     >
       {/* Header with Icon */}
       <View style={styles.modalHeader}>
-        <Ionicons name="close-circle" size={40} color={colors.destructive} />
+        <Ionicons name="close-circle" size={40} color={colors.text} />
         <ThemedText
           type="titleLarge"
           style={{
@@ -150,7 +150,7 @@ export function CreatePostRejectedScreen({
           ]}
           onPress={handleClosePress}
         >
-          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
+          <ThemedText type="buttonLarge" style={{ color: colors.text }}>
             Cancel
           </ThemedText>
         </TouchableOpacity>
