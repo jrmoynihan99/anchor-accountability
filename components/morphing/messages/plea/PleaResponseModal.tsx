@@ -2,10 +2,16 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  serverTimestamp,
+} from "firebase/firestore";
+import React, { useEffect, useRef, useState } from "react";
 import { Keyboard, StyleSheet, View } from "react-native";
 import Animated, {
+  Easing,
   interpolate,
   SharedValue,
   useAnimatedStyle,
@@ -17,6 +23,8 @@ import { PleaData } from "./PleaCard";
 import { PleaCardContent } from "./PleaCardContent";
 import { PleaResponseConfirmationScreen } from "./PleaResponseConfirmationScreen";
 import { PleaResponseInputScreen } from "./PleaResponseInputScreen";
+import { PleaResponsePendingScreen } from "./PleaResponsePendingScreen";
+import { PleaResponseRejectedScreen } from "./PleaResponseRejectedScreen";
 
 interface PleaResponseModalProps {
   isVisible: boolean;
@@ -27,7 +35,7 @@ interface PleaResponseModalProps {
   now: Date;
 }
 
-type ScreenType = "input" | "confirmation";
+type ScreenType = "input" | "pending" | "confirmation" | "rejected";
 
 export function PleaResponseModal({
   isVisible,
@@ -40,25 +48,105 @@ export function PleaResponseModal({
   const { colors, effectiveTheme } = useTheme();
 
   // Screen logic
-  const [screen, setScreen] = useState<ScreenType>("input");
-  const screenTransition = useSharedValue(0); // 0 = input, 1 = confirmation
+  const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
+  const screenTransition = useSharedValue(0); // 0 = input, 1 = other screens
   const [encouragementText, setEncouragementText] = useState("");
-  const [isSending, setIsSending] = useState(false);
   const [isOpenToChat, setIsOpenToChat] = useState(true); // Default to true
+  const [currentEncouragementId, setCurrentEncouragementId] = useState<
+    string | null
+  >(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Reset on close
+  // Reset modal state when closed
   useEffect(() => {
     if (!isVisible) {
-      setTimeout(() => {
-        setScreen("input");
+      const timer = setTimeout(() => {
+        setCurrentScreen("input");
         setEncouragementText("");
-        setIsOpenToChat(true); // Reset to default
+        setIsOpenToChat(true);
+        setCurrentEncouragementId(null);
         screenTransition.value = 0;
-      }, 200);
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+          unsubscribeRef.current = null;
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isVisible, screenTransition]);
 
-  // Animation for the two screens (slide L/R)
+  // Clean up listener on unmount
+  useEffect(() => {
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  const transitionToScreen = (screen: ScreenType) => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen(screen);
+  };
+
+  // Send encouragement handler
+  const handleSendEncouragement = async () => {
+    Keyboard.dismiss();
+    if (!encouragementText.trim() || !auth.currentUser || !plea) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    try {
+      transitionToScreen("pending");
+      const docRef = await addDoc(
+        collection(db, "pleas", plea.id, "encouragements"),
+        {
+          helperUid: auth.currentUser.uid,
+          message: encouragementText.trim(),
+          openToChat: isOpenToChat,
+          createdAt: serverTimestamp(),
+          status: "pending",
+        }
+      );
+      setCurrentEncouragementId(docRef.id);
+
+      const unsubscribe = onSnapshot(docRef, (snap) => {
+        if (!snap.exists()) return;
+        const status = snap.data().status;
+        if (status === "approved") {
+          transitionToScreen("confirmation");
+          // Auto-close after showing confirmation for 2 seconds
+          setTimeout(() => {
+            close?.();
+          }, 2000);
+        } else if (status === "rejected") {
+          transitionToScreen("rejected");
+        }
+      });
+      unsubscribeRef.current = unsubscribe;
+    } catch (error) {
+      console.error("Error sending encouragement:", error);
+      transitionToScreen("input");
+    }
+  };
+
+  const handleRetry = () => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    setCurrentEncouragementId(null);
+    screenTransition.value = withTiming(0, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen("input");
+  };
+
+  // --- Animations for the two-layer screen swap ---
   const inputScreenStyle = useAnimatedStyle(() => ({
     transform: [
       {
@@ -76,20 +164,15 @@ export function PleaResponseModal({
       [1, 0.3, 0],
       "clamp"
     ),
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   }));
 
-  const confirmationScreenStyle = useAnimatedStyle(() => ({
+  const activeScreenStyle = useAnimatedStyle(() => ({
     transform: [
       {
         translateX: interpolate(
           screenTransition.value,
           [0, 1],
-          [100, 0],
+          [300, 0],
           "clamp"
         ),
       },
@@ -100,11 +183,6 @@ export function PleaResponseModal({
       [0, 1, 1],
       "clamp"
     ),
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
   }));
 
   if (!plea) return null;
@@ -114,57 +192,59 @@ export function PleaResponseModal({
     plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
   const buttonContent = <PleaCardContent plea={plea} now={now} />;
 
-  // Send encouragement handler
-  const handleSendEncouragement = async () => {
-    Keyboard.dismiss();
-    if (!encouragementText.trim() || !auth.currentUser) return;
-    setIsSending(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      await addDoc(collection(db, "pleas", plea.id, "encouragements"), {
-        helperUid: auth.currentUser.uid,
-        message: encouragementText.trim(),
-        openToChat: isOpenToChat,
-        createdAt: serverTimestamp(),
-        status: "pending",
-      });
-
-      setEncouragementText("");
-      // Animate to confirmation
-      screenTransition.value = withTiming(1, { duration: 320 });
-      setScreen("confirmation");
-      setTimeout(() => {
-        close?.();
-        // Reset will run after close due to effect above
-      }, 2000);
-    } catch (error) {
-      console.error("Error sending encouragement:", error);
-    } finally {
-      setIsSending(false);
+  // --- Screens ---
+  const renderActiveScreen = () => {
+    switch (currentScreen) {
+      case "pending":
+        return <PleaResponsePendingScreen />;
+      case "confirmation":
+        return <PleaResponseConfirmationScreen />;
+      case "rejected":
+        return (
+          <PleaResponseRejectedScreen
+            onClose={close}
+            onRetry={handleRetry}
+            originalMessage={encouragementText}
+          />
+        );
+      default:
+        return null;
     }
   };
 
   // Modal content is a layered animated container
   const modalContent = (
-    <View style={{ flex: 1, minHeight: 420 }}>
-      {/* Input Screen */}
-      <Animated.View style={[styles.animatedScreen, inputScreenStyle]}>
+    <View style={styles.screenContainer}>
+      <Animated.View
+        style={[
+          styles.screenWrapper,
+          styles.screenBackground,
+          inputScreenStyle,
+        ]}
+      >
         <PleaResponseInputScreen
           plea={plea}
           now={now}
           encouragementText={encouragementText}
           onChangeEncouragementText={setEncouragementText}
-          isSending={isSending}
+          isSending={false}
           onSend={handleSendEncouragement}
           isOpenToChat={isOpenToChat}
           onToggleOpenToChat={setIsOpenToChat}
         />
       </Animated.View>
-      {/* Confirmation Screen */}
-      <Animated.View style={[styles.animatedScreen, confirmationScreenStyle]}>
-        <PleaResponseConfirmationScreen />
-      </Animated.View>
+
+      {currentScreen !== "input" && (
+        <Animated.View
+          style={[
+            styles.screenWrapper,
+            styles.screenBackground,
+            activeScreenStyle,
+          ]}
+        >
+          {renderActiveScreen()}
+        </Animated.View>
+      )}
     </View>
   );
 
@@ -195,12 +275,20 @@ function getHoursAgo(date: Date, now: Date): number {
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  screenContainer: {
     flex: 1,
+    position: "relative",
   },
-  animatedScreen: {
-    flex: 1,
-    minHeight: 420,
-    // This keeps scroll/padding matching original modal
+  screenWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  screenBackground: {
+    backgroundColor: "transparent",
+    borderRadius: 28,
+    overflow: "hidden",
   },
 });

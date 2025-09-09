@@ -144,23 +144,36 @@ export function ReachOutModal({
       console.error("No user logged in");
       return;
     }
+
+    const hasMessage = contextMessage && contextMessage.trim();
+    const initialStatus = hasMessage ? "pending" : "approved";
+
     try {
-      transitionToScreen("pending");
+      if (hasMessage) {
+        transitionToScreen("pending");
+      } else {
+        transitionToScreen("confirmation"); // Skip pending for blank messages
+      }
+
       const docRef = await addDoc(collection(db, "pleas"), {
         uid: user.uid,
         message: contextMessage || "",
         createdAt: serverTimestamp(),
-        status: "pending",
+        status: initialStatus,
       });
-      setCurrentPleaId(docRef.id);
 
-      const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (snap) => {
-        if (!snap.exists()) return;
-        const status = snap.data().status;
-        if (status === "approved") transitionToScreen("confirmation");
-        else if (status === "rejected") transitionToScreen("rejected");
-      });
-      unsubscribeRef.current = unsubscribe;
+      if (hasMessage) {
+        // Only set up listener if we need to wait for approval
+        setCurrentPleaId(docRef.id);
+        const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (snap) => {
+          if (!snap.exists()) return;
+          const status = snap.data().status;
+          if (status === "approved") transitionToScreen("confirmation");
+          else if (status === "rejected") transitionToScreen("rejected");
+        });
+        unsubscribeRef.current = unsubscribe;
+      }
+      // If no message, we already transitioned to confirmation above
     } catch (error) {
       console.error("Error sending plea:", error);
       transitionToScreen("input");
