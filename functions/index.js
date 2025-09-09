@@ -229,6 +229,160 @@ async function getChapterText(reference) {
   }
 }
 
+// ADD THIS DEBUG FUNCTION
+exports.debugBibleGateway = onRequest(async (request, response) => {
+  try {
+    const reference = request.query.reference || "2 Timothy 2:22";
+    logger.info(`Debugging Bible Gateway with reference: ${reference}`);
+
+    const debugResult = await debugBibleGatewayStructure(reference);
+
+    response.json({
+      success: true,
+      message: "Debug completed - check logs for detailed output",
+      reference: reference,
+      result: debugResult,
+    });
+  } catch (error) {
+    logger.error("Error debugging Bible Gateway:", error);
+    response.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Debug helper function
+async function debugBibleGatewayStructure(reference) {
+  let bookAndChapter = reference;
+  const match = reference.match(/^(.+?)\s+(\d+)(?::\d+)?$/);
+  if (match) {
+    bookAndChapter = `${match[1]} ${match[2]}`;
+  }
+
+  const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(
+    bookAndChapter
+  )}&version=ESV`;
+
+  try {
+    const { data: html } = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      },
+    });
+
+    const $ = cheerio.load(html);
+
+    logger.info("=== DEBUGGING BIBLE GATEWAY STRUCTURE ===");
+    logger.info(`Reference: ${reference}`);
+    logger.info(`URL: ${url}`);
+
+    // Let's see what the main passage container looks like
+    const passageContainer = $(".passage-text");
+    logger.info(`Passage container found: ${passageContainer.length > 0}`);
+
+    // Let's examine different selectors
+    const selectors = [
+      ".passage-text .text",
+      ".passage-text .chapter-0",
+      ".passage-text .chapter-1",
+      ".passage-text h3",
+      ".passage-text h2",
+      ".passage-text p",
+      ".passage-text .verse-num",
+      ".passage-text sup.versenum",
+    ];
+
+    const debugData = {};
+
+    selectors.forEach((selector) => {
+      const elements = $(selector);
+      logger.info(`\n--- ${selector} (${elements.length} found) ---`);
+
+      const selectorData = [];
+      elements.each((i, el) => {
+        if (i < 5) {
+          // Only show first 5 to avoid spam
+          const text = $(el).text().trim();
+          const classes = $(el).attr("class") || "no-class";
+          const tagName = el.tagName;
+          const isIndented = $(el).parents(".indent-1").length > 0;
+          const elementInfo = `${i}: [${tagName}.${classes}] ${
+            isIndented ? "(INDENTED)" : ""
+          } "${text}"`;
+          logger.info(elementInfo);
+          selectorData.push({
+            index: i,
+            tagName,
+            classes,
+            text,
+            isIndented,
+            elementInfo,
+          });
+        }
+      });
+
+      if (elements.length > 5) {
+        logger.info(`... and ${elements.length - 5} more`);
+      }
+
+      debugData[selector] = {
+        count: elements.length,
+        samples: selectorData,
+      };
+    });
+
+    // Let's also look at the overall structure
+    logger.info("\n--- OVERALL STRUCTURE ---");
+    const overallStructure = [];
+    $(".passage-text")
+      .children()
+      .each((i, el) => {
+        if (i < 10) {
+          const $el = $(el);
+          const tagName = el.tagName;
+          const classes = $el.attr("class") || "no-class";
+          const text = $el.text().trim().substring(0, 100);
+          const structureInfo = `${i}: <${tagName} class="${classes}">${text}${
+            text.length >= 100 ? "..." : ""
+          }`;
+          logger.info(structureInfo);
+          overallStructure.push({
+            index: i,
+            tagName,
+            classes,
+            text: text,
+            truncated: text.length >= 100,
+          });
+        }
+      });
+
+    // Also capture what your current function would return
+    logger.info("\n--- CURRENT FUNCTION OUTPUT ---");
+    const currentResult = await getChapterText(reference);
+    logger.info(
+      "Current function result:",
+      JSON.stringify(currentResult, null, 2)
+    );
+
+    return {
+      url,
+      passageContainerFound: passageContainer.length > 0,
+      selectorAnalysis: debugData,
+      overallStructure,
+      currentFunctionResult: currentResult,
+      debugComplete: true,
+    };
+  } catch (error) {
+    logger.error("Error in debug function:", error);
+    return {
+      error: error.message,
+      url,
+    };
+  }
+}
+
 // MODIFY THIS: Enhanced generate daily content function
 const generateDailyContent = async (targetDate) => {
   try {
