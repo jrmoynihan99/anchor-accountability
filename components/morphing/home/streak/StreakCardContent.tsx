@@ -69,7 +69,7 @@ export function StreakCardContent({
         style={[
           styles.bannerText,
           {
-            color: colors.icon,
+            color: colors.textSecondary,
             opacity: 0.8,
           },
         ]}
