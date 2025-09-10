@@ -1,0 +1,315 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Living Stone and Chosen People"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "Rid yourselves, therefore, of all malice, deceit, hypocrisy, envy, and slander. "
+        },
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "Like newborn babies, crave pure spiritual milk, so that by it you may grow up in your salvation, "
+        },
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "now that you have tasted that the Lord is good."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "As you come to Him, the living stone, rejected by men but chosen and precious in God's sight, "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "you also, like living stones, are being built into a spiritual house to be a holy priesthood, offering spiritual sacrifices acceptable to God through Jesus Christ. "
+        },
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "For it stands in Scripture:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "\"See, I lay in Zion a stone,\"" }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "a chosen and precious cornerstone;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and the one who believes in Him" }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "will never be put to shame.\"" }]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "To you who believe, then, this stone is precious. But to those who do not believe,"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "\"The stone the builders rejected\"" }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "has become the cornerstone,\"" }]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "and,"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "\"A stone of stumbling\"" }]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "and a rock of offense.\"" }]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "They stumble because they disobey the word—and to this they were appointed."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "But you are a chosen people, a royal priesthood, a holy nation, a people for God's own possession, to proclaim the virtues of Him who called you out of darkness into His marvelous light. "
+        },
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "Once you were not a people, but now you are the people of God; once you had not received mercy, but now you have received mercy."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "Beloved, I urge you, as foreigners and exiles, to abstain from the desires of the flesh, which war against your soul. "
+        },
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "Conduct yourselves with such honor among the Gentiles that, though they slander you as evildoers, they may see your good deeds and glorify God on the day He visits us."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Submission to Authorities"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "Submit yourselves for the Lord's sake to every human institution, whether to the king as the supreme authority, "
+        },
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "or to governors as those sent by him to punish those who do wrong and to praise those who do right. "
+        },
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "For it is God's will that by doing good you should silence the ignorance of foolish men."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "Live in freedom, but do not use your freedom as a cover-up for evil; live as servants of God. "
+        },
+        { "kind": "v", "n": 17 },
+        {
+          "kind": "t",
+          "text": "Treat everyone with high regard: Love the brotherhood of believers, fear God, honor the king."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 18 },
+        {
+          "kind": "t",
+          "text": "Servants, submit yourselves to your masters with all respect, not only to those who are good and gentle, but even to those who are unreasonable. "
+        },
+        { "kind": "v", "n": 19 },
+        {
+          "kind": "t",
+          "text": "For if anyone endures the pain of unjust suffering because he is conscious of God, this is to be commended. "
+        },
+        { "kind": "v", "n": 20 },
+        {
+          "kind": "t",
+          "text": "How is it to your credit if you are beaten for doing wrong and you endure it? But if you suffer for doing good and you endure it, this is commendable before God."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Christ's Example of Suffering"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 21 },
+        {
+          "kind": "t",
+          "text": "For to this you were called, because Christ also suffered for you, leaving you an example, that you should follow in His footsteps:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 22 },
+            { "kind": "t", "text": "\"He committed no sin,\"" }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "and no deceit was found in His mouth.\"" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 23 },
+            { "kind": "t", "text": "When they heaped abuse on Him," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "He did not retaliate;" }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "when He suffered, He made no threats," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "but entrusted Himself to Him who judges justly."
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 24 },
+            { "kind": "t", "text": "He Himself bore our sins" }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "in His body on the tree," }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "so that we might die to sin" }]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "and live to righteousness." }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "\"By His stripes you are healed.\"" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 25 },
+        {
+          "kind": "t",
+          "text": "For \"you were like sheep going astray,\" but now you have returned to the Shepherd and Overseer of your souls."
+        }
+      ]
+    }
+  ]
+}

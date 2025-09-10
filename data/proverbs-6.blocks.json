@@ -1,0 +1,567 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warnings against Foolishness"
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            {
+              "kind": "t",
+              "text": "My son, if you have put up security for your neighbor,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "if you have struck hands in pledge with a stranger,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            {
+              "kind": "t",
+              "text": "if you have been trapped by the words of your lips,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "ensnared by the words of your mouth," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "then do this, my son, to free yourself," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "for you have fallen into your neighbor's hands:"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "Go, humble yourself," }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and press your plea with your neighbor." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            { "kind": "t", "text": "Allow no sleep to your eyes" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "or slumber to your eyelids." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            {
+              "kind": "t",
+              "text": "Free yourself, like a gazelle from the hand of the hunter,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "like a bird from the snare of the fowler." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            { "kind": "t", "text": "Walk in the manner of the ant, O slacker;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "observe its ways and become wise." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "Without a commander," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "without an overseer or ruler," }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            { "kind": "t", "text": "it prepares its provisions in summer;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "it gathers its food at harvest." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 9 },
+            { "kind": "t", "text": "How long will you lie there, O slacker?" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "When will you get up from your sleep?" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            { "kind": "t", "text": "A little sleep, a little slumber," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "a little folding of the hands to rest," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 11 },
+            {
+              "kind": "t",
+              "text": "and poverty will come upon you like a robber,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and need like a bandit." }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 12 },
+            { "kind": "t", "text": "A worthless person, a wicked man," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "walks with a perverse mouth," }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 13 },
+            { "kind": "t", "text": "winking his eyes, speaking with his feet," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and pointing with his fingers." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 14 },
+            { "kind": "t", "text": "With deceit in his heart he devises evil;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "he continually sows discord." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 15 },
+            {
+              "kind": "t",
+              "text": "Therefore calamity will come upon him suddenly;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "in an instant he will be shattered beyond recovery."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "There are six things that the LORD hates, seven that are detestable to Him:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 17 },
+            { "kind": "t", "text": "haughty eyes," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "a lying tongue," }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "hands that shed innocent blood," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 18 },
+            { "kind": "t", "text": "a heart that devises wicked schemes," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "feet that run swiftly to evil," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 19 },
+            {
+              "kind": "t",
+              "text": "a false witness who gives false testimony,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and one who stirs up discord among brothers."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Warnings against Adultery"
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 20 },
+            { "kind": "t", "text": "My son, keep your father's commandment," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and do not forsake your mother's teaching."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 21 },
+            { "kind": "t", "text": "Bind them always upon your heart;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "tie them around your neck." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 22 },
+            { "kind": "t", "text": "When you walk, they will guide you;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "when you lie down, they will watch over you;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "when you awake, they will speak to you." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 23 },
+            {
+              "kind": "t",
+              "text": "For this commandment is a lamp, this teaching is a light,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and the reproofs of discipline are the way to life,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 24 },
+            { "kind": "t", "text": "to keep you from the evil woman," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "from the smooth tongue of the adulteress." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 25 },
+            { "kind": "t", "text": "Do not lust in your heart for her beauty" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or let her captivate you with her eyes." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 26 },
+            {
+              "kind": "t",
+              "text": "For the levy of the prostitute is poverty,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and the adulteress preys upon your very life."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 27 },
+            { "kind": "t", "text": "Can a man embrace fire" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and his clothes not be burned?" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 28 },
+            { "kind": "t", "text": "Can a man walk on hot coals" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "without scorching his feet?" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 29 },
+            {
+              "kind": "t",
+              "text": "So is he who sleeps with another man's wife;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "no one who touches her will go unpunished."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 30 },
+            { "kind": "t", "text": "Men do not despise the thief" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "if he steals to satisfy his hunger." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 31 },
+            { "kind": "t", "text": "Yet if caught, he must pay sevenfold;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "he must give up all the wealth of his house."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 32 },
+            { "kind": "t", "text": "He who commits adultery lacks judgment;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "whoever does so destroys himself." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 33 },
+            { "kind": "t", "text": "Wounds and dishonor will befall him," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and his reproach will never be wiped away."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 34 },
+            { "kind": "t", "text": "For jealousy enrages a husband," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and he will show no mercy in the day of vengeance."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 35 },
+            { "kind": "t", "text": "He will not be appeased by any ransom," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "or persuaded by lavish gifts." }]
+        }
+      ]
+    }
+  ]
+}

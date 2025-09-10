@@ -1,0 +1,178 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I Will Set No Worthless Thing before My Eyes"
+    },
+    {
+      "type": "subheading",
+      "text": "A Psalm of David."
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            {
+              "kind": "t",
+              "text": "I will sing of Your loving devotion and justice;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "to You, O LORD, I will sing praises." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            { "kind": "t", "text": "I will ponder the way that is blameless—" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "when will You come to me?" }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "I will walk in my house" }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "with integrity of heart." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "I will set no worthless thing" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "before my eyes." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "t", "text": "I hate the work of those who fall away;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "it shall not cling to me." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            { "kind": "t", "text": "A perverse heart shall depart from me;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "I will know nothing of evil." }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            { "kind": "t", "text": "Whoever slanders his neighbor in secret," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "I will put to silence;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "the one with haughty eyes and a proud heart,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "I will not endure." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            { "kind": "t", "text": "My eyes favor the faithful of the land," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "that they may dwell with me;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "t", "text": "he who walks in the way of integrity" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "shall minister to me." }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "No one who practices deceit" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "shall dwell in my house;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "no one who tells lies" }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "shall stand in my presence." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            {
+              "kind": "t",
+              "text": "Every morning I will remove all the wicked of the land,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "that I may cut off every evildoer from the city of the LORD."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

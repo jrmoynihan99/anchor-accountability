@@ -1,0 +1,310 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Giving to the Needy"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "\"Be careful not to perform your righteous acts before men to be seen by them. If you do, you will have no reward from your Father in heaven."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "So when you give to the needy, do not sound a trumpet before you, as the hypocrites do in the synagogues and on the streets, to be honored by men. Truly I tell you, they already have their full reward. "
+        },
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "But when you give to the needy, do not let your left hand know what your right hand is doing, "
+        },
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "so that your giving may be in secret. And your Father, who sees what is done in secret, will reward you."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "The Lord's Prayer"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "And when you pray, do not be like the hypocrites. For they love to pray standing in the synagogues and on the street corners to be seen by men. Truly I tell you, they already have their full reward. "
+        },
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "But when you pray, go into your inner room, shut your door, and pray to your Father, who is unseen. And your Father, who sees what is done in secret, will reward you."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "And when you pray, do not babble on like pagans, for they think that by their many words they will be heard. "
+        },
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "Do not be like them, for your Father knows what you need before you ask Him."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "So then, this is how you should pray:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "\"Our Father in heaven," }]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "hallowed be Your name." }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            { "kind": "t", "text": "Your kingdom come," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "Your will be done," }]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "on earth as it is in heaven." }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 11 },
+            { "kind": "t", "text": "Give us this day our daily bread." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 12 },
+            { "kind": "t", "text": "And forgive us our debts," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "as we also have forgiven our debtors." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "v", "n": 13 },
+            { "kind": "t", "text": "And lead us not into temptation," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "but deliver us from the evil one.\"" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "For if you forgive men their trespasses, your heavenly Father will also forgive you. "
+        },
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "But if you do not forgive men their trespasses, neither will your Father forgive yours."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Proper Fasting"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "When you fast, do not be somber like the hypocrites, for they disfigure their faces to show men they are fasting. Truly I tell you, they already have their full reward. "
+        },
+        { "kind": "v", "n": 17 },
+        {
+          "kind": "t",
+          "text": "But when you fast, anoint your head and wash your face, "
+        },
+        { "kind": "v", "n": 18 },
+        {
+          "kind": "t",
+          "text": "so that your fasting will not be obvious to men, but only to your Father, who is unseen. And your Father, who sees what is done in secret, will reward you."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Treasures in Heaven"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 19 },
+        {
+          "kind": "t",
+          "text": "Do not store up for yourselves treasures on earth, where moth and rust destroy, and where thieves break in and steal. "
+        },
+        { "kind": "v", "n": 20 },
+        {
+          "kind": "t",
+          "text": "But store up for yourselves treasures in heaven, where moth and rust do not destroy, and where thieves do not break in and steal. "
+        },
+        { "kind": "v", "n": 21 },
+        {
+          "kind": "t",
+          "text": "For where your treasure is, there your heart will be also."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "The Lamp of the Body"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 22 },
+        {
+          "kind": "t",
+          "text": "The eye is the lamp of the body. If your eyes are good, your whole body will be full of light. "
+        },
+        { "kind": "v", "n": 23 },
+        {
+          "kind": "t",
+          "text": "But if your eyes are bad, your whole body will be full of darkness. If then the light within you is darkness, how great is that darkness!"
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 24 },
+        {
+          "kind": "t",
+          "text": "No one can serve two masters: Either he will hate the one and love the other, or he will be devoted to the one and despise the other. You cannot serve both God and money."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Do Not Worry"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 25 },
+        {
+          "kind": "t",
+          "text": "Therefore I tell you, do not worry about your life, what you will eat or drink; or about your body, what you will wear. Is not life more than food, and the body more than clothes? "
+        },
+        { "kind": "v", "n": 26 },
+        {
+          "kind": "t",
+          "text": "Look at the birds of the air: They do not sow or reap or gather into barns, and yet your heavenly Father feeds them. Are you not much more valuable than they? "
+        },
+        { "kind": "v", "n": 27 },
+        {
+          "kind": "t",
+          "text": "Who of you by worrying can add a single hour to his life?"
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 28 },
+        {
+          "kind": "t",
+          "text": "And why do you worry about clothes? Consider how the lilies of the field grow: They do not labor or spin. "
+        },
+        { "kind": "v", "n": 29 },
+        {
+          "kind": "t",
+          "text": "Yet I tell you that not even Solomon in all his glory was adorned like one of these. "
+        },
+        { "kind": "v", "n": 30 },
+        {
+          "kind": "t",
+          "text": "If that is how God clothes the grass of the field, which is here today and tomorrow is thrown into the furnace, will He not much more clothe you, O you of little faith?"
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 31 },
+        {
+          "kind": "t",
+          "text": "Therefore do not worry, saying, 'What shall we eat?' or 'What shall we drink?' or 'What shall we wear?' "
+        },
+        { "kind": "v", "n": 32 },
+        {
+          "kind": "t",
+          "text": "For the Gentiles strive after all these things, and your heavenly Father knows that you need them. "
+        },
+        { "kind": "v", "n": 33 },
+        {
+          "kind": "t",
+          "text": "But seek first the kingdom of God and His righteousness, and all these things will be added unto you."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 34 },
+        {
+          "kind": "t",
+          "text": "Therefore do not worry about tomorrow, for tomorrow will worry about itself. Today has enough trouble of its own."
+        }
+      ]
+    }
+  ]
+}

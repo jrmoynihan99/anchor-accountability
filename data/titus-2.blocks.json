@@ -1,0 +1,128 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Teaching Sound Doctrine"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "But as for you, speak the things that are consistent with sound doctrine."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "Older men are to be temperate, dignified, self-controlled, and sound in faith, love, and perseverance."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "Older women, likewise, are to be reverent in their behavior, not slanderers or addicted to much wine, but teachers of good. "
+        },
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "In this way they can train the young women to love their husbands and children, "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "to be self-controlled, pure, managers of their households, kind, and submissive to their own husbands, so that the word of God will not be discredited."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "In the same way, urge the younger men to be self-controlled."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "In everything, show yourself to be an example by doing good works. In your teaching show integrity, dignity, "
+        },
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "and wholesome speech that is above reproach, so that anyone who opposes us will be ashamed, having nothing bad to say about us."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "Slaves are to submit to their own masters in everything, to be well-pleasing, not argumentative, "
+        },
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "not stealing from them, but showing all good faith, so that in every respect they will adorn the teaching about God our Savior."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "God's Grace Brings Salvation"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "For the grace of God has appeared, bringing salvation to everyone. "
+        },
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "It instructs us to renounce ungodliness and worldly passions, and to live sensible, upright, and godly lives in the present age, "
+        },
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "as we await the blessed hope and glorious appearance of our great God and Savior Jesus Christ. "
+        },
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "He gave Himself for us to redeem us from all lawlessness and to purify for Himself a people for His own possession, zealous for good deeds."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "Speak these things as you encourage and rebuke with all authority. Let no one despise you."
+        }
+      ]
+    }
+  ]
+}

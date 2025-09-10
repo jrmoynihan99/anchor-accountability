@@ -23,10 +23,16 @@ export interface VerseCarouselRef {
   openTodayInContext: () => void;
 }
 
-// 🔧 Store both morph + originless controls per item
+// Define the structured chapter text type
+interface StructuredChapterText {
+  schema: string;
+  blocks: any[];
+}
+
+// Store both morph + originless controls per item
 type ModalControls = {
   open: () => void;
-  openOriginless?: () => void; // NEW
+  openOriginless?: () => void;
   close: (velocity?: number) => void;
 };
 
@@ -42,21 +48,21 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
   );
 
   // Store refs to each modal controller
-  const modalControlsRef = useRef<ModalControls[]>([]); // 🔧 typed
+  const modalControlsRef = useRef<ModalControls[]>([]);
 
   // Selected verse for modal display
   const [selectedVerseData, setSelectedVerseData] = useState<{
     verse: string | null;
     reference: string | null;
     formattedDate: string;
-    chapterText?: string | null;
+    chapterText?: StructuredChapterText | string | null;
     chapterReference?: string | null;
     bibleVersion?: string | null;
     index: number;
     initialView?: "verse" | "context";
   } | null>(null);
 
-  // Expose function to open today’s verse in context
+  // Expose function to open today's verse in context
   useImperativeHandle(ref, () => ({
     openTodayInContext: () => {
       const todayData = verseDataByOffset[0]; // offset 0 = today
@@ -112,7 +118,7 @@ export const VerseCarousel = forwardRef<VerseCarouselRef>((props, ref) => {
               <ButtonModalTransitionBridge>
                 {({
                   open,
-                  openOriginless, // 👈 NEW
+                  openOriginless,
                   close,
                   isModalVisible,
                   progress,

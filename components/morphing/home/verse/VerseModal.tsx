@@ -1,16 +1,22 @@
-// ✅ VerseModal.tsx
+// VerseModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/ThemeContext";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { ContextView } from "./ContextView";
 import { VerseCardContent } from "./VerseCardContent";
 import { VerseView } from "./VerseView";
-import { SharedValue } from "react-native-reanimated";
 
 type ModalView = "verse" | "context";
+
+// Define the structured chapter text type
+interface StructuredChapterText {
+  schema: string;
+  blocks: any[];
+}
 
 interface VerseModalProps {
   isVisible: boolean;
@@ -23,7 +29,7 @@ interface VerseModalProps {
   index?: number;
   currentIndex?: number;
   total?: number;
-  chapterText?: string;
+  chapterText?: StructuredChapterText | string;
   chapterReference?: string;
   bibleVersion?: string;
   initialView?: ModalView;

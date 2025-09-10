@@ -1,0 +1,653 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Job's Final Appeal"
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            { "kind": "t", "text": "\"I have made a covenant with my eyes." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "How then could I gaze with desire at a virgin?"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            {
+              "kind": "t",
+              "text": "For what is the allotment of God from above,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "or the heritage from the Almighty on high?"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "Does not disaster come to the unjust" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and calamity to the workers of iniquity?" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            { "kind": "t", "text": "Does He not see my ways" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and count my every step?" }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            { "kind": "t", "text": "If I have walked in falsehood" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or my foot has rushed to deceit," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            { "kind": "t", "text": "let God weigh me with honest scales," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "that He may know my integrity." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "If my steps have turned from the path," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "if my heart has followed my eyes," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or if impurity has stuck to my hands," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            { "kind": "t", "text": "then may another eat what I have sown," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and may my crops be uprooted." }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 9 },
+            {
+              "kind": "t",
+              "text": "If my heart has been enticed by my neighbor's wife,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "or I have lurked at his door," }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            {
+              "kind": "t",
+              "text": "then may my own wife grind grain for another,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and may other men sleep with her." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 11 },
+            { "kind": "t", "text": "For that would be a heinous crime," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "an iniquity to be judged." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 12 },
+            {
+              "kind": "t",
+              "text": "For it is a fire that burns down to Abaddon;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "it would root out my entire harvest." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 13 },
+            {
+              "kind": "t",
+              "text": "If I have rejected the cause of my manservant or maidservant"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "when they made a complaint against me," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 14 },
+            { "kind": "t", "text": "what will I do when God rises to judge?" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "How will I answer when called to account?" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 15 },
+            {
+              "kind": "t",
+              "text": "Did not He who made me in the womb also make them?"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "Did not the same One form us in the womb?" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 16 },
+            { "kind": "t", "text": "If I have denied the desires of the poor" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or allowed the widow's eyes to fail," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 17 },
+            { "kind": "t", "text": "if I have eaten my morsel alone," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "not sharing it with the fatherless—" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 18 },
+            {
+              "kind": "t",
+              "text": "though from my youth I reared him as would a father,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and from my mother's womb I guided the widow—"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 19 },
+            {
+              "kind": "t",
+              "text": "if I have seen one perish for lack of clothing,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or a needy man without a cloak," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 20 },
+            { "kind": "t", "text": "if his heart has not blessed me" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "for warming him with the fleece of my sheep,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 21 },
+            {
+              "kind": "t",
+              "text": "if I have lifted up my hand against the fatherless"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "because I saw that I had support in the gate,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 22 },
+            { "kind": "t", "text": "then may my arm fall from my shoulder" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and be torn from its socket." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 23 },
+            { "kind": "t", "text": "For calamity from God terrifies me," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and His splendor I cannot overpower." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 24 },
+            { "kind": "t", "text": "If I have put my trust in gold" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or called pure gold my security," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 25 },
+            { "kind": "t", "text": "if I have rejoiced in my great wealth" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "because my hand had gained so much," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 26 },
+            { "kind": "t", "text": "if I have beheld the sun in its radiance" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or the moon moving in splendor," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 27 },
+            { "kind": "t", "text": "so that my heart was secretly enticed" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and my hand threw a kiss from my mouth," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 28 },
+            {
+              "kind": "t",
+              "text": "this would also be an iniquity to be judged,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "for I would have denied God on high." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 29 },
+            { "kind": "t", "text": "If I have rejoiced in my enemy's ruin," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or exulted when evil befell him—" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 30 },
+            { "kind": "t", "text": "I have not allowed my mouth to sin" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "by asking for his life with a curse—" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 31 },
+            { "kind": "t", "text": "if the men of my house have not said," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "'Who is there who has not had his fill?'—" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 32 },
+            {
+              "kind": "t",
+              "text": "but no stranger had to lodge on the street,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "for my door has been open to the traveler—"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 33 },
+            {
+              "kind": "t",
+              "text": "if I have covered my transgressions like Adam"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "by hiding my guilt in my heart," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 34 },
+            { "kind": "t", "text": "because I greatly feared the crowds" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and the contempt of the clans terrified me,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "so that I kept silent" }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and would not go outside—" }]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 35 },
+            { "kind": "t", "text": "Oh, that I had one to hear me!" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "Here is my signature." }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "Let the Almighty answer me;" }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "let my accuser compose an indictment." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 36 },
+            { "kind": "t", "text": "Surely I would carry it on my shoulder" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and wear it like a crown." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 37 },
+            { "kind": "t", "text": "I would give account of all my steps;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "I would approach Him like a prince.—" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 38 },
+            { "kind": "t", "text": "if my land cries out against me" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and its furrows weep together," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 39 },
+            {
+              "kind": "t",
+              "text": "if I have devoured its produce without payment"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or broken the spirit of its tenants," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 40 },
+            { "kind": "t", "text": "then let briers grow instead of wheat" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and stinkweed instead of barley.\"" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "Thus conclude the words of Job."
+        }
+      ]
+    }
+  ]
+}

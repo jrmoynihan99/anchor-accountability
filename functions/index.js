@@ -11,9 +11,7 @@ const {
 const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
 const admin = require("firebase-admin");
-const fetch = require("node-fetch"); // ADD THIS LINE
 const axios = require("axios");
-const cheerio = require("cheerio");
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -24,13 +22,6 @@ setGlobalOptions({ maxInstances: 10 });
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-// ADD THIS: Bible API configuration
-const BIBLE_API_CONFIG = {
-  baseUrl: "https://api.esv.org/v3",
-  apiKey: process.env.ESV_API_KEY,
-  version: "ESV",
-};
 
 // Helper function to format date as YYYY-MM-DD
 const formatDate = (date) => {
@@ -44,470 +35,84 @@ const getDateWithOffset = (offsetDays) => {
   return date;
 };
 
-// Get recent content to avoid repetition
-const getRecentContent = async (daysToFetch = 7) => {
-  try {
-    const snapshot = await admin
-      .firestore()
-      .collection("dailyContent")
-      .orderBy("date", "desc")
-      .limit(daysToFetch)
-      .get();
-
-    const recentContent = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      recentContent.push({
-        date: data.date,
-        verse: data.verse,
-        reference: data.reference,
-        prayerContent: data.prayerContent,
-      });
-    });
-
-    logger.info(
-      `Found ${recentContent.length} recent content entries for context`
-    );
-    return recentContent;
-  } catch (error) {
-    logger.error("Error fetching recent content:", error);
-    return [];
-  }
-};
-
-// --- EXPO PUSH NOTIFICATION HELPER (AXIOS VERSION) --- //
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-
-async function sendExpoPushNotification(to, title, body, data = {}) {
-  const message = {
-    to,
-    sound: "default",
-    title,
-    body,
-    data,
-    // priority: "high",
-  };
-
-  try {
-    const res = await axios.post(EXPO_PUSH_URL, [message], {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.data?.errors) {
-      logger.error("Expo push error:", res.data.errors);
-    }
-    return res.data;
-  } catch (e) {
-    logger.error("Failed to send Expo push:", e);
-  }
-}
-
-const getPrompt = async () => {
-  try {
-    const doc = await admin
-      .firestore()
-      .collection("config")
-      .doc("dailyContentPrompt")
-      .get();
-
-    if (doc.exists) {
-      return doc.data().prompt;
-    }
-  } catch (error) {
-    logger.error("Error getting prompt from Firestore:", error);
-  }
-
-  // Fallback prompt if Firestore fails
-  return `Generate devotional content for a Christian accountability app focused on helping people overcome pornography addiction. The content should include:
-
-1. A 2-3 sentence prayer. This prayer should be specific to Christianity, and can be related to the bible verse of the day, but this is not required. It should be encouraging, biblically grounded, and helpful to their struggle.
-2. A bible verse that is specific/related to the struggle against temptation and/or sexual temptation. 
-3. The reference from the bible for the verse ("Matthew 16:21", "1 Corinthians 10:13", etc).
-
-Please respond with a JSON object in this exact format:
-{
-  "prayerContent": "A 2-3 sentence prayer asking for strength, forgiveness, and God's help in overcoming temptation",
-  "verse": "The actual Bible verse text", 
-  "reference": "Book Chapter:Verse format (e.g., 'James 1:12')"
-}
-
-Focus on themes like: purity, strength, renewal, God's love, forgiveness, perseverance, and victory over sin.`;
-};
-
-// ADD THIS: Helper function to parse Bible reference
-const parseBibleReference = (reference) => {
-  // Examples: "John 3:16", "1 Corinthians 10:13", "Psalm 119:9-11"
-  const match = reference.match(/^(\d?\s?\w+)\s+(\d+):(\d+)(?:-(\d+))?$/);
-  if (!match) {
-    throw new Error(`Invalid Bible reference format: ${reference}`);
-  }
-
-  const [, book, chapter, startVerse, endVerse] = match;
-  return {
-    book: book.trim(),
-    chapter: parseInt(chapter),
-    startVerse: parseInt(startVerse),
-    endVerse: endVerse ? parseInt(endVerse) : parseInt(startVerse),
-  };
-};
-
-async function getChapterText(reference) {
-  let bookAndChapter = reference;
-  const match = reference.match(/^(.+?)\s+(\d+)(?::\d+)?$/);
-  if (match) {
-    bookAndChapter = `${match[1]} ${match[2]}`;
-  }
-  const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(
-    bookAndChapter
-  )}&version=ESV`;
-
-  try {
-    const { data: html } = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-      },
-    });
-    const $ = cheerio.load(html);
-
-    // Get all lines (headers, verses, poetic lines)
-    let lines = [];
-    $(
-      ".passage-text .text, .passage-text .chapter-0, .passage-text .chapter-1, .passage-text h3, .passage-text h2"
-    ).each((i, el) => {
-      let isIndented = $(el).parents(".indent-1").length > 0;
-      let text = $(el).text().trim();
-
-      // Clean up line: remove crossrefs, footnotes, etc.
-      text = text
-        .replace(/\([A-Z]{1,3}\)/g, "")
-        .replace(/\[[a-z]{1,2}\]/g, "")
-        .replace(/([.,;])([A-Z]{1,3})/g, "$1")
-        .replace(/[ \t]+$/g, "")
-        .replace(/^\s+/, "");
-
-      if (text) {
-        if (isIndented) text = "<<INDENT>> " + text;
-        lines.push(text);
-      }
-    });
-
-    // Deduplicate consecutive lines
-    let deduped = [];
-    for (let i = 0; i < lines.length; i++) {
-      if (i === 0 || lines[i] !== lines[i - 1]) {
-        deduped.push(lines[i]);
-      }
-    }
-
-    // Replace the first number with "1" ONLY if the first non-header line is a verse
-    for (let i = 0; i < deduped.length; i++) {
-      if (/^\d+\s+/.test(deduped[i])) {
-        deduped[i] = deduped[i].replace(/^\d+/, "1");
-        break;
-      }
-      // If it's a header, skip
-    }
-
-    const passage = deduped.join("\n");
-
-    if (passage.length > 100) {
-      return {
-        chapterText: passage,
-        chapterReference: bookAndChapter,
-        bibleVersion: "ESV",
-      };
-    }
-    throw new Error("Passage too short / not found");
-  } catch (err) {
-    return {
-      chapterText: `Chapter text for ${bookAndChapter} could not be loaded. Please read at https://www.biblegateway.com/passage/?search=${encodeURIComponent(
-        bookAndChapter
-      )}&version=ESV`,
-      chapterReference: bookAndChapter,
-      bibleVersion: "Error",
-    };
-  }
-}
-
-// ADD THIS DEBUG FUNCTION
-exports.debugBibleGateway = onRequest(async (request, response) => {
-  try {
-    const reference = request.query.reference || "2 Timothy 2:22";
-    logger.info(`Debugging Bible Gateway with reference: ${reference}`);
-
-    const debugResult = await debugBibleGatewayStructure(reference);
-
-    response.json({
-      success: true,
-      message: "Debug completed - check logs for detailed output",
-      reference: reference,
-      result: debugResult,
-    });
-  } catch (error) {
-    logger.error("Error debugging Bible Gateway:", error);
-    response.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
-
-// Debug helper function
-async function debugBibleGatewayStructure(reference) {
-  let bookAndChapter = reference;
-  const match = reference.match(/^(.+?)\s+(\d+)(?::\d+)?$/);
-  if (match) {
-    bookAndChapter = `${match[1]} ${match[2]}`;
-  }
-
-  const url = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(
-    bookAndChapter
-  )}&version=ESV`;
-
-  try {
-    const { data: html } = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-      },
-    });
-
-    const $ = cheerio.load(html);
-
-    logger.info("=== DEBUGGING BIBLE GATEWAY STRUCTURE ===");
-    logger.info(`Reference: ${reference}`);
-    logger.info(`URL: ${url}`);
-
-    // Let's see what the main passage container looks like
-    const passageContainer = $(".passage-text");
-    logger.info(`Passage container found: ${passageContainer.length > 0}`);
-
-    // Let's examine different selectors
-    const selectors = [
-      ".passage-text .text",
-      ".passage-text .chapter-0",
-      ".passage-text .chapter-1",
-      ".passage-text h3",
-      ".passage-text h2",
-      ".passage-text p",
-      ".passage-text .verse-num",
-      ".passage-text sup.versenum",
-    ];
-
-    const debugData = {};
-
-    selectors.forEach((selector) => {
-      const elements = $(selector);
-      logger.info(`\n--- ${selector} (${elements.length} found) ---`);
-
-      const selectorData = [];
-      elements.each((i, el) => {
-        if (i < 5) {
-          // Only show first 5 to avoid spam
-          const text = $(el).text().trim();
-          const classes = $(el).attr("class") || "no-class";
-          const tagName = el.tagName;
-          const isIndented = $(el).parents(".indent-1").length > 0;
-          const elementInfo = `${i}: [${tagName}.${classes}] ${
-            isIndented ? "(INDENTED)" : ""
-          } "${text}"`;
-          logger.info(elementInfo);
-          selectorData.push({
-            index: i,
-            tagName,
-            classes,
-            text,
-            isIndented,
-            elementInfo,
-          });
-        }
-      });
-
-      if (elements.length > 5) {
-        logger.info(`... and ${elements.length - 5} more`);
-      }
-
-      debugData[selector] = {
-        count: elements.length,
-        samples: selectorData,
-      };
-    });
-
-    // Let's also look at the overall structure
-    logger.info("\n--- OVERALL STRUCTURE ---");
-    const overallStructure = [];
-    $(".passage-text")
-      .children()
-      .each((i, el) => {
-        if (i < 10) {
-          const $el = $(el);
-          const tagName = el.tagName;
-          const classes = $el.attr("class") || "no-class";
-          const text = $el.text().trim().substring(0, 100);
-          const structureInfo = `${i}: <${tagName} class="${classes}">${text}${
-            text.length >= 100 ? "..." : ""
-          }`;
-          logger.info(structureInfo);
-          overallStructure.push({
-            index: i,
-            tagName,
-            classes,
-            text: text,
-            truncated: text.length >= 100,
-          });
-        }
-      });
-
-    // Also capture what your current function would return
-    logger.info("\n--- CURRENT FUNCTION OUTPUT ---");
-    const currentResult = await getChapterText(reference);
-    logger.info(
-      "Current function result:",
-      JSON.stringify(currentResult, null, 2)
-    );
-
-    return {
-      url,
-      passageContainerFound: passageContainer.length > 0,
-      selectorAnalysis: debugData,
-      overallStructure,
-      currentFunctionResult: currentResult,
-      debugComplete: true,
-    };
-  } catch (error) {
-    logger.error("Error in debug function:", error);
-    return {
-      error: error.message,
-      url,
-    };
-  }
-}
-
 // MODIFY THIS: Enhanced generate daily content function
 const generateDailyContent = async (targetDate) => {
-  try {
-    logger.info(`Generating content for date: ${targetDate}`);
+  // 1. Get recent used verses
+  const recentSnapshot = await admin
+    .firestore()
+    .collection("dailyContent")
+    .orderBy("date", "desc")
+    .limit(6)
+    .get();
 
-    const prompt = await getPrompt();
-    const recentContent = await getRecentContent(7);
+  const usedRefs = new Set();
+  recentSnapshot.forEach((doc) => {
+    const d = doc.data();
+    if (d.reference) usedRefs.add(d.reference);
+    if (d.chapterReference) usedRefs.add(d.chapterReference);
+  });
 
-    // Build the full prompt with recent content context
-    let fullPrompt = prompt;
+  // 2. Get all bible verses, filter out recently used
+  const bibleVersesSnap = await admin
+    .firestore()
+    .collection("bibleVerses")
+    .get();
+  const candidates = bibleVersesSnap.docs
+    .map((doc) => doc.data())
+    .filter(
+      (d) => !usedRefs.has(d.reference) && !usedRefs.has(d.chapterReference)
+    );
 
-    if (recentContent.length > 0) {
-      fullPrompt += `\n\nIMPORTANT: Here are the last ${recentContent.length} days of content to avoid repetition:\n\n`;
+  if (!candidates.length)
+    throw new Error("No eligible bible verses found for today.");
 
-      recentContent.forEach((content, index) => {
-        fullPrompt += `${content.date}:\n`;
-        fullPrompt += `Verse: "${content.verse}"\n`;
-        fullPrompt += `Reference: ${content.reference}\n`;
-        fullPrompt += `Prayer: "${content.prayerContent}"\n\n`;
-      });
+  const picked = candidates[Math.floor(Math.random() * candidates.length)];
 
-      fullPrompt += "Please ensure:\n";
-      fullPrompt +=
-        "- DO NOT use any of the above Bible verses or references\n";
-      fullPrompt += "- Create a different prayer (similar themes are fine)\n";
-    }
+  // 3. Generate prayer content with GPT
+  const gptPrompt = `
+Here is today's Bible verse:
 
-    // Step 1: Get verse/prayer content from GPT
-    logger.info("Requesting content from OpenAI...");
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a Christian devotional writer specializing in content for accountability and recovery apps. Always respond with valid JSON only. Avoid repeating content you've been shown.",
-        },
-        {
-          role: "user",
-          content: fullPrompt,
-        },
-      ],
-      max_tokens: 500,
-      temperature: 0.7,
-    });
+"${picked.verse}"
+(${picked.reference})
 
-    const content = response.choices[0].message.content;
-    logger.info("OpenAI response received");
+Write a 2-3 sentence prayer, rooted in biblical Christian faith, that is encouraging and specifically connects to this verse and its themes. Respond ONLY with the prayer text, no intro or outro.
+  `;
 
-    // Parse the JSON response
-    const parsedContent = JSON.parse(content);
+  const gptResponse = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a Christian devotional writer. Write encouraging, biblically grounded prayers.",
+      },
+      { role: "user", content: gptPrompt },
+    ],
+    max_tokens: 120,
+    temperature: 0.7,
+  });
 
-    // Validate required fields
-    if (
-      !parsedContent.prayerContent ||
-      !parsedContent.verse ||
-      !parsedContent.reference
-    ) {
-      throw new Error("Missing required fields in OpenAI response");
-    }
+  const prayerContent = gptResponse.choices[0].message.content.trim();
 
-    logger.info(`GPT generated reference: ${parsedContent.reference}`);
+  // 4. Save to Firestore
+  const newContent = {
+    date: targetDate,
+    bibleVersion: picked.bibleVersion,
+    chapterReference: picked.chapterReference,
+    chapterText: picked.chapterText,
+    reference: picked.reference,
+    verse: picked.verse,
+    prayerContent,
+  };
 
-    // Step 2: Get the full chapter text for the reference
-    const chapterData = await getChapterText(parsedContent.reference);
+  await admin
+    .firestore()
+    .collection("dailyContent")
+    .doc(targetDate)
+    .set(newContent);
 
-    // Step 3: Combine everything
-    const finalContent = {
-      date: targetDate,
-      prayerContent: parsedContent.prayerContent,
-      verse: parsedContent.verse,
-      reference: parsedContent.reference,
-      // NEW: Chapter context fields
-      chapterText: chapterData.chapterText,
-      chapterReference: chapterData.chapterReference,
-      bibleVersion: chapterData.bibleVersion,
-    };
-
-    logger.info(`Successfully generated complete content for ${targetDate}`);
-    return finalContent;
-  } catch (error) {
-    logger.error("Error generating content with OpenAI:", error);
-
-    // Enhanced fallback content with chapter text
-    const fallbackReference = "1 Corinthians 10:13";
-    logger.info(`Using fallback content with reference: ${fallbackReference}`);
-    const fallbackChapter = await getChapterText(fallbackReference);
-
-    return {
-      date: targetDate,
-      prayerContent:
-        "Lord, thank you for your grace and mercy. Strengthen me today to walk in purity and to honor you with my thoughts and actions. Help me to rely on your power when I am weak. In Jesus' name, Amen.",
-      verse:
-        "No temptation has overtaken you except what is common to mankind. And God is faithful; he will not let you be tempted beyond what you can bear. But when you are tempted, he will also provide a way out so that you can endure it.",
-      reference: fallbackReference,
-      chapterText: fallbackChapter.chapterText,
-      chapterReference: fallbackChapter.chapterReference,
-      bibleVersion: fallbackChapter.bibleVersion,
-    };
-  }
+  return newContent;
 };
-
-// ADD THIS: Test function for Bible API
-exports.testBibleApi = onRequest(async (request, response) => {
-  try {
-    const reference = request.query.reference || "John 3:16";
-    logger.info(`Testing Bible API with reference: ${reference}`);
-
-    const chapterData = await getChapterText(reference);
-
-    response.json({
-      success: true,
-      message: "Bible API test successful",
-      input: reference,
-      result: chapterData,
-      preview: chapterData.chapterText.substring(0, 200) + "...",
-    });
-  } catch (error) {
-    logger.error("Error testing Bible API:", error);
-    response.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-});
 
 // EXISTING FUNCTIONS (unchanged)
 exports.testGenerateContent = onRequest(async (request, response) => {

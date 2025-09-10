@@ -1,0 +1,407 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A Father's Instruction"
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            {
+              "kind": "t",
+              "text": "Listen, my sons, to a father's instruction;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "pay attention and gain understanding." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            { "kind": "t", "text": "For I give you sound teaching;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "do not abandon my directive." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "When I was a son to my father," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "tender and the only child of my mother," }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            { "kind": "t", "text": "he taught me and said," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "\"Let your heart lay hold of my words;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "keep my commands and you will live." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            { "kind": "t", "text": "Get wisdom, get understanding;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "do not forget my words or turn from them." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            {
+              "kind": "t",
+              "text": "Do not forsake wisdom, and she will preserve you;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "love her, and she will guard you." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "Wisdom is supreme; so acquire wisdom." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "And whatever you may acquire, gain understanding."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            { "kind": "t", "text": "Prize her, and she will exalt you;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "if you embrace her, she will honor you." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 9 },
+            {
+              "kind": "t",
+              "text": "She will set a garland of grace on your head;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "she will present you with a crown of beauty.\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            { "kind": "t", "text": "Listen, my son, and receive my words," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and the years of your life will be many." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 11 },
+            { "kind": "t", "text": "I will guide you in the way of wisdom;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "I will lead you on straight paths." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 12 },
+            {
+              "kind": "t",
+              "text": "When you walk, your steps will not be impeded;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "when you run, you will not stumble." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 13 },
+            { "kind": "t", "text": "Hold on to instruction; do not let go." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "Guard it, for it is your life." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 14 },
+            { "kind": "t", "text": "Do not set foot on the path of the wicked" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or walk in the way of evildoers." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 15 },
+            { "kind": "t", "text": "Avoid it; do not travel on it." }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "Turn from it and pass on by." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 16 },
+            { "kind": "t", "text": "For they cannot sleep" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "unless they do evil;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "they are deprived of slumber" }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "until they make someone fall." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 17 },
+            { "kind": "t", "text": "For they eat the bread of wickedness" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and drink the wine of violence." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 18 },
+            {
+              "kind": "t",
+              "text": "The path of the righteous is like the first gleam of dawn,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "shining brighter and brighter until midday."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 19 },
+            {
+              "kind": "t",
+              "text": "But the way of the wicked is like the darkest gloom;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "they do not know what makes them stumble." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 20 },
+            { "kind": "t", "text": "My son, pay attention to my words;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "incline your ear to my sayings." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 21 },
+            { "kind": "t", "text": "Do not lose sight of them;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "keep them within your heart." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 22 },
+            { "kind": "t", "text": "For they are life to those who find them," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "and health to the whole body." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 23 },
+            { "kind": "t", "text": "Guard your heart with all diligence," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "for from it flow springs of life." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 24 },
+            { "kind": "t", "text": "Put away deception from your mouth;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "keep your lips from perverse speech." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 25 },
+            { "kind": "t", "text": "Let your eyes look forward;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "fix your gaze straight ahead." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 26 },
+            { "kind": "t", "text": "Make a level path for your feet," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and all your ways will be sure." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 27 },
+            {
+              "kind": "t",
+              "text": "Do not swerve to the right or to the left;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "turn your feet away from evil." }
+          ]
+        }
+      ]
+    }
+  ]
+}

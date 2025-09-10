@@ -1,0 +1,225 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Come Quickly to Me"
+    },
+    {
+      "type": "subheading",
+      "text": "A Psalm of David."
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            {
+              "kind": "t",
+              "text": "I call upon You, O LORD; come quickly to me."
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "Hear my voice when I call to You." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            {
+              "kind": "t",
+              "text": "May my prayer be set before You like incense;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "my uplifted hands, like the evening offering."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "Set a guard, O LORD, over my mouth;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "keep watch at the door of my lips." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            {
+              "kind": "t",
+              "text": "Do not let my heart be drawn to any evil thing"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "or take part in works of wickedness" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "with men who do iniquity;" }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "let me not feast on their delicacies." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            { "kind": "t", "text": "Let the righteous man strike me;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "let his rebuke be an act of loving devotion."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "It is oil for my head; let me not refuse it."
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "For my prayer is ever against the deeds of the wicked."
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            {
+              "kind": "t",
+              "text": "When their rulers are thrown down from the cliffs,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "the people will listen to my words," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "for they are pleasant." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "As when one plows and breaks up the soil," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "so our bones have been scattered at the mouth of Sheol."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            { "kind": "t", "text": "But my eyes are fixed on You," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "O GOD the Lord." }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "In You I seek refuge;" }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "do not leave my soul defenseless." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 9 },
+            {
+              "kind": "t",
+              "text": "Keep me from the snares they have laid for me,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and from the lures of evildoers." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            { "kind": "t", "text": "Let the wicked fall into their own nets," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "while I pass by in safety." }]
+        }
+      ]
+    }
+  ]
+}

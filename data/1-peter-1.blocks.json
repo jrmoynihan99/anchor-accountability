@@ -1,0 +1,252 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A Greeting from Peter"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "Peter, an apostle of Jesus Christ,"
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "To the elect who are exiles of the Dispersion throughout Pontus, Galatia, Cappadocia, Asia, and Bithynia, chosen "
+        },
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "according to the foreknowledge of God the Father and sanctified by the Spirit for obedience to Jesus Christ and sprinkling by His blood:"
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "Grace and peace be yours in abundance."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "A Living Hope"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "Blessed be the God and Father of our Lord Jesus Christ! By His great mercy He has given us new birth into a living hope through the resurrection of Jesus Christ from the dead, "
+        },
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "and into an inheritance that is imperishable, undefiled, and unfading, reserved in heaven for you, "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "who through faith are shielded by God's power for the salvation that is ready to be revealed in the last time."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "In this you greatly rejoice, though now for a little while you may have had to suffer grief in various trials "
+        },
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "so that the proven character of your faith—more precious than gold, which perishes even though refined by fire—may result in praise, glory, and honor at the revelation of Jesus Christ."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "Though you have not seen Him, you love Him; and though you do not see Him now, you believe in Him and rejoice with an inexpressible and glorious joy, "
+        },
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "now that you are receiving the goal of your faith, the salvation of your souls."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "Concerning this salvation, the prophets who foretold the grace to come to you searched and investigated carefully, "
+        },
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "trying to determine the time and setting to which the Spirit of Christ in them was pointing when He predicted the sufferings of Christ and the glories to follow."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "It was revealed to them that they were not serving themselves, but you, when they foretold the things now announced by those who preached the gospel to you by the Holy Spirit sent from heaven. Even angels long to look into these things."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "A Call to Holiness"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "Therefore prepare your minds for action. Be sober-minded. Set your hope fully on the grace to be given you at the revelation of Jesus Christ. "
+        },
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "As obedient children, do not conform to the passions of your former ignorance. "
+        },
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "But just as He who called you is holy, so be holy in all you do. "
+        },
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "For it is written: \"Be holy, because I am holy.\""
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 17 },
+        {
+          "kind": "t",
+          "text": "Since you call on a Father who judges each one's work impartially, conduct yourselves in reverent fear during your stay as foreigners. "
+        },
+        { "kind": "v", "n": 18 },
+        {
+          "kind": "t",
+          "text": "For you know that it was not with perishable things such as silver or gold that you were redeemed from the empty way of life you inherited from your forefathers, "
+        },
+        { "kind": "v", "n": 19 },
+        {
+          "kind": "t",
+          "text": "but with the precious blood of Christ, a lamb without blemish or spot. "
+        },
+        { "kind": "v", "n": 20 },
+        {
+          "kind": "t",
+          "text": "He was known before the foundation of the world, but was revealed in the last times for your sake."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 21 },
+        {
+          "kind": "t",
+          "text": "Through Him you believe in God, who raised Him from the dead and glorified Him; and so your faith and hope are in God."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "The Enduring Word"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 22 },
+        {
+          "kind": "t",
+          "text": "Since you have purified your souls by obedience to the truth so that you have a genuine love for your brothers, love one another deeply, from a pure heart. "
+        },
+        { "kind": "v", "n": 23 },
+        {
+          "kind": "t",
+          "text": "For you have been born again, not of perishable seed, but of imperishable, through the living and enduring word of God. "
+        },
+        { "kind": "v", "n": 24 },
+        {
+          "kind": "t",
+          "text": "For,"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "\"All flesh is like grass," }]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "and all its glory like the flowers of the field;"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "the grass withers and the flowers fall," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "v", "n": 25 },
+            {
+              "kind": "t",
+              "text": "but the word of the Lord stands forever.\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "And this is the word that was proclaimed to you."
+        }
+      ]
+    }
+  ]
+}

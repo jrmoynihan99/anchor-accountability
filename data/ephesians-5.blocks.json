@@ -1,0 +1,261 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Imitators of God"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "Be imitators of God, therefore, as beloved children, "
+        },
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "and walk in love, just as Christ loved us and gave Himself up for us as a fragrant sacrificial offering to God."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "But among you, as is proper among the saints, there must not be even a hint of sexual immorality, or of any kind of impurity, or of greed. "
+        },
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "Nor should there be obscenity, foolish talk, or crude joking, which are out of character, but rather thanksgiving. "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "For of this you can be sure: No immoral, impure, or greedy person (that is, an idolater) has any inheritance in the kingdom of Christ and of God."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "Let no one deceive you with empty words, for because of such things the wrath of God is coming on the sons of disobedience. "
+        },
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "Therefore do not be partakers with them."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Children of Light"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "For you were once darkness, but now you are light in the Lord. Walk as children of light, "
+        },
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "for the fruit of the light consists in all goodness, righteousness, and truth. "
+        },
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "Test and prove what pleases the Lord."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "Have no fellowship with the fruitless deeds of darkness, but rather expose them. "
+        },
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "For it is shameful even to mention what the disobedient do in secret. "
+        },
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "But everything exposed by the light becomes visible, for everything that is illuminated becomes a light itself. "
+        },
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "So it is said:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "\"Wake up, O sleeper," }]
+        },
+        {
+          "indent": 2,
+          "segments": [{ "kind": "t", "text": "rise up from the dead," }]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "and Christ will shine on you.\"" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "Pay careful attention, then, to how you walk, not as unwise but as wise, "
+        },
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "redeeming the time, because the days are evil. "
+        },
+        { "kind": "v", "n": 17 },
+        {
+          "kind": "t",
+          "text": "Therefore do not be foolish, but understand what the Lord's will is. "
+        },
+        { "kind": "v", "n": 18 },
+        {
+          "kind": "t",
+          "text": "Do not get drunk on wine, which leads to reckless indiscretion. Instead, be filled with the Spirit."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 19 },
+        {
+          "kind": "t",
+          "text": "Speak to one another with psalms, hymns, and spiritual songs. Sing and make music in your hearts to the Lord, "
+        },
+        { "kind": "v", "n": 20 },
+        {
+          "kind": "t",
+          "text": "always giving thanks to God the Father for everything in the name of our Lord Jesus Christ."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wives and Husbands"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 21 },
+        {
+          "kind": "t",
+          "text": "Submit to one another out of reverence for Christ."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 22 },
+        {
+          "kind": "t",
+          "text": "Wives, submit to your husbands as to the Lord. "
+        },
+        { "kind": "v", "n": 23 },
+        {
+          "kind": "t",
+          "text": "For the husband is the head of the wife as Christ is the head of the church, His body, of which He is the Savior. "
+        },
+        { "kind": "v", "n": 24 },
+        {
+          "kind": "t",
+          "text": "Now as the church submits to Christ, so also wives should submit to their husbands in everything."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 25 },
+        {
+          "kind": "t",
+          "text": "Husbands, love your wives, just as Christ loved the church and gave Himself up for her "
+        },
+        { "kind": "v", "n": 26 },
+        {
+          "kind": "t",
+          "text": "to sanctify her, cleansing her by the washing with water through the word, "
+        },
+        { "kind": "v", "n": 27 },
+        {
+          "kind": "t",
+          "text": "and to present her to Himself as a glorious church, without stain or wrinkle or any such blemish, but holy and blameless."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 28 },
+        {
+          "kind": "t",
+          "text": "In the same way, husbands ought to love their wives as their own bodies. He who loves his wife loves himself. "
+        },
+        { "kind": "v", "n": 29 },
+        {
+          "kind": "t",
+          "text": "Indeed, no one ever hated his own body, but he nourishes and cherishes it, just as Christ does the church. "
+        },
+        { "kind": "v", "n": 30 },
+        {
+          "kind": "t",
+          "text": "For we are members of His body."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 31 },
+        {
+          "kind": "t",
+          "text": "\"For this reason a man will leave his father and mother and be united to his wife, and the two will become one flesh.\" "
+        },
+        { "kind": "v", "n": 32 },
+        {
+          "kind": "t",
+          "text": "This mystery is profound, but I am speaking about Christ and the church. "
+        },
+        { "kind": "v", "n": 33 },
+        {
+          "kind": "t",
+          "text": "Nevertheless, each one of you also must love his wife as he loves himself, and the wife must respect her husband."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Sabbath Rest"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "Therefore, while the promise of entering His rest still stands, let us be careful that none of you be deemed to have fallen short of it. "
+        },
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "For we also received the good news just as they did; but the message they heard was of no value to them, since they did not share the faith of those who comprehended it."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "Now we who have believed enter that rest. As for the others, it is just as God has said:"
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "\"So I swore on oath in My anger," }
+          ]
+        },
+        {
+          "indent": 2,
+          "segments": [
+            { "kind": "t", "text": "'They shall never enter My rest.'\"" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "And yet His works have been finished since the foundation of the world. "
+        },
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "For somewhere He has spoken about the seventh day in this manner: \"And on the seventh day God rested from all His works.\" "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "And again, as He says in the passage above: \"They shall never enter My rest.\""
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "Since, then, it remains for some to enter His rest, and since those who formerly heard the good news did not enter because of their disobedience, "
+        },
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "God again designated a certain day as \"Today,\" when a long time later He spoke through David as was just stated: \"Today, if you hear His voice, do not harden your hearts.\""
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "For if Joshua had given them rest, God would not have spoken later about another day. "
+        },
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "There remains, then, a Sabbath rest for the people of God. "
+        },
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "For whoever enters God's rest also rests from his own work, just as God did from His. "
+        },
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "Let us, therefore, make every effort to enter that rest, so that no one will fall by following the same pattern of disobedience."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "The Living Word"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "For the word of God is living and active. Sharper than any double-edged sword, it pierces even to dividing soul and spirit, joints and marrow. It judges the thoughts and intentions of the heart. "
+        },
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "Nothing in all creation is hidden from God's sight; everything is uncovered and exposed before the eyes of Him to whom we must give account."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "Therefore, since we have a great high priest who has passed through the heavens, Jesus the Son of God, let us hold firmly to what we profess. "
+        },
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "For we do not have a high priest who is unable to sympathize with our weaknesses, but we have one who was tempted in every way that we are, yet was without sin. "
+        },
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "Let us then approach the throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need."
+        }
+      ]
+    }
+  ]
+}

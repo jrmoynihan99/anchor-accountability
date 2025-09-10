@@ -1,0 +1,284 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Heavens Declare the Glory of God"
+    },
+    {
+      "type": "subheading",
+      "text": "For the choirmaster. A Psalm of David."
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 1 },
+            { "kind": "t", "text": "The heavens declare the glory of God;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "the skies proclaim the work of His hands." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 2 },
+            { "kind": "t", "text": "Day after day they pour forth speech;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "night after night they reveal knowledge." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 3 },
+            { "kind": "t", "text": "Without speech or language," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "without a sound to be heard," }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 4 },
+            {
+              "kind": "t",
+              "text": "their voice has gone out into all the earth,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "their words to the ends of the world." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "In the heavens He has pitched" }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "a tent for the sun." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 5 },
+            {
+              "kind": "t",
+              "text": "Like a bridegroom emerging from his chamber,"
+            }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            {
+              "kind": "t",
+              "text": "like a champion rejoicing to run his course,"
+            }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 6 },
+            { "kind": "t", "text": "it rises at one end of the heavens" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and runs its circuit to the other;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "nothing is deprived of its warmth." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 7 },
+            { "kind": "t", "text": "The Law of the LORD is perfect," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "reviving the soul;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "t", "text": "the testimony of the LORD is trustworthy," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "making wise the simple." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 8 },
+            { "kind": "t", "text": "The precepts of the LORD are right," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "bringing joy to the heart;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "t", "text": "the commandments of the LORD are radiant," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "giving light to the eyes." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 9 },
+            { "kind": "t", "text": "The fear of the LORD is pure," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "enduring forever;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "t", "text": "the judgments of the LORD are true," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "being altogether righteous." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 10 },
+            { "kind": "t", "text": "They are more precious than gold," }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "than much pure gold;" }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "they are sweeter than honey," }]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "than honey from the comb." }]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 11 },
+            { "kind": "t", "text": "By them indeed Your servant is warned;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "in keeping them is great reward." }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "poetry",
+      "lines": [
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 12 },
+            { "kind": "t", "text": "Who can discern his own errors?" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "Cleanse me from my hidden faults." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 13 },
+            { "kind": "t", "text": "Keep Your servant also from willful sins;" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [{ "kind": "t", "text": "may they not rule over me." }]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "Then I will be blameless" }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and cleansed of great transgression." }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [
+            { "kind": "v", "n": 14 },
+            { "kind": "t", "text": "May the words of my mouth" }
+          ]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "and the meditation of my heart" }
+          ]
+        },
+        {
+          "indent": 0,
+          "segments": [{ "kind": "t", "text": "be pleasing in Your sight," }]
+        },
+        {
+          "indent": 1,
+          "segments": [
+            { "kind": "t", "text": "O LORD, my Rock and my Redeemer." }
+          ]
+        }
+      ]
+    }
+  ]
+}

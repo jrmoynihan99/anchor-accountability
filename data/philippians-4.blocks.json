@@ -1,0 +1,201 @@
+{
+  "schema": "v1",
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Rejoice in the Lord"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 1 },
+        {
+          "kind": "t",
+          "text": "Therefore, my brothers, whom I love and long for, my joy and crown, that is how you must stand firm in the Lord, my beloved."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 2 },
+        {
+          "kind": "t",
+          "text": "I urge Euodia and Syntyche to agree with each other in the Lord. "
+        },
+        { "kind": "v", "n": 3 },
+        {
+          "kind": "t",
+          "text": "Yes, and I ask you, my true yokefellow, to help these women who have contended at my side for the gospel, along with Clement and the rest of my fellow workers, whose names are in the Book of Life."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 4 },
+        {
+          "kind": "t",
+          "text": "Rejoice in the Lord always. I will say it again: Rejoice! "
+        },
+        { "kind": "v", "n": 5 },
+        {
+          "kind": "t",
+          "text": "Let your gentleness be apparent to all. The Lord is near."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 6 },
+        {
+          "kind": "t",
+          "text": "Be anxious for nothing, but in everything, by prayer and petition, with thanksgiving, present your requests to God. "
+        },
+        { "kind": "v", "n": 7 },
+        {
+          "kind": "t",
+          "text": "And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 8 },
+        {
+          "kind": "t",
+          "text": "Finally, brothers, whatever is true, whatever is honorable, whatever is right, whatever is pure, whatever is lovely, whatever is admirable—if anything is excellent or praiseworthy—think on these things. "
+        },
+        { "kind": "v", "n": 9 },
+        {
+          "kind": "t",
+          "text": "Whatever you have learned or received or heard from me, or seen in me, put it into practice. And the God of peace will be with you."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "The Generosity of the Philippians"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 10 },
+        {
+          "kind": "t",
+          "text": "Now I rejoice greatly in the Lord that at last you have revived your concern for me. You were indeed concerned, but you had no opportunity to show it. "
+        },
+        { "kind": "v", "n": 11 },
+        {
+          "kind": "t",
+          "text": "I am not saying this out of need, for I have learned to be content regardless of my circumstances. "
+        },
+        { "kind": "v", "n": 12 },
+        {
+          "kind": "t",
+          "text": "I know how to live humbly, and I know how to abound. In any and every situation I have learned the secret of being filled and being hungry, of having plenty and having need. "
+        },
+        { "kind": "v", "n": 13 },
+        {
+          "kind": "t",
+          "text": "I can do all things through Christ who gives me strength."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 14 },
+        {
+          "kind": "t",
+          "text": "Nevertheless, you have done well to share in my affliction. "
+        },
+        { "kind": "v", "n": 15 },
+        {
+          "kind": "t",
+          "text": "And as you Philippians know, in the early days of the gospel, when I left Macedonia, no church but you partnered with me in the matter of giving and receiving. "
+        },
+        { "kind": "v", "n": 16 },
+        {
+          "kind": "t",
+          "text": "For even while I was in Thessalonica, you provided for my needs again and again."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 17 },
+        {
+          "kind": "t",
+          "text": "Not that I am seeking a gift, but I am looking for the fruit that may be credited to your account. "
+        },
+        { "kind": "v", "n": 18 },
+        {
+          "kind": "t",
+          "text": "I have all I need and more, now that I have received your gifts from Epaphroditus. They are a fragrant offering, an acceptable sacrifice, well-pleasing to God."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 19 },
+        {
+          "kind": "t",
+          "text": "And my God will supply all your needs according to His glorious riches in Christ Jesus. "
+        },
+        { "kind": "v", "n": 20 },
+        {
+          "kind": "t",
+          "text": "To our God and Father be glory forever and ever. Amen."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Final Greetings"
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 21 },
+        {
+          "kind": "t",
+          "text": "Greet all the saints in Christ Jesus."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        {
+          "kind": "t",
+          "text": "The brothers who are with me send you greetings."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 22 },
+        {
+          "kind": "t",
+          "text": "All the saints send you greetings, especially those from the household of Caesar."
+        }
+      ]
+    },
+    {
+      "type": "para",
+      "segments": [
+        { "kind": "v", "n": 23 },
+        {
+          "kind": "t",
+          "text": "The grace of the Lord Jesus Christ be with your spirit."
+        }
+      ]
+    }
+  ]
+}
