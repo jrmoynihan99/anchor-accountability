@@ -60,7 +60,7 @@ export function StreakCardContent({
     >
       <IconSymbol
         name="calendar"
-        color={colors.icon}
+        color={colors.textSecondary}
         size={20}
         style={{ marginRight: 8 }}
       />
