@@ -40,7 +40,7 @@ export function ReachOutRejectedScreen({
     onClose();
     setTimeout(() => {
       setModalIntent("settingsGuidelines");
-    }, 100); // Small delay to ensure current modal closes first
+    }, 300); // Small delay to ensure current modal closes first
   };
 
   return (
@@ -74,7 +74,7 @@ export function ReachOutRejectedScreen({
         }}
       >
         Your message couldn't be sent because it doesn't align with our
-        community guidelines. Please try rephrasing your request.
+        community guidelines.
       </ThemedText>
 
       {/* Show original message if it exists */}
@@ -145,10 +145,10 @@ export function ReachOutRejectedScreen({
           <Ionicons
             name="information-circle"
             size={18}
-            color={colors.tint}
+            color={colors.textMuted}
             style={{ marginRight: 8 }}
           />
-          <ThemedText type="buttonLarge" style={{ color: colors.tint }}>
+          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
             View Guidelines
           </ThemedText>
         </TouchableOpacity>

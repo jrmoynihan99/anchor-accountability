@@ -46,7 +46,7 @@ export default function TabLayout() {
       setTimeout(() => {
         if (settingsModalOpenRef.current) settingsModalOpenRef.current();
         setModalIntent(null); // clear after use
-      }, 250);
+      }, 300);
     }
   }, [modalIntent, setModalIntent]);
 

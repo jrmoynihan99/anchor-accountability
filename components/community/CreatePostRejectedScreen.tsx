@@ -1,5 +1,6 @@
 // CreatePostRejectedScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -20,6 +21,7 @@ export function CreatePostRejectedScreen({
   originalContent,
 }: CreatePostRejectedScreenProps) {
   const { colors, effectiveTheme } = useTheme();
+  const { setModalIntent } = useModalIntent();
 
   // Main color for icons/titles based on theme
   const mainTextColor = effectiveTheme === "dark" ? colors.text : colors.text;
@@ -32,6 +34,15 @@ export function CreatePostRejectedScreen({
   const handleClosePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onClose();
+  };
+
+  const handleViewGuidelinesPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Close current modal and trigger settings guidelines intent
+    onClose();
+    setTimeout(() => {
+      setModalIntent("settingsGuidelines");
+    }, 300); // Small delay to ensure current modal closes first
   };
 
   return (
@@ -142,6 +153,27 @@ export function CreatePostRejectedScreen({
 
         <TouchableOpacity
           style={[
+            styles.guidelinesButton,
+            {
+              backgroundColor: colors.modalCardBackground,
+              borderColor: colors.modalCardBorder,
+            },
+          ]}
+          onPress={handleViewGuidelinesPress}
+        >
+          <Ionicons
+            name="information-circle"
+            size={18}
+            color={colors.textMuted}
+            style={{ marginRight: 8 }}
+          />
+          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
+            View Guidelines
+          </ThemedText>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
             styles.closeButton,
             {
               backgroundColor: colors.modalCardBackground,
@@ -150,7 +182,7 @@ export function CreatePostRejectedScreen({
           ]}
           onPress={handleClosePress}
         >
-          <ThemedText type="buttonLarge" style={{ color: colors.text }}>
+          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
             Cancel
           </ThemedText>
         </TouchableOpacity>
@@ -190,6 +222,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  guidelinesButton: {
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
   },
   closeButton: {
     borderRadius: 16,
