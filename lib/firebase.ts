@@ -25,14 +25,6 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FB_APP_ID,
 };
 
-// TEMPORARY DEBUG - Add this after firebaseConfig
-console.log("=== FIREBASE CONFIG DEBUG ===");
-console.log("API Key:", firebaseConfig.apiKey ? "EXISTS" : "MISSING");
-console.log("Auth Domain:", firebaseConfig.authDomain);
-console.log("Project ID:", firebaseConfig.projectId);
-console.log("App ID:", firebaseConfig.appId ? "EXISTS" : "MISSING");
-console.log("==============================");
-
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 // Initialize Auth with AsyncStorage persistence using dynamic import
@@ -44,13 +36,7 @@ try {
   auth = initializeAuth(app, {
     persistence: getReactNativePersistence(AsyncStorage),
   });
-  console.log("✅ Firebase Auth initialized with AsyncStorage persistence");
 } catch (error) {
-  // If auth is already initialized, get the existing instance
-  console.log(
-    "⚠️  Auth already initialized, getting existing instance:",
-    error
-  );
   auth = getAuth(app);
 }
 
@@ -202,7 +188,6 @@ export async function markEncouragementAsRead(pleaId: string): Promise<void> {
     await updateDoc(pleaRef, {
       unreadEncouragementCount: 0,
     });
-    console.log(`✅ Marked encouragements as read for plea ${pleaId}`);
   } catch (error) {
     console.error("❌ Error marking encouragements as read:", error);
     throw error;

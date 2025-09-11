@@ -249,7 +249,6 @@ export function usePostComments(postId: string | null) {
         commentData
       );
 
-      console.log("Comment posted with ID:", docRef.id);
       return true;
     } catch (err) {
       console.error("Error posting comment:", err);

@@ -2,7 +2,7 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
-import { ThemedText } from "../../../components/ThemedText";
+import { ThemedText } from "../ThemedText";
 
 export function IntroHeader() {
   const { colors } = useTheme();

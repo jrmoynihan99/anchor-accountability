@@ -167,8 +167,6 @@ export function CreatePostModal({
               const data = doc.data();
               const status = data.status;
 
-              console.log(`Post ${postId} status updated to: ${status}`);
-
               if (status === "approved") {
                 transitionToScreen("confirmation");
                 // Auto-close after 3 seconds

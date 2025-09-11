@@ -35,7 +35,6 @@ export function usePostActions() {
         await updateDoc(postRef, {
           likeCount: increment(-1),
         });
-        console.log("Post unliked");
       } else {
         // Like
         await setDoc(likeRef, {
@@ -44,7 +43,6 @@ export function usePostActions() {
         await updateDoc(postRef, {
           likeCount: increment(1),
         });
-        console.log("Post liked");
       }
 
       return true;
@@ -85,7 +83,6 @@ export function usePostActions() {
         updatedAt: serverTimestamp(),
       });
 
-      console.log("Post edited successfully");
       return true;
     } catch (err) {
       console.error("Error editing post:", err);
@@ -119,7 +116,6 @@ export function usePostActions() {
         updatedAt: serverTimestamp(),
       });
 
-      console.log("Post deleted successfully");
       return true;
     } catch (err) {
       console.error("Error deleting post:", err);
@@ -143,7 +139,6 @@ export function usePostActions() {
     try {
       // You could create a reports collection later
       // For now, just log it
-      console.log(`Post ${postId} reported for: ${reason}`);
 
       // In the future:
       // await addDoc(collection(db, "reports"), {

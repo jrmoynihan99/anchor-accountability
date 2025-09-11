@@ -251,13 +251,6 @@ export function PleaResponseInputScreen({
           showBorder={false}
         />
 
-        {/* Open to Chat Toggle */}
-        <OpenToChatToggle
-          isOpen={isOpenToChat}
-          onToggle={onToggleOpenToChat}
-          user={anonymousUsername}
-        />
-
         {/* Send Button */}
         <View style={styles.sendButtonContainer}>
           <TouchableOpacity
@@ -303,6 +296,11 @@ export function PleaResponseInputScreen({
             </View>
           )}
         </View>
+        <OpenToChatToggle
+          isOpen={isOpenToChat}
+          onToggle={onToggleOpenToChat}
+          user={anonymousUsername}
+        />
       </View>
     </ScrollView>
   );
@@ -423,7 +421,8 @@ const styles = StyleSheet.create({
 
   // Send Button Styles
   sendButtonContainer: {
-    marginTop: 20,
+    marginTop: 12,
+    marginBottom: 12,
   },
   sendButton: {
     flexDirection: "row",

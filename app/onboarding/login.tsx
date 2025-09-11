@@ -16,8 +16,8 @@ import Animated, {
   useDerivedValue,
   withTiming,
 } from "react-native-reanimated";
-import { LoginForm } from "./components/LoginForm";
-import { LoginHeader } from "./components/LoginHeader";
+import { LoginForm } from "../../components/onboarding/LoginForm";
+import { LoginHeader } from "../../components/onboarding/LoginHeader";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");

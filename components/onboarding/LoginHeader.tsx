@@ -2,8 +2,8 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { BackButton } from "../../../components/BackButton";
-import { ThemedText } from "../../../components/ThemedText";
+import { BackButton } from "../BackButton";
+import { ThemedText } from "../ThemedText";
 
 interface LoginHeaderProps {
   isSignUp: boolean;

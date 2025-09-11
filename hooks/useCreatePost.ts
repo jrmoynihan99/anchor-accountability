@@ -57,7 +57,6 @@ export function useCreatePost() {
         isDeleted: false,
       });
 
-      console.log("Post created with ID:", docRef.id);
       return docRef.id;
     } catch (err) {
       console.error("Error creating post:", err);

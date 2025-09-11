@@ -4,10 +4,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StatusBar, StyleSheet, View } from "react-native";
-import { IntroContinueButton } from "./components/IntroContinueButton";
-import { IntroFeaturesCard } from "./components/IntroFeaturesCard";
-import { IntroHeader } from "./components/IntroHeader";
-import { IntroScrollableMessage } from "./components/IntroScrollableMessage";
+import { IntroContinueButton } from "../../components/onboarding/IntroContinueButton";
+import { IntroFeaturesCard } from "../../components/onboarding/IntroFeaturesCard";
+import { IntroHeader } from "../../components/onboarding/IntroHeader";
+import { IntroScrollableMessage } from "../../components/onboarding/IntroScrollableMessage";
 
 const { width, height } = Dimensions.get("window");
 

@@ -100,11 +100,6 @@ export function FloatingSettingsModal({
     }, 300);
   };
 
-  const handleSignOut = () => {
-    // TODO: Implement sign out functionality
-    console.log("Sign out pressed");
-  };
-
   // Text content for different sections
   const getTextContent = (
     type: "privacy" | "terms" | "about" | "community"
@@ -309,7 +304,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
-            <SignOutButton onPress={handleSignOut} />
+            <SignOutButton />
           </View>
         </ScrollView>
       </Animated.View>

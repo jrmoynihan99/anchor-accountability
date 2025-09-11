@@ -50,49 +50,17 @@ export default function HomeScreen() {
     }
   }, [modalIntent, setModalIntent]);
 
-  // Debug logging for authentication and data
-  useEffect(() => {
-    console.log(`🔍 HomeScreen: Current user:`, auth.currentUser?.uid);
-    console.log(`🔍 HomeScreen: User email:`, auth.currentUser?.email);
-    console.log(`🔍 HomeScreen: Streak data length:`, streakData.length);
-    console.log(`🔍 HomeScreen: Streak data:`, streakData);
-
-    if (streakData.length > 0) {
-      const dateToAsk = getDateToAskAbout(streakData);
-    }
-  }, [streakData]);
-
   const handleStreakCheckIn = async (status: "success" | "fail") => {
-    console.log(
-      `🔍 HomeScreen: handleStreakCheckIn called with status:`,
-      status
-    );
-
     // Find the date we're supposed to be checking in for
     const dateToAsk = getDateToAskAbout(streakData);
-    console.log(`🔍 HomeScreen: Date to ask about:`, dateToAsk);
 
     if (dateToAsk) {
-      // Update the specific date that was being asked about
-      console.log(
-        `🔍 HomeScreen: Updating date ${dateToAsk.date} with status ${status}`
-      );
       await updateStreakStatus(dateToAsk.date, status);
     } else {
       // Fallback: update today's date (though this shouldn't happen in normal flow)
       const today = new Date().toISOString().split("T")[0];
-      console.log(
-        `🔍 HomeScreen: No date to ask about, updating today (${today}) with status ${status}`
-      );
       await updateStreakStatus(today, status);
     }
-
-    console.log(
-      "Checked in with status:",
-      status,
-      "for date:",
-      dateToAsk?.date
-    );
   };
 
   return (

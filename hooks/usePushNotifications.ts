@@ -16,12 +16,10 @@ export async function registerForPushNotificationsAsync() {
     }
 
     if (finalStatus !== "granted") {
-      console.log("❌ Notification permissions not granted");
       return null;
     }
 
     const token = (await Notifications.getExpoPushTokenAsync()).data;
-    console.log("✅ Expo Push Token:", token);
 
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
@@ -67,7 +65,6 @@ export async function savePushTokenToFirestore() {
       },
       { merge: true }
     );
-    console.log("✅ Push token saved to Firestore for user:", uid);
   } catch (err) {
     console.error("❌ Error saving push token to Firestore:", err);
   }

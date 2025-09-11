@@ -19,11 +19,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ThemedText } from "../../../components/ThemedText";
-import { useTheme } from "../../../hooks/useTheme";
-import { ensureSignedIn } from "../../../lib/auth";
-import { auth } from "../../../lib/firebase";
-import { setHasOnboarded } from "../../../lib/onboarding";
+import { useTheme } from "../../hooks/useTheme";
+import { ensureSignedIn } from "../../lib/auth";
+import { auth } from "../../lib/firebase";
+import { setHasOnboarded } from "../../lib/onboarding";
+import { ThemedText } from "../ThemedText";
 
 type LoadingButton = "auth" | "guest" | null;
 

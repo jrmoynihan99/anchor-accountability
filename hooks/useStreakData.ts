@@ -22,28 +22,19 @@ export function useStreakData() {
 
   // Listen to auth state changes
   useEffect(() => {
-    console.log(`🔍 useStreakData: Setting up auth state listener`);
-
     const unsubAuth = onAuthStateChanged(auth, (user) => {
-      console.log(`🔍 useStreakData: Auth state changed, user:`, user?.uid);
       setUser(user);
     });
 
     return () => {
-      console.log(`🔍 useStreakData: Cleaning up auth listener`);
       unsubAuth();
     };
   }, []);
 
   // Function to ensure recent days exist
   const ensureRecentDaysExist = async (uid: string) => {
-    console.log(`🔍 ensureRecentDaysExist: Current user UID:`, uid);
-
     const today = getLocalDateString(0);
     const yesterday = getLocalDateString(-1);
-
-    console.log(`🔍 ensureRecentDaysExist: Today's date:`, today);
-    console.log(`🔍 ensureRecentDaysExist: Yesterday's date:`, yesterday);
 
     // Check and create today's document
     const todayRef = doc(db, "users", uid, "streak", today);
@@ -52,35 +43,17 @@ export function useStreakData() {
     try {
       // Check today
       const todaySnap = await getDoc(todayRef);
-      console.log(
-        `🔍 ensureRecentDaysExist: Today document exists?`,
-        todaySnap.exists()
-      );
 
       if (!todaySnap.exists()) {
-        console.log(
-          `🔍 ensureRecentDaysExist: Creating pending document for today`
-        );
         await setDoc(todayRef, { status: "pending" });
       }
 
       // Check yesterday
       const yesterdaySnap = await getDoc(yesterdayRef);
-      console.log(
-        `🔍 ensureRecentDaysExist: Yesterday document exists?`,
-        yesterdaySnap.exists()
-      );
 
       if (!yesterdaySnap.exists()) {
-        console.log(
-          `🔍 ensureRecentDaysExist: Creating pending document for yesterday`
-        );
         await setDoc(yesterdayRef, { status: "pending" });
       }
-
-      console.log(
-        `🔍 ensureRecentDaysExist: Successfully ensured recent days exist`
-      );
     } catch (error) {
       console.error(`🔍 ensureRecentDaysExist: Error:`, error);
     }
@@ -91,9 +64,6 @@ export function useStreakData() {
     const currentDate = getDate(0);
 
     if (currentDate !== lastCheckedDate.current) {
-      console.log(
-        `🔍 Date changed from ${lastCheckedDate.current} to ${currentDate}, refreshing data...`
-      );
       lastCheckedDate.current = currentDate;
 
       if (user?.uid) {
@@ -106,7 +76,6 @@ export function useStreakData() {
   useEffect(() => {
     const handleAppStateChange = (nextAppState: string) => {
       if (nextAppState === "active") {
-        console.log(`🔍 App became active, checking if date changed...`);
         checkDateAndRefresh();
       }
     };
@@ -135,36 +104,25 @@ export function useStreakData() {
   // Load + watch all streak records when user changes
   useEffect(() => {
     const uid = user?.uid;
-    console.log(`🔍 useStreakData: User effect triggered, UID:`, uid);
 
     if (!uid) {
-      console.log(`🔍 useStreakData: No user authenticated, clearing data`);
       setStreakData([]);
       return;
     }
 
     const ref = collection(db, "users", uid, "streak");
-    console.log(
-      `🔍 useStreakData: Setting up listener for path: users/${uid}/streak`
-    );
 
     const unsub = onSnapshot(
       ref,
       (snapshot) => {
-        console.log(
-          `🔍 useStreakData: Snapshot received with ${snapshot.docs.length} documents`
-        );
-
         const data: StreakEntry[] = snapshot.docs.map((doc) => {
           const entry = {
             date: doc.id,
             status: doc.data().status,
           };
-          console.log(`🔍 useStreakData: Document ${doc.id}:`, doc.data());
           return entry;
         });
 
-        console.log(`🔍 useStreakData: Final streak data:`, data);
         setStreakData(data);
       },
       (error) => {
@@ -173,7 +131,6 @@ export function useStreakData() {
     );
 
     return () => {
-      console.log(`🔍 useStreakData: Cleaning up firestore listener`);
       unsub();
     };
   }, [user?.uid]);
@@ -192,26 +149,15 @@ export function useStreakData() {
     status: "success" | "fail"
   ) => {
     const uid = user?.uid;
-    console.log(`🔍 updateStreakStatus: Current user UID:`, uid);
-    console.log(
-      `🔍 updateStreakStatus: Updating date ${date} to status ${status}`
-    );
 
     if (!uid) {
-      console.log(
-        `🔍 updateStreakStatus: No user authenticated, returning early`
-      );
       return;
     }
 
     const ref = doc(db, "users", uid, "streak", date);
-    console.log(
-      `🔍 updateStreakStatus: Updating document at: users/${uid}/streak/${date}`
-    );
 
     try {
       await setDoc(ref, { status });
-      console.log(`🔍 updateStreakStatus: Successfully updated document`);
     } catch (error) {
       console.error(`🔍 updateStreakStatus: Error:`, error);
     }

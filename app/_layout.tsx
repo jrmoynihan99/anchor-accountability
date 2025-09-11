@@ -140,11 +140,6 @@ function AppContent() {
   const inAuthGroup = segments[0] === "onboarding";
 
   useEffect(() => {
-    console.log("--🔍 Layout useEffect fired", {
-      spectralLoaded,
-      navigationStateKey: navigationState?.key,
-      isNavigationReady,
-    });
     if (!spectralLoaded || !navigationState?.key) return;
     const checkAuth = async () => {
       try {
