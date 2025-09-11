@@ -1,6 +1,8 @@
 import { ThemedText } from "@/components/ThemedText";
+import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useStreakVisibility } from "@/hooks/useStreakVisibility";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
@@ -35,6 +37,12 @@ export function AppearanceSection() {
     setThemeMode,
     setColorPalette,
   } = useTheme();
+
+  const {
+    streakVisible,
+    setStreakVisible,
+    loading: streakLoading,
+  } = useStreakVisibility();
 
   // Use textSecondary for all radio borders unless selected
   const getRadioBorderColor = (selected: boolean) =>
@@ -158,6 +166,45 @@ export function AppearanceSection() {
           </View>
         </TouchableOpacity>
       ))}
+
+      {/* Streak Visibility */}
+      <ThemedText
+        type="bodyMedium"
+        style={[styles.settingTitle, { marginTop: 20 }]}
+      >
+        Privacy
+      </ThemedText>
+
+      <View style={styles.settingItem}>
+        <View style={styles.settingContent}>
+          <View style={styles.settingTextContainer}>
+            <View style={styles.settingLabelWithIcon}>
+              <Ionicons
+                name="trophy-outline"
+                size={16}
+                color={colors.text}
+                style={{ marginRight: 8 }}
+              />
+              <ThemedText type="body" style={styles.settingLabel}>
+                Show my streak to others
+              </ThemedText>
+            </View>
+            <ThemedText
+              type="caption"
+              lightColor={colors.textSecondary}
+              darkColor={colors.textSecondary}
+              style={styles.settingDescription}
+            >
+              Other users can see your streak badge
+            </ThemedText>
+          </View>
+          <ThemedToggle
+            value={streakVisible}
+            onValueChange={(value) => !streakLoading && setStreakVisible(value)}
+            disabled={streakLoading}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -211,5 +258,30 @@ const styles = StyleSheet.create({
     marginRight: 12,
     marginLeft: 1,
     borderWidth: 1,
+  },
+  settingItem: {
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "rgba(128, 128, 128, 0.2)",
+  },
+  settingContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  settingTextContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  settingLabel: {
+    marginBottom: 2,
+  },
+  settingDescription: {
+    opacity: 0.8,
+    lineHeight: 16,
+  },
+  settingLabelWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 });

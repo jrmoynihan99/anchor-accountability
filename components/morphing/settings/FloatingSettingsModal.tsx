@@ -307,8 +307,8 @@ Thank you for helping us keep this a safe and welcoming space!`,
           <View style={styles.settingsSection}>
             <NotificationsSection />
             <AppearanceSection />
-            <PrivacySection onNavigateToContent={transitionToTextContent} />
             <AboutSection onNavigateToContent={transitionToTextContent} />
+            <PrivacySection onNavigateToContent={transitionToTextContent} />
             <SignOutButton onPress={handleSignOut} />
           </View>
         </ScrollView>

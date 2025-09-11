@@ -303,10 +303,10 @@ export const Colors = {
       textMuted: "rgba(232, 240, 232, 0.6)",
 
       background: "#1F2B20", // Dark forest
-      tint: "#A8B8A2", // Light sage
+      tint: "#7A9471", // Light sage
       icon: "#CBD5C9", // Very light sage
       tabIconDefault: "#CBD5C9",
-      tabIconSelected: "#A8B8A2",
+      tabIconSelected: "#7A9471",
 
       // --- UI Elements ---
       cardBackground: "#2A3A2B", // Medium forest

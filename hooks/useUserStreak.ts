@@ -4,7 +4,15 @@ import {
   type StreakEntry,
 } from "@/components/morphing/home/streak/streakUtils";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, limit, orderBy, query } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function useUserStreak(userId: string) {
@@ -23,6 +31,20 @@ export function useUserStreak(userId: string) {
       try {
         setLoading(true);
         setError(null);
+
+        // First check if the user has streak visibility enabled
+        const userRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          // If streakVisible is explicitly set to false, don't show streak
+          if (userData.streakVisible === false) {
+            setStreak(0);
+            setLoading(false);
+            return;
+          }
+        }
 
         // Get the user's streak data using your existing structure
         const streakRef = collection(db, "users", userId, "streak");
@@ -78,6 +100,18 @@ export function useMultipleUserStreaks(userIds: string[]) {
         // Batch fetch user streaks
         const streakPromises = userIds.map(async (userId) => {
           try {
+            // Check streak visibility first
+            const userRef = doc(db, "users", userId);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              // If streakVisible is explicitly set to false, return 0
+              if (userData.streakVisible === false) {
+                return { userId, streak: 0 };
+              }
+            }
+
             const streakRef = collection(db, "users", userId, "streak");
             const streakQuery = query(
               streakRef,
