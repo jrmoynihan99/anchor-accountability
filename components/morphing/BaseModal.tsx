@@ -58,7 +58,7 @@ export function BaseModal({
   useEffect(() => {
     if (isVisible) {
       // 100ms delay ensures BlurView initializes properly
-      setTimeout(() => setBlurReady(true), 40);
+      setTimeout(() => setBlurReady(true), 50);
     } else {
       setBlurReady(false);
     }

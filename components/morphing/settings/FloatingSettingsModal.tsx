@@ -26,6 +26,7 @@ interface FloatingSettingsModalProps {
   progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+  initialScreen?: "settings" | "guidelines";
 }
 
 type ScreenType = "settings" | "textContent";
@@ -40,12 +41,27 @@ export function FloatingSettingsModal({
   progress,
   modalAnimatedStyle,
   close,
+  initialScreen = "settings",
 }: FloatingSettingsModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("settings");
   const [textContentData, setTextContentData] =
     useState<TextContentData | null>(null);
   const screenTransition = useSharedValue(0);
+
+  // Initialize modal state based on initialScreen prop
+  useEffect(() => {
+    if (isVisible && initialScreen === "guidelines") {
+      const content = getTextContent("community");
+      setTextContentData({ title: "Guidelines", content: content.content });
+      setCurrentScreen("textContent");
+      screenTransition.value = 1; // Skip animation, go directly to guidelines
+    } else if (isVisible && initialScreen === "settings") {
+      // Ensure we're on settings screen
+      setCurrentScreen("settings");
+      screenTransition.value = 0;
+    }
+  }, [isVisible, initialScreen]);
 
   // Reset modal state when closed
   useEffect(() => {
@@ -54,14 +70,14 @@ export function FloatingSettingsModal({
         setCurrentScreen("settings");
         setTextContentData(null);
         screenTransition.value = 0;
-      }, 100);
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [isVisible]);
 
   const transitionToTextContent = (title: string, contentType: string) => {
     const content = getTextContent(
-      contentType as "privacy" | "terms" | "about"
+      contentType as "privacy" | "terms" | "about" | "community"
     );
     setTextContentData({ title, content: content.content });
     screenTransition.value = withTiming(1, {

@@ -9,12 +9,13 @@ import { FloatingSettingsButton } from "@/components/morphing/settings/FloatingS
 import { FloatingSettingsModal } from "@/components/morphing/settings/FloatingSettingsModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
+import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useThreads } from "@/hooks/useThreads";
 import { Tabs, useRouter, useSegments } from "expo-router";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function TabLayout() {
@@ -29,6 +30,25 @@ export default function TabLayout() {
   // Notification permission management
   const { shouldShowModal, handlePermissionResult, closeModal } =
     useNotificationPermission();
+
+  // Settings modal state management
+  const settingsModalOpenRef = useRef<(() => void) | null>(null);
+  const [settingsInitialScreen, setSettingsInitialScreen] = useState<
+    "settings" | "guidelines"
+  >("settings");
+
+  // Modal Intent context handling
+  const { modalIntent, setModalIntent } = useModalIntent();
+
+  useEffect(() => {
+    if (modalIntent === "settingsGuidelines") {
+      setSettingsInitialScreen("guidelines");
+      setTimeout(() => {
+        if (settingsModalOpenRef.current) settingsModalOpenRef.current();
+        setModalIntent(null); // clear after use
+      }, 250);
+    }
+  }, [modalIntent, setModalIntent]);
 
   // Get the current active tab
   const lastSegment = segments[segments.length - 1];
@@ -160,23 +180,39 @@ export default function TabLayout() {
           buttonRef,
           handlePressIn,
           handlePressOut,
-        }) => (
-          <>
-            <FloatingSettingsButton
-              ref={buttonRef}
-              style={buttonAnimatedStyle}
-              onPress={open}
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-            />
-            <FloatingSettingsModal
-              isVisible={isModalVisible}
-              progress={progress}
-              modalAnimatedStyle={modalAnimatedStyle}
-              close={close}
-            />
-          </>
-        )}
+        }) => {
+          // Store the open function for programmatic access
+          settingsModalOpenRef.current = open;
+
+          // Reset initial screen when modal closes
+          React.useEffect(() => {
+            if (!isModalVisible) {
+              setSettingsInitialScreen("settings");
+            }
+          }, [isModalVisible]);
+
+          return (
+            <>
+              <FloatingSettingsButton
+                ref={buttonRef}
+                style={buttonAnimatedStyle}
+                onPress={() => {
+                  setSettingsInitialScreen("settings"); // Reset to settings when manually opened
+                  open();
+                }}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+              />
+              <FloatingSettingsModal
+                isVisible={isModalVisible}
+                progress={progress}
+                modalAnimatedStyle={modalAnimatedStyle}
+                close={close}
+                initialScreen={settingsInitialScreen}
+              />
+            </>
+          );
+        }}
       </ButtonModalTransitionBridge>
 
       {/* Notification Permission Modal */}

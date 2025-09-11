@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 
-type ModalIntentType = "guidedPrayer" | "verse" | null;
+type ModalIntentType = "guidedPrayer" | "verse" | "settingsGuidelines" | null;
 
 interface ModalIntentContextValue {
   modalIntent: ModalIntentType;
