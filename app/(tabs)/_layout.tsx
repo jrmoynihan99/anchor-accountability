@@ -184,6 +184,20 @@ export default function TabLayout() {
           // Store the open function for programmatic access
           settingsModalOpenRef.current = open;
 
+          // One-time measurement for settings button to enable proper morph animation
+          React.useEffect(() => {
+            // Trigger the same measurement that handlePressIn does
+            const timer = setTimeout(() => {
+              // Manually trigger the press logic to populate buttonLayout
+              handlePressIn();
+              // Immediately reset the scale to avoid visual effects
+              setTimeout(() => {
+                handlePressOut();
+              }, 10);
+            }, 100);
+            return () => clearTimeout(timer);
+          }, []); // Empty dependency array = run once on mount
+
           // Reset initial screen when modal closes
           React.useEffect(() => {
             if (!isModalVisible) {
