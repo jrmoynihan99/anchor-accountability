@@ -50,7 +50,7 @@ export function BackButton({
       <Ionicons
         name="arrow-back"
         size={iconSize}
-        color={iconColor || colors.white}
+        color={iconColor || colors.textSecondary}
       />
     </TouchableOpacity>
   );

@@ -43,11 +43,11 @@ export function IntroContinueButton({ onPress }: IntroContinueButtonProps) {
         >
           <ThemedText
             type="buttonLarge"
-            style={[styles.buttonText, { color: colors.text }]}
+            style={[styles.buttonText, { color: colors.white }]}
           >
             Begin Your Journey
           </ThemedText>
-          <Ionicons name="arrow-forward" size={20} color={colors.text} />
+          <Ionicons name="arrow-forward" size={20} color={colors.white} />
         </TouchableOpacity>
       </BlurView>
     </View>

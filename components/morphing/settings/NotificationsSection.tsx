@@ -97,12 +97,12 @@ export function NotificationsSection() {
             <IconSymbol
               name={getEnableButtonIcon()}
               size={18}
-              color={colors.background}
+              color={colors.white}
             />
             <ThemedText
               type="bodyMedium"
-              lightColor={colors.background}
-              darkColor={colors.background}
+              lightColor={colors.white}
+              darkColor={colors.white}
               style={styles.enableButtonText}
             >
               {getEnableButtonText()}

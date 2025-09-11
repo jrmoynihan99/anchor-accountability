@@ -1,8 +1,7 @@
 // components/IntroHeader.tsx
 import { useTheme } from "@/hooks/ThemeContext";
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import { ThemedText } from "../../../components/ThemedText";
 
 export function IntroHeader() {
@@ -19,13 +18,17 @@ export function IntroHeader() {
           },
         ]}
       >
-        <Ionicons name="shield-checkmark" size={32} color={colors.icon} />
+        <Image
+          source={require("@/assets/images/icon.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
       </View>
       <ThemedText
         type="titleXLarge"
         style={[styles.title, { color: colors.text }]}
       >
-        Welcome to Haven
+        Welcome to Anchor
       </ThemedText>
     </View>
   );
@@ -45,6 +48,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     borderWidth: 1,
+    overflow: "hidden", // Clips the image to the circle
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   title: {
     textAlign: "center",
