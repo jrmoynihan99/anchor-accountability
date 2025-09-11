@@ -117,7 +117,7 @@ export function PendingPleasSection() {
       {pendingPleas.length === 0 ? (
         <View style={styles.emptyContainer}>
           <IconSymbol
-            name="heart.circle"
+            name="megaphone"
             size={32}
             color={colors.textSecondary}
             style={styles.emptyIcon}
@@ -236,7 +236,7 @@ function SectionHeader({
             { backgroundColor: colors.iconCircleBackground },
           ]}
         >
-          <IconSymbol name="hand.raised" size={20} color={colors.icon} />
+          <IconSymbol name="megaphone" size={20} color={colors.icon} />
         </View>
         <View style={styles.headerText}>
           <ThemedText

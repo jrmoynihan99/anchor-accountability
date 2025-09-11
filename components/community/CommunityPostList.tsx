@@ -163,11 +163,16 @@ export function CommunityPostList({
   const renderEmpty = () => {
     if (loading) {
       return (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colors.textSecondary} />
+        <View style={styles.emptyContainer}>
+          <IconSymbol
+            name="clock"
+            size={32}
+            color={colors.textSecondary}
+            style={styles.emptyIcon}
+          />
           <ThemedText
-            type="caption"
-            style={[styles.loadingText, { color: colors.textSecondary }]}
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
           >
             Loading posts...
           </ThemedText>
@@ -176,15 +181,16 @@ export function CommunityPostList({
     }
     if (error) {
       return (
-        <View style={styles.centerContainer}>
+        <View style={styles.emptyContainer}>
           <IconSymbol
             name="exclamationmark.triangle"
             size={32}
             color={colors.textSecondary}
+            style={styles.emptyIcon}
           />
           <ThemedText
-            type="body"
-            style={[styles.errorText, { color: colors.textSecondary }]}
+            type="captionMedium"
+            style={[styles.emptyText, { color: colors.textSecondary }]}
           >
             {error}
           </ThemedText>
@@ -195,19 +201,19 @@ export function CommunityPostList({
       <View style={styles.emptyContainer}>
         <IconSymbol
           name="bubble.left.and.bubble.right"
-          size={48}
+          size={32}
           color={colors.textSecondary}
           style={styles.emptyIcon}
         />
         <ThemedText
-          type="subtitleSemibold"
-          style={[styles.emptyTitle, { color: colors.text }]}
+          type="captionMedium"
+          style={[styles.emptyText, { color: colors.textSecondary }]}
         >
           No posts yet
         </ThemedText>
         <ThemedText
           type="caption"
-          style={[styles.emptyText, { color: colors.textSecondary }]}
+          style={[styles.emptySubtext, { color: colors.textSecondary }]}
         >
           Be the first to share something with the community
         </ThemedText>
@@ -267,33 +273,21 @@ const styles = StyleSheet.create({
   emptyContentContainer: {
     flexGrow: 1,
   },
-  centerContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    gap: 12,
-  },
-  loadingText: {
-    opacity: 0.8,
-  },
-  errorText: {
-    textAlign: "center",
-    marginTop: 8,
-  },
   emptyContainer: {
     alignItems: "center",
-    paddingVertical: 60,
+    paddingVertical: 32,
     paddingHorizontal: 24,
   },
   emptyIcon: {
-    marginBottom: 16,
-    opacity: 0.4,
-  },
-  emptyTitle: {
-    marginBottom: 8,
+    marginBottom: 12,
+    opacity: 0.6,
   },
   emptyText: {
+    textAlign: "center",
+    marginBottom: 4,
+    opacity: 0.8,
+  },
+  emptySubtext: {
     textAlign: "center",
     opacity: 0.6,
     lineHeight: 18,
