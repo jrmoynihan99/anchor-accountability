@@ -13,9 +13,10 @@ export function AboutSection({ onNavigateToContent }: AboutSectionProps) {
   const { colors } = useTheme();
 
   const handleWhyWePress = () => {
-    if (onNavigateToContent) {
-      onNavigateToContent("Why I Made This", "about");
-    }
+    onNavigateToContent?.("Why I Made This", "about");
+  };
+  const handleGuidelinesPress = () => {
+    onNavigateToContent?.("Guidelines", "community");
   };
 
   return (
@@ -44,6 +45,20 @@ export function AboutSection({ onNavigateToContent }: AboutSectionProps) {
       <TouchableOpacity style={styles.settingItem} onPress={handleWhyWePress}>
         <ThemedText type="body" style={styles.settingLabel}>
           Why I Made This
+        </ThemedText>
+        <IconSymbol
+          name="chevron.right"
+          size={16}
+          color={colors.textSecondary}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.settingItem}
+        onPress={handleGuidelinesPress}
+      >
+        <ThemedText type="body" style={styles.settingLabel}>
+          Community Guidelines
         </ThemedText>
         <IconSymbol
           name="chevron.right"

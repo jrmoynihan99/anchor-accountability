@@ -90,7 +90,9 @@ export function FloatingSettingsModal({
   };
 
   // Text content for different sections
-  const getTextContent = (type: "privacy" | "terms" | "about") => {
+  const getTextContent = (
+    type: "privacy" | "terms" | "about" | "community"
+  ) => {
     switch (type) {
       case "privacy":
         return {
@@ -188,6 +190,23 @@ Our Heart
 We believe everyone deserves freedom from shame and the struggles that keep them isolated. We believe community and encouragement can be powerful tools for healing. We believe you're worth fighting for, even on the days you don't believe it yourself.
 
 Let's beat this together. You're not alone.`,
+        };
+      case "community":
+        return {
+          title: "Guidelines",
+          content: `Our community thrives on kindness, encouragement, and respect.
+
+- Treat every user with compassion and dignity.
+- Avoid spam, trolling, or negative remarks.
+- All messages and posts should be supportive and helpful.
+- Report anything that seems unsafe or abusive.
+
+Things we do not allow:
+1. Spam
+2. Trolling
+2. Hateful content
+
+Thank you for helping us keep this a safe and welcoming space!`,
         };
     }
   };
