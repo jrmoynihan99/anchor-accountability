@@ -1,8 +1,8 @@
-// VerseView.tsx - Default verse display
+// VerseView.tsx - Standard ScrollView (button scrolls with content)
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface VerseViewProps {
   verse: string;
@@ -22,7 +22,12 @@ export function VerseView({
   colors,
 }: VerseViewProps) {
   return (
-    <View style={styles.modalCard}>
+    <ScrollView
+      style={styles.scrollView}
+      contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
       <ThemedText
         type="title"
         style={[styles.dateHeader, { color: colors.text, textAlign: "center" }]}
@@ -73,6 +78,7 @@ export function VerseView({
           { backgroundColor: colors.buttonBackground },
         ]}
         onPress={onReadInContext}
+        activeOpacity={0.85}
       >
         <IconSymbol
           name="book"
@@ -80,24 +86,25 @@ export function VerseView({
           color={colors.white}
           style={{ marginRight: 8 }}
         />
-        <ThemedText
-          type="buttonLarge"
-          style={[styles.contextButtonText, { color: colors.white }]}
-        >
+        <ThemedText type="buttonLarge" style={{ color: colors.white }}>
           Read in Context
         </ThemedText>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  modalCard: {
+  scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 40,
-    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  container: {
     alignItems: "center",
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    flexGrow: 1,
   },
   dateHeader: {
     marginBottom: 32,
@@ -115,12 +122,14 @@ const styles = StyleSheet.create({
   modalReference: {},
   contextButton: {
     borderRadius: 16,
-    padding: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 16,
-    marginHorizontal: 16,
+    alignSelf: "stretch",
+    minWidth: 200,
+    maxWidth: 420,
   },
-  contextButtonText: {},
 });

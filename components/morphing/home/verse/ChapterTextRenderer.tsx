@@ -14,20 +14,31 @@ interface ChapterTextProps {
 
 interface Block {
   type: "heading" | "subheading" | "para" | "poetry";
-  text?: string; // for headings and subheadings
-  segments?: Segment[]; // for paragraphs
-  lines?: PoetryLine[]; // for poetry
+  text?: string;
+  segments?: Segment[];
+  lines?: PoetryLine[];
 }
 
 interface Segment {
-  kind: "v" | "t"; // verse number or text
-  n?: number; // verse number
-  text?: string; // text content
+  kind: "v" | "t";
+  n?: number;
+  text?: string;
 }
 
 interface PoetryLine {
   indent: number;
   segments: Segment[];
+}
+
+// Helper for robust matching
+function normalizeForMatch(str?: string): string {
+  if (!str) return "";
+  return str
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, " ")
+    .replace(/\u00A0/g, " ")
+    .trim();
 }
 
 export function ChapterTextRenderer({
@@ -43,60 +54,45 @@ export function ChapterTextRenderer({
     );
   }
 
-  const renderSegments = (segments: Segment[], isPoetry = false) => {
-    // For both paragraphs and poetry, we use nested Text components
-    // The key is ensuring paragraph Text components flow inline
-
-    let hasActiveVerse = false;
-
-    // Check if any segment contains the active verse
-    segments.forEach((segment) => {
-      if (
-        segment.kind === "t" &&
-        segment.text?.trim() === activeVerse?.trim()
-      ) {
-        hasActiveVerse = true;
-      }
-    });
-
-    return (
-      <Text style={[styles.verseText, { color: colors.textSecondary }]}>
-        {segments.map((segment, index) => {
-          if (segment.kind === "v") {
-            return (
-              <Text
-                key={`verse-${segment.n}-${index}`}
-                style={[
-                  styles.verseNumber,
-                  { color: colors.secondaryButtonBackground },
-                  isPoetry && styles.poetryVerseNumber,
-                ]}
-              >
-                {segment.n}
-                {isPoetry ? "" : " "}
-              </Text>
-            );
-          } else if (segment.kind === "t") {
-            const isActive = segment.text?.trim() === activeVerse?.trim();
-            return (
-              <Text
-                key={`text-${index}`}
-                style={[
-                  {
-                    color: colors.textSecondary,
-                    fontWeight: isActive ? "bold" : "normal",
-                  },
-                ]}
-              >
-                {segment.text}
-              </Text>
-            );
+  const renderSegments = (segments: Segment[], isPoetry = false) => (
+    <Text style={[styles.verseText, { color: colors.textSecondary }]}>
+      {segments.map((segment, index) => {
+        if (segment.kind === "v") {
+          return (
+            <Text
+              key={`verse-${segment.n}-${index}`}
+              style={[
+                styles.verseNumber,
+                { color: colors.secondaryButtonBackground },
+                isPoetry && styles.poetryVerseNumber,
+              ]}
+            >
+              {segment.n}{" "}
+            </Text>
+          );
+        } else if (segment.kind === "t") {
+          let isActive = false;
+          if (!!activeVerse && !!segment.text) {
+            const normalizedActiveVerse = normalizeForMatch(activeVerse);
+            const normalizedSegment = normalizeForMatch(segment.text);
+            isActive = normalizedActiveVerse.includes(normalizedSegment);
           }
-          return null;
-        })}
-      </Text>
-    );
-  };
+          return (
+            <Text
+              key={`text-${index}`}
+              style={{
+                color: colors.textSecondary,
+                fontWeight: isActive ? "bold" : "normal",
+              }}
+            >
+              {segment.text}
+            </Text>
+          );
+        }
+        return null;
+      })}
+    </Text>
+  );
 
   const renderBlock = (block: Block, blockIndex: number) => {
     switch (block.type) {
@@ -116,7 +112,6 @@ export function ChapterTextRenderer({
             {block.text}
           </ThemedText>
         );
-
       case "subheading":
         return (
           <ThemedText
@@ -133,7 +128,6 @@ export function ChapterTextRenderer({
             {block.text}
           </ThemedText>
         );
-
       case "para":
         if (!block.segments) return null;
         return (
@@ -141,7 +135,6 @@ export function ChapterTextRenderer({
             {renderSegments(block.segments)}
           </View>
         );
-
       case "poetry":
         if (!block.lines) return null;
         return (
@@ -149,17 +142,13 @@ export function ChapterTextRenderer({
             {block.lines.map((line, lineIndex) => (
               <View
                 key={`poetry-line-${lineIndex}`}
-                style={[
-                  styles.poetryLine,
-                  { marginLeft: line.indent * 20 }, // 20px per indent level
-                ]}
+                style={[styles.poetryLine, { marginLeft: line.indent * 20 }]}
               >
                 {renderSegments(line.segments, true)}
               </View>
             ))}
           </View>
         );
-
       default:
         return null;
     }
