@@ -92,28 +92,29 @@ export function CreatePostRejectedScreen({
             },
           ]}
         >
-          <Ionicons
-            name="information-circle"
-            size={20}
-            color={colors.textMuted}
-            style={{ marginBottom: 8 }}
-          />
-          <ThemedText
-            type="captionMedium"
-            style={{
-              color: colors.textMuted,
-              marginBottom: 4,
-              textAlign: "center",
-            }}
-          >
-            Reason:
-          </ThemedText>
+          <View style={styles.reasonHeader}>
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.textMuted}
+              style={{ marginRight: 6 }}
+            />
+            <ThemedText
+              type="captionMedium"
+              style={{
+                color: colors.textMuted,
+              }}
+            >
+              Reason:
+            </ThemedText>
+          </View>
           <ThemedText
             type="body"
             style={{
               color: colors.text,
               textAlign: "center",
               lineHeight: 20,
+              marginTop: 8,
             }}
           >
             {rejectionReason}
@@ -204,12 +205,15 @@ export function CreatePostRejectedScreen({
           onPress={handleViewGuidelinesPress}
         >
           <Ionicons
-            name="information-circle"
+            name="information-circle-outline"
             size={18}
-            color={colors.text}
+            color={colors.textSecondary}
             style={{ marginRight: 8 }}
           />
-          <ThemedText type="buttonLarge" style={{ color: colors.text }}>
+          <ThemedText
+            type="buttonLarge"
+            style={{ color: colors.textSecondary }}
+          >
             View Guidelines
           </ThemedText>
         </TouchableOpacity>
@@ -239,6 +243,11 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 16,
     alignItems: "center",
+  },
+  reasonHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   originalContentContainer: {
     borderWidth: 1,
