@@ -1,4 +1,4 @@
-// VerseView.tsx - Standard ScrollView (button scrolls with content)
+// VerseView.tsx - ScrollView with dynamic centering
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import React from "react";
@@ -105,6 +105,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 32,
     flexGrow: 1,
+    justifyContent: "center", // Centers content when it's short
   },
   dateHeader: {
     marginBottom: 32,
