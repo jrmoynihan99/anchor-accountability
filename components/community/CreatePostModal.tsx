@@ -53,6 +53,9 @@ export function CreatePostModal({
   // Screen logic
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [currentPostId, setCurrentPostId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | undefined>(
+    undefined
+  );
   const screenTransition = useSharedValue(0);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -79,6 +82,7 @@ export function CreatePostModal({
       const timer = setTimeout(() => {
         setCurrentScreen("input");
         setCurrentPostId(null);
+        setRejectionReason(undefined);
         screenTransition.value = 0;
         setTitle("");
         setContent("");
@@ -172,6 +176,8 @@ export function CreatePostModal({
                   close?.();
                 }, 3000);
               } else if (status === "rejected") {
+                // Capture rejection reason if available
+                setRejectionReason(data.rejectionReason || undefined);
                 transitionToScreen("rejected");
               }
               // If still "pending", stay on pending screen
@@ -196,6 +202,7 @@ export function CreatePostModal({
       unsubscribeRef.current = null;
     }
     setCurrentPostId(null);
+    setRejectionReason(undefined);
     screenTransition.value = withTiming(0, {
       duration: 300,
       easing: Easing.out(Easing.quad),
@@ -281,6 +288,7 @@ export function CreatePostModal({
             onRetry={handleRetry}
             originalTitle={title}
             originalContent={content}
+            rejectionReason={rejectionReason}
           />
         );
       case "rateLimited": // ADD THIS CASE

@@ -87,6 +87,9 @@ export function ReachOutModal({
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
   const [currentPleaId, setCurrentPleaId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | undefined>(
+    undefined
+  );
   const screenTransition = useSharedValue(0);
   const { colors, effectiveTheme } = useTheme();
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -111,6 +114,7 @@ export function ReachOutModal({
         setCurrentScreen("input");
         setContextMessage("");
         setCurrentPleaId(null);
+        setRejectionReason(undefined);
         screenTransition.value = 0;
         if (unsubscribeRef.current) {
           unsubscribeRef.current();
@@ -167,9 +171,15 @@ export function ReachOutModal({
         setCurrentPleaId(docRef.id);
         const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (snap) => {
           if (!snap.exists()) return;
-          const status = snap.data().status;
-          if (status === "approved") transitionToScreen("confirmation");
-          else if (status === "rejected") transitionToScreen("rejected");
+          const data = snap.data();
+          const status = data.status;
+          if (status === "approved") {
+            transitionToScreen("confirmation");
+          } else if (status === "rejected") {
+            // Capture rejection reason if available
+            setRejectionReason(data.rejectionReason || undefined);
+            transitionToScreen("rejected");
+          }
         });
         unsubscribeRef.current = unsubscribe;
       }
@@ -186,6 +196,7 @@ export function ReachOutModal({
       unsubscribeRef.current = null;
     }
     setCurrentPleaId(null);
+    setRejectionReason(undefined);
     screenTransition.value = withTiming(0, {
       duration: 300,
       easing: Easing.out(Easing.quad),
@@ -315,6 +326,7 @@ export function ReachOutModal({
             onClose={close}
             onRetry={handleRetry}
             originalMessage={contextMessage}
+            rejectionReason={rejectionReason}
           />
         );
       case "rateLimited": {

@@ -12,6 +12,7 @@ interface CreatePostRejectedScreenProps {
   onRetry: () => void;
   originalTitle: string;
   originalContent: string;
+  rejectionReason?: string;
 }
 
 export function CreatePostRejectedScreen({
@@ -19,6 +20,7 @@ export function CreatePostRejectedScreen({
   onRetry,
   originalTitle,
   originalContent,
+  rejectionReason,
 }: CreatePostRejectedScreenProps) {
   const { colors, effectiveTheme } = useTheme();
   const { setModalIntent } = useModalIntent();
@@ -69,7 +71,7 @@ export function CreatePostRejectedScreen({
       <ThemedText
         type="body"
         style={{
-          color: colors.textMuted,
+          color: colors.text,
           lineHeight: 22,
           textAlign: "center",
           marginBottom: 24,
@@ -78,6 +80,46 @@ export function CreatePostRejectedScreen({
         Your post couldn't be published because it doesn't meet our community
         guidelines. Please review and try again.
       </ThemedText>
+
+      {/* Show rejection reason if available */}
+      {rejectionReason && (
+        <View
+          style={[
+            styles.rejectionReasonContainer,
+            {
+              backgroundColor: colors.modalCardBackground,
+              borderColor: colors.modalCardBorder,
+            },
+          ]}
+        >
+          <Ionicons
+            name="information-circle"
+            size={20}
+            color={colors.textMuted}
+            style={{ marginBottom: 8 }}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textMuted,
+              marginBottom: 4,
+              textAlign: "center",
+            }}
+          >
+            Reason:
+          </ThemedText>
+          <ThemedText
+            type="body"
+            style={{
+              color: colors.text,
+              textAlign: "center",
+              lineHeight: 20,
+            }}
+          >
+            {rejectionReason}
+          </ThemedText>
+        </View>
+      )}
 
       {/* Show original content if it exists */}
       {(originalTitle.trim() || originalContent.trim()) && (
@@ -164,26 +206,11 @@ export function CreatePostRejectedScreen({
           <Ionicons
             name="information-circle"
             size={18}
-            color={colors.textMuted}
+            color={colors.text}
             style={{ marginRight: 8 }}
           />
-          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
+          <ThemedText type="buttonLarge" style={{ color: colors.text }}>
             View Guidelines
-          </ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.closeButton,
-            {
-              backgroundColor: colors.modalCardBackground,
-              borderColor: colors.modalCardBorder,
-            },
-          ]}
-          onPress={handleClosePress}
-        >
-          <ThemedText type="buttonLarge" style={{ color: colors.textMuted }}>
-            Cancel
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -205,6 +232,14 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 16,
   },
+  rejectionReasonContainer: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    width: "100%",
+    marginBottom: 16,
+    alignItems: "center",
+  },
   originalContentContainer: {
     borderWidth: 1,
     borderRadius: 12,
@@ -224,14 +259,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   guidelinesButton: {
-    borderRadius: 16,
-    padding: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-  },
-  closeButton: {
     borderRadius: 16,
     padding: 18,
     flexDirection: "row",

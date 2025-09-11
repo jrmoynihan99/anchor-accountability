@@ -55,6 +55,9 @@ export function PleaResponseModal({
   const [currentEncouragementId, setCurrentEncouragementId] = useState<
     string | null
   >(null);
+  const [rejectionReason, setRejectionReason] = useState<string | undefined>(
+    undefined
+  );
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   // Reset modal state when closed
@@ -65,6 +68,7 @@ export function PleaResponseModal({
         setEncouragementText("");
         setIsOpenToChat(true);
         setCurrentEncouragementId(null);
+        setRejectionReason(undefined);
         screenTransition.value = 0;
         if (unsubscribeRef.current) {
           unsubscribeRef.current();
@@ -115,7 +119,8 @@ export function PleaResponseModal({
 
       const unsubscribe = onSnapshot(docRef, (snap) => {
         if (!snap.exists()) return;
-        const status = snap.data().status;
+        const data = snap.data();
+        const status = data.status;
         if (status === "approved") {
           transitionToScreen("confirmation");
           // Auto-close after showing confirmation for 2 seconds
@@ -123,6 +128,8 @@ export function PleaResponseModal({
             close?.();
           }, 2000);
         } else if (status === "rejected") {
+          // Capture rejection reason if available
+          setRejectionReason(data.rejectionReason || undefined);
           transitionToScreen("rejected");
         }
       });
@@ -139,6 +146,7 @@ export function PleaResponseModal({
       unsubscribeRef.current = null;
     }
     setCurrentEncouragementId(null);
+    setRejectionReason(undefined);
     screenTransition.value = withTiming(0, {
       duration: 300,
       easing: Easing.out(Easing.quad),
@@ -205,6 +213,7 @@ export function PleaResponseModal({
             onClose={close}
             onRetry={handleRetry}
             originalMessage={encouragementText}
+            rejectionReason={rejectionReason}
           />
         );
       default:
