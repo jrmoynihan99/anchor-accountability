@@ -147,7 +147,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#28B463", // Between original #27AE60 and deep #229954
       error: "#CD3C2E", // Between original #E74C3C and deep #C0392B
-      achievement: "#E67E22", // Keep original as it was good
+      achievement: "#FFD700", // Keep original as it was good
 
       // --- Specialty Colors ---
       fireColor: "#E67E22", // Keep original
@@ -205,7 +205,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#28B463", // Midpoint green
       error: "#CD3C2E", // Midpoint red
-      achievement: "#E67E22", // Keep original
+      achievement: "#FFD700", // Keep original
 
       // --- Specialty Colors ---
       fireColor: "#E67E22", // Keep original

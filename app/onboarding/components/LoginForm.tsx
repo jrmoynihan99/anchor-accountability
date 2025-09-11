@@ -10,8 +10,9 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import React from "react";
+import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   StyleSheet,
   TextInput,
@@ -23,6 +24,8 @@ import { useTheme } from "../../../hooks/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
 import { auth } from "../../../lib/firebase";
 import { setHasOnboarded } from "../../../lib/onboarding";
+
+type LoadingButton = "auth" | "guest" | null;
 
 interface LoginFormProps {
   email: string;
@@ -44,12 +47,13 @@ export function LoginForm({
   setPassword,
   isSignUp,
   setIsSignUp,
-  loading,
-  setLoading,
+  loading: _loading, // <- not used anymore, but kept for API compatibility
+  setLoading: _setLoading, // <- not used
   showPassword,
   setShowPassword,
 }: LoginFormProps) {
   const { colors } = useTheme();
+  const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
 
   const completeOnboarding = async () => {
     try {
@@ -68,7 +72,7 @@ export function LoginForm({
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
+    setLoadingButton("auth");
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
@@ -79,13 +83,13 @@ export function LoginForm({
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
-      setLoading(false);
+      setLoadingButton(null);
     }
   };
 
   const handleContinueWithoutLogin = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setLoading(true);
+    setLoadingButton("guest");
     try {
       await ensureSignedIn(); // Sign in anonymously
       await completeOnboarding();
@@ -93,7 +97,7 @@ export function LoginForm({
       console.error("Error with anonymous sign in:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingButton(null);
     }
   };
 
@@ -182,15 +186,19 @@ export function LoginForm({
           <TouchableOpacity
             style={[styles.authButton, { backgroundColor: colors.tint }]}
             onPress={handleEmailAuth}
-            disabled={loading}
+            disabled={loadingButton !== null}
             activeOpacity={0.8}
           >
-            <ThemedText
-              type="buttonLarge"
-              style={[styles.buttonText, { color: colors.background }]}
-            >
-              {loading ? "Loading..." : isSignUp ? "Create Account" : "Sign In"}
-            </ThemedText>
+            {loadingButton === "auth" ? (
+              <ActivityIndicator color={colors.background} size="small" />
+            ) : (
+              <ThemedText
+                type="buttonLarge"
+                style={[styles.buttonText, { color: colors.background }]}
+              >
+                {isSignUp ? "Create Account" : "Sign In"}
+              </ThemedText>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -226,16 +234,26 @@ export function LoginForm({
                 { backgroundColor: colors.whiteTranslucent },
               ]}
               onPress={handleContinueWithoutLogin}
-              disabled={loading}
+              disabled={loadingButton !== null}
               activeOpacity={0.8}
             >
-              <Ionicons name="person-outline" size={20} color={colors.text} />
-              <ThemedText
-                type="bodyMedium"
-                style={[styles.guestButtonText, { color: colors.text }]}
-              >
-                Continue Without Account
-              </ThemedText>
+              {loadingButton === "guest" ? (
+                <ActivityIndicator color={colors.text} size="small" />
+              ) : (
+                <>
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={colors.text}
+                  />
+                  <ThemedText
+                    type="bodyMedium"
+                    style={[styles.guestButtonText, { color: colors.text }]}
+                  >
+                    Continue Without Account
+                  </ThemedText>
+                </>
+              )}
             </TouchableOpacity>
           </BlurView>
         </View>
@@ -259,7 +277,7 @@ export function LoginForm({
             <>
               <AnonymousBadge
                 buttonRef={buttonRef}
-                style={[buttonAnimatedStyle, { marginBottom: 12 }]} // apply margin directly
+                style={[buttonAnimatedStyle, { marginBottom: 12 }]}
                 onPress={open}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
@@ -340,7 +358,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
-    marginBottom: 8, // Reduced from 24
+    marginBottom: 8,
   },
   buttonText: {
     fontWeight: "600",
@@ -348,7 +366,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16, // Reduced from 24
+    marginBottom: 16,
     paddingHorizontal: 8,
   },
   divider: {

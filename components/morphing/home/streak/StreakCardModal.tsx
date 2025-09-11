@@ -1,6 +1,7 @@
 // StreakCardModal.tsx - Refactored
 import { ThemedText } from "@/components/ThemedText";
-import { IconSymbol } from "@/components/ui/IconSymbol";
+import { IconSymbol, type IconSymbolName } from "@/components/ui/IconSymbol";
+
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -65,7 +66,7 @@ export function StreakCardModal({
     label,
     color = colors.text,
   }: {
-    icon: string;
+    icon: IconSymbolName; // <-- Use the strict type
     value: string | number;
     label: string;
     color?: string;
@@ -82,8 +83,10 @@ export function StreakCardModal({
     >
       <View style={styles.statCardContent}>
         <View
-          style={[styles.statIconCircle, { backgroundColor: `${color}33` }]} // 20% opacity
-        ></View>
+          style={[styles.statIconCircle, { backgroundColor: `${color}33` }]}
+        >
+          <IconSymbol name={icon} size={20} color={color} />
+        </View>
         <View style={styles.statTextContainer}>
           <ThemedText
             type="statValue"

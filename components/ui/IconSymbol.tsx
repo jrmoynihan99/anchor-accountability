@@ -9,7 +9,7 @@ type IconMapping = Record<
   SymbolViewProps["name"],
   ComponentProps<typeof MaterialIcons>["name"]
 >;
-type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * Add your SF Symbols to Material Icons mappings here.
@@ -28,6 +28,9 @@ const MAPPING = {
   "flame.fill": "whatshot",
   // 👇 ADD THIS
   "megaphone.fill": "campaign", // "campaign" looks like a megaphone in MaterialIcons
+  "trophy.fill": "emoji-events", // Trophy
+  calendar: "calendar-today", // Calendar
+  "chart.bar.fill": "bar-chart", // Bar Chart
 } as IconMapping;
 
 /**
