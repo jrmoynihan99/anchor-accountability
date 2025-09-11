@@ -1,7 +1,7 @@
 // components/ChapterTextRenderer.tsx
 import { ThemedText } from "@/components/ThemedText";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 interface ChapterTextProps {
   chapterText: {
@@ -30,7 +30,6 @@ interface PoetryLine {
   segments: Segment[];
 }
 
-// Helper for robust matching
 function normalizeForMatch(str?: string): string {
   if (!str) return "";
   return str
@@ -55,20 +54,30 @@ export function ChapterTextRenderer({
   }
 
   const renderSegments = (segments: Segment[], isPoetry = false) => (
-    <Text style={[styles.verseText, { color: colors.textSecondary }]}>
+    // Inline text: use body/caption for default, but override for special cases
+    <ThemedText
+      type="body"
+      style={{ color: colors.textSecondary, flexWrap: "wrap", flexShrink: 1 }}
+    >
       {segments.map((segment, index) => {
         if (segment.kind === "v") {
+          // Use ThemedText with "caption" for verse number (small, bold)
           return (
-            <Text
+            <ThemedText
               key={`verse-${segment.n}-${index}`}
+              type="caption"
               style={[
-                styles.verseNumber,
-                { color: colors.secondaryButtonBackground },
-                isPoetry && styles.poetryVerseNumber,
+                {
+                  color: colors.secondaryButtonBackground,
+                  marginRight: isPoetry ? 4 : 6,
+                  fontWeight: "bold",
+                  fontSize: isPoetry ? 12 : 13,
+                  lineHeight: 22,
+                },
               ]}
             >
               {segment.n}{" "}
-            </Text>
+            </ThemedText>
           );
         } else if (segment.kind === "t") {
           let isActive = false;
@@ -77,21 +86,23 @@ export function ChapterTextRenderer({
             const normalizedSegment = normalizeForMatch(segment.text);
             isActive = normalizedActiveVerse.includes(normalizedSegment);
           }
+          // Use "body" type, and bold if active
           return (
-            <Text
+            <ThemedText
               key={`text-${index}`}
+              type="body"
               style={{
                 color: colors.textSecondary,
                 fontWeight: isActive ? "bold" : "normal",
               }}
             >
               {segment.text}
-            </Text>
+            </ThemedText>
           );
         }
         return null;
       })}
-    </Text>
+    </ThemedText>
   );
 
   const renderBlock = (block: Block, blockIndex: number) => {
@@ -101,13 +112,13 @@ export function ChapterTextRenderer({
           <ThemedText
             key={`heading-${blockIndex}`}
             type="title"
-            style={[
-              styles.headerText,
-              {
-                color: colors.secondaryButtonBackground,
-                textAlign: "center",
-              },
-            ]}
+            style={{
+              color: colors.secondaryButtonBackground,
+              textAlign: "center",
+              marginTop: 18,
+              marginBottom: 12,
+              letterSpacing: 0.5,
+            }}
           >
             {block.text}
           </ThemedText>
@@ -117,13 +128,13 @@ export function ChapterTextRenderer({
           <ThemedText
             key={`subheading-${blockIndex}`}
             type="subtitle"
-            style={[
-              styles.subheaderText,
-              {
-                color: colors.secondaryButtonBackground,
-                textAlign: "center",
-              },
-            ]}
+            style={{
+              color: colors.secondaryButtonBackground,
+              textAlign: "center",
+              marginTop: 14,
+              marginBottom: 10,
+              letterSpacing: 0.3,
+            }}
           >
             {block.text}
           </ThemedText>
@@ -175,34 +186,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     marginBottom: 4,
-  },
-  verseNumber: {
-    fontWeight: "bold",
-    fontSize: 13,
-    marginRight: 6,
-    lineHeight: 22,
-  },
-  poetryVerseNumber: {
-    fontSize: 12,
-    marginRight: 4,
-  },
-  verseText: {
-    fontSize: 16,
-    lineHeight: 22,
-    flexShrink: 1,
-  },
-  headerText: {
-    fontSize: 19,
-    fontWeight: "bold",
-    marginTop: 18,
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  subheaderText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 14,
-    marginBottom: 10,
-    letterSpacing: 0.3,
   },
 });
