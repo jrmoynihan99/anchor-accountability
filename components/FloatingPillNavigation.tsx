@@ -83,12 +83,12 @@ export function FloatingPillNavigation({
 
     if (activeLayout) {
       animatedX.value = withSpring(activeLayout.x, {
-        damping: 35,
-        stiffness: 500,
+        damping: 170,
+        stiffness: 3000,
       });
       animatedWidth.value = withSpring(activeLayout.width, {
-        damping: 27,
-        stiffness: 500,
+        damping: 170,
+        stiffness: 3000,
       });
     }
   }, [activeTab, tabLayouts]);

@@ -1,7 +1,8 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { forwardRef } from "react";
-import { Dimensions, Pressable, StyleSheet, View } from "react-native";
+import { Dimensions, Pressable, StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface FloatingMainCTAButtonProps {
@@ -41,7 +42,8 @@ export const FloatingMainCTAButton = forwardRef<
     const { colors } = useTheme();
 
     return (
-      <View
+      <Animated.View
+        ref={ref}
         pointerEvents="box-none"
         style={[
           styles.absoluteContainer,
@@ -51,10 +53,10 @@ export const FloatingMainCTAButton = forwardRef<
             width: size,
             height: size,
           },
+          style, // Apply animated style to the same element as the ref
         ]}
       >
         <Pressable
-          ref={ref}
           style={[
             styles.button,
             {
@@ -70,11 +72,8 @@ export const FloatingMainCTAButton = forwardRef<
               shadowRadius: 12,
               elevation: 5,
             },
-            style,
           ]}
-          onPress={() => {
-            onPress();
-          }}
+          onPress={onPress}
           onPressIn={onPressIn}
           onPressOut={onPressOut}
           hitSlop={12}
@@ -85,7 +84,7 @@ export const FloatingMainCTAButton = forwardRef<
             color={colors.white}
           />
         </Pressable>
-      </View>
+      </Animated.View>
     );
   }
 );

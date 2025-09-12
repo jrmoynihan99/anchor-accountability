@@ -1,4 +1,6 @@
 // app/_layout.tsx
+import "react-native-reanimated";
+
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
@@ -15,7 +17,6 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import "react-native-reanimated";
 
 import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
 import {
