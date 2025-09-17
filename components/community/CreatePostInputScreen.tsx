@@ -193,7 +193,7 @@ export function CreatePostInputScreen({
           onChangeText={setContent}
           placeholder="Share your story, resource, question, or words of encouragement..."
           maxLength={MAX_CONTENT_LENGTH}
-          minHeight={120}
+          minHeight={80}
           showCharacterCount={true}
           showBorder={false}
         />

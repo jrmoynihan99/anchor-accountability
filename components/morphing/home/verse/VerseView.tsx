@@ -35,19 +35,6 @@ export function VerseView({
         Verse of the Day – {formattedDate}
       </ThemedText>
 
-      <ThemedText
-        type="verseBody"
-        style={[
-          styles.modalVerseText,
-          {
-            color: colors.textSecondary,
-            textAlign: "center",
-          },
-        ]}
-      >
-        {verse}
-      </ThemedText>
-
       <View style={styles.modalReferenceContainer}>
         <ThemedText
           type="body"
@@ -71,6 +58,19 @@ export function VerseView({
           </ThemedText>
         )}
       </View>
+
+      <ThemedText
+        type="verseBody"
+        style={[
+          styles.modalVerseText,
+          {
+            color: colors.textSecondary,
+            textAlign: "center",
+          },
+        ]}
+      >
+        {verse}
+      </ThemedText>
 
       <TouchableOpacity
         style={[
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     justifyContent: "center", // Centers content when it's short
   },
   dateHeader: {
-    marginBottom: 32,
+    marginBottom: 12,
   },
   modalVerseText: {
     marginBottom: 24,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   },
   modalReferenceContainer: {
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 0,
     marginBottom: 24,
   },
   modalReference: {},

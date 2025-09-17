@@ -31,6 +31,8 @@ const MAPPING = {
   "trophy.fill": "emoji-events", // Trophy
   calendar: "calendar-today", // Calendar
   "chart.bar.fill": "bar-chart", // Bar Chart
+  "eye.slash": "visibility-off",
+  "questionmark.circle": "help",
 } as IconMapping;
 
 /**

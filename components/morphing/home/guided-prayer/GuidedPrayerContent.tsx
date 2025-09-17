@@ -113,7 +113,9 @@ export function GuidedPrayerContent({
         Try this in times of temptation
       </ThemedText>
 
-      <BeginButton />
+      <View pointerEvents="none">
+        <BeginButton />
+      </View>
     </View>
   );
 }

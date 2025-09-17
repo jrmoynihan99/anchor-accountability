@@ -113,8 +113,11 @@ export function VerseCardContent({
               color: colors.textSecondary,
               fontStyle: "italic",
               opacity: 0.8,
+              maxWidth: 125, // adjust as needed!
             },
           ]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
         >
           {reference}
         </ThemedText>

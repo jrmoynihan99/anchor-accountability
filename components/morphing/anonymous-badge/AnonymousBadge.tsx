@@ -1,20 +1,20 @@
-// components/AnonymousBadge.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { IconSymbol } from "@/components/ui/IconSymbol";
+import { IconSymbol, type IconSymbolName } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 
 interface AnonymousBadgeProps {
-  // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
   onPress?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
-  // Custom props
   text?: string;
+  icon?: IconSymbolName; // Now type-safe!
+  iconColor?: string;
+  textColor?: string;
 }
 
 export function AnonymousBadge({
@@ -24,11 +24,24 @@ export function AnonymousBadge({
   onPressIn,
   onPressOut,
   text = "100% Anonymous",
+  icon,
+  iconColor,
+  textColor,
 }: AnonymousBadgeProps) {
   const { colors } = useTheme();
 
-  // If we have modal bridge props, make it touchable
-  if (onPress && buttonRef) {
+  // Default logic for icon and colors
+  const isTouchable = !!onPress && !!buttonRef;
+  const defaultIcon: IconSymbolName = isTouchable
+    ? "questionmark.circle"
+    : "eye.slash";
+  const finalIcon: IconSymbolName = icon || defaultIcon;
+  const finalIconColor =
+    iconColor ?? (isTouchable ? colors.textSecondary : colors.text);
+  const finalTextColor = textColor ?? colors.text;
+
+  // Touchable badge (with modal bridge)
+  if (isTouchable) {
     return (
       <Animated.View style={style}>
         <TouchableOpacity
@@ -46,14 +59,14 @@ export function AnonymousBadge({
           activeOpacity={0.8}
         >
           <IconSymbol
-            name="questionmark.circle"
+            name={finalIcon}
             size={14}
-            color={colors.textSecondary}
+            color={finalIconColor}
             style={{ marginRight: 6 }}
           />
           <ThemedText
             type="badge"
-            style={[styles.anonymousBadgeText, { color: colors.text }]}
+            style={[styles.anonymousBadgeText, { color: finalTextColor }]}
           >
             {text}
           </ThemedText>
@@ -62,7 +75,7 @@ export function AnonymousBadge({
     );
   }
 
-  // Otherwise, render as a regular non-touchable badge
+  // Static badge
   return (
     <View
       style={[
@@ -71,17 +84,18 @@ export function AnonymousBadge({
           backgroundColor: colors.modalCardBackground,
           borderColor: colors.modalCardBorder,
         },
+        style,
       ]}
     >
       <IconSymbol
-        name="eye.slash"
+        name={finalIcon}
         size={14}
-        color={colors.text}
+        color={finalIconColor}
         style={{ marginRight: 6 }}
       />
       <ThemedText
         type="badge"
-        style={[styles.anonymousBadgeText, { color: colors.text }]}
+        style={[styles.anonymousBadgeText, { color: finalTextColor }]}
       >
         {text}
       </ThemedText>
@@ -100,6 +114,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   anonymousBadgeText: {
-    // Typography styles handled by ThemedText type="badge"
+    // Typography handled by ThemedText type="badge"
   },
 });

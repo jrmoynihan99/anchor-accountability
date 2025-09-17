@@ -1,8 +1,7 @@
-// components/ui/MessageInput.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/ThemeContext";
-import React from "react";
-import { StyleSheet, TextInput, View } from "react-native";
+import React, { useRef, useState } from "react";
+import { Keyboard, StyleSheet, TextInput, View } from "react-native";
 
 interface MessageInputProps {
   value: string;
@@ -11,7 +10,7 @@ interface MessageInputProps {
   maxLength?: number;
   minHeight?: number;
   showCharacterCount?: boolean;
-  showBorder?: boolean; // New optional prop
+  showBorder?: boolean;
 }
 
 export function MessageInput({
@@ -21,14 +20,16 @@ export function MessageInput({
   maxLength = 500,
   minHeight = 120,
   showCharacterCount = true,
-  showBorder = true, // Defaults to true for backward compatibility
+  showBorder = true,
 }: MessageInputProps) {
   const { colors } = useTheme();
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   return (
     <View
       style={[
-        showBorder && styles.inputContainer, // Only apply border styles if showBorder is true
+        showBorder && styles.inputContainer,
         showBorder && {
           backgroundColor: colors.modalCardBackground,
           borderColor: colors.modalCardBorder,
@@ -36,6 +37,7 @@ export function MessageInput({
       ]}
     >
       <TextInput
+        ref={inputRef}
         style={[
           styles.textInput,
           {
@@ -52,6 +54,16 @@ export function MessageInput({
         onChangeText={onChangeText}
         maxLength={maxLength}
         textAlignVertical="top"
+        scrollEnabled={isFocused}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        // Optional: dismiss keyboard on drag
+        onTouchStart={() => {
+          if (!isFocused) {
+            // prevent auto-focusing unless already focused
+            Keyboard.dismiss();
+          }
+        }}
       />
       {showCharacterCount && (
         <ThemedText

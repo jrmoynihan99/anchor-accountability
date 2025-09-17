@@ -281,6 +281,10 @@ export function LoginForm({
                 onPress={open}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
+                text="What's the Difference?"
+                icon="questionmark.circle" // <<--- Explicit icon
+                iconColor={colors.textSecondary} // <<--- Explicit color
+                textColor={colors.textSecondary} // <<--- (optional: match modal style)
               />
               <AnonymousBadgeModal
                 isVisible={isModalVisible}

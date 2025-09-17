@@ -1,9 +1,10 @@
 import { ThemedText } from "@/components/ThemedText";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { BaseModal } from "../BaseModal";
+import { SharedValue } from "react-native-reanimated";
+import { AnonymousBadge } from "./AnonymousBadge";
 
 interface AnonymousBadgeModalProps {
   isVisible: boolean;
@@ -20,19 +21,15 @@ export function AnonymousBadgeModal({
 }: AnonymousBadgeModalProps) {
   const { colors, effectiveTheme } = useTheme();
 
-  // Button content that shows during the transition (just icon + text)
+  // Use the same badge component for morphing!
   const buttonContent = (
-    <View style={styles.badgeButtonContent}>
-      <IconSymbol
-        name="eye.slash"
-        size={14}
-        color={colors.textSecondary}
-        style={{ marginRight: 6 }}
-      />
-      <ThemedText type="badge" style={{ color: colors.textSecondary }}>
-        100% anonymous
-      </ThemedText>
-    </View>
+    <AnonymousBadge
+      text="What's the Difference?"
+      icon="questionmark.circle"
+      iconColor={colors.textSecondary}
+      textColor={colors.textSecondary}
+      style={{ alignSelf: "center" }}
+    />
   );
 
   return (
@@ -45,6 +42,7 @@ export function AnonymousBadgeModal({
       backgroundColor={colors.modalCardBackground}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.2]}
+      buttonContentPadding={0}
     >
       {/* Modal content with semi-transparent background */}
       <View
@@ -83,12 +81,6 @@ export function AnonymousBadgeModal({
 }
 
 const styles = StyleSheet.create({
-  badgeButtonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    flex: 1,
-  },
   modalContentWrapper: {
     flex: 1,
     borderRadius: 28,

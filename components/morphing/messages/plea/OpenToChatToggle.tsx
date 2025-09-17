@@ -35,33 +35,17 @@ export function OpenToChatToggle({
             Open to Chat?
           </ThemedText>
           <View style={styles.subtitleContainer}>
-            {user ? (
-              <ThemedText
-                type="caption"
-                style={{ color: colors.textSecondary }}
-              >
-                Give{" "}
-                <ThemedText
-                  type="caption"
-                  style={{ color: colors.textSecondary, fontWeight: "bold" }}
-                >
-                  {user}
-                </ThemedText>{" "}
-                permission to start an anonymous chat with you for additional
-                support
-              </ThemedText>
-            ) : (
-              <ThemedText
-                type="caption"
-                style={{ color: colors.textSecondary }}
-              >
-                Give permission for the recipient to start an anonymous chat
-                with you for additional support
-              </ThemedText>
-            )}
+            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
+              Allow the recipient to start a chat with you for additional
+              support
+            </ThemedText>
           </View>
         </View>
-        <ThemedToggle value={isOpen} onValueChange={onToggle} />
+        <View
+          style={{ justifyContent: "center", alignItems: "center", height: 40 }}
+        >
+          <ThemedToggle value={isOpen} onValueChange={onToggle} />
+        </View>
       </View>
     </View>
   );
