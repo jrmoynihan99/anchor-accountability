@@ -73,7 +73,7 @@ export function ReachOutInputScreen({
         ]}
       >
         You're not alone in this journey. Reach out anonymously, and receive
-        instant encouragement & accoutability from our community.
+        encouragement & accoutability from our community.
       </ThemedText>
 
       <MessageInput
