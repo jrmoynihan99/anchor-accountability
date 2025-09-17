@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "my-accountability-app",
-    "slug": "my-accountability-app",
+    "name": "Anchor",
+    "slug": "anchor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myaccountabilityapp",
+    "scheme": "anchor",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jrmoynihan99.myaccountabilityapp",
+      "bundleIdentifier": "com.jrmoynihan99.anchor",
       "entitlements": {
         "aps-environment": "production"
       },
@@ -24,7 +24,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jrmoynihan99.myaccountabilityapp"
+      "package": "com.jrmoynihan99.anchor"
     },
     "web": {
       "bundler": "metro",
