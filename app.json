@@ -7,12 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "myaccountabilityapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.jrmoynihan99.myaccountabilityapp",
       "entitlements": {
-        "aps-environment": "development"
+        "aps-environment": "production"
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

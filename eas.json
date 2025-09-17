@@ -9,10 +9,26 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_FB_API_KEY": "AIzaSyBPufxWH7c-MuWykuEgTkB0nbbDV2_ZzE0",
+        "EXPO_PUBLIC_FB_AUTH_DOMAIN": "accountability-app-a7767.firebaseapp.com",
+        "EXPO_PUBLIC_FB_PROJECT_ID": "accountability-app-a7767",
+        "EXPO_PUBLIC_FB_STORAGE_BUCKET": "accountability-app-a7767.firebasestorage.app",
+        "EXPO_PUBLIC_FB_SENDER_ID": "797457661968",
+        "EXPO_PUBLIC_FB_APP_ID": "1:797457661968:web:98873ed536649c9f0e8a95"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FB_API_KEY": "AIzaSyBPufxWH7c-MuWykuEgTkB0nbbDV2_ZzE0",
+        "EXPO_PUBLIC_FB_AUTH_DOMAIN": "accountability-app-a7767.firebaseapp.com",
+        "EXPO_PUBLIC_FB_PROJECT_ID": "accountability-app-a7767",
+        "EXPO_PUBLIC_FB_STORAGE_BUCKET": "accountability-app-a7767.firebasestorage.app",
+        "EXPO_PUBLIC_FB_SENDER_ID": "797457661968",
+        "EXPO_PUBLIC_FB_APP_ID": "1:797457661968:web:98873ed536649c9f0e8a95"
+      }
     }
   },
   "submit": {
