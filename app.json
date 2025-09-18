@@ -15,7 +15,8 @@
         "aps-environment": "production"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserNotificationUsageDescription": "We use notifications to alert you about new help requests, encouragements, and messages."
       }
     },
     "android": {
