@@ -229,7 +229,7 @@ function SectionHeader({
             type="title"
             style={[styles.headerTitle, { color: colors.text }]}
           >
-            My Reach Outs
+            My Support Requests
           </ThemedText>
           <ThemedText
             type="caption"

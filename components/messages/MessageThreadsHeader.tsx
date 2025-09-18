@@ -71,7 +71,7 @@ export function SectionHeader({
             type="title"
             style={[styles.headerTitle, { color: colors.text }]}
           >
-            Message Threads
+            Private Chats
           </ThemedText>
           <ThemedText
             type="caption"
@@ -131,7 +131,7 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
             type="subtitleSemibold"
             style={[styles.stickyHeaderTitle, { color: colors.text }]}
           >
-            Message Threads
+            Private Chats
           </ThemedText>
         </View>
       </View>

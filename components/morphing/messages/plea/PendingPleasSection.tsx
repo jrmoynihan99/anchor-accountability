@@ -66,7 +66,7 @@ export function PendingPleasSection() {
             type="caption"
             style={[styles.loadingText, { color: colors.textSecondary }]}
           >
-            Loading recent requests...
+            Loading recent support requests...
           </ThemedText>
         </View>
       </View>
@@ -126,7 +126,7 @@ export function PendingPleasSection() {
             type="captionMedium"
             style={[styles.emptyText, { color: colors.textSecondary }]}
           >
-            No recent requests right now
+            No recent support requests right now
           </ThemedText>
           <ThemedText
             type="caption"
@@ -243,7 +243,7 @@ function SectionHeader({
             type="title"
             style={[styles.headerTitle, { color: colors.text }]}
           >
-            Recent Requests
+            Recent Support Requests
           </ThemedText>
           <ThemedText
             type="caption"
