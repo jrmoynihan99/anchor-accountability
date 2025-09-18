@@ -115,14 +115,12 @@ export function useNotificationPreferences(enabled: boolean = true) {
   const enableNotifications = async (): Promise<boolean> => {
     if (!enabled) return false;
     try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-
       // Check current permission status first
       const { status: currentStatus } =
         await Notifications.getPermissionsAsync();
 
       if (currentStatus === "denied") {
-        // Permissions were explicitly denied - guide to settings
+        // Permissions were explicitly denied - guide to settings (no loading state)
         Alert.alert(
           "Notifications Disabled",
           "You previously declined notifications. To enable them:\n\n1. Open iPhone Settings\n2. Find this app\n3. Tap Notifications\n4. Turn on Allow Notifications",
@@ -134,9 +132,12 @@ export function useNotificationPreferences(enabled: boolean = true) {
             },
           ]
         );
-        setState((prev) => ({ ...prev, loading: false }));
+        // Don't set loading: no async work is happening!
         return false;
       }
+
+      // Now we're about to do real work: show loading
+      setState((prev) => ({ ...prev, loading: true, error: null }));
 
       // Continue with normal flow for undetermined/granted status
       await savePushTokenToFirestore();
