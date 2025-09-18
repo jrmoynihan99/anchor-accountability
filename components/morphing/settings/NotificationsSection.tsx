@@ -3,12 +3,14 @@ import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   View,
+  AppState,
+  AppStateStatus,
 } from "react-native";
 
 interface NotificationsSectionProps {
@@ -30,7 +32,42 @@ export function NotificationsSection({
     systemPermissionDenied,
     enableNotifications,
     updatePreference,
+    reload, // <-- this is important!
   } = useNotificationPreferences(shouldLoad);
+
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  // --- AppState effect: Auto-refresh on returning from iOS Settings ---
+  useEffect(() => {
+    if (!shouldLoad) return;
+
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (
+        (appState.current === "inactive" ||
+          appState.current === "background") &&
+        nextAppState === "active"
+      ) {
+        const { status } = await import("expo-notifications").then((m) =>
+          m.getPermissionsAsync()
+        );
+        if (status === "granted") {
+          await enableNotifications();
+        } else {
+          await reload(); // <--- this covers disabling in Settings
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, [shouldLoad, enableNotifications, reload]);
 
   const handleEnablePress = async () => {
     await enableNotifications();
@@ -92,9 +129,7 @@ export function NotificationsSection({
             style={[
               styles.enableButton,
               {
-                backgroundColor: systemPermissionDenied
-                  ? colors.textSecondary
-                  : colors.tint,
+                backgroundColor: colors.tint, // Always use tint for consistency
               },
             ]}
             onPress={handleEnablePress}
