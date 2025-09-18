@@ -165,29 +165,6 @@ export function ThreadInfoModal({
             </ThemedText>
           </TouchableOpacity>
         </View>
-
-        {/* Privacy Section */}
-        <View style={styles.detailItem}>
-          <View style={styles.detailHeader}>
-            <IconSymbol
-              name="lock.shield"
-              size={20}
-              color={colors.textSecondary}
-            />
-            <ThemedText
-              type="bodyMedium"
-              style={[styles.detailLabel, { color: colors.text }]}
-            >
-              Privacy & Security
-            </ThemedText>
-          </View>
-          <ThemedText
-            type="caption"
-            style={[styles.detailValue, { color: colors.textSecondary }]}
-          >
-            Anonymous • Private
-          </ThemedText>
-        </View>
       </View>
     </ScrollView>
   );

@@ -1,7 +1,9 @@
-// app/message-thread.tsx - Fixed version that adjusts scroll bounds without double animation
+// app/message-thread.tsx
+
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
+import { ContextCard } from "@/components/messages/chat/ContextCard";
 import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -17,7 +19,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { doc, getDoc } from "firebase/firestore";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Alert,
   Keyboard,
@@ -47,6 +49,7 @@ export default function MessageThreadScreen() {
   const threadName = params.threadName as string;
   const otherUserId = params.otherUserId as string;
   const pleaId = params.pleaId as string;
+  const encouragementId = params.encouragementId as string;
   const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
@@ -55,6 +58,21 @@ export default function MessageThreadScreen() {
   const [actualThreadId, setActualThreadId] = useState<string>(threadId);
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Context messages + owner UIDs
+  const [pleaMessage, setPleaMessage] = useState<string | null>(null);
+  const [encouragementMessage, setEncouragementMessage] = useState<
+    string | null
+  >(null);
+  const [pleaOwnerUid, setPleaOwnerUid] = useState<string | null>(null);
+  const [encouragementOwnerUid, setEncouragementOwnerUid] = useState<
+    string | null
+  >(null);
+  const [contextPleaId, setContextPleaId] = useState<string | null>(null);
+  const [contextEncouragementId, setContextEncouragementId] = useState<
+    string | null
+  >(null);
+  const [loadingContext, setLoadingContext] = useState(true);
 
   // State for fetched thread data when coming from notification
   const [fetchedThreadName, setFetchedThreadName] = useState<string>("");
@@ -70,147 +88,170 @@ export default function MessageThreadScreen() {
   // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
 
-  // Function to adjust ScrollView's scrollable area to compensate for the transform
+  // 1. Resolve context IDs (from params or Firestore)
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingContext(true);
+    async function resolveContextIds() {
+      if (pleaId || encouragementId) {
+        if (isMounted) {
+          setContextPleaId(pleaId ?? null);
+          setContextEncouragementId(encouragementId ?? null);
+        }
+        return;
+      }
+      if (actualThreadId) {
+        const threadDoc = await getDoc(doc(db, "threads", actualThreadId));
+        if (threadDoc.exists()) {
+          const data = threadDoc.data();
+          if (isMounted) {
+            setContextPleaId(data.startedFromPleaId ?? null);
+            setContextEncouragementId(data.startedFromEncouragementId ?? null);
+          }
+        } else if (isMounted) {
+          setContextPleaId(null);
+          setContextEncouragementId(null);
+        }
+      }
+    }
+    resolveContextIds().then(() => setLoadingContext(false));
+    return () => {
+      isMounted = false;
+    };
+  }, [actualThreadId, pleaId, encouragementId]);
+
+  // 2. Fetch context messages/owners
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingContext(true);
+
+    async function fetchContext() {
+      let pleaMsg = null,
+        pleaUid = null,
+        encMsg = null,
+        encUid = null;
+      if (contextPleaId) {
+        const pleaDoc = await getDoc(doc(db, "pleas", contextPleaId));
+        if (pleaDoc.exists()) {
+          const data = pleaDoc.data();
+          pleaUid = data.uid ?? data.userId ?? null;
+          pleaMsg =
+            typeof data.message === "string" && data.message.trim().length > 0
+              ? data.message
+              : null;
+        }
+      }
+      if (contextPleaId && contextEncouragementId) {
+        const encDoc = await getDoc(
+          doc(
+            db,
+            "pleas",
+            contextPleaId,
+            "encouragements",
+            contextEncouragementId
+          )
+        );
+        if (encDoc.exists()) {
+          const data = encDoc.data();
+          encUid = data.helperUid ?? data.userId ?? null;
+          encMsg =
+            typeof data.message === "string" && data.message.trim().length > 0
+              ? data.message
+              : null;
+        }
+      }
+      if (isMounted) {
+        setPleaOwnerUid(pleaUid);
+        setPleaMessage(pleaMsg);
+        setEncouragementOwnerUid(encUid);
+        setEncouragementMessage(encMsg);
+        setLoadingContext(false);
+      }
+    }
+    // If no context at all, still show the card but empty.
+    if (!contextPleaId) {
+      setPleaOwnerUid(null);
+      setPleaMessage(null);
+      setEncouragementOwnerUid(null);
+      setEncouragementMessage(null);
+      setLoadingContext(false);
+      return;
+    }
+    fetchContext();
+    return () => {
+      isMounted = false;
+    };
+  }, [contextPleaId, contextEncouragementId]);
+
+  // Keyboard & scroll logic (identical to previous)
   const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
     if (!scrollViewRef.current) return;
-
     if (Platform.OS === "ios") {
-      // On iOS, adjust contentInset to add scrollable space at the top
-      // This compensates for the visual transform by making more content scrollable
       scrollViewRef.current.setNativeProps({
-        contentInset: {
-          top: keyboardHeight, // Add scrollable space at top
-          bottom: 0,
-        },
-        scrollIndicatorInsets: {
-          top: keyboardHeight,
-          bottom: 0,
-        },
+        contentInset: { top: keyboardHeight, bottom: 0 },
+        scrollIndicatorInsets: { top: keyboardHeight, bottom: 0 },
       });
-    } else {
-      // On Android, we'll handle this differently in the MessagesList component
-      // by adjusting the contentContainerStyle
     }
   };
-
-  // Set current thread when component mounts and clear when unmounting
-  useEffect(() => {
-    if (actualThreadId) {
-      setCurrentThreadId(actualThreadId);
-    }
-
-    // Clear current thread when leaving this screen
-    return () => {
-      setCurrentThreadId(null);
-      if (actualThreadId) {
-        markMessagesAsRead(actualThreadId)
-          .then(() => refreshUnreadCount())
-          .catch(console.error);
-      }
-    };
-  }, [actualThreadId, setCurrentThreadId]);
-
-  // Update current thread when actualThreadId changes (for new threads)
-  useEffect(() => {
-    if (actualThreadId) {
-      setCurrentThreadId(actualThreadId);
-    }
-  }, [actualThreadId, setCurrentThreadId]);
-
-  // Keyboard event listeners with smooth animations
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (event) => {
         const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
         const height = event.endCoordinates.height;
-
         keyboardHeight.value = withTiming(
           height,
-          {
-            duration: duration,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          },
-          () => {
-            // After animation, adjust ScrollView to compensate for transform
-            runOnJS(adjustScrollViewForKeyboard)(height);
-          }
+          { duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1) },
+          () => runOnJS(adjustScrollViewForKeyboard)(height)
         );
       }
     );
-
     const keyboardWillHide = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
       (event) => {
         const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-
         keyboardHeight.value = withTiming(
           0,
-          {
-            duration: duration,
-            easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-          },
-          () => {
-            // Reset ScrollView insets
-            runOnJS(adjustScrollViewForKeyboard)(0);
-          }
+          { duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1) },
+          () => runOnJS(adjustScrollViewForKeyboard)(0)
         );
       }
     );
-
-    // Also listen for keyboardDidHide to catch interactive dismissal
     const keyboardDidHide = Keyboard.addListener("keyboardDidHide", (event) => {
       keyboardHeight.value = withTiming(
         0,
-        {
-          duration: 200,
-          easing: Easing.out(Easing.quad),
-        },
-        () => {
-          runOnJS(adjustScrollViewForKeyboard)(0);
-        }
+        { duration: 200, easing: Easing.out(Easing.quad) },
+        () => runOnJS(adjustScrollViewForKeyboard)(0)
       );
     });
-
     return () => {
       keyboardWillShow.remove();
       keyboardWillHide.remove();
       keyboardDidHide.remove();
     };
   }, []);
-
-  // Animated styles for smooth transitions - KEEP EXACTLY AS BEFORE
-  const animatedInputStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
-    };
-  });
-
-  const animatedMessagesStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: -keyboardHeight.value * 0.9 }],
-    };
-  });
+  const animatedInputStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -keyboardHeight.value * 0.9 }],
+  }));
+  const animatedMessagesStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: -keyboardHeight.value * 0.9 }],
+  }));
 
   // Fetch missing thread data if coming from notification
   useEffect(() => {
     const fetchThreadData = async () => {
       if (threadName && otherUserId) return;
       if (!threadId || !currentUserId) return;
-
       setLoadingThreadData(true);
       try {
         const threadDoc = await getDoc(doc(db, "threads", threadId));
         if (threadDoc.exists()) {
           const threadData = threadDoc.data();
-
           const otherUserIdFromThread =
             threadData.userA === currentUserId
               ? threadData.userB
               : threadData.userA;
-
           setFetchedOtherUserId(otherUserIdFromThread);
-
           const userDoc = await getDoc(doc(db, "users", otherUserIdFromThread));
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -230,11 +271,8 @@ export default function MessageThreadScreen() {
         setLoadingThreadData(false);
       }
     };
-
     fetchThreadData();
   }, [threadId, threadName, otherUserId, currentUserId]);
-
-  // Scroll to specific message if messageId is provided
   useEffect(() => {
     if (messageId && messages.length > 0) {
       setTimeout(() => {
@@ -242,12 +280,8 @@ export default function MessageThreadScreen() {
       }, 500);
     }
   }, [messageId, messages]);
-
-  // Use fetched data as fallback
   const displayThreadName = threadName || fetchedThreadName || "Unknown User";
   const displayOtherUserId = otherUserId || fetchedOtherUserId;
-
-  // Get current user ID
   useEffect(() => {
     const userId = auth.currentUser?.uid;
     if (userId) {
@@ -257,25 +291,23 @@ export default function MessageThreadScreen() {
       router.back();
     }
   }, []);
-
-  // Set up thread for new conversations
   useEffect(() => {
     if (!currentUserId || !isNewThread || !displayOtherUserId) return;
-
     const setupNewThread = async () => {
       try {
-        const newThreadId = await createThread(displayOtherUserId, pleaId);
+        const newThreadId = await createThread(
+          displayOtherUserId,
+          pleaId,
+          encouragementId
+        );
         setActualThreadId(newThreadId);
       } catch (error) {
         console.error("Failed to create thread:", error);
         Alert.alert("Error", "Failed to start conversation");
       }
     };
-
     setupNewThread();
-  }, [currentUserId, isNewThread, displayOtherUserId, pleaId]);
-
-  // Auto-scroll to bottom when new messages arrive
+  }, [currentUserId, isNewThread, displayOtherUserId, pleaId, encouragementId]);
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => {
@@ -283,8 +315,6 @@ export default function MessageThreadScreen() {
       }, 100);
     }
   }, [messages]);
-
-  // Mark messages as read when screen loads
   useEffect(() => {
     if (actualThreadId && !isNewThread) {
       markMessagesAsRead(actualThreadId)
@@ -293,17 +323,44 @@ export default function MessageThreadScreen() {
     }
   }, [actualThreadId, isNewThread, refreshUnreadCount]);
 
+  // Compose unified data array with context card at top
+  const displayData = useMemo(() => {
+    const contextItem = {
+      type: "context",
+      key: "context-card",
+      loading: loadingContext,
+      plea: pleaMessage,
+      encouragement: encouragementMessage,
+      currentUserId,
+      pleaOwnerUid,
+      encouragementOwnerUid,
+      colors,
+    };
+    const messageItems = (messages || []).map((msg) => ({
+      type: "message",
+      ...msg,
+      key: msg.id,
+    }));
+    return [contextItem, ...messageItems];
+  }, [
+    loadingContext,
+    pleaMessage,
+    encouragementMessage,
+    currentUserId,
+    pleaOwnerUid,
+    encouragementOwnerUid,
+    colors,
+    messages,
+  ]);
+
   const handleSendMessage = async () => {
     if (inputText.trim().length === 0 || !currentUserId || sending) return;
-
     const messageText = inputText.trim();
     setInputText("");
     setSending(true);
-
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
-
     try {
       await sendMessage(actualThreadId, messageText);
     } catch (error) {
@@ -375,7 +432,6 @@ export default function MessageThreadScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
-
         <MessageThreadHeader
           threadName={displayThreadName}
           isTyping={isTyping}
@@ -384,12 +440,11 @@ export default function MessageThreadScreen() {
           colorScheme={effectiveTheme}
           otherUserId={displayOtherUserId}
         />
-
-        {/* Keep the same animated transform */}
+        {/* Animated transform for message list */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
             ref={scrollViewRef}
-            messages={messages}
+            data={displayData}
             currentUserId={currentUserId}
             isNewThread={isNewThread}
             threadName={displayThreadName}
@@ -398,11 +453,10 @@ export default function MessageThreadScreen() {
             loadingMore={loadingMore}
             hasMore={hasMore}
             onLoadMore={loadMoreMessages}
-            keyboardHeight={keyboardHeight} // Pass keyboard height for Android handling
+            keyboardHeight={keyboardHeight}
           />
         </Animated.View>
-
-        {/* Keep the same animated transform */}
+        {/* Animated transform for input */}
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
             ref={inputRef}
@@ -421,12 +475,8 @@ export default function MessageThreadScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  content: { flex: 1 },
   inputContainer: {
     position: "absolute",
     bottom: 0,

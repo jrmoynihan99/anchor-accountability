@@ -1,6 +1,5 @@
-// Updated MessagesList.tsx - Minimal changes for Android
-// components/messages/MessagesList.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { ContextCard } from "@/components/messages/chat/ContextCard";
 import React, { forwardRef, useRef } from "react";
 import {
   ActivityIndicator,
@@ -21,7 +20,7 @@ import { MessageBubble } from "./MessageBubble";
 import { Message } from "./types";
 
 interface MessagesListProps {
-  messages: any[];
+  data: any[]; // Unified array: [{type: 'context'}, ...messages]
   currentUserId: string | null;
   isNewThread: boolean;
   threadName?: string;
@@ -36,7 +35,7 @@ interface MessagesListProps {
 export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
   (
     {
-      messages,
+      data,
       currentUserId,
       isNewThread,
       threadName,
@@ -50,7 +49,7 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
     ref
   ) => {
     const insets = useSafeAreaInsets();
-    const HEADER_HEIGHT = 60; // Match to your header's real height
+    const HEADER_HEIGHT = 60; // Match your header's height
     const paddingTop = insets.top + HEADER_HEIGHT;
     const scrollPositionRef = useRef(0);
 
@@ -64,25 +63,20 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
       status: "read",
     });
 
-    // Calculate input height
-    const inputHeight = 60 + insets.bottom;
-
     // For Android: Add padding at the top to simulate contentInset behavior
     const animatedContentStyle = useAnimatedStyle(() => {
       if (Platform.OS === "android" && keyboardHeight) {
         return {
-          paddingTop: keyboardHeight.value, // Add scrollable space at top
+          paddingTop: keyboardHeight.value,
         };
       }
       return {};
     });
 
     const handleScroll = (event: any) => {
-      const { contentOffset, contentSize, layoutMeasurement } =
-        event.nativeEvent;
+      const { contentOffset } = event.nativeEvent;
       scrollPositionRef.current = contentOffset.y;
 
-      // Adjust the threshold for Android when we have keyboard padding
       const threshold =
         Platform.OS === "android" && keyboardHeight
           ? 50 + (keyboardHeight.value || 0)
@@ -139,7 +133,7 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
         contentContainerStyle={[
           styles.messagesContent,
           {
-            paddingBottom: inputHeight + 16,
+            paddingBottom: 60 + insets.bottom + 16,
             paddingTop,
           },
         ]}
@@ -149,40 +143,63 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
           <Animated.View style={animatedContentStyle} />
         )}
 
+        {/* ---- Render items (context + messages) ---- */}
+        {data.map((item, index) => {
+          if (item.type === "context") {
+            return (
+              <Animated.View
+                key={item.key}
+                entering={FadeInDown}
+                layout={LinearTransition.duration(220)}
+                style={{ width: "100%" }}
+              >
+                <ContextCard
+                  plea={item.plea}
+                  encouragement={item.encouragement}
+                  colors={item.colors}
+                  currentUserId={item.currentUserId}
+                  pleaOwnerUid={item.pleaOwnerUid}
+                  encouragementOwnerUid={item.encouragementOwnerUid}
+                  loading={item.loading}
+                />
+              </Animated.View>
+            );
+          }
+
+          // Render message
+          const message = convertMessageForDisplay(item);
+          const showTimestamp =
+            index === 1 || // context is always first, so messages start at index 1
+            (data[index - 1] &&
+              item.createdAt?.toMillis?.() -
+                data[index - 1]?.createdAt?.toMillis?.() >
+                300000);
+
+          return (
+            <Animated.View
+              key={item.key}
+              entering={FadeInDown}
+              layout={LinearTransition.duration(220)}
+              style={{ width: "100%" }}
+            >
+              <MessageBubble
+                message={message}
+                showTimestamp={showTimestamp}
+                colors={colors}
+              />
+            </Animated.View>
+          );
+        })}
+
         {renderLoadingHeader()}
 
-        {messages.length === 0 ? (
+        {data.length === 1 ? (
           <EmptyMessagesState
             isNewThread={isNewThread}
             threadName={threadName}
             colors={colors}
           />
-        ) : (
-          messages.map((firebaseMessage, index) => {
-            const message = convertMessageForDisplay(firebaseMessage);
-            const showTimestamp =
-              index === 0 ||
-              (messages[index - 1] &&
-                firebaseMessage.createdAt.toMillis() -
-                  messages[index - 1].createdAt.toMillis() >
-                  300000);
-
-            return (
-              <Animated.View
-                key={message.id}
-                entering={FadeInDown}
-                layout={LinearTransition.duration(220)}
-                style={{ width: "100%" }}
-              >
-                <MessageBubble
-                  message={message}
-                  showTimestamp={showTimestamp}
-                  colors={colors}
-                />
-              </Animated.View>
-            );
-          })
-        )}
+        ) : null}
       </ScrollView>
     );
   }

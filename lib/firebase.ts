@@ -52,6 +52,7 @@ export interface ThreadData {
   userA: string; // reachOutUser
   userB: string; // helperUser
   startedFromPleaId?: string;
+  startedFromEncouragementId?: string;
   createdAt: Timestamp;
   lastMessage?: {
     text: string;
@@ -116,7 +117,8 @@ export async function sendMessage(
 // Create a new thread
 export async function createThread(
   otherUserId: string,
-  pleaId?: string
+  pleaId?: string,
+  encouragementId?: string
 ): Promise<string> {
   const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) throw new Error("User not authenticated");
@@ -142,6 +144,7 @@ export async function createThread(
     userA: currentUserId, // Current user is always userA (the one who initiated)
     userB: otherUserId,
     startedFromPleaId: pleaId,
+    startedFromEncouragementId: encouragementId,
     createdAt: serverTimestamp() as Timestamp,
     lastActivity: serverTimestamp() as Timestamp,
     userA_unreadCount: 0,

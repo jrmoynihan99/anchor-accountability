@@ -176,6 +176,7 @@ export function EncouragementsList({
                               threadName: anonymousUsername,
                               otherUserId: encouragement.helperUid,
                               pleaId: pleaId, // Pass the plea ID from props
+                              encouragementId: encouragement.id,
                               isNewThread: "true",
                             },
                           });
