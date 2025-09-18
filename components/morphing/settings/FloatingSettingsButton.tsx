@@ -4,6 +4,7 @@ import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SIZE = 40;
 
@@ -19,6 +20,7 @@ export const FloatingSettingsButton = forwardRef<
   FloatingSettingsButtonProps
 >(({ onPress, onPressIn, onPressOut, style }, ref) => {
   const { colors, effectiveTheme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Animated.View
@@ -28,7 +30,7 @@ export const FloatingSettingsButton = forwardRef<
         styles.shadowWrapper,
         {
           shadowColor: colors.shadow,
-          top: 64,
+          top: insets.top + 20, // Responsive to safe area!
           right: 24,
           width: SIZE,
           height: SIZE,
