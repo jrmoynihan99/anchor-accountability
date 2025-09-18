@@ -1,4 +1,3 @@
-// hooks/useNotificationPreferences.ts
 import * as Notifications from "expo-notifications";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore";
@@ -21,16 +20,19 @@ export interface NotificationState {
   error: string | null;
 }
 
-export function useNotificationPreferences() {
+// --- Add this for fallback state! ---
+const EMPTY_NOTIFICATION_PREFS: NotificationPreferences = {
+  pleas: false,
+  encouragements: false,
+  messages: false,
+};
+
+export function useNotificationPreferences(enabled: boolean = true) {
   const [state, setState] = useState<NotificationState>({
     systemPermissionGranted: false,
     systemPermissionDenied: false,
     hasExpoPushToken: false,
-    preferences: {
-      pleas: false,
-      encouragements: false,
-      messages: false,
-    },
+    preferences: EMPTY_NOTIFICATION_PREFS,
     loading: true,
     error: null,
   });
@@ -38,7 +40,30 @@ export function useNotificationPreferences() {
   const auth = getAuth();
   const db = getFirestore();
 
+  // Prevent *any* side effects or async work unless enabled
+  useEffect(() => {
+    if (!enabled) return;
+    loadNotificationState();
+    // eslint-disable-next-line
+  }, [enabled, auth.currentUser?.uid]);
+
+  // Only subscribe if enabled
+  useEffect(() => {
+    if (!enabled) return;
+    const subscription = Notifications.addNotificationReceivedListener(() => {
+      // If we receive a notification, permissions are definitely granted
+      if (!state.systemPermissionGranted) {
+        loadNotificationState();
+      }
+    });
+    return () => {
+      if (subscription) subscription.remove();
+    };
+    // eslint-disable-next-line
+  }, [enabled, state.systemPermissionGranted]);
+
   const loadNotificationState = async () => {
+    if (!enabled) return; // Extra guard
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
@@ -65,11 +90,8 @@ export function useNotificationPreferences() {
       const userData = userDoc.data();
 
       const hasExpoPushToken = !!userData?.expoPushToken;
-      const preferences = userData?.notificationPreferences || {
-        pleas: false,
-        encouragements: false,
-        messages: false,
-      };
+      const preferences =
+        userData?.notificationPreferences || EMPTY_NOTIFICATION_PREFS;
 
       setState({
         systemPermissionGranted,
@@ -89,7 +111,9 @@ export function useNotificationPreferences() {
     }
   };
 
+  // --- All async actions should check 'enabled' ---
   const enableNotifications = async (): Promise<boolean> => {
+    if (!enabled) return false;
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
@@ -136,6 +160,7 @@ export function useNotificationPreferences() {
     preferenceKey: keyof NotificationPreferences,
     value: boolean
   ): Promise<void> => {
+    if (!enabled) return;
     // Store the previous value for rollback
     const previousValue = state.preferences[preferenceKey];
 
@@ -171,29 +196,27 @@ export function useNotificationPreferences() {
     }
   };
 
-  // Load initial state
-  useEffect(() => {
-    loadNotificationState();
-  }, [auth.currentUser?.uid]);
+  // --- When disabled, always return default props, stubs, and loading true ---
+  if (!enabled) {
+    return {
+      ...state,
+      preferences: EMPTY_NOTIFICATION_PREFS,
+      loading: true,
+      error: null,
+      enableNotifications: async () => false,
+      updatePreference: async () => {},
+      reload: async () => {},
+      shouldShowEnableButton: false,
+      shouldShowPreferences: false,
+    };
+  }
 
-  // Reload when app comes to foreground (to catch permission changes)
-  useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(() => {
-      // If we receive a notification, permissions are definitely granted
-      if (!state.systemPermissionGranted) {
-        loadNotificationState();
-      }
-    });
-
-    return () => subscription.remove();
-  }, [state.systemPermissionGranted]);
-
+  // --- Normal return (enabled) ---
   return {
     ...state,
     enableNotifications,
     updatePreference,
     reload: loadNotificationState,
-    // Computed properties for UI logic
     shouldShowEnableButton:
       !state.systemPermissionGranted || !state.hasExpoPushToken,
     shouldShowPreferences:

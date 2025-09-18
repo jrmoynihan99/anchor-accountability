@@ -49,6 +49,23 @@ export function FloatingSettingsModal({
     useState<TextContentData | null>(null);
   const screenTransition = useSharedValue(0);
 
+  const [shouldLoadNotifications, setShouldLoadNotifications] = useState(false);
+
+  // Delay loading notifications until modal is fully open
+  useEffect(() => {
+    let timer: number | null = null;
+    if (isVisible && currentScreen === "settings") {
+      timer = setTimeout(() => {
+        setShouldLoadNotifications(true);
+      }, 350); // Match your modal open animation duration (in ms)
+    } else {
+      setShouldLoadNotifications(false); // reset on close or when leaving settings screen
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [isVisible, currentScreen]);
+
   // Initialize modal state based on initialScreen prop
   useEffect(() => {
     if (isVisible && initialScreen === "guidelines") {
@@ -300,8 +317,8 @@ Thank you for helping us keep this a safe and welcoming space!`,
           <SettingsHeader />
 
           <View style={styles.settingsSection}>
+            <NotificationsSection shouldLoad={shouldLoadNotifications} />
             <AppearanceSection />
-            <NotificationsSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
             <SignOutButton />

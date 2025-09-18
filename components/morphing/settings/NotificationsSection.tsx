@@ -1,4 +1,3 @@
-// components/morphing/settings/sections/NotificationsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -12,8 +11,16 @@ import {
   View,
 } from "react-native";
 
-export function NotificationsSection() {
+interface NotificationsSectionProps {
+  shouldLoad: boolean;
+}
+
+export function NotificationsSection({
+  shouldLoad,
+}: NotificationsSectionProps) {
   const { colors } = useTheme();
+
+  // Always call the hook; lazy loading inside
   const {
     preferences,
     loading: notificationLoading,
@@ -23,7 +30,7 @@ export function NotificationsSection() {
     systemPermissionDenied,
     enableNotifications,
     updatePreference,
-  } = useNotificationPreferences();
+  } = useNotificationPreferences(shouldLoad);
 
   const handleEnablePress = async () => {
     await enableNotifications();
@@ -72,7 +79,6 @@ export function NotificationsSection() {
           </ThemedText>
         </View>
       ) : shouldShowEnableButton ? (
-        // Show enable notifications button
         <View style={styles.enableNotificationContainer}>
           <ThemedText
             type="caption"
@@ -110,7 +116,6 @@ export function NotificationsSection() {
           </TouchableOpacity>
         </View>
       ) : shouldShowPreferences ? (
-        // Show individual notification toggles
         <>
           <View style={styles.settingItem}>
             <View style={styles.settingContent}>
