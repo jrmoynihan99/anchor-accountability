@@ -3,7 +3,6 @@
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
-import { ContextCard } from "@/components/messages/chat/ContextCard";
 import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -119,6 +118,20 @@ export default function MessageThreadScreen() {
       isMounted = false;
     };
   }, [actualThreadId, pleaId, encouragementId]);
+
+  useEffect(() => {
+    if (actualThreadId) {
+      setCurrentThreadId(actualThreadId);
+    }
+    return () => {
+      setCurrentThreadId(null);
+      if (actualThreadId) {
+        markMessagesAsRead(actualThreadId)
+          .then(() => refreshUnreadCount())
+          .catch(console.error);
+      }
+    };
+  }, [actualThreadId, setCurrentThreadId]);
 
   // 2. Fetch context messages/owners
   useEffect(() => {
