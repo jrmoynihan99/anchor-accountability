@@ -11,8 +11,7 @@ export const PRAYER_STEPS: Record<PrayerStep, PrayerStepConfig> = {
   intro: {
     title: "Guided Prayer",
     subtitle: "Find peace and strength",
-    content:
-      "Take a moment to center yourself. Let's begin this journey together.",
+    content: "Take a moment to center yourself.",
     duration: null,
   },
   breathing: {

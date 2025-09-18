@@ -8,7 +8,7 @@ export const STRINGS = {
   // Subtitles
   SUBTITLE_PERSONAL_BEST: (best: number) =>
     `Personal Best: ${best} ${best === 1 ? "Day" : "Days"}`,
-  SUBTITLE_BEGIN_TRACKING: "Check in to begin tracking your progress.",
+  SUBTITLE_BEGIN_TRACKING: "Start tracking your progress today!",
 
   // Questions
   QUESTION_YESTERDAY: "How did you do yesterday?",

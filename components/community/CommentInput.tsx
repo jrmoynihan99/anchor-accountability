@@ -84,8 +84,8 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
     useEffect(() => {
       if (shouldShowAnyIndicator) {
         indicatorHeight.value = withSpring(40, {
-          damping: 15,
-          stiffness: 150,
+          damping: 60,
+          stiffness: 600,
         });
         indicatorOpacity.value = withTiming(1, { duration: 200 });
       } else {
