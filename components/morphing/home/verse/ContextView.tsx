@@ -106,16 +106,13 @@ export function ContextView({
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView
-        style={styles.contextScrollView}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={[styles.contextScrollView, { flex: 1 }]}>
         <ChapterTextRenderer
           chapterText={getStructuredChapterText()}
           colors={colors}
           activeVerse={verse}
         />
-      </ScrollView>
+      </View>
     </View>
   );
 }

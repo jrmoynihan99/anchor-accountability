@@ -2,6 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { FlatList } from "react-native";
 
 interface ChapterTextProps {
   chapterText: {
@@ -166,22 +167,24 @@ export function ChapterTextRenderer({
   };
 
   return (
-    <View style={styles.container}>
-      {chapterText.blocks.map((block, index) => renderBlock(block, index))}
-    </View>
+    <FlatList
+      data={chapterText.blocks}
+      keyExtractor={(_, idx) => `block-${idx}`}
+      renderItem={({ item, index }) => renderBlock(item, index)}
+      // Optionally add padding/margin here, but DO NOT use flex: 1
+      contentContainerStyle={{ paddingBottom: 32 }}
+      showsVerticalScrollIndicator={false}
+      windowSize={7}
+      initialNumToRender={12}
+      maxToRenderPerBatch={10}
+      removeClippedSubviews={true}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  paragraphContainer: {
-    marginBottom: 12,
-  },
-  poetryContainer: {
-    marginBottom: 12,
-  },
+  paragraphContainer: { marginBottom: 12 },
+  poetryContainer: { marginBottom: 12 },
   poetryLine: {
     flexDirection: "row",
     alignItems: "flex-start",

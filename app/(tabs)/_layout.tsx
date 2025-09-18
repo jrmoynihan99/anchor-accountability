@@ -17,9 +17,15 @@ import { useThreads } from "@/hooks/useThreads";
 import { Tabs, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { LinearGradient } from "expo-linear-gradient";
+import { Platform, StyleSheet, View } from "react-native";
 
 export default function TabLayout() {
-  const { colors } = useTheme();
+  const { colors, effectiveTheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
   const { myReachOuts } = useMyReachOuts();
@@ -71,6 +77,47 @@ export default function TabLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* Sticky Top Blur Header */}
+      <View
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: insets.top + 30,
+          zIndex: 9999,
+          pointerEvents: "none",
+        }}
+      >
+        <MaskedView
+          style={{ flex: 1 }}
+          maskElement={
+            <LinearGradient
+              colors={["rgba(0,0,0,1)", "rgba(0,0,0,0)"]}
+              locations={[0.5, 1]}
+              style={{ flex: 1 }}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+          }
+        >
+          <BlurView
+            intensity={50}
+            tint={effectiveTheme === "dark" ? "dark" : "light"}
+            style={{ flex: 1 }}
+          >
+            <View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: colors.background,
+                opacity: Platform.OS === "ios" ? 0.4 : 0.95,
+              }}
+            />
+          </BlurView>
+        </MaskedView>
+      </View>
+
+      {/* Main Tabs */}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: colors.tint,
@@ -188,15 +235,13 @@ export default function TabLayout() {
           React.useEffect(() => {
             // Trigger the same measurement that handlePressIn does
             const timer = setTimeout(() => {
-              // Manually trigger the press logic to populate buttonLayout
               handlePressIn();
-              // Immediately reset the scale to avoid visual effects
               setTimeout(() => {
                 handlePressOut();
               }, 10);
             }, 100);
             return () => clearTimeout(timer);
-          }, []); // Empty dependency array = run once on mount
+          }, []);
 
           // Reset initial screen when modal closes
           React.useEffect(() => {

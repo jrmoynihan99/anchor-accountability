@@ -12,8 +12,8 @@ export function IntroScrollableMessage() {
   const messageText = [
     "I'm someone who struggled with porn addiction for years. I know the shame, the isolation, and the cycle that feels impossible to break.",
     "One thing that truly helped me was having accountability partners – people who understood the struggle and could offer support in moments of weakness. But I often stopped reaching out because the shame felt too overwhelming.",
-    "That's why I built this app. It's a place for 100% anonymous accountability – where you can reach out anytime during moments of temptation and connect with real people who understand, without the shame or judgment.",
-    "You don't have to face this alone. Recovery is possible, and it starts with our willingness to reach out for help.",
+    "That's why I built this app. It's a place for 100% anonymous accountability – where you can reach out anytime during moments of temptation and instantly connect with real people who understand, without the shame or wait time.",
+    "You don't have to face this alone. Recovery is possible, and it starts with the willingness to reach out for help.",
   ];
 
   return (

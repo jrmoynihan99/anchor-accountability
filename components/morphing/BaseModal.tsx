@@ -129,6 +129,16 @@ export function BaseModal({
     scheduleOnRN(close);
   });
 
+  // *** New: fade the entire modal as it returns to the button ***
+  const modalFadeStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      progress.value,
+      [0, 0.08, 1], // last 12% of animation will fade out
+      [0, 1, 1],
+      "clamp"
+    ),
+  }));
+
   return (
     <Modal
       visible={isVisible}
@@ -155,7 +165,11 @@ export function BaseModal({
 
       {/* Modal Card */}
       <Animated.View
-        style={[modalAnimatedStyle, { overflow: "hidden", zIndex: 20 }]}
+        style={[
+          modalAnimatedStyle,
+          modalFadeStyle, // <<<<< The fade out effect!
+          { overflow: "hidden", zIndex: 20 },
+        ]}
         pointerEvents="box-none"
       >
         {/* Invisible touch blocker to prevent overlay taps from closing modal */}

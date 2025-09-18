@@ -13,7 +13,6 @@ export function IntroFeaturesCard() {
     { icon: "eye-off", text: "100% Anonymous" },
     { icon: "people", text: "Real accountability partners" },
     { icon: "time", text: "Available 24/7" },
-    { icon: "heart", text: "Judgment-free support" },
   ];
 
   return (

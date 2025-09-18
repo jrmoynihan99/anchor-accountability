@@ -17,9 +17,6 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
-import MaskedView from "@react-native-masked-view/masked-view";
-import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
@@ -195,41 +192,6 @@ export default function HomeScreen() {
           }}
         </ButtonModalTransitionBridge>
       </ScrollView>
-
-      {/* Invisible Blur Header - Only shows blur when content passes under */}
-      <View
-        style={[
-          styles.blurHeader,
-          { height: insets.top + 10, pointerEvents: "none" },
-        ]}
-      >
-        <MaskedView
-          style={{ flex: 1 }}
-          maskElement={
-            <LinearGradient
-              colors={["rgba(0,0,0,1)", "rgba(0,0,0,0)"]}
-              locations={[0.4, 1]} // fade bottom 30%
-              style={{ flex: 1 }}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-            />
-          }
-        >
-          <BlurView
-            intensity={50}
-            tint={effectiveTheme === "dark" ? "dark" : "light"}
-            style={{ flex: 1 }}
-          >
-            <View
-              style={{
-                ...StyleSheet.absoluteFillObject,
-                backgroundColor: colors.background,
-                opacity: Platform.OS === "ios" ? 0.4 : 0.95,
-              }}
-            />
-          </BlurView>
-        </MaskedView>
-      </View>
     </View>
   );
 }
