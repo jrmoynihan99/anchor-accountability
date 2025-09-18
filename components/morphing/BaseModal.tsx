@@ -7,12 +7,12 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
   interpolate,
-  runOnJS,
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { scheduleOnRN } from "react-native-worklets";
 
 interface BaseModalProps {
   isVisible: boolean;
@@ -86,7 +86,7 @@ export function BaseModal({
           { duration: 200, easing: Easing.inOut(Easing.quad) },
           (finished) => {
             if (finished) {
-              runOnJS(close)(event.velocityY);
+              scheduleOnRN(close, event.velocityY);
               gestureY.value = 0;
             }
           }
@@ -124,6 +124,10 @@ export function BaseModal({
       "clamp"
     ),
   }));
+
+  const closeButtonGesture = Gesture.Tap().onEnd(() => {
+    scheduleOnRN(close);
+  });
 
   return (
     <Modal
@@ -220,22 +224,21 @@ export function BaseModal({
 
         {/* Modal Content - WITHOUT GestureDetector */}
         <Animated.View style={[styles.modalContent, modalContentStyle]}>
-          <TouchableOpacity
-            onPress={() => close()}
-            style={[
-              styles.closeButton,
-              { backgroundColor: colors.closeButtonBackground },
-            ]}
-            hitSlop={16}
-            activeOpacity={0.7}
-          >
-            <IconSymbol
-              name="xmark"
-              size={18}
-              weight="light"
-              color={buttonColor}
-            />
-          </TouchableOpacity>
+          <GestureDetector gesture={closeButtonGesture}>
+            <Animated.View
+              style={[
+                styles.closeButton,
+                { backgroundColor: colors.closeButtonBackground },
+              ]}
+            >
+              <IconSymbol
+                name="xmark"
+                size={18}
+                weight="light"
+                color={buttonColor}
+              />
+            </Animated.View>
+          </GestureDetector>
 
           {children}
 
