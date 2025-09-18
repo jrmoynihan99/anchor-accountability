@@ -88,7 +88,7 @@ export function VerseCardContent({
       {/* Main verse text, max 3 lines */}
       <ThemedText
         type="verse"
-        numberOfLines={3}
+        numberOfLines={4}
         ellipsizeMode="tail"
         style={[
           styles.verseText,

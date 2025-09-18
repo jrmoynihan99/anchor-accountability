@@ -105,7 +105,7 @@ export function BaseModal({
   }));
 
   const solidBackgroundStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.4], [1, 0], "clamp"),
+    opacity: interpolate(progress.value, [0, 0.7], [1, 0], "clamp"),
   }));
 
   const blurBackgroundStyle = useAnimatedStyle(() => ({

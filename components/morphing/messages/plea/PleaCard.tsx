@@ -42,8 +42,7 @@ export function PleaCard({
   };
 
   // Use the parent-passed "now" for urgency, not Date.now()
-  const isUrgent =
-    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
+  const isUrgent = plea.encouragementCount === 0;
 
   return (
     <TouchableOpacity

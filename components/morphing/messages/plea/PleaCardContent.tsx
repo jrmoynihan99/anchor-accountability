@@ -20,8 +20,7 @@ export function PleaCardContent({ plea, now }: PleaCardContentProps) {
 
   // Use now passed from parent for all time math
   const timeAgo = getTimeAgo(plea.createdAt, now);
-  const isUrgent =
-    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
+  const isUrgent = plea.encouragementCount === 0;
 
   const hasResponded = plea.hasUserResponded || false;
 

@@ -196,8 +196,8 @@ export function PleaResponseModal({
   if (!plea) return null;
 
   // Button content (keep same padding, border logic)
-  const isUrgent =
-    plea.encouragementCount === 0 && getHoursAgo(plea.createdAt, now) > 2;
+  const isUrgent = plea.encouragementCount === 0;
+
   const buttonContent = <PleaCardContent plea={plea} now={now} />;
 
   // --- Screens ---
