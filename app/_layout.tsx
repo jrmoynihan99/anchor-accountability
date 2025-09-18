@@ -29,14 +29,13 @@ import {
 // Notifications
 import * as Notifications from "expo-notifications";
 
+// --- Notification handler logic remains unchanged ---
 let getCurrentThreadId: (() => string | null) | null = null;
 let getCurrentPleaId: (() => string | null) | null = null;
 
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
     const data = notification.request.content.data;
-
-    // Suppress banner if already viewing thread
     if (data?.threadId && getCurrentThreadId) {
       const currentThread = getCurrentThreadId();
       if (currentThread === data.threadId) {
@@ -48,8 +47,6 @@ Notifications.setNotificationHandler({
         };
       }
     }
-
-    // Suppress banner if already viewing encouragement plea
     if (data?.pleaId && data?.type === "encouragement" && getCurrentPleaId) {
       const currentPlea = getCurrentPleaId();
       if (currentPlea === data.pleaId) {
@@ -61,8 +58,6 @@ Notifications.setNotificationHandler({
         };
       }
     }
-
-    // Default banner behavior
     return {
       shouldShowBanner: true,
       shouldShowList: true,
@@ -72,6 +67,7 @@ Notifications.setNotificationHandler({
   },
 });
 
+// --- Prevent splash from auto-hiding, will hide manually ---
 SplashScreen.preventAutoHideAsync();
 
 function ThemedStack() {
@@ -124,47 +120,62 @@ function ThemedStack() {
 }
 
 function AppContent() {
-  const [isNavigationReady, setIsNavigationReady] = useState(false);
-  const segments = useSegments();
-  const navigationState = useRootNavigationState();
-  const { currentThreadId, currentPleaId } = useThread();
-
-  // Only keep regular notification handling
-  useNotificationHandler({ currentThreadId, currentPleaId });
-
   const [spectralLoaded] = useSpectralFonts({
     Spectral_400Regular,
     Spectral_700Bold,
     Spectral_700Bold_Italic,
   });
 
-  const inAuthGroup = segments[0] === "onboarding";
+  const [appReady, setAppReady] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
+  const navigationState = useRootNavigationState();
+  const segments = useSegments();
+  const { currentThreadId, currentPleaId } = useThread();
+
+  useNotificationHandler({ currentThreadId, currentPleaId });
+
+  // --- Core: Only show spinner until the decision is made ---
   useEffect(() => {
     if (!spectralLoaded || !navigationState?.key) return;
-    const checkAuth = async () => {
+
+    const checkAndRoute = async () => {
+      setRedirecting(true);
       try {
         const hasCompleted = await getHasOnboarded();
-        if (hasCompleted) await ensureSignedIn();
-        if (!isNavigationReady) {
-          setIsNavigationReady(true);
-          await SplashScreen.hideAsync();
+        // Get first segment (onboarding or tabs)
+        const inAuthGroup = segments[0] === "onboarding";
+        if (hasCompleted && inAuthGroup) {
+          // User completed onboarding but is on onboarding screens: route to tabs
+          await router.replace("/(tabs)");
+        } else if (!hasCompleted && !inAuthGroup) {
+          // User has not onboarded, but is not in onboarding screens: route to onboarding
+          await router.replace("/onboarding/intro");
         }
-        if (hasCompleted && inAuthGroup) router.replace("/(tabs)");
-        else if (!hasCompleted && !inAuthGroup)
-          router.replace("/onboarding/intro");
+        // Delay just a tick so navigation state can update
+        setTimeout(async () => {
+          setAppReady(true);
+          await SplashScreen.hideAsync();
+        }, 40);
       } catch (error) {
-        if (!isNavigationReady) {
-          setIsNavigationReady(true);
+        // Fail open: route to onboarding
+        await router.replace("/onboarding/intro");
+        setTimeout(async () => {
+          setAppReady(true);
           await SplashScreen.hideAsync();
-        }
-        router.replace("/onboarding/intro");
+        }, 40);
+      } finally {
+        setRedirecting(false);
       }
     };
-    checkAuth();
-  }, [spectralLoaded, navigationState?.key, isNavigationReady]);
 
-  if (!spectralLoaded || !isNavigationReady) {
+    checkAndRoute();
+    // Only run on initial load (not on segments/naviationState change)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spectralLoaded, navigationState?.key]);
+
+  // --- Don't mount stack until all fonts loaded, check finished, and redirect done ---
+  if (!spectralLoaded || !appReady || redirecting) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View

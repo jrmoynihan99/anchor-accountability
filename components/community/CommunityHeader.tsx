@@ -6,7 +6,7 @@ import { BlurView } from "expo-blur";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import Animated, {
-  Extrapolate,
+  Extrapolation,
   interpolate,
   SharedValue,
   useAnimatedStyle,
@@ -19,11 +19,22 @@ const STICKY_HEADER_HEIGHT = 44;
 const SCROLL_THRESHOLD = 80;
 
 // --- Large Section Header (for ListHeaderComponent)
-export function SectionHeader() {
+export function SectionHeader({ scrollY }: { scrollY: SharedValue<number> }) {
   const { colors } = useTheme();
 
+  // Animate opacity so it fades out quickly
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, 24, 48],
+      [1, 0.4, 0],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
   return (
-    <View style={styles.header}>
+    <Animated.View style={[styles.header, animatedStyle]}>
       <View style={styles.headerLeft}>
         <View
           style={[
@@ -48,7 +59,7 @@ export function SectionHeader() {
           </ThemedText>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -69,7 +80,7 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
       ]}
     >
       <BlurView
-        intensity={80}
+        intensity={50}
         tint={effectiveTheme === "dark" ? "dark" : "light"}
         style={StyleSheet.absoluteFillObject}
       />
@@ -118,14 +129,14 @@ export function CommunityHeader({ scrollY }: CommunityHeaderProps) {
       scrollY.value,
       [0, SCROLL_THRESHOLD],
       [0, 1],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     const translateY = interpolate(
       scrollY.value,
       [0, SCROLL_THRESHOLD],
       [-20, 0],
-      Extrapolate.CLAMP
+      Extrapolation.CLAMP
     );
 
     return {

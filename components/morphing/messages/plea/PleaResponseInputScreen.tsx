@@ -191,116 +191,138 @@ export function PleaResponseInputScreen({
 
         {/* Context Section - Now inside the same card */}
         <View style={styles.contextDivider} />
-        <View style={styles.contextHeader}>
-          <View
-            style={[
-              styles.contextIconCircle,
-              { backgroundColor: `${colors.iconCircleBackground}50` },
-            ]}
-          >
-            <IconSymbol name="heart" size={16} color={colors.icon} />
-          </View>
-          <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
-            Support Needed
-          </ThemedText>
-        </View>
         {plea.message && plea.message.trim() ? (
           <View
             style={[
               styles.contextMessageContainer,
               {
-                backgroundColor: colors.cardBackground,
-                borderLeftColor: colors.tint,
+                backgroundColor: colors.modalCardBackground,
+                borderColor: colors.modalCardBorder,
               },
             ]}
           >
-            <ThemedText type="body" style={{ color: colors.text }}>
+            <ThemedText
+              type="body"
+              style={{ color: colors.text, fontStyle: "italic" }}
+            >
               "{plea.message}"
             </ThemedText>
           </View>
-        ) : null}
+        ) : (
+          <View style={styles.contextHeader}>
+            <View
+              style={[
+                styles.contextIconCircle,
+                { backgroundColor: `${colors.iconCircleBackground}50` },
+              ]}
+            >
+              <IconSymbol name="heart" size={16} color={colors.icon} />
+            </View>
+            <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
+              Support Needed
+            </ThemedText>
+          </View>
+        )}
       </View>
 
       {/* Response Section - No card styling */}
-      <View style={styles.responseSection}>
-        <View style={styles.responseHeader}>
-          <View
-            style={[
-              styles.responseIconCircle,
-              { backgroundColor: `${colors.iconCircleBackground}50` },
-            ]}
-          >
-            <IconSymbol name="paperplane" size={16} color={colors.icon} />
-          </View>
-          <View style={styles.responseHeaderText}>
-            <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
-              Send Encouragement
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
-              Your message will be sent anonymously
-            </ThemedText>
-          </View>
-        </View>
-
-        <MessageInput
-          value={encouragementText}
-          onChangeText={onChangeEncouragementText}
-          placeholder="Type your message here..."
-          maxLength={500}
-          minHeight={60}
-          showBorder={false}
-        />
-
-        {/* Send Button */}
-        <View style={styles.sendButtonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.sendButton,
-              {
-                backgroundColor: getButtonBackgroundColor(),
-              },
-            ]}
-            onPress={handleSendPress}
-            activeOpacity={0.8}
-          >
-            {isSending ? (
-              <IconSymbol name="arrow.up" size={20} color={colors.white} />
-            ) : (
-              <>
-                <IconSymbol
-                  name="heart.fill"
-                  size={18}
-                  color={getButtonTextColor()}
-                />
-                <ThemedText
-                  type="button"
-                  style={{ color: getButtonTextColor() }}
-                >
-                  {isButtonDisabled
-                    ? "Type your message"
-                    : "Send Encouragement"}
-                </ThemedText>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {hasResponded && (
-            <View style={styles.alreadyRespondedContainer}>
-              <IconSymbol name="checkmark" size={12} color={colors.success} />
+      <View
+        style={[
+          styles.replyCard,
+          {
+            backgroundColor: colors.modalCardBackground,
+            borderColor: colors.modalCardBorder,
+            shadowColor: colors.shadow,
+          },
+        ]}
+      >
+        <View style={styles.responseSection}>
+          <View style={styles.responseHeader}>
+            <View
+              style={[
+                styles.responseIconCircle,
+                { backgroundColor: `${colors.iconCircleBackground}50` },
+              ]}
+            >
+              <IconSymbol name="paperplane" size={16} color={colors.icon} />
+            </View>
+            <View style={styles.responseHeaderText}>
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.text }}
+              >
+                Send Encouragement
+              </ThemedText>
               <ThemedText
                 type="caption"
                 style={{ color: colors.textSecondary }}
               >
-                You've already sent encouragement
+                Your message will be sent anonymously
               </ThemedText>
             </View>
-          )}
+          </View>
+
+          <MessageInput
+            value={encouragementText}
+            onChangeText={onChangeEncouragementText}
+            placeholder="Type your message here..."
+            maxLength={500}
+            minHeight={80}
+            showBorder={false}
+          />
+
+          <OpenToChatToggle
+            isOpen={isOpenToChat}
+            onToggle={onToggleOpenToChat}
+            user={anonymousUsername}
+          />
+
+          {/* Send Button */}
+          <View style={styles.sendButtonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                {
+                  backgroundColor: getButtonBackgroundColor(),
+                },
+              ]}
+              onPress={handleSendPress}
+              activeOpacity={0.8}
+            >
+              {isSending ? (
+                <IconSymbol name="arrow.up" size={20} color={colors.white} />
+              ) : (
+                <>
+                  <IconSymbol
+                    name="heart.fill"
+                    size={18}
+                    color={getButtonTextColor()}
+                  />
+                  <ThemedText
+                    type="button"
+                    style={{ color: getButtonTextColor() }}
+                  >
+                    {isButtonDisabled
+                      ? "Type your message"
+                      : "Send Encouragement"}
+                  </ThemedText>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {hasResponded && (
+              <View style={styles.alreadyRespondedContainer}>
+                <IconSymbol name="checkmark" size={12} color={colors.success} />
+                <ThemedText
+                  type="caption"
+                  style={{ color: colors.textSecondary }}
+                >
+                  You've already sent encouragement
+                </ThemedText>
+              </View>
+            )}
+          </View>
         </View>
-        <OpenToChatToggle
-          isOpen={isOpenToChat}
-          onToggle={onToggleOpenToChat}
-          user={anonymousUsername}
-        />
       </View>
     </ScrollView>
   );
@@ -377,7 +399,7 @@ const styles = StyleSheet.create({
   // Context Section
   contextDivider: {
     height: 1,
-    marginVertical: 16,
+    marginVertical: 8,
   },
   contextHeader: {
     flexDirection: "row",
@@ -394,8 +416,8 @@ const styles = StyleSheet.create({
   contextMessageContainer: {
     borderRadius: 12,
     padding: 16,
-    borderLeftWidth: 3,
-    marginTop: 8,
+    borderWidth: 1,
+    marginTop: 0,
   },
 
   // Response Section - No card styling
@@ -421,8 +443,8 @@ const styles = StyleSheet.create({
 
   // Send Button Styles
   sendButtonContainer: {
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 24,
+    marginBottom: 0,
   },
   sendButton: {
     flexDirection: "row",
@@ -442,6 +464,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 6,
     marginTop: 12,
+  },
+  replyCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    paddingBottom: 0,
+    marginBottom: 8,
+    marginTop: 0, // Or 20 if you want some separation from the top card
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
   },
 });
 

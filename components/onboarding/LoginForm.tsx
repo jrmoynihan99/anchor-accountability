@@ -40,6 +40,52 @@ interface LoginFormProps {
   setShowPassword: (show: boolean) => void;
 }
 
+// Helper to show friendly errors
+function showAuthError({
+  error,
+  isSignUp,
+  setIsSignUp,
+}: {
+  error: any;
+  isSignUp: boolean;
+  setIsSignUp: (v: boolean) => void;
+}) {
+  const errorCode = error.code || "";
+
+  if (isSignUp && errorCode === "auth/email-already-in-use") {
+    Alert.alert(
+      "Error",
+      "Account already exists with this email",
+      [
+        {
+          text: "Sign In",
+          onPress: () => setIsSignUp(false),
+        },
+      ],
+      { cancelable: true }
+    );
+  } else if (
+    !isSignUp &&
+    (errorCode === "auth/invalid-credential" ||
+      errorCode === "auth/wrong-password" ||
+      errorCode === "auth/user-not-found" ||
+      errorCode === "auth/invalid-email")
+  ) {
+    Alert.alert(
+      "Error",
+      "Invalid Email or Password",
+      [{ text: "OK", style: "default" }],
+      { cancelable: true }
+    );
+  } else {
+    Alert.alert(
+      "Error",
+      error.message || "Something went wrong. Please try again.",
+      [{ text: "OK", style: "default" }]
+    );
+  }
+}
+
 export function LoginForm({
   email,
   setEmail,
@@ -81,7 +127,7 @@ export function LoginForm({
       }
       await completeOnboarding();
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      showAuthError({ error, isSignUp, setIsSignUp });
     } finally {
       setLoadingButton(null);
     }

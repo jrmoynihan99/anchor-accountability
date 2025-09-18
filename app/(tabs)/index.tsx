@@ -13,11 +13,13 @@ import {
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useStreakData } from "@/hooks/useStreakData";
-import { auth } from "@/lib/firebase";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View, Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BlurView } from "expo-blur";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
@@ -193,6 +195,41 @@ export default function HomeScreen() {
           }}
         </ButtonModalTransitionBridge>
       </ScrollView>
+
+      {/* Invisible Blur Header - Only shows blur when content passes under */}
+      <View
+        style={[
+          styles.blurHeader,
+          { height: insets.top + 10, pointerEvents: "none" },
+        ]}
+      >
+        <MaskedView
+          style={{ flex: 1 }}
+          maskElement={
+            <LinearGradient
+              colors={["rgba(0,0,0,1)", "rgba(0,0,0,0)"]}
+              locations={[0.4, 1]} // fade bottom 30%
+              style={{ flex: 1 }}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            />
+          }
+        >
+          <BlurView
+            intensity={50}
+            tint={effectiveTheme === "dark" ? "dark" : "light"}
+            style={{ flex: 1 }}
+          >
+            <View
+              style={{
+                ...StyleSheet.absoluteFillObject,
+                backgroundColor: colors.background,
+                opacity: Platform.OS === "ios" ? 0.4 : 0.95,
+              }}
+            />
+          </BlurView>
+        </MaskedView>
+      </View>
     </View>
   );
 }
@@ -206,5 +243,12 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+  },
+  blurHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
 });

@@ -54,7 +54,7 @@ export function OpenToChatToggle({
 const styles = StyleSheet.create({
   // Layout and structural styles only - NO text styling
   container: {
-    marginTop: 16,
+    marginTop: 8,
   },
   content: {
     flexDirection: "row",

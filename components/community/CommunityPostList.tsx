@@ -233,7 +233,7 @@ export function CommunityPostList({
       data={posts}
       renderItem={renderPost}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={<SectionHeader />}
+      ListHeaderComponent={() => <SectionHeader scrollY={scrollY} />}
       ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[

@@ -1,4 +1,3 @@
-// components/messages/MessageThreadsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -30,7 +29,7 @@ export function MessageThreadsSection({
   if (loading) {
     return (
       <View style={styles.section}>
-        <SectionHeader threadsCount={0} loading={true} />
+        <SectionHeader scrollY={scrollY} threadsCount={0} loading={true} />
         <View style={styles.emptyContainer}>
           <IconSymbol
             name="clock"
@@ -52,7 +51,7 @@ export function MessageThreadsSection({
   if (error) {
     return (
       <View style={styles.section}>
-        <SectionHeader threadsCount={0} error={error} />
+        <SectionHeader scrollY={scrollY} threadsCount={0} error={error} />
         <View style={styles.emptyContainer}>
           <IconSymbol
             name="exclamationmark.triangle"
@@ -73,7 +72,7 @@ export function MessageThreadsSection({
 
   return (
     <View style={styles.section}>
-      <SectionHeader threadsCount={threads.length} />
+      <SectionHeader scrollY={scrollY} threadsCount={threads.length} />
 
       {threads.length === 0 ? (
         <View style={styles.emptyContainer}>

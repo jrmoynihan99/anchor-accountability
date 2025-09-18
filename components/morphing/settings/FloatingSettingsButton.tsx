@@ -75,7 +75,7 @@ export const FloatingSettingsButton = forwardRef<
             <Ionicons
               name="settings-sharp"
               size={24}
-              color={colors.tabIconSelected}
+              color={colors.tabIconDefault}
             />
           </Pressable>
         </View>

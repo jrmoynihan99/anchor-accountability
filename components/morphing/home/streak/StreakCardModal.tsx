@@ -81,32 +81,37 @@ export function StreakCardModal({
         },
       ]}
     >
-      <View style={styles.statCardContent}>
+      <View style={{ alignItems: "center" }}>
+        {/* Icon and value inline */}
         <View
-          style={[styles.statIconCircle, { backgroundColor: `${color}33` }]}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 2,
+          }}
         >
-          <IconSymbol name={icon} size={20} color={color} />
-        </View>
-        <View style={styles.statTextContainer}>
-          <ThemedText
-            type="statValue"
+          <View
             style={[
-              styles.statValue,
-              {
-                color,
-                marginBottom: 2,
-              },
+              styles.statIconCircle,
+              { backgroundColor: `${color}33`, marginRight: 6 },
             ]}
           >
+            <IconSymbol name={icon} size={20} color={color} />
+          </View>
+          <ThemedText type="statValue" style={[styles.statValue, { color }]}>
             {value}
           </ThemedText>
-          <ThemedText
-            type="statLabel"
-            style={[styles.statLabel, { color: colors.textSecondary }]}
-          >
-            {label}
-          </ThemedText>
         </View>
+        {/* Label below */}
+        <ThemedText
+          type="statLabel"
+          style={[
+            styles.statLabel,
+            { color: colors.textSecondary, textAlign: "center" },
+          ]}
+        >
+          {label}
+        </ThemedText>
       </View>
     </View>
   );
