@@ -300,8 +300,8 @@ Thank you for helping us keep this a safe and welcoming space!`,
           <SettingsHeader />
 
           <View style={styles.settingsSection}>
-            <NotificationsSection />
             <AppearanceSection />
+            <NotificationsSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
             <SignOutButton />
