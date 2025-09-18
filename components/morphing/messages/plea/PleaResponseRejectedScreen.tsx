@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { useSegments, router } from "expo-router";
 
 interface PleaResponseRejectedScreenProps {
   onClose: () => void;
@@ -36,13 +37,24 @@ export function PleaResponseRejectedScreen({
     onClose();
   };
 
+  const segments = useSegments();
+
   const handleViewGuidelinesPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Close current modal and trigger settings guidelines intent
     onClose();
+
     setTimeout(() => {
-      setModalIntent("settingsGuidelines");
-    }, 100); // Small delay to ensure current modal closes first
+      // Convert segments to path (e.g., ['(tabs)', 'pleas'] => '/(tabs)/pleas')
+      const path = "/" + segments.join("/");
+      if (path !== "/(tabs)/pleas") {
+        router.replace("/(tabs)/pleas");
+        setTimeout(() => {
+          setModalIntent("settingsGuidelines");
+        }, 100);
+      } else {
+        setModalIntent("settingsGuidelines");
+      }
+    }, 300);
   };
 
   return (

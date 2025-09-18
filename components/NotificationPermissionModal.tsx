@@ -173,7 +173,7 @@ export function NotificationPermissionModal({
             />
             <ThemedText
               type="caption"
-              style={[styles.noteText, { color: colors.tint }]}
+              style={[styles.noteText, { color: colors.textSecondary }]}
             >
               Without notifications, you won't know when someone needs your
               support, or when you've recieved encouragement from others!
