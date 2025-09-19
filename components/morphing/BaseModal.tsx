@@ -133,7 +133,7 @@ export function BaseModal({
   const modalFadeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       progress.value,
-      [0, 0.08, 1], // last 12% of animation will fade out
+      [0, 0.02, 1], // last 12% of animation will fade out
       [0, 1, 1],
       "clamp"
     ),
