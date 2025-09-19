@@ -1,6 +1,7 @@
 // hooks/useNotificationPermission.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import { getAuth } from "firebase/auth";
 import { useEffect, useState } from "react";
 
 const NOTIFICATION_PROMPT_KEY = "hasSeenNotificationPrompt";
@@ -11,10 +12,12 @@ export function useNotificationPermission() {
   const [shouldShowModal, setShouldShowModal] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<string | null>(null);
 
+  const auth = getAuth();
+
   // Check if we should show the notification prompt
   useEffect(() => {
     checkNotificationState();
-  }, []);
+  }, [auth.currentUser?.uid]); // Re-check when user changes
 
   const checkNotificationState = async () => {
     try {
@@ -22,27 +25,34 @@ export function useNotificationPermission() {
       const { status } = await Notifications.getPermissionsAsync();
       setPermissionStatus(status);
 
-      // If already granted, don't show modal
+      // If already granted and user has push token, don't show modal
       if (status === "granted") {
+        // Let useNotificationPreferences handle the auto-setup
         setHasSeenPrompt(true);
         setShouldShowModal(false);
         return;
       }
 
-      // Check if user has seen the prompt before
-      const seenPrompt = await AsyncStorage.getItem(NOTIFICATION_PROMPT_KEY);
+      // Get user-specific storage keys (so different users don't share state)
+      const uid = auth.currentUser?.uid || "anonymous";
+      const userSpecificPromptKey = `${NOTIFICATION_PROMPT_KEY}_${uid}`;
+      const userSpecificDismissedKey = `${NOTIFICATION_DISMISSED_KEY}_${uid}`;
+
+      // Check if THIS USER has seen the prompt before
+      const seenPrompt = await AsyncStorage.getItem(userSpecificPromptKey);
       const hasSeenBefore = seenPrompt === "true";
       setHasSeenPrompt(hasSeenBefore);
 
       if (!hasSeenBefore) {
-        // First time - show modal after delay
+        // First time for this user - show modal after delay
+        // This applies whether permissions are undetermined OR denied
         setTimeout(() => {
           setShouldShowModal(true);
         }, 1500);
       } else {
-        // Check if we should ask again (after 7 days if they said "ask later")
+        // Check if we should ask again (after 3 days if they said "ask later")
         const dismissedAt = await AsyncStorage.getItem(
-          NOTIFICATION_DISMISSED_KEY
+          userSpecificDismissedKey
         );
         if (dismissedAt) {
           const dismissedDate = new Date(dismissedAt);
@@ -66,7 +76,9 @@ export function useNotificationPermission() {
 
   const markPromptAsSeen = async () => {
     try {
-      await AsyncStorage.setItem(NOTIFICATION_PROMPT_KEY, "true");
+      const uid = auth.currentUser?.uid || "anonymous";
+      const userSpecificPromptKey = `${NOTIFICATION_PROMPT_KEY}_${uid}`;
+      await AsyncStorage.setItem(userSpecificPromptKey, "true");
       setHasSeenPrompt(true);
     } catch (error) {
       console.error("Error marking prompt as seen:", error);
@@ -75,8 +87,10 @@ export function useNotificationPermission() {
 
   const markPromptDismissed = async () => {
     try {
+      const uid = auth.currentUser?.uid || "anonymous";
+      const userSpecificDismissedKey = `${NOTIFICATION_DISMISSED_KEY}_${uid}`;
       await AsyncStorage.setItem(
-        NOTIFICATION_DISMISSED_KEY,
+        userSpecificDismissedKey,
         new Date().toISOString()
       );
       await markPromptAsSeen();

@@ -4,7 +4,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import * as Haptics from "expo-haptics";
-import React from "react";
+import * as Notifications from "expo-notifications";
+import { Linking } from "react-native";
+import React, { useEffect, useState } from "react";
 import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   Easing,
@@ -28,6 +30,20 @@ export function NotificationPermissionModal({
   const { colors } = useTheme();
   const { enableNotifications, loading } = useNotificationPreferences();
   const translateY = useSharedValue(1000);
+  const [permissionStatus, setPermissionStatus] =
+    useState<string>("undetermined");
+
+  // Check permission status when modal becomes visible
+  useEffect(() => {
+    if (isVisible) {
+      checkPermissionStatus();
+    }
+  }, [isVisible]);
+
+  const checkPermissionStatus = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setPermissionStatus(status);
+  };
 
   React.useEffect(() => {
     if (isVisible) {
@@ -54,6 +70,14 @@ export function NotificationPermissionModal({
   const handleEnableNotifications = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    if (permissionStatus === "denied") {
+      // Guide to settings instead of trying to enable
+      Linking.openSettings();
+      onPermissionResult(false); // Still mark as not granted
+      onClose();
+      return;
+    }
+
     const success = await enableNotifications();
     onPermissionResult(success);
 
@@ -70,9 +94,21 @@ export function NotificationPermissionModal({
       duration: 250,
       easing: Easing.in(Easing.quad),
     });
+
+    // Call the handlers to properly dismiss the modal
+    onPermissionResult(false);
+    onClose();
   };
 
   if (!isVisible) return null;
+
+  // Determine content based on permission status
+  const isDenied = permissionStatus === "denied";
+  const buttonText = isDenied ? "Open Settings" : "Enable Notifications";
+  const buttonIcon = isDenied ? "gear" : "bell.badge";
+  const noteText = isDenied
+    ? "Notifications are currently disabled for this app. Tap below to open Settings and enable them manually."
+    : "Without notifications, you won't know when someone needs your support, or when you've received encouragement from others!";
 
   return (
     <Modal
@@ -137,7 +173,7 @@ export function NotificationPermissionModal({
             ]}
           >
             <IconSymbol
-              name="bell"
+              name={isDenied ? "bell.slash" : "bell"}
               size={32}
               color={colors.tint}
               weight="medium"
@@ -146,7 +182,9 @@ export function NotificationPermissionModal({
 
           {/* Title */}
           <ThemedText type="title" style={styles.title}>
-            Enable Notifications To Help
+            {isDenied
+              ? "Notifications Are Disabled"
+              : "Enable Notifications To Help"}
           </ThemedText>
 
           {/* Description */}
@@ -166,7 +204,7 @@ export function NotificationPermissionModal({
             ]}
           >
             <IconSymbol
-              name="exclamationmark.triangle"
+              name={isDenied ? "gear" : "exclamationmark.triangle"}
               size={16}
               color={colors.tint}
               style={styles.warningIcon}
@@ -175,19 +213,20 @@ export function NotificationPermissionModal({
               type="caption"
               style={[styles.noteText, { color: colors.textSecondary }]}
             >
-              Without notifications, you won't know when someone needs your
-              support, or when you've recieved encouragement from others!
+              {noteText}
             </ThemedText>
           </View>
 
-          {/* Customization Note */}
-          <ThemedText
-            type="caption"
-            style={[styles.customizeText, { color: colors.textSecondary }]}
-          >
-            You can change which types of notifications you receive after
-            enabling.
-          </ThemedText>
+          {/* Customization Note - only show if not denied */}
+          {!isDenied && (
+            <ThemedText
+              type="caption"
+              style={[styles.customizeText, { color: colors.textSecondary }]}
+            >
+              You can change which types of notifications you receive after
+              enabling.
+            </ThemedText>
+          )}
 
           {/* Buttons */}
           <View style={styles.buttonContainer}>
@@ -206,12 +245,12 @@ export function NotificationPermissionModal({
                   type="button"
                   style={[styles.enableButtonText, { color: colors.white }]}
                 >
-                  Enabling...
+                  {isDenied ? "Opening..." : "Enabling..."}
                 </ThemedText>
               ) : (
                 <>
                   <IconSymbol
-                    name="bell.badge"
+                    name={buttonIcon}
                     size={18}
                     color={colors.white}
                     style={styles.buttonIcon}
@@ -220,7 +259,7 @@ export function NotificationPermissionModal({
                     type="button"
                     style={[styles.enableButtonText, { color: colors.white }]}
                   >
-                    Enable Notifications
+                    {buttonText}
                   </ThemedText>
                 </>
               )}
@@ -242,8 +281,6 @@ export function NotificationPermissionModal({
               </ThemedText>
             </TouchableOpacity>
           </View>
-
-          {/* Bottom drag indicator */}
         </Animated.View>
       </View>
     </Modal>

@@ -22,9 +22,9 @@ export interface NotificationState {
 
 // --- Add this for fallback state! ---
 const EMPTY_NOTIFICATION_PREFS: NotificationPreferences = {
-  pleas: false,
-  encouragements: false,
-  messages: false,
+  pleas: true,
+  encouragements: true,
+  messages: true,
 };
 
 export function useNotificationPreferences(enabled: boolean = true) {
