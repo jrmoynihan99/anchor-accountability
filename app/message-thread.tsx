@@ -3,6 +3,7 @@
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
+import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -336,36 +337,6 @@ export default function MessageThreadScreen() {
     }
   }, [actualThreadId, isNewThread, refreshUnreadCount]);
 
-  // Compose unified data array with context card at top
-  const displayData = useMemo(() => {
-    const contextItem = {
-      type: "context",
-      key: "context-card",
-      loading: loadingContext,
-      plea: pleaMessage,
-      encouragement: encouragementMessage,
-      currentUserId,
-      pleaOwnerUid,
-      encouragementOwnerUid,
-      colors,
-    };
-    const messageItems = (messages || []).map((msg) => ({
-      type: "message",
-      ...msg,
-      key: msg.id,
-    }));
-    return [contextItem, ...messageItems];
-  }, [
-    loadingContext,
-    pleaMessage,
-    encouragementMessage,
-    currentUserId,
-    pleaOwnerUid,
-    encouragementOwnerUid,
-    colors,
-    messages,
-  ]);
-
   const handleSendMessage = async () => {
     if (inputText.trim().length === 0 || !currentUserId || sending) return;
     const messageText = inputText.trim();
@@ -445,6 +416,8 @@ export default function MessageThreadScreen() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
+
+        {/* Header */}
         <MessageThreadHeader
           threadName={displayThreadName}
           isTyping={isTyping}
@@ -453,11 +426,24 @@ export default function MessageThreadScreen() {
           colorScheme={effectiveTheme}
           otherUserId={displayOtherUserId}
         />
+
+        {/* Context Section - positioned absolutely */}
+        <ContextSection
+          plea={pleaMessage}
+          encouragement={encouragementMessage}
+          colors={colors}
+          currentUserId={currentUserId}
+          pleaOwnerUid={pleaOwnerUid}
+          encouragementOwnerUid={encouragementOwnerUid}
+          loading={loadingContext}
+          isNewThread={isNewThread}
+        />
+
         {/* Animated transform for message list */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
             ref={scrollViewRef}
-            data={displayData}
+            messages={messages || []}
             currentUserId={currentUserId}
             isNewThread={isNewThread}
             threadName={displayThreadName}
@@ -469,6 +455,7 @@ export default function MessageThreadScreen() {
             keyboardHeight={keyboardHeight}
           />
         </Animated.View>
+
         {/* Animated transform for input */}
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
