@@ -154,7 +154,7 @@ Your Control
 You can delete your account at any time, which will remove all associated data. You have complete control over what you share and when.
 
 Contact Us
-If you have questions about privacy, please reach out through the app's support feature.`,
+If you have questions about privacy, please reach out: jrmoynihan99@gmail.com`,
         };
       case "terms":
         return {
@@ -222,17 +222,15 @@ Let's beat this together. You're not alone.`,
       case "community":
         return {
           title: "Guidelines",
-          content: `Our community thrives on kindness, encouragement, and respect.
+          content: `Our community thrives on encouragement, and respect.
 
-- Treat every user with compassion and dignity.
+- Treat every user with dignity.
 - Avoid spam, trolling, or negative remarks.
-- All messages and posts should be supportive and helpful.
 - Report anything that seems unsafe or abusive.
 
 Things we do not allow:
-1. Spam
-2. Trolling
-2. Hateful content
+1. Spam/Trolling
+2. Hateful/Abusive content
 
 Thank you for helping us keep this a safe and welcoming space!`,
         };
