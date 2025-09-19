@@ -89,9 +89,27 @@ export function useNotificationPreferences(enabled: boolean = true) {
       const userDoc = await getDoc(userRef);
       const userData = userDoc.data();
 
-      const hasExpoPushToken = !!userData?.expoPushToken;
+      let hasExpoPushToken = !!userData?.expoPushToken;
       const preferences =
         userData?.notificationPreferences || EMPTY_NOTIFICATION_PREFS;
+
+      // NEW: Auto-setup push token if system permissions are granted but user doesn't have token
+      if (systemPermissionGranted && !hasExpoPushToken) {
+        try {
+          console.log(
+            "Auto-setting up push token for new user with granted permissions"
+          );
+          await savePushTokenToFirestore();
+
+          // Re-fetch to confirm the token was saved
+          const updatedUserDoc = await getDoc(userRef);
+          const updatedUserData = updatedUserDoc.data();
+          hasExpoPushToken = !!updatedUserData?.expoPushToken;
+        } catch (error) {
+          console.error("Error auto-setting up push token:", error);
+          // Don't throw - just continue with the original state
+        }
+      }
 
       setState({
         systemPermissionGranted,
