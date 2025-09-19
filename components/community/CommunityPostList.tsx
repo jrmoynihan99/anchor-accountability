@@ -246,7 +246,7 @@ export function CommunityPostList({
         posts.length === 0 && styles.emptyContentContainer,
       ]}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps="always"
       keyboardDismissMode="interactive"
       onScroll={onScroll}
       scrollEventThrottle={16}

@@ -172,6 +172,7 @@ export function ViewPostModal({
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           {/* Full Post Content */}
           <View
