@@ -524,55 +524,40 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
 
   let rejectionReason = null;
 
-  // 1. OpenAI Moderation API
-  let flagged = false;
-  try {
-    const modResult = await openai.moderations.create({ input: message });
-    flagged = modResult.results[0].flagged;
-    if (flagged) {
-      rejectionReason = "Content contains hateful or derogatory language";
-    }
-    logger.info(`[moderatePlea] OpenAI Moderation flagged: ${flagged}`);
-  } catch (e) {
-    logger.error("OpenAI Moderation API failed, skipping to GPT fallback.", e);
-  }
-
-  // 2. GPT moderation with Firestore prompt
+  // GPT moderation with Firestore prompt
   let gptFlagged = false;
-  if (!flagged) {
-    try {
-      const filteringPrompt = await getFilteringPrompt("plea");
-      logger.info(`[moderatePlea] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", message);
-      logger.info(`[moderatePlea] Sending prompt text: ${promptText}`);
-      const gptCheck = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: promptText }],
-        temperature: 0,
-        max_tokens: 20, // Enough for our specific responses
-      });
-      const result = gptCheck.choices[0].message.content.trim();
-      logger.info(`[moderatePlea] GPT result: ${result}`);
+  try {
+    const filteringPrompt = await getFilteringPrompt("plea");
+    logger.info(`[moderatePlea] Using prompt: ${filteringPrompt}`);
+    const promptText = filteringPrompt.replace("{message}", message);
+    logger.info(`[moderatePlea] Sending prompt text: ${promptText}`);
+    const gptCheck = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "system", content: promptText }],
+      temperature: 0,
+      max_tokens: 20, // Enough for our specific responses
+    });
+    const result = gptCheck.choices[0].message.content.trim();
+    logger.info(`[moderatePlea] GPT result: ${result}`);
 
-      if (result !== "ALLOW") {
-        gptFlagged = true;
-        if (result === "BLOCK: hateful/derogatory") {
-          rejectionReason = "Content contains hateful or derogatory language";
-        } else if (result === "BLOCK: spam/trolling") {
-          rejectionReason = "Content appears to be spam or trolling";
-        } else {
-          // Fallback for any unexpected responses
-          rejectionReason = "Message doesn't align with community guidelines";
-        }
-      }
-    } catch (err) {
-      logger.error("GPT moderation failed:", err);
+    if (result !== "ALLOW") {
       gptFlagged = true;
-      rejectionReason = "Unable to process message at this time";
+      if (result === "BLOCK: hateful/derogatory") {
+        rejectionReason = "Content contains hateful or derogatory language";
+      } else if (result === "BLOCK: spam/trolling") {
+        rejectionReason = "Content appears to be spam or trolling";
+      } else {
+        // Fallback for any unexpected responses
+        rejectionReason = "Message doesn't align with community guidelines";
+      }
     }
+  } catch (err) {
+    logger.error("GPT moderation failed:", err);
+    gptFlagged = true;
+    rejectionReason = "Unable to process message at this time";
   }
 
-  const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+  const newStatus = gptFlagged ? "rejected" : "approved";
   logger.info(`Moderation result for plea ${snap.id}: ${newStatus}`);
 
   const updateData = {
@@ -607,62 +592,48 @@ exports.moderateEncouragement = onDocumentCreated(
       return;
     }
 
-    // 1. OpenAI Moderation API
-    let flagged = false;
-    try {
-      const modResult = await openai.moderations.create({ input: message });
-      flagged = modResult.results[0].flagged;
-      if (flagged) {
-        rejectionReason = "Content contains hateful or derogatory language";
-      }
-      logger.info(
-        `[moderateEncouragement] OpenAI Moderation flagged: ${flagged}`
-      );
-    } catch (e) {
-      logger.error(
-        "OpenAI Moderation API failed, skipping to GPT fallback.",
-        e
-      );
-    }
-
-    // 2. GPT moderation with Firestore prompt
+    // GPT moderation with Firestore prompt
     let gptFlagged = false;
-    if (!flagged) {
-      try {
-        const filteringPrompt = await getFilteringPrompt("encouragement");
-        logger.info(`[moderateEncouragement] Using prompt: ${filteringPrompt}`);
-        const promptText = filteringPrompt.replace("{message}", message);
-        logger.info(
-          `[moderateEncouragement] Sending prompt text: ${promptText}`
-        );
-        const gptCheck = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "system", content: promptText }],
-          temperature: 0,
-          max_tokens: 20, // Enough for our specific responses
-        });
-        const result = gptCheck.choices[0].message.content.trim();
-        logger.info(`[moderateEncouragement] GPT result: ${result}`);
+    try {
+      const filteringPrompt = await getFilteringPrompt("encouragement");
+      logger.info(`[moderateEncouragement] Using prompt: ${filteringPrompt}`);
+      const promptText = filteringPrompt.replace("{message}", message);
+      logger.info(`[moderateEncouragement] Sending prompt text: ${promptText}`);
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 20, // Enough for our specific responses
+      });
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderateEncouragement] GPT result: ${result}`);
 
-        if (result !== "ALLOW") {
-          gptFlagged = true;
-          if (result === "BLOCK: hateful/derogatory") {
-            rejectionReason = "Content contains hateful or derogatory language";
-          } else if (result === "BLOCK: spam/trolling") {
-            rejectionReason = "Content appears to be spam or trolling";
-          } else {
-            // Fallback for any unexpected responses
-            rejectionReason = "Message doesn't align with community guidelines";
-          }
-        }
-      } catch (err) {
-        logger.error("GPT moderation failed:", err);
+      const cleanResult = result.toLowerCase().trim();
+      logger.info(`[moderateEncouragement] Clean result: "${cleanResult}"`);
+      if (cleanResult !== "allow") {
         gptFlagged = true;
-        rejectionReason = "Unable to process message at this time";
+        if (
+          cleanResult.includes("hateful") ||
+          cleanResult.includes("derogatory")
+        ) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (
+          cleanResult.includes("spam") ||
+          cleanResult.includes("trolling")
+        ) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
+          // Fallback for any unexpected responses
+          rejectionReason = "Message doesn't align with community guidelines";
+        }
       }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process message at this time";
     }
 
-    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    const newStatus = gptFlagged ? "rejected" : "approved";
     logger.info(`Moderation result for encouragement ${snap.id}: ${newStatus}`);
 
     const updateData = {
@@ -676,8 +647,6 @@ exports.moderateEncouragement = onDocumentCreated(
     await snap.ref.update(updateData);
   }
 );
-
-// Add these two functions to your existing index.js
 
 exports.moderatePost = onDocumentCreated(
   "communityPosts/{postId}",
@@ -706,60 +675,48 @@ exports.moderatePost = onDocumentCreated(
       return;
     }
 
-    // 1. OpenAI Moderation API
-    let flagged = false;
-    try {
-      const modResult = await openai.moderations.create({
-        input: combinedText,
-      });
-      flagged = modResult.results[0].flagged;
-      if (flagged) {
-        rejectionReason = "Content contains hateful or derogatory language";
-      }
-      logger.info(`[moderatePost] OpenAI Moderation flagged: ${flagged}`);
-    } catch (e) {
-      logger.error(
-        "OpenAI Moderation API failed, skipping to GPT fallback.",
-        e
-      );
-    }
-
-    // 2. GPT moderation with Firestore prompt
+    // GPT moderation with Firestore prompt
     let gptFlagged = false;
-    if (!flagged) {
-      try {
-        const filteringPrompt = await getFilteringPrompt("post");
-        logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
-        const promptText = filteringPrompt.replace("{message}", combinedText);
-        logger.info(`[moderatePost] Sending prompt text: ${promptText}`);
-        const gptCheck = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "system", content: promptText }],
-          temperature: 0,
-          max_tokens: 20, // Enough for our specific responses
-        });
-        const result = gptCheck.choices[0].message.content.trim();
-        logger.info(`[moderatePost] GPT result: ${result}`);
+    try {
+      const filteringPrompt = await getFilteringPrompt("post");
+      logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
+      const promptText = filteringPrompt.replace("{message}", combinedText);
+      logger.info(`[moderatePost] Sending prompt text: ${promptText}`);
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 20, // Enough for our specific responses
+      });
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderatePost] GPT result: ${result}`);
 
-        if (result !== "ALLOW") {
-          gptFlagged = true;
-          if (result === "BLOCK: hateful/derogatory") {
-            rejectionReason = "Content contains hateful or derogatory language";
-          } else if (result === "BLOCK: spam/trolling") {
-            rejectionReason = "Content appears to be spam or trolling";
-          } else {
-            // Fallback for any unexpected responses
-            rejectionReason = "Post doesn't align with community guidelines";
-          }
-        }
-      } catch (err) {
-        logger.error("GPT moderation failed:", err);
+      const cleanResult = result.toLowerCase().trim();
+      logger.info(`[moderatePost] Clean result: "${cleanResult}"`);
+      if (cleanResult !== "allow") {
         gptFlagged = true;
-        rejectionReason = "Unable to process post at this time";
+        if (
+          cleanResult.includes("hateful") ||
+          cleanResult.includes("derogatory")
+        ) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (
+          cleanResult.includes("spam") ||
+          cleanResult.includes("trolling")
+        ) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
+          // Fallback for any unexpected responses
+          rejectionReason = "Post doesn't align with community guidelines";
+        }
       }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process post at this time";
     }
 
-    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    const newStatus = gptFlagged ? "rejected" : "approved";
     logger.info(`Moderation result for post ${snap.id}: ${newStatus}`);
 
     const updateData = {
@@ -782,50 +739,72 @@ exports.moderateComment = onDocumentCreated(
     const comment = snap.data();
     const content = (comment?.content || "").trim();
 
+    let rejectionReason = null;
+
     // If content is blank, auto-reject
     if (!content) {
-      await snap.ref.update({ status: "rejected" });
+      await snap.ref.update({
+        status: "rejected",
+        rejectionReason: "Message cannot be empty",
+      });
       logger.info(`Comment ${snap.id} was blank, auto-rejected.`);
       return;
     }
 
-    // 1. OpenAI Moderation API
-    let flagged = false;
-    try {
-      const modResult = await openai.moderations.create({ input: content });
-      flagged = modResult.results[0].flagged;
-    } catch (e) {
-      logger.error(
-        "OpenAI Moderation API failed, skipping to GPT fallback.",
-        e
-      );
-    }
-
-    // 2. GPT moderation with Firestore prompt
+    // GPT moderation with Firestore prompt
     let gptFlagged = false;
-    if (!flagged) {
-      try {
-        const filteringPrompt = await getFilteringPrompt("comment");
-        const promptText = filteringPrompt.replace("{message}", content);
-        const gptCheck = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [{ role: "system", content: promptText }],
-          temperature: 0,
-          max_tokens: 3,
-        });
-        const result = gptCheck.choices[0].message.content.trim();
-        gptFlagged = result !== "ALLOW";
-      } catch (err) {
-        logger.error("GPT moderation failed:", err);
+    try {
+      const filteringPrompt = await getFilteringPrompt("comment");
+      logger.info(`[moderateComment] Using prompt: ${filteringPrompt}`);
+      const promptText = filteringPrompt.replace("{message}", content);
+      logger.info(`[moderateComment] Sending prompt text: ${promptText}`);
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 20,
+      });
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderateComment] GPT result: ${result}`);
+
+      const cleanResult = result.toLowerCase().trim();
+      logger.info(`[moderateComment] Clean result: "${cleanResult}"`);
+      if (cleanResult !== "allow") {
         gptFlagged = true;
+        if (
+          cleanResult.includes("hateful") ||
+          cleanResult.includes("derogatory")
+        ) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (
+          cleanResult.includes("spam") ||
+          cleanResult.includes("trolling")
+        ) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
+          // Fallback for any unexpected responses
+          rejectionReason = "Message doesn't align with community guidelines";
+        }
       }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process message at this time";
     }
 
-    const newStatus = flagged || gptFlagged ? "rejected" : "approved";
+    const newStatus = gptFlagged ? "rejected" : "approved";
     logger.info(`Moderation result for comment ${snap.id}: ${newStatus}`);
 
+    const updateData = {
+      status: newStatus,
+    };
+
+    if (rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
     // Update comment status
-    await snap.ref.update({ status: newStatus });
+    await snap.ref.update(updateData);
 
     // Increment comment count only if approved
     if (newStatus === "approved") {

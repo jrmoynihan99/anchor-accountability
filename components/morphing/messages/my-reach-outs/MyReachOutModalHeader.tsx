@@ -89,53 +89,38 @@ export function MyReachOutModalHeader({
       </View>
 
       {/* Context Section - Now inside the same card */}
+      <View style={styles.contextDivider} />
       {reachOut.message && reachOut.message.trim() ? (
-        <>
-          <View style={styles.contextDivider} />
-          <View style={styles.contextHeader}>
-            <View
-              style={[
-                styles.contextIconCircle,
-                { backgroundColor: `${colors.iconCircleBackground}50` },
-              ]}
-            >
-              <IconSymbol name="quote.bubble" size={16} color={colors.icon} />
-            </View>
-            <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
-              Your Message
-            </ThemedText>
-          </View>
+        <View
+          style={[
+            styles.contextMessageContainer,
+            {
+              backgroundColor: colors.modalCardBackground,
+              borderColor: colors.modalCardBorder,
+            },
+          ]}
+        >
+          <ThemedText
+            type="body"
+            style={{ color: colors.text, fontStyle: "italic" }}
+          >
+            "{reachOut.message}"
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.contextHeader}>
           <View
             style={[
-              styles.contextMessageContainer,
-              {
-                backgroundColor: colors.cardBackground,
-                borderLeftColor: colors.tint,
-              },
+              styles.contextIconCircle,
+              { backgroundColor: `${colors.iconCircleBackground}50` },
             ]}
           >
-            <ThemedText type="body" style={{ color: colors.text }}>
-              "{reachOut.message}"
-            </ThemedText>
+            <IconSymbol name="heart" size={16} color={colors.icon} />
           </View>
-        </>
-      ) : (
-        <>
-          <View style={styles.contextDivider} />
-          <View style={styles.contextHeader}>
-            <View
-              style={[
-                styles.contextIconCircle,
-                { backgroundColor: `${colors.iconCircleBackground}50` },
-              ]}
-            >
-              <IconSymbol name="heart" size={16} color={colors.icon} />
-            </View>
-            <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
-              Support Request
-            </ThemedText>
-          </View>
-        </>
+          <ThemedText type="subtitleMedium" style={{ color: colors.text }}>
+            Support Request
+          </ThemedText>
+        </View>
       )}
     </View>
   );
@@ -278,6 +263,7 @@ const styles = StyleSheet.create({
   contextMessageContainer: {
     borderRadius: 12,
     padding: 16,
-    borderLeftWidth: 3,
+    borderWidth: 1,
+    marginTop: 0,
   },
 });
