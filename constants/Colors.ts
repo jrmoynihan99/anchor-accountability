@@ -29,7 +29,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#4CAF50", // Green for checkmarks
       error: "#E57373", // Red for errors/slipped
-      achievement: "#FFD700", // Gold for achievements
+      achievement: "#DAA520", // Gold for achievements
 
       // --- Specialty Colors ---
       fireColor: "#F47C1A", // Orange for streak flames
@@ -147,7 +147,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#28B463", // Between original #27AE60 and deep #229954
       error: "#CD3C2E", // Between original #E74C3C and deep #C0392B
-      achievement: "#FFD700", // Keep original as it was good
+      achievement: "#DAA520", // Keep original as it was good
 
       // --- Specialty Colors ---
       fireColor: "#E67E22", // Keep original
@@ -266,7 +266,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#4CAF50", // Green
       error: "#E57373", // Red
-      achievement: "#FFD700", // Gold
+      achievement: "#DAA520", // Gold
 
       // --- Specialty Colors ---
       fireColor: "#F47C1A", // Orange
@@ -381,7 +381,7 @@ export const Colors = {
       // --- Status Colors ---
       success: "#4CAF50", // Green
       error: "#E57373", // Red
-      achievement: "#FFD700", // Gold
+      achievement: "#DAA520", // Gold
       // --- Specialty Colors ---
       fireColor: "#F47C1A", // Orange
       iconCircleBackground: "#F8F9FC", // Very light navy tint
