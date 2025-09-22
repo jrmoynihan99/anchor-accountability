@@ -206,7 +206,7 @@ Traditional accountability requires vulnerability with specific people who know 
 - The temptation to isolate when you need help most
 - The vulnerability required to reach out in moments of weakness
 
-Our Solution
+The Solution
 What if reaching out for help had no shame attached? What if you could get immediate support without anyone knowing it was you? What if there was always someone ready to encourage you, no matter what time it was?
 
 That's this app. One click to reach out. Anonymous encouragement from others who understand. The option to chat privately with those offering support, still completely anonymous.
@@ -214,10 +214,9 @@ That's this app. One click to reach out. Anonymous encouragement from others who
 Not a Replacement
 This isn't meant to replace real accountability partners, therapy, or professional help. It's meant to lower the barrier to seeking support when shame and isolation try to take over.
 
-Our Heart
-We believe everyone deserves freedom from shame and the struggles that keep them isolated. We believe community and encouragement can be powerful tools for healing. We believe you're worth fighting for, even on the days you don't believe it yourself.
+I believe everyone can be free from shame and the struggles that keep us isolated. I believe community and encouragement can be powerful tools for avoiding temptation. I believe you're worth fighting for, even on the days you don't believe it yourself.
 
-Let's beat this together. You're not alone.`,
+Let's beat this together.`,
         };
       case "community":
         return {
