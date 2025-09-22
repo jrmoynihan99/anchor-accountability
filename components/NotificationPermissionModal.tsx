@@ -6,7 +6,7 @@ import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { Linking } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   Easing,
@@ -32,6 +32,8 @@ export function NotificationPermissionModal({
   const translateY = useSharedValue(1000);
   const [permissionStatus, setPermissionStatus] =
     useState<string>("undetermined");
+  const [isAnimating, setIsAnimating] = useState(false);
+  const pendingCallback = useRef<(() => void) | null>(null);
 
   // Check permission status when modal becomes visible
   useEffect(() => {
@@ -45,19 +47,31 @@ export function NotificationPermissionModal({
     setPermissionStatus(status);
   };
 
+  // Handle show animation
   React.useEffect(() => {
     if (isVisible) {
+      setIsAnimating(false);
       translateY.value = withTiming(0, {
         duration: 300,
         easing: Easing.out(Easing.quad),
       });
-    } else {
-      translateY.value = withTiming(1000, {
-        duration: 250,
-        easing: Easing.in(Easing.quad),
-      });
     }
   }, [isVisible]);
+
+  // Handle hide animation completion
+  React.useEffect(() => {
+    if (isAnimating) {
+      const timer = setTimeout(() => {
+        if (pendingCallback.current) {
+          pendingCallback.current();
+          pendingCallback.current = null;
+        }
+        setIsAnimating(false);
+      }, 300); // Match animation duration
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating]);
 
   const modalStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -67,40 +81,61 @@ export function NotificationPermissionModal({
     opacity: interpolate(translateY.value, [1000, 0], [0, 0.4]),
   }));
 
+  // Animated close function that starts animation and sets up callback
+  const animatedClose = (callback: () => void) => {
+    if (isAnimating) return; // Prevent multiple animations
+
+    setIsAnimating(true);
+    pendingCallback.current = callback;
+
+    translateY.value = withTiming(1000, {
+      duration: 250,
+      easing: Easing.in(Easing.quad),
+    });
+  };
+
   const handleEnableNotifications = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     if (permissionStatus === "denied") {
       // Guide to settings instead of trying to enable
       Linking.openSettings();
-      onPermissionResult(false); // Still mark as not granted
-      onClose();
+      // Wait a bit for the settings to open, then close with animation
+      setTimeout(() => {
+        animatedClose(() => {
+          onPermissionResult(false);
+          onClose();
+        });
+      }, 500);
       return;
     }
 
     const success = await enableNotifications();
-    onPermissionResult(success);
 
-    if (success) {
+    // Close with animation regardless of success/failure
+    animatedClose(() => {
+      onPermissionResult(success);
       onClose();
-    }
+    });
   };
 
   const handleNotNow = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Start the close animation
-    translateY.value = withTiming(1000, {
-      duration: 250,
-      easing: Easing.in(Easing.quad),
+    animatedClose(() => {
+      onPermissionResult(false);
+      onClose();
     });
-
-    // Call the handlers to properly dismiss the modal
-    onPermissionResult(false);
-    onClose();
   };
 
-  if (!isVisible) return null;
+  const handleOverlayPress = () => {
+    animatedClose(() => {
+      onPermissionResult(false);
+      onClose();
+    });
+  };
+
+  // Don't render if not visible and not animating
+  if (!isVisible && !isAnimating) return null;
 
   // Determine content based on permission status
   const isDenied = permissionStatus === "denied";
@@ -129,7 +164,7 @@ export function NotificationPermissionModal({
       >
         <TouchableOpacity
           style={StyleSheet.absoluteFill}
-          onPress={handleNotNow}
+          onPress={handleOverlayPress}
           activeOpacity={1}
         />
       </Animated.View>
@@ -295,7 +330,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     paddingHorizontal: 16,
-    paddingBottom: 50,
   },
   modal: {
     borderRadius: 24,
