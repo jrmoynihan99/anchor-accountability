@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   getFirestore,
   query,
   serverTimestamp,
@@ -121,38 +122,34 @@ export async function createThread(
   encouragementId?: string
 ): Promise<string> {
   const currentUserId = auth.currentUser?.uid;
-  if (!currentUserId) throw new Error("User not authenticated");
-
-  const threadsRef = collection(db, "threads");
-
-  // Check if thread already exists between these users
-  const existingThreadQuery = query(
-    threadsRef,
-    where("userA", "in", [currentUserId, otherUserId]),
-    where("userB", "in", [currentUserId, otherUserId])
-  );
-
-  const existingThreads = await getDocs(existingThreadQuery);
-
-  if (!existingThreads.empty) {
-    // Return existing thread ID
-    return existingThreads.docs[0].id;
+  if (!currentUserId) {
+    throw new Error("User not authenticated");
   }
 
-  // Create new thread
-  const threadData: Omit<ThreadData, "id"> = {
-    userA: currentUserId, // Current user is always userA (the one who initiated)
+  // Deterministic thread ID (no duplicates, order doesn't matter)
+  const threadId = [currentUserId, otherUserId].sort().join("_");
+  const threadRef = doc(db, "threads", threadId);
+
+  // 1. Check if the thread already exists
+  const threadSnap = await getDoc(threadRef);
+  if (threadSnap.exists()) {
+    return threadId;
+  }
+
+  // 2. If not, create new thread
+  const threadData = {
+    userA: currentUserId,
     userB: otherUserId,
-    startedFromPleaId: pleaId,
-    startedFromEncouragementId: encouragementId,
-    createdAt: serverTimestamp() as Timestamp,
-    lastActivity: serverTimestamp() as Timestamp,
+    startedFromPleaId: pleaId ?? undefined,
+    startedFromEncouragementId: encouragementId ?? undefined,
+    createdAt: serverTimestamp(),
+    lastActivity: serverTimestamp(),
     userA_unreadCount: 0,
     userB_unreadCount: 0,
   };
 
-  const docRef = await addDoc(threadsRef, threadData);
-  return docRef.id;
+  await setDoc(threadRef, threadData);
+  return threadId;
 }
 
 // Mark messages as read
