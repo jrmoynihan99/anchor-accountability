@@ -83,7 +83,7 @@ export function ButtonModalTransitionBridge({
     } else {
       progress.value = withTiming(
         0,
-        { duration: 220, easing: Easing.bezier(0.4, 0, 1, 1) },
+        { duration: 300, easing: Easing.bezier(0.4, 0, 0.6, 1) },
         (finished) => {
           if (finished) runOnJS(setIsModalVisible)(false);
         }
@@ -184,7 +184,7 @@ export function ButtonModalTransitionBridge({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       progress.value = withTiming(1, {
         duration: 400,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
       });
     });
   };
@@ -197,7 +197,7 @@ export function ButtonModalTransitionBridge({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       progress.value = withTiming(1, {
         duration: 400,
-        easing: Easing.bezier(0.22, 1, 0.36, 1),
+        easing: Easing.bezier(0.25, 1, 0.5, 1),
       });
     });
   };

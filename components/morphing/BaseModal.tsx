@@ -101,7 +101,7 @@ export function BaseModal({
     });
 
   const overlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.4]),
+    opacity: interpolate(progress.value, [0, 1], [0, 0.6]),
   }));
 
   const solidBackgroundStyle = useAnimatedStyle(() => ({
@@ -195,7 +195,7 @@ export function BaseModal({
                 style={[
                   styles.blurBackground,
                   {
-                    backgroundColor: `${backgroundColor}B8`,
+                    backgroundColor: `${backgroundColor}99`,
                     borderColor: colors.modalCardBorder,
                   },
                 ]}
