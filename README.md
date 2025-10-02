@@ -1,50 +1,72 @@
-# Welcome to your Expo app 👋
+# Anchor
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Anchor** is a nonprofit accountability app designed to help young men overcome pornography addiction through **anonymous support, streak tracking, AI-generated daily content, and community encouragement**.  
+It’s built with **React Native (Expo)** and **Firebase** and is available free on the App Store.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+- Anonymous reach-outs and encouragements (no accounts required)
+- Daily streak tracking with success/fail logging
+- Scheduled **AI-generated verse, prayer, and reflection content**
+- Push notifications for streak reminders and community replies
+- Firebase backend with moderation and spam prevention
+- Clean, modern UI built in React Native
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## 🛠️ Tech Stack
 
-In the output, you'll find options to open the app in a
+- **Frontend**: React Native, Expo, TypeScript
+- **Backend**: Firebase (Auth, Firestore, Cloud Functions)
+- **AI Integration**: OpenAI API (daily content + moderation)
+- **Other**: Expo Push Notifications, Reanimated animations
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🚀 Getting Started
 
-## Get a fresh project
+### Prerequisites
 
-When you're ready, run:
+- Node.js 18+
+- Expo CLI (`npm install -g expo-cli`)
+
+> ⚠️ This project is configured against a private Firebase backend.  
+> You can run the frontend locally, but backend features (Firestore, Functions, Notifications) require access to the production Firebase project.
+
+### Installation
 
 ```bash
-npm run reset-project
+git clone https://github.com/jrmoynihan99/anchor-accountability
+cd anchor-accountability
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Run Locally
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+You’ll see a QR code in the terminal. Open the Expo Go app on your iOS or Android device to run the project instantly.
+(You can also launch it in an iOS simulator or Android emulator if you have those set up.)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+---
 
-## Join the community
+## 📱 App Store
 
-Join our community of developers creating universal apps.
+Download the app for free: [Anchor on the App Store](https://apps.apple.com/your-app)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
+## 📖 Case Study
+
+Want to see how it was designed and built?  
+Check out the [Anchor Case Study](https://jasonmoynihan.com/projects/anchor).
+
+---
+
+## 🧑‍💻 About
+
+Anchor was built by **Jason Moynihan** as a nonprofit side project to create a safe, shame-free accountability space for men.
