@@ -4,7 +4,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#3A2D28", // Dark Brown
-      textSecondary: "#8D7963", // Secondary text
+      textSecondary: "#6F5D47", // Secondary text
       textMuted: "rgba(58, 45, 40, 0.6)", // Muted text for placeholders, disabled states, etc.
 
       background: "#F1EDE6", // Cream
