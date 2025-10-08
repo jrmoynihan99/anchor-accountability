@@ -259,8 +259,9 @@ exports.sendHelpNotificationOnApprove = onDocumentUpdated(
 );
 
 // Helper function (use for both triggers) - UPDATE THIS
+// --- HELP NOTIFICATIONS (updated with block checks) ---
 async function sendHelpNotificationToHelpers(plea, pleaId) {
-  const { message, uid } = plea || {};
+  const { message, uid } = plea || {}; // uid = plea author
 
   try {
     // Only users who opted in for plea notifications
@@ -270,7 +271,7 @@ async function sendHelpNotificationToHelpers(plea, pleaId) {
       .where("notificationPreferences.pleas", "==", true)
       .get();
 
-    const tokens = [];
+    const tokenPairs = [];
 
     usersSnap.forEach((doc) => {
       const data = doc.data();
@@ -283,27 +284,42 @@ async function sendHelpNotificationToHelpers(plea, pleaId) {
         // Don't notify the sender of the plea
         if (doc.id === uid) return;
 
-        tokens.push(data.expoPushToken);
+        tokenPairs.push({ token: data.expoPushToken, helperUid: doc.id });
       }
     });
 
-    if (tokens.length === 0) {
+    if (tokenPairs.length === 0) {
       console.log("No users opted in for plea notifications.");
       return;
     }
 
-    const notifications = tokens.map((token) => ({
-      to: token,
-      sound: "default",
-      title: "Someone is struggling",
-      body: message?.length
-        ? `They wrote: "${message.slice(0, 100)}"`
-        : "They need encouragement. Tap to respond.",
-      data: {
-        pleaId,
-        type: "plea", // 👈 ADD THIS FLAG
-      },
-    }));
+    // Filter out helpers that are blocked either direction
+    const notifications = [];
+    for (const { token, helperUid } of tokenPairs) {
+      const blocked = await eitherBlocked(uid, helperUid);
+      if (blocked) {
+        console.log(`[help] Skipping blocked pair ${uid} <-> ${helperUid}`);
+        continue;
+      }
+
+      notifications.push({
+        to: token,
+        sound: "default",
+        title: "Someone is struggling",
+        body: message?.length
+          ? `They wrote: "${message.slice(0, 100)}"`
+          : "They need encouragement. Tap to respond.",
+        data: {
+          pleaId,
+          type: "plea",
+        },
+      });
+    }
+
+    if (notifications.length === 0) {
+      console.log("No eligible helpers after block filtering.");
+      return;
+    }
 
     // Send in batches of 100
     const batchSize = 100;
@@ -312,14 +328,12 @@ async function sendHelpNotificationToHelpers(plea, pleaId) {
       const res = await axios.post(
         "https://exp.host/--/api/v2/push/send",
         chunk,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
       console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
     }
 
-    console.log(`✅ Notifications sent to ${tokens.length} helpers.`);
+    console.log(`✅ Notifications sent to ${notifications.length} helpers.`);
   } catch (err) {
     console.error("❌ Failed to send plea notifications:", err);
   }
@@ -338,15 +352,25 @@ exports.sendEncouragementNotification = onDocumentCreated(
     // Only notify for approved encouragements
     if (encouragement.status !== "approved") return;
 
-    // 👈 ADD THIS: Increment unread count
-    await snap.ref.parent.parent.update({
+    const pleaRef = snap.ref.parent.parent;
+    const pleaDoc = await pleaRef.get();
+    if (!pleaDoc.exists) return;
+    const plea = pleaDoc.data();
+
+    // Skip if blocked either direction
+    if (await eitherBlocked(plea.uid, encouragement.helperUid)) {
+      console.log(
+        `[encouragement:create] Skipping due to block between ${plea.uid} and ${encouragement.helperUid}`
+      );
+      return;
+    }
+
+    // Increment unread count
+    await pleaRef.update({
       unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
     });
 
-    await sendEncouragementNotificationToPleaOwner(
-      snap.ref.parent.parent, // pleaRef
-      encouragement
-    );
+    await sendEncouragementNotificationToPleaOwner(pleaRef, encouragement);
   }
 );
 
@@ -357,17 +381,27 @@ exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
     const before = event.data.before.data();
     const after = event.data.after.data();
 
+    // Only trigger when newly approved
     if (before.status !== "approved" && after.status === "approved") {
-      // 👈 ADD THIS: Increment unread count
-      await event.data.after.ref.parent.parent.update({
+      const pleaRef = event.data.after.ref.parent.parent;
+      const pleaDoc = await pleaRef.get();
+      if (!pleaDoc.exists) return;
+      const plea = pleaDoc.data();
+
+      // Skip if blocked either direction
+      if (await eitherBlocked(plea.uid, after.helperUid)) {
+        console.log(
+          `[encouragement:approve] Skipping due to block between ${plea.uid} and ${after.helperUid}`
+        );
+        return;
+      }
+
+      // Increment unread count
+      await pleaRef.update({
         unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
       });
 
-      // "pleaRef" is 2 levels up from encouragement doc
-      await sendEncouragementNotificationToPleaOwner(
-        event.data.after.ref.parent.parent,
-        after
-      );
+      await sendEncouragementNotificationToPleaOwner(pleaRef, after);
     }
   }
 );
@@ -447,14 +481,20 @@ exports.sendMessageNotification = onDocumentCreated(
     const userA = thread.userA;
     const userB = thread.userB;
 
-    // Find recipient(s)
+    // Determine recipients (everyone except sender)
     const recipients = [userA, userB].filter((uid) => uid !== senderUid);
-
-    // 🔹 Generate pseudo-username from UID
     const senderName = `user-${senderUid.substring(0, 5)}`;
 
-    // For each recipient, check notification preferences
     for (const recipientUid of recipients) {
+      // Check if users have blocked each other
+      const blocked = await eitherBlocked(senderUid, recipientUid);
+      if (blocked) {
+        console.log(
+          `[message] Skipping notify for blocked pair ${senderUid} <-> ${recipientUid}`
+        );
+        continue;
+      }
+
       const userDoc = await admin
         .firestore()
         .collection("users")
@@ -472,7 +512,6 @@ exports.sendMessageNotification = onDocumentCreated(
         expoPushToken.startsWith("ExponentPushToken")
       ) {
         try {
-          // Get unread count for recipient
           const totalUnread = await getTotalUnreadForUser(recipientUid);
 
           await axios.post(
@@ -483,16 +522,14 @@ exports.sendMessageNotification = onDocumentCreated(
                 sound: "default",
                 title: senderName,
                 body: text && text.length ? text.slice(0, 100) : "",
-                badge: totalUnread, // <-- add this!
+                badge: totalUnread, // iOS badge count
                 data: {
                   threadId,
                   messageId: snap.id,
                 },
               },
             ],
-            {
-              headers: { "Content-Type": "application/json" },
-            }
+            { headers: { "Content-Type": "application/json" } }
           );
 
           console.log(`✅ Sent message notification to ${recipientUid}`);
