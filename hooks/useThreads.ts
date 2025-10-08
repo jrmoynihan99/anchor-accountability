@@ -9,11 +9,13 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 export interface ThreadData {
   id: string;
-  userA: string; // reachOutUser
-  userB: string; // helperUser
+  userA: string;
+  userB: string;
   startedFromPleaId?: string;
   createdAt: Timestamp;
   lastMessage?: {
@@ -33,21 +35,32 @@ export interface ThreadWithMessages extends ThreadData {
 }
 
 export function useThreads() {
+  const uid = auth.currentUser?.uid ?? null;
+
   const [threads, setThreads] = useState<ThreadWithMessages[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 2-way block state
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers(); // who blocked me
+
   // Keep track of unsubscribe functions
   const unsubscribesRef = useRef<Unsubscribe[]>([]);
 
+  // Helper: hide thread if the other user is blocked either direction
+  const shouldHide = (otherUid: string) =>
+    blockedUserIds.has(otherUid) || blockedByUserIds.has(otherUid);
+
   useEffect(() => {
-    if (!auth.currentUser) {
-      setLoading(false);
+    if (!uid) {
       setThreads([]);
+      setLoading(false);
       return;
     }
 
-    const currentUserId = auth.currentUser.uid;
+    // Wait for both block lists
+    if (blockedLoading || blockedByLoading) return;
 
     // Clean up any existing listeners
     unsubscribesRef.current.forEach((unsub) => unsub());
@@ -56,61 +69,49 @@ export function useThreads() {
     const threadsRef = collection(db, "threads");
 
     // Query for threads where user is either userA or userB
-    const userAQuery = query(threadsRef, where("userA", "==", currentUserId));
-
-    const userBQuery = query(threadsRef, where("userB", "==", currentUserId));
+    const userAQuery = query(threadsRef, where("userA", "==", uid));
+    const userBQuery = query(threadsRef, where("userB", "==", uid));
 
     let userAThreads: ThreadWithMessages[] = [];
     let userBThreads: ThreadWithMessages[] = [];
 
     const updateThreads = () => {
-      const allThreads = [...userAThreads, ...userBThreads];
+      const all = [...userAThreads, ...userBThreads];
 
-      // Remove duplicates based on thread ID (for cases where userA === userB)
-      const uniqueThreads = allThreads.filter(
-        (thread, index, self) =>
-          index === self.findIndex((t) => t.id === thread.id)
+      // Dedupe by thread id
+      const unique = all.filter(
+        (t, i, self) => i === self.findIndex((x) => x.id === t.id)
       );
 
-      // Improved sorting - prioritize lastMessage timestamp over lastActivity
-      uniqueThreads.sort((a, b) => {
-        // First try to use lastMessage timestamp as it's most accurate
-        const aMessageTime = a.lastMessage?.timestamp?.toMillis
+      // 2-way block filter
+      const filtered = unique.filter((t) => !shouldHide(t.otherUserId));
+
+      // Sort by latest activity, using lastMessage.timestamp first, fallback to lastActivity
+      filtered.sort((a, b) => {
+        const aMsg = a.lastMessage?.timestamp?.toMillis
           ? a.lastMessage.timestamp.toMillis()
           : 0;
-        const bMessageTime = b.lastMessage?.timestamp?.toMillis
+        const bMsg = b.lastMessage?.timestamp?.toMillis
           ? b.lastMessage.timestamp.toMillis()
           : 0;
 
-        // If both have lastMessage timestamps, use those
-        if (aMessageTime && bMessageTime) {
-          return bMessageTime - aMessageTime; // Most recent first
-        }
+        if (aMsg !== bMsg) return bMsg - aMsg;
 
-        // Fall back to lastActivity if one or both don't have lastMessage
-        const aActivityTime = a.lastActivity?.toMillis
-          ? a.lastActivity.toMillis()
-          : 0;
-        const bActivityTime = b.lastActivity?.toMillis
-          ? b.lastActivity.toMillis()
-          : 0;
-
-        // Use whichever timestamp is more recent
-        const aTime = Math.max(aMessageTime, aActivityTime);
-        const bTime = Math.max(bMessageTime, bActivityTime);
-
-        return bTime - aTime; // Most recent first
+        const aAct = a.lastActivity?.toMillis ? a.lastActivity.toMillis() : 0;
+        const bAct = b.lastActivity?.toMillis ? b.lastActivity.toMillis() : 0;
+        return bAct - aAct;
       });
 
-      setThreads(uniqueThreads);
+      setThreads(filtered);
     };
 
-    // Listen to userA threads
+    // Listen to threads where I'm userA
     const unsubA = onSnapshot(
       userAQuery,
       (snapshot) => {
         userAThreads = snapshot.docs.map((doc) => {
-          const data = doc.data();
+          const data = doc.data() as any;
+          const otherId = data.userB as string;
           return {
             id: doc.id,
             userA: data.userA || "",
@@ -118,13 +119,11 @@ export function useThreads() {
             startedFromPleaId: data.startedFromPleaId,
             createdAt: data.createdAt,
             lastMessage: data.lastMessage,
-            // Use createdAt as fallback if lastActivity is missing
             lastActivity: data.lastActivity || data.createdAt,
-            // Provide defaults for unread counts
             userA_unreadCount: data.userA_unreadCount || 0,
             userB_unreadCount: data.userB_unreadCount || 0,
-            otherUserId: data.userB,
-            otherUserName: `user-${data.userB?.substring(0, 5) || "unknown"}`,
+            otherUserId: otherId,
+            otherUserName: `user-${otherId?.substring(0, 5) || "unk"}`,
             unreadCount: data.userA_unreadCount || 0,
           };
         });
@@ -139,12 +138,13 @@ export function useThreads() {
       }
     );
 
-    // Listen to userB threads
+    // Listen to threads where I'm userB
     const unsubB = onSnapshot(
       userBQuery,
       (snapshot) => {
         userBThreads = snapshot.docs.map((doc) => {
-          const data = doc.data();
+          const data = doc.data() as any;
+          const otherId = data.userA as string;
           return {
             id: doc.id,
             userA: data.userA || "",
@@ -152,13 +152,11 @@ export function useThreads() {
             startedFromPleaId: data.startedFromPleaId,
             createdAt: data.createdAt,
             lastMessage: data.lastMessage,
-            // Use createdAt as fallback if lastActivity is missing
             lastActivity: data.lastActivity || data.createdAt,
-            // Provide defaults for unread counts
             userA_unreadCount: data.userA_unreadCount || 0,
             userB_unreadCount: data.userB_unreadCount || 0,
-            otherUserId: data.userA,
-            otherUserName: `user-${data.userA?.substring(0, 5) || "unknown"}`,
+            otherUserId: otherId,
+            otherUserName: `user-${otherId?.substring(0, 5) || "unk"}`,
             unreadCount: data.userB_unreadCount || 0,
           };
         });
@@ -179,7 +177,11 @@ export function useThreads() {
       unsubscribesRef.current.forEach((unsub) => unsub());
       unsubscribesRef.current = [];
     };
-  }, [auth.currentUser]);
+  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
-  return { threads, loading, error };
+  return {
+    threads,
+    loading: loading || blockedLoading || blockedByLoading,
+    error,
+  };
 }

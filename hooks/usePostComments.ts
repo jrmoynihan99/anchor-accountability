@@ -6,6 +6,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   increment,
   limit,
   onSnapshot,
@@ -18,6 +19,8 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 interface UserCommentStatus {
   status: "pending" | "approved" | "rejected";
@@ -33,8 +36,15 @@ export function usePostComments(postId: string | null) {
   const [userCommentStatus, setUserCommentStatus] =
     useState<UserCommentStatus | null>(null);
 
-  // Track dismissed statuses to prevent re-showing
+  // 2-way block state
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers(); // who blocked me
+
   const dismissedStatusesRef = useRef(new Set<string>());
+
+  // Helper: hide if author is blocked either direction
+  const shouldHideAuthor = (authorUid: string) =>
+    blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
 
   // --- REAL-TIME COMMENT LISTENER (all approved comments) ---
   useEffect(() => {
@@ -43,6 +53,10 @@ export function usePostComments(postId: string | null) {
       setLoading(false);
       return;
     }
+
+    // wait for both block lists
+    if (blockedLoading || blockedByLoading) return;
+
     setLoading(true);
 
     const commentsQuery = query(
@@ -55,7 +69,12 @@ export function usePostComments(postId: string | null) {
       commentsQuery,
       async (snapshot) => {
         try {
-          const commentsData = await processComments(snapshot.docs, postId);
+          // 2-way filter on author uid
+          const visibleDocs = snapshot.docs.filter(
+            (d) => !shouldHideAuthor((d.data() as any).uid)
+          );
+
+          const commentsData = await processComments(visibleDocs, postId);
           setAllComments(commentsData);
           setError(null);
         } catch (err) {
@@ -73,7 +92,14 @@ export function usePostComments(postId: string | null) {
     );
 
     return () => unsubscribe();
-  }, [postId, auth.currentUser]);
+  }, [
+    postId,
+    auth.currentUser?.uid,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+  ]);
 
   // ---- userCommentStatus logic with fix for re-showing ----
   useEffect(() => {
@@ -98,7 +124,6 @@ export function usePostComments(postId: string | null) {
           const commentId = doc.id;
           const status = data.status as "pending" | "approved" | "rejected";
 
-          // Don't re-show already dismissed approved statuses
           if (
             status === "approved" &&
             dismissedStatusesRef.current.has(commentId)
@@ -119,12 +144,11 @@ export function usePostComments(postId: string | null) {
         console.error("Error listening to user comment status:", err);
       }
     );
-    return () => {
-      unsubscribe();
-    };
-  }, [postId, auth.currentUser]);
 
-  // Auto-dismiss approved status and track dismissal
+    return () => unsubscribe();
+  }, [postId, auth.currentUser?.uid]);
+
+  // Auto-dismiss approved status
   useEffect(() => {
     if (userCommentStatus?.status === "approved") {
       const timer = setTimeout(() => {
@@ -137,12 +161,10 @@ export function usePostComments(postId: string | null) {
 
   // Reset dismissed statuses when post changes
   useEffect(() => {
-    if (postId) {
-      dismissedStatusesRef.current.clear();
-    }
+    if (postId) dismissedStatusesRef.current.clear();
   }, [postId]);
 
-  // ---- Organize parent/replies tree as before ----
+  // ---- Build parent/replies tree ----
   async function processComments(
     docs: QueryDocumentSnapshot[],
     postId: string
@@ -151,9 +173,10 @@ export function usePostComments(postId: string | null) {
 
     const allComments = await Promise.all(
       docs.map(async (docSnap) => {
-        const data = docSnap.data();
+        const data = docSnap.data() as any;
         const commentId = docSnap.id;
-        // Check if current user has liked this comment
+
+        // like status: single get on like doc (no temp listener)
         let hasUserLiked = false;
         try {
           const likeRef = doc(
@@ -165,23 +188,19 @@ export function usePostComments(postId: string | null) {
             "likes",
             currentUserId
           );
-          const likeSnap = await new Promise<boolean>((resolve) => {
-            const unsub = onSnapshot(likeRef, (snap) => {
-              resolve(snap.exists());
-              unsub();
-            });
-          });
-          hasUserLiked = likeSnap;
-        } catch (err) {
-          // Fail silently
+          const likeSnap = await getDoc(likeRef);
+          hasUserLiked = likeSnap.exists();
+        } catch {
+          /* ignore */
         }
 
-        const authorUsername = `user-${data.uid.substring(0, 5)}`;
+        const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
+
         return {
           id: commentId,
           uid: data.uid,
           content: data.content,
-          createdAt: data.createdAt?.toDate() || new Date(),
+          createdAt: data.createdAt?.toDate?.() || new Date(),
           parentCommentId: data.parentCommentId || null,
           likeCount: data.likeCount || 0,
           status: data.status,
@@ -191,28 +210,31 @@ export function usePostComments(postId: string | null) {
         } as PostComment;
       })
     );
-    // Now, organize into parent/reply structure
+
+    // organize into parent/replies
     const parentComments: PostComment[] = [];
-    const commentMap = new Map<string, PostComment>();
-    allComments.forEach((comment) => commentMap.set(comment.id, comment));
-    allComments.forEach((comment) => {
-      if (comment.parentCommentId === null) {
-        parentComments.push(comment);
+    const map = new Map<string, PostComment>();
+    allComments.forEach((c) => map.set(c.id, c));
+
+    allComments.forEach((c) => {
+      if (c.parentCommentId === null) {
+        parentComments.push(c);
       } else {
-        const parent = commentMap.get(comment.parentCommentId);
+        const parent = map.get(c.parentCommentId);
         if (parent) {
           parent.replies = parent.replies || [];
-          parent.replies.push(comment);
+          parent.replies.push(c);
         }
       }
     });
-    parentComments.forEach((comment) => {
-      if (comment.replies && comment.replies.length > 0) {
-        comment.replies.sort(
-          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
-        );
+
+    // sort replies by time
+    parentComments.forEach((p) => {
+      if (p.replies && p.replies.length) {
+        p.replies.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       }
     });
+
     return parentComments;
   }
 
@@ -225,7 +247,6 @@ export function usePostComments(postId: string | null) {
       setError("You must be logged in to comment");
       return false;
     }
-
     if (!content.trim()) {
       setError("Comment cannot be empty");
       return false;
@@ -241,14 +262,13 @@ export function usePostComments(postId: string | null) {
         createdAt: serverTimestamp(),
         parentCommentId,
         likeCount: 0,
-        status: "pending", // Will trigger moderation
+        status: "pending",
       };
 
-      const docRef = await addDoc(
+      await addDoc(
         collection(db, "communityPosts", postId, "comments"),
         commentData
       );
-
       return true;
     } catch (err) {
       console.error("Error posting comment:", err);
@@ -270,6 +290,24 @@ export function usePostComments(postId: string | null) {
 
     try {
       const userId = auth.currentUser.uid;
+
+      // Guard: prevent liking if the comment's author is blocked either way
+      const commentRef = doc(
+        db,
+        "communityPosts",
+        postId,
+        "comments",
+        commentId
+      );
+      const commentSnap = await getDoc(commentRef);
+      if (!commentSnap.exists()) return false;
+
+      const authorUid = (commentSnap.data() as any).uid as string;
+      if (shouldHideAuthor(authorUid)) {
+        setError("You can’t interact with this comment.");
+        return false;
+      }
+
       const likeRef = doc(
         db,
         "communityPosts",
@@ -279,28 +317,15 @@ export function usePostComments(postId: string | null) {
         "likes",
         userId
       );
-      const commentRef = doc(
-        db,
-        "communityPosts",
-        postId,
-        "comments",
-        commentId
-      );
 
       if (currentlyLiked) {
         // Unlike
         await deleteDoc(likeRef);
-        await updateDoc(commentRef, {
-          likeCount: increment(-1),
-        });
+        await updateDoc(commentRef, { likeCount: increment(-1) });
       } else {
         // Like
-        await setDoc(likeRef, {
-          createdAt: serverTimestamp(),
-        });
-        await updateDoc(commentRef, {
-          likeCount: increment(1),
-        });
+        await setDoc(likeRef, { createdAt: serverTimestamp() });
+        await updateDoc(commentRef, { likeCount: increment(1) });
       }
 
       return true;
@@ -327,11 +352,8 @@ export function usePostComments(postId: string | null) {
       );
       await deleteDoc(commentRef);
 
-      // Update comment count on parent post
       const postRef = doc(db, "communityPosts", postId);
-      await updateDoc(postRef, {
-        commentCount: increment(-1),
-      });
+      await updateDoc(postRef, { commentCount: increment(-1) });
 
       return true;
     } catch (err) {
@@ -341,7 +363,6 @@ export function usePostComments(postId: string | null) {
     }
   };
 
-  // Dismiss user comment status feedback and track dismissal
   const dismissCommentStatus = () => {
     if (userCommentStatus) {
       dismissedStatusesRef.current.add(userCommentStatus.commentId);
@@ -350,8 +371,8 @@ export function usePostComments(postId: string | null) {
   };
 
   return {
-    allComments, // <- This is the full, real-time parent/reply tree
-    loading,
+    allComments, // fully filtered parent/reply tree (2-way blocking)
+    loading: loading || blockedLoading || blockedByLoading,
     error,
     posting,
     postComment,

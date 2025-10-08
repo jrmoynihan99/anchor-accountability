@@ -6,6 +6,7 @@ import { ThreadWithMessages } from "@/hooks/useThreads";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { BlockUserIcon } from "../BlockUserIcon";
 
 interface ThreadItemProps {
   thread: ThreadWithMessages;
@@ -105,6 +106,7 @@ export function ThreadItem({ thread, colors, now }: ThreadItemProps) {
                 {thread.otherUserName}
               </ThemedText>
               <UserStreakDisplay userId={thread.otherUserId} size="small" />
+              <BlockUserIcon userIdToBlock={thread.otherUserId} />
             </View>
 
             <View style={styles.timeAndChevron}>

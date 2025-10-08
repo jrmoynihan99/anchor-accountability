@@ -11,60 +11,68 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 const MAX_RECENT_REACH_OUTS = 20;
 
-// Encouragement stats cache (not for unreadCount!)
 type EncouragementStats = {
   encouragementCount: number;
   lastEncouragementAt?: Date;
 };
 
 export function useMyReachOuts() {
+  const uid = auth.currentUser?.uid ?? null;
+
   const [myReachOuts, setMyReachOuts] = useState<MyReachOutData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Encourage listeners for cleanup
+  // 2-way block state
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers(); // who blocked me
+
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
-  // Track encouragement stats for each reach out (NOT unreadCount)
   const encouragementStatsRef = useRef<Record<string, EncouragementStats>>({});
 
+  // helper: hide items from helperUid if blocked either direction
+  const shouldHideHelper = (helperUid: string) =>
+    blockedUserIds.has(helperUid) || blockedByUserIds.has(helperUid);
+
   useEffect(() => {
-    if (!auth.currentUser) {
-      setLoading(false);
+    if (!uid) {
       setMyReachOuts([]);
+      setLoading(false);
       return;
     }
-
-    const currentUserId = auth.currentUser.uid;
+    // wait until both block lists are resolved
+    if (blockedLoading || blockedByLoading) return;
 
     const pleasQuery = query(
       collection(db, "pleas"),
-      where("uid", "==", currentUserId),
+      where("uid", "==", uid),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(MAX_RECENT_REACH_OUTS)
     );
 
-    // Top-level listener for latest pleas
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
-        const currentReachOutIds = new Set(snapshot.docs.map((doc) => doc.id));
+        const currentReachOutIds = new Set(snapshot.docs.map((d) => d.id));
 
-        // Clean up subcollection listeners for deleted pleas
-        Object.keys(encouragementListenersRef.current).forEach((reachOutId) => {
-          if (!currentReachOutIds.has(reachOutId)) {
-            encouragementListenersRef.current[reachOutId]();
-            delete encouragementListenersRef.current[reachOutId];
-            delete encouragementStatsRef.current[reachOutId];
+        // cleanup listeners for pleads no longer in set
+        Object.keys(encouragementListenersRef.current).forEach((id) => {
+          if (!currentReachOutIds.has(id)) {
+            encouragementListenersRef.current[id]?.();
+            delete encouragementListenersRef.current[id];
+            delete encouragementStatsRef.current[id];
           }
         });
 
-        // Set up subcollection listeners (if not already)
-        snapshot.docs.forEach((doc) => {
-          const reachOutId = doc.id;
+        // ensure sublisteners
+        snapshot.docs.forEach((docSnap) => {
+          const reachOutId = docSnap.id;
           if (encouragementListenersRef.current[reachOutId]) return;
 
           const encouragementsQuery = query(
@@ -72,35 +80,35 @@ export function useMyReachOuts() {
             where("status", "==", "approved")
           );
 
-          // Listen to subcollection to get encouragement stats (but not unreadCount)
           const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
-            const encouragementCount = encSnap.size;
-            let lastEncouragementAt: Date | undefined = undefined;
+            // filter out encouragements from helpers in either block direction
+            const allowed = encSnap.docs
+              .map((d) => d.data() as any)
+              .filter((d) => d?.helperUid && !shouldHideHelper(d.helperUid));
 
+            const encouragementCount = allowed.length;
+
+            let lastEncouragementAt: Date | undefined = undefined;
             if (encouragementCount > 0) {
-              const encouragements = encSnap.docs
-                .map((d) => d.data())
+              allowed
                 .filter((d) => !!d.createdAt)
-                .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
-              lastEncouragementAt = encouragements[0]?.createdAt?.toDate?.();
+                .sort(
+                  (a, b) =>
+                    (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0)
+                );
+              lastEncouragementAt = allowed[0]?.createdAt?.toDate?.();
             }
 
-            // Update cached stats
             encouragementStatsRef.current[reachOutId] = {
               encouragementCount,
               lastEncouragementAt,
             };
 
-            // Patch the existing state to update only these fields
-            setMyReachOuts((oldReachOuts) =>
-              oldReachOuts.map((r) =>
+            // patch state for this reach out (do NOT touch unreadCount here)
+            setMyReachOuts((old) =>
+              old.map((r) =>
                 r.id === reachOutId
-                  ? {
-                      ...r,
-                      encouragementCount,
-                      lastEncouragementAt,
-                      // NEVER patch unreadCount here!
-                    }
+                  ? { ...r, encouragementCount, lastEncouragementAt }
                   : r
               )
             );
@@ -109,34 +117,32 @@ export function useMyReachOuts() {
           encouragementListenersRef.current[reachOutId] = unsub;
         });
 
-        // Build the new reachOuts array using parent doc data + cached encouragement stats
-        const newReachOuts: MyReachOutData[] = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          const id = doc.id;
-          const encouragementStats = encouragementStatsRef.current[id] || {
+        // build rows (parent doc + cached stats)
+        const rows: MyReachOutData[] = snapshot.docs.map((d) => {
+          const data = d.data() as any;
+          const cached = encouragementStatsRef.current[d.id] ?? {
             encouragementCount: 0,
             lastEncouragementAt: undefined,
           };
-
           return {
-            id,
+            id: d.id,
             message: data.message || "",
-            createdAt: data.createdAt?.toDate() || new Date(),
-            encouragementCount: encouragementStats.encouragementCount,
-            lastEncouragementAt: encouragementStats.lastEncouragementAt,
-            unreadCount: data.unreadEncouragementCount || 0, // ← always from parent doc!
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+            encouragementCount: cached.encouragementCount,
+            lastEncouragementAt: cached.lastEncouragementAt,
+            // unread count always comes from parent doc (server-managed)
+            unreadCount: data.unreadEncouragementCount || 0,
           };
         });
 
-        setMyReachOuts(
-          newReachOuts.sort((a, b) => {
-            // 1. Sort by last encouragement received, descending
-            const aDate = a.lastEncouragementAt || a.createdAt;
-            const bDate = b.lastEncouragementAt || b.createdAt;
-            return bDate.getTime() - aDate.getTime();
-          })
-        );
+        // sort: most recent activity (lastEncouragementAt fallback to createdAt)
+        rows.sort((a, b) => {
+          const aDate = a.lastEncouragementAt || a.createdAt;
+          const bDate = b.lastEncouragementAt || b.createdAt;
+          return bDate.getTime() - aDate.getTime();
+        });
 
+        setMyReachOuts(rows);
         setError(null);
         setLoading(false);
       },
@@ -149,13 +155,15 @@ export function useMyReachOuts() {
 
     return () => {
       unsubPleas();
-      Object.values(encouragementListenersRef.current).forEach((unsub) =>
-        unsub()
-      );
+      Object.values(encouragementListenersRef.current).forEach((u) => u());
       encouragementListenersRef.current = {};
       encouragementStatsRef.current = {};
     };
-  }, [auth.currentUser]);
+  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
-  return { myReachOuts, loading, error };
+  return {
+    myReachOuts,
+    loading: loading || blockedLoading || blockedByLoading,
+    error,
+  };
 }

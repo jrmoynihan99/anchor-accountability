@@ -5,6 +5,7 @@ import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { BlockUserIcon } from "../BlockUserIcon";
 import { CommunityPost, PostCategory } from "./types";
 
 interface PostDetailViewProps {
@@ -83,6 +84,7 @@ export function PostDetailView({
                 {post.authorUsername}
               </ThemedText>
               <UserStreakDisplay userId={post.uid} size="small" />
+              {!isOwnPost && <BlockUserIcon userIdToBlock={post.uid} />}
             </View>
             <ThemedText
               type="caption"

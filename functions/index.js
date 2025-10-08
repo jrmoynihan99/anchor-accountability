@@ -7,6 +7,7 @@ const { onSchedule } = require("firebase-functions/scheduler");
 const {
   onDocumentCreated,
   onDocumentUpdated,
+  onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
@@ -949,3 +950,60 @@ async function getTotalUnreadForUser(uid) {
 
   return messageUnread + encouragementUnread;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Block mirror: when a user blocks someone, mirror into the other user's
+// `/blockedBy/{blockerUid}`; when unblocked, delete the mirror.
+// Clients **only** write to /blockList; server (Admin SDK) writes /blockedBy.
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.onBlockCreate = onDocumentCreated(
+  "users/{uid}/blockList/{blockedUid}",
+  async (event) => {
+    const { uid, blockedUid } = event.params; // uid = blocker, blockedUid = target
+    try {
+      await admin.firestore().doc(`users/${blockedUid}/blockedBy/${uid}`).set(
+        {
+          uid, // who blocked you
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      logger.error("[onBlockCreate] mirror write failed:", err, {
+        uid,
+        blockedUid,
+      });
+    }
+  }
+);
+
+exports.onBlockDelete = onDocumentDeleted(
+  "users/{uid}/blockList/{blockedUid}",
+  async (event) => {
+    const { uid, blockedUid } = event.params;
+    try {
+      await admin
+        .firestore()
+        .doc(`users/${blockedUid}/blockedBy/${uid}`)
+        .delete();
+    } catch (err) {
+      // mirror might already be gone; swallow
+      logger.warn("[onBlockDelete] mirror delete warn:", err, {
+        uid,
+        blockedUid,
+      });
+    }
+  }
+);
+
+// Reusable Admin helper: returns true if either user blocked the other
+async function eitherBlocked(aUid, bUid) {
+  const db = admin.firestore();
+  const [aBlocksB, bBlocksA] = await Promise.all([
+    db.doc(`users/${aUid}/blockList/${bUid}`).get(),
+    db.doc(`users/${bUid}/blockList/${aUid}`).get(),
+  ]);
+  return aBlocksB.exists || bBlocksA.exists;
+}
+exports._eitherBlocked = eitherBlocked; // (optional) export for reuse/tests

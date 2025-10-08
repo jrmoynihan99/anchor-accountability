@@ -16,6 +16,8 @@ import Animated, {
 import { BaseModal } from "../BaseModal";
 import { AboutSection } from "./AboutSection";
 import { AppearanceSection } from "./AppearanceSection";
+import { BlockListSection } from "./BlockListSection";
+import { BlockListView } from "./BlockListView";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
@@ -31,7 +33,7 @@ interface FloatingSettingsModalProps {
   initialScreen?: "settings" | "guidelines";
 }
 
-type ScreenType = "settings" | "textContent";
+type ScreenType = "settings" | "textContent" | "blockList";
 
 interface TextContentData {
   title: string;
@@ -103,6 +105,14 @@ export function FloatingSettingsModal({
       easing: Easing.out(Easing.quad),
     });
     setCurrentScreen("textContent");
+  };
+
+  const transitionToBlockList = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen("blockList");
   };
 
   const handleBackToSettings = () => {
@@ -256,6 +266,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
           <SettingsHeader />
           <View style={styles.settingsSection}>
             <NotificationsSection shouldLoad={shouldLoadNotifications} />
+            <BlockListSection onNavigateToBlockList={transitionToBlockList} />
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
@@ -274,6 +285,11 @@ Thank you for helping us keep this a safe and welcoming space!`,
             onBackPress={handleBackToSettings}
             colors={colors}
           />
+        </Animated.View>
+      )}
+      {currentScreen === "blockList" && (
+        <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
+          <BlockListView onBackPress={handleBackToSettings} colors={colors} />
         </Animated.View>
       )}
     </View>

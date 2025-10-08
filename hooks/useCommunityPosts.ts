@@ -4,6 +4,8 @@ import { auth, db } from "@/lib/firebase";
 import {
   collection,
   DocumentSnapshot,
+  doc as fsDoc,
+  getDoc,
   limit,
   onSnapshot,
   orderBy,
@@ -13,40 +15,59 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 const POSTS_PER_PAGE = 10;
 
 export function useCommunityPosts() {
+  const uid = auth.currentUser?.uid ?? null;
+
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
-  // Used to force effect refresh for pull-to-refresh logic
+  // 2-way block state
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers(); // who blocked me
+
+  // pull-to-refresh trigger
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Keep track of the last document for pagination
+  // pagination & listener refs
   const lastDocRef = useRef<DocumentSnapshot | null>(null);
-  // Track if we've already set up the initial listener
-  const listenerSetupRef = useRef(false);
-  // Store the unsubscribe function
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Initial load and real-time updates for first page
+  const shouldHideAuthor = (authorUid: string) =>
+    blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
+
+  // Initial page listener (re-run when uid or block sets change, or refreshKey bumps)
   useEffect(() => {
-    if (!auth.currentUser || listenerSetupRef.current) {
-      if (!auth.currentUser) {
-        setLoading(false);
-        setPosts([]);
-      }
+    // cleanup any previous listener
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    if (!uid) {
+      setPosts([]);
+      setHasMore(false);
+      setLoading(false);
       return;
     }
 
-    listenerSetupRef.current = true;
-    const currentUserId = auth.currentUser.uid;
+    // wait until both block lists are resolved
+    if (blockedLoading || blockedByLoading) {
+      setLoading(true);
+      return;
+    }
 
-    // Query for approved posts only
+    setLoading(true);
+    setError(null);
+    lastDocRef.current = null;
+
     const postsQuery = query(
       collection(db, "communityPosts"),
       where("status", "==", "approved"),
@@ -55,7 +76,7 @@ export function useCommunityPosts() {
       limit(POSTS_PER_PAGE)
     );
 
-    const unsubscribe = onSnapshot(
+    const unsub = onSnapshot(
       postsQuery,
       async (snapshot) => {
         try {
@@ -66,33 +87,29 @@ export function useCommunityPosts() {
             setHasMore(false);
           }
 
-          // Process posts and check for likes
-          const postsData = await Promise.all(
-            snapshot.docs.map(async (doc) => {
-              const data = doc.data();
-              const postId = doc.id;
+          // filter out authors hidden by 2-way blocks
+          const visibleDocs = snapshot.docs.filter(
+            (d) => !shouldHideAuthor((d.data() as any).uid)
+          );
 
-              // Check if current user has liked this post
+          // process posts + like status
+          const rows = await Promise.all(
+            visibleDocs.map(async (d) => {
+              const data = d.data() as any;
+              const postId = d.id;
+
+              // like doc id == current user uid
               let hasUserLiked = false;
               try {
-                const likeQuery = query(
-                  collection(db, "communityPosts", postId, "likes"),
-                  where("__name__", "==", currentUserId),
-                  limit(1)
+                const likeSnap = await getDoc(
+                  fsDoc(db, "communityPosts", postId, "likes", uid)
                 );
-                const likeSnap = await new Promise<boolean>((resolve) => {
-                  const unsub = onSnapshot(likeQuery, (snap) => {
-                    resolve(!snap.empty);
-                    unsub();
-                  });
-                });
-                hasUserLiked = likeSnap;
-              } catch (err) {
-                console.error("Error checking like status:", err);
+                hasUserLiked = likeSnap.exists();
+              } catch (e) {
+                console.error("like check failed:", e);
               }
 
-              // Generate anonymous username
-              const authorUsername = `user-${data.uid.substring(0, 5)}`;
+              const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
 
               return {
                 id: postId,
@@ -100,9 +117,9 @@ export function useCommunityPosts() {
                 title: data.title,
                 content: data.content,
                 categories: data.categories || [],
-                createdAt: data.createdAt?.toDate() || new Date(),
-                updatedAt: data.updatedAt?.toDate() || new Date(),
-                lastEditableAt: data.lastEditableAt?.toDate() || new Date(),
+                createdAt: data.createdAt?.toDate?.() || new Date(),
+                updatedAt: data.updatedAt?.toDate?.() || new Date(),
+                lastEditableAt: data.lastEditableAt?.toDate?.() || new Date(),
                 likeCount: data.likeCount || 0,
                 commentCount: data.commentCount || 0,
                 status: data.status,
@@ -113,10 +130,10 @@ export function useCommunityPosts() {
             })
           );
 
-          setPosts(postsData);
+          setPosts(rows);
           setError(null);
-        } catch (err) {
-          console.error("Error processing posts:", err);
+        } catch (e) {
+          console.error("Error processing posts:", e);
           setError("Failed to load posts");
         } finally {
           setLoading(false);
@@ -129,28 +146,30 @@ export function useCommunityPosts() {
       }
     );
 
-    unsubscribeRef.current = unsubscribe;
+    unsubscribeRef.current = unsub;
 
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
-      listenerSetupRef.current = false;
     };
-  }, [auth.currentUser, refreshKey]); // <-- include refreshKey!
+  }, [
+    uid,
+    refreshKey,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+  ]);
 
-  // Load more posts (pagination)
+  // Pagination (respects 2-way blocks and reuses getDoc like check)
   const loadMore = async () => {
-    if (!auth.currentUser || !lastDocRef.current || loadingMore || !hasMore) {
-      return;
-    }
+    if (!uid || !lastDocRef.current || loadingMore || !hasMore) return;
 
     setLoadingMore(true);
-    const currentUserId = auth.currentUser.uid;
-
     try {
-      const morePostsQuery = query(
+      const moreQuery = query(
         collection(db, "communityPosts"),
         where("status", "==", "approved"),
         where("isDeleted", "==", false),
@@ -159,10 +178,9 @@ export function useCommunityPosts() {
         limit(POSTS_PER_PAGE)
       );
 
-      // Use a one-time get instead of listener for pagination
       const snapshot = await new Promise<any>((resolve, reject) => {
         const unsub = onSnapshot(
-          morePostsQuery,
+          moreQuery,
           (snap) => {
             resolve(snap);
             unsub();
@@ -171,60 +189,56 @@ export function useCommunityPosts() {
         );
       });
 
-      if (!snapshot.empty) {
-        lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-        setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
-
-        const morePosts = await Promise.all(
-          snapshot.docs.map(async (doc: QueryDocumentSnapshot) => {
-            const data = doc.data();
-            const postId = doc.id;
-
-            // Check if current user has liked this post
-            let hasUserLiked = false;
-            try {
-              const likeDoc = await new Promise<boolean>((resolve) => {
-                const unsub = onSnapshot(
-                  collection(db, "communityPosts", postId, "likes"),
-                  (snap) => {
-                    const hasLike = snap.docs.some(
-                      (d) => d.id === currentUserId
-                    );
-                    resolve(hasLike);
-                    unsub();
-                  }
-                );
-              });
-              hasUserLiked = likeDoc;
-            } catch (err) {
-              console.error("Error checking like status:", err);
-            }
-
-            const authorUsername = `user-${data.uid.substring(0, 5)}`;
-
-            return {
-              id: postId,
-              uid: data.uid,
-              title: data.title,
-              content: data.content,
-              categories: data.categories || [],
-              createdAt: data.createdAt?.toDate() || new Date(),
-              updatedAt: data.updatedAt?.toDate() || new Date(),
-              lastEditableAt: data.lastEditableAt?.toDate() || new Date(),
-              likeCount: data.likeCount || 0,
-              commentCount: data.commentCount || 0,
-              status: data.status,
-              isDeleted: data.isDeleted || false,
-              hasUserLiked,
-              authorUsername,
-            } as CommunityPost;
-          })
-        );
-
-        setPosts((prev) => [...prev, ...morePosts]);
-      } else {
+      if (snapshot.empty) {
         setHasMore(false);
+        setLoadingMore(false);
+        return;
       }
+
+      lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
+      setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
+
+      const visibleDocs: QueryDocumentSnapshot[] = snapshot.docs.filter(
+        (d: QueryDocumentSnapshot) => !shouldHideAuthor((d.data() as any).uid)
+      );
+
+      const morePosts: CommunityPost[] = await Promise.all(
+        visibleDocs.map(async (d: QueryDocumentSnapshot) => {
+          const data = d.data() as any;
+          const postId = d.id;
+
+          let hasUserLiked = false;
+          try {
+            const likeSnap = await getDoc(
+              fsDoc(db, "communityPosts", postId, "likes", uid)
+            );
+            hasUserLiked = likeSnap.exists();
+          } catch (e) {
+            console.error("like check failed:", e);
+          }
+
+          const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
+
+          return {
+            id: postId,
+            uid: data.uid,
+            title: data.title,
+            content: data.content,
+            categories: data.categories || [],
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+            updatedAt: data.updatedAt?.toDate?.() || new Date(),
+            lastEditableAt: data.lastEditableAt?.toDate?.() || new Date(),
+            likeCount: data.likeCount || 0,
+            commentCount: data.commentCount || 0,
+            status: data.status,
+            isDeleted: data.isDeleted || false,
+            hasUserLiked,
+            authorUsername,
+          } as CommunityPost;
+        })
+      );
+
+      setPosts((prev) => [...prev, ...morePosts]);
     } catch (err) {
       console.error("Error loading more posts:", err);
       setError("Failed to load more posts");
@@ -233,27 +247,23 @@ export function useCommunityPosts() {
     }
   };
 
-  // Refresh function for pull-to-refresh
   const refresh = async () => {
     setHasMore(true);
     setPosts([]);
     setLoading(true);
 
-    // Unsubscribe and re-setup
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
     lastDocRef.current = null;
-    listenerSetupRef.current = false;
 
-    // Bump the refreshKey to force effect to run again!
     setRefreshKey((k) => k + 1);
   };
 
   return {
     posts,
-    loading,
+    loading: loading || blockedLoading || blockedByLoading,
     loadingMore,
     error,
     hasMore,

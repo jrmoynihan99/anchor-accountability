@@ -2,19 +2,24 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useBlockCheck } from "@/hooks/useBlockCheck";
+import { useBlockUser } from "@/hooks/useBlockUser";
 import { useReportCheck } from "@/hooks/useReportCheck";
 import { auth, db } from "@/lib/firebase";
+import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
-import { BaseModal } from "../../BaseModal";
 import { SharedValue } from "react-native-reanimated";
+import { BaseModal } from "../../BaseModal";
 
 interface ThreadInfoModalProps {
   isVisible: boolean;
@@ -34,7 +39,10 @@ export function ThreadInfoModal({
   otherUserId,
 }: ThreadInfoModalProps) {
   const { colors, effectiveTheme } = useTheme();
-  const { hasReported, isLoading } = useReportCheck(otherUserId);
+  const { hasReported, isLoading: reportLoading } = useReportCheck(otherUserId);
+  const { hasBlocked, isLoading: blockCheckLoading } =
+    useBlockCheck(otherUserId);
+  const { blockUser, loading: blockLoading } = useBlockUser();
 
   const handleReportUser = async () => {
     const currentUserId = auth.currentUser?.uid;
@@ -57,11 +65,61 @@ export function ThreadInfoModal({
         reporterUserId: currentUserId,
         timestamp: serverTimestamp(),
       });
-
       Alert.alert("Report Submitted", "Thank you for your report.");
     } catch (error) {
       Alert.alert("Error", "Failed to submit report. Please try again.");
     }
+  };
+
+  const handleBlockUser = () => {
+    if (hasBlocked) {
+      Alert.alert(
+        "Already Blocked",
+        "You have already blocked this user. You can unblock them from Settings → Block List."
+      );
+      return;
+    }
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    Alert.alert(
+      "Block User?",
+      "You will no longer see anything from this user and they will not be able to interact with you. You can unblock them from Settings → Block List.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: async () => {
+            const success = await blockUser(otherUserId);
+            if (success) {
+              Haptics.notificationAsync(
+                Haptics.NotificationFeedbackType.Success
+              );
+              Alert.alert(
+                "User Blocked",
+                "You have successfully blocked this user. This conversation will be hidden.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      close();
+                      router.replace("/(tabs)/messages");
+                    },
+                  },
+                ]
+              );
+            } else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Error", "Failed to block user. Please try again.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   // Button content (the info icon in its collapsed state)
@@ -92,14 +150,12 @@ export function ThreadInfoModal({
               : "U"}
           </ThemedText>
         </View>
-
         <ThemedText
           type="title"
           style={[styles.userName, { color: colors.text }]}
         >
           {threadName || "Anonymous User"}
         </ThemedText>
-
         <ThemedText
           type="caption"
           style={[styles.userStatus, { color: colors.textSecondary }]}
@@ -137,33 +193,71 @@ export function ThreadInfoModal({
             immediately.
           </ThemedText>
 
-          {/* Report User Button */}
-          <TouchableOpacity
-            style={[
-              styles.reportButton,
-              {
-                backgroundColor: hasReported
-                  ? colors.textSecondary
-                  : colors.error || colors.tint,
-                opacity: hasReported || isLoading ? 0.6 : 1,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={handleReportUser}
-            disabled={hasReported || isLoading}
-          >
-            <IconSymbol
-              name={hasReported ? "checkmark" : "flag"}
-              size={16}
-              color={colors.white}
-            />
-            <ThemedText
-              type="caption"
-              style={[styles.reportButtonText, { color: colors.white }]}
+          {/* Action Buttons Row */}
+          <View style={styles.actionButtonsRow}>
+            {/* Report User Button */}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: hasReported
+                    ? colors.textSecondary
+                    : colors.error || colors.tint,
+                  opacity: hasReported || reportLoading ? 0.6 : 1,
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={handleReportUser}
+              disabled={hasReported || reportLoading}
             >
-              {hasReported ? "Already Reported" : "Report User"}
-            </ThemedText>
-          </TouchableOpacity>
+              <IconSymbol
+                name={hasReported ? "checkmark" : "flag"}
+                size={16}
+                color={colors.white}
+              />
+              <ThemedText
+                type="caption"
+                style={[styles.actionButtonText, { color: colors.white }]}
+              >
+                {hasReported ? "Reported" : "Report"}
+              </ThemedText>
+            </TouchableOpacity>
+
+            {/* Block User Button */}
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                {
+                  backgroundColor: hasBlocked
+                    ? colors.textSecondary
+                    : colors.error || colors.tint,
+                  opacity:
+                    hasBlocked || blockLoading || blockCheckLoading ? 0.6 : 1,
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={handleBlockUser}
+              disabled={hasBlocked || blockLoading || blockCheckLoading}
+            >
+              {blockLoading || blockCheckLoading ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <IconSymbol
+                    name={hasBlocked ? "checkmark" : "hand.raised.slash"}
+                    size={16}
+                    color={colors.white}
+                  />
+                  <ThemedText
+                    type="caption"
+                    style={[styles.actionButtonText, { color: colors.white }]}
+                  >
+                    {hasBlocked ? "Blocked" : "Block"}
+                  </ThemedText>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -244,15 +338,22 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     marginBottom: 16,
   },
-  reportButton: {
+  actionButtonsRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 20,
+    justifyContent: "center",
+    paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 10,
     gap: 8,
   },
-  reportButtonText: {
+  actionButtonText: {
     fontWeight: "600",
   },
   detailItem: {

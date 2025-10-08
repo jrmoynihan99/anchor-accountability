@@ -1,4 +1,5 @@
 // components/messages/EncouragementsList.tsx
+import { BlockUserIcon } from "@/components/BlockUserIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
@@ -139,6 +140,7 @@ export function EncouragementsList({
                           userId={encouragement.helperUid}
                           size="small"
                         />
+                        <BlockUserIcon userIdToBlock={anonymousUsername} />
                       </View>
                       <ThemedText
                         type="caption"

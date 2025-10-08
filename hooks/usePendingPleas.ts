@@ -1,4 +1,4 @@
-// hooks/usePendingPleas.ts - FILTERS OUT CURRENT USER'S OWN PLEAS
+// hooks/usePendingPleas.ts
 import { PleaData } from "@/components/morphing/messages/plea/PleaCard";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -11,29 +11,45 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 const MAX_RECENT_PLEAS = 20;
 
 export function usePendingPleas() {
+  const uid = auth.currentUser?.uid ?? null;
+
   const [pendingPleas, setPendingPleas] = useState<PleaData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep track of all active encouragement listeners so we can unsubscribe
+  // who I blocked / who blocked me
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers();
+
+  // encouragement listeners
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
-  // Keep track of the current plea base data (without encouragement counts)
+  // base plea data (without encouragement counts)
   const currentPleasRef = useRef<
     Map<string, Omit<PleaData, "encouragementCount" | "hasUserResponded">>
   >(new Map());
 
+  // Utility: hide if self OR blocked either direction
+  const shouldHide = (authorUid: string) => {
+    if (!uid) return true;
+    if (authorUid === uid) return true;
+    return blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
+  };
+
   useEffect(() => {
-    if (!auth.currentUser) {
-      setLoading(false);
+    if (!uid) {
       setPendingPleas([]);
+      setLoading(false);
       return;
     }
 
-    const currentUserId = auth.currentUser.uid;
+    // Wait for both block lists
+    if (blockedLoading || blockedByLoading) return;
 
     const pleasQuery = query(
       collection(db, "pleas"),
@@ -42,55 +58,47 @@ export function usePendingPleas() {
       limit(MAX_RECENT_PLEAS)
     );
 
-    // Top-level listener for latest pleas
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
-        // Get the current plea IDs from the snapshot
-        const currentPleaIds = new Set(snapshot.docs.map((doc) => doc.id));
+        const currentPleaIds = new Set(snapshot.docs.map((d) => d.id));
 
-        // Clean up listeners for pleas that are no longer in the result set
+        // Clean up listeners for pleas no longer present
         Object.keys(encouragementListenersRef.current).forEach((pleaId) => {
           if (!currentPleaIds.has(pleaId)) {
-            encouragementListenersRef.current[pleaId]();
+            encouragementListenersRef.current[pleaId]?.();
             delete encouragementListenersRef.current[pleaId];
             currentPleasRef.current.delete(pleaId);
           }
         });
 
-        // Update the base plea data
+        // Rebuild base map (skip hidden)
         const newPleasMap = new Map<
           string,
           Omit<PleaData, "encouragementCount" | "hasUserResponded">
         >();
 
         snapshot.docs.forEach((doc) => {
-          const data = doc.data();
-          // --- SKIP if it's the current user's own plea ---
-          if (data.uid === currentUserId) return;
+          const data = doc.data() as any;
+          if (shouldHide(data.uid)) return;
 
-          const pleaBase = {
+          newPleasMap.set(doc.id, {
             id: doc.id,
             message: data.message || "",
             uid: data.uid,
-            createdAt: data.createdAt?.toDate() || new Date(),
-          };
-          newPleasMap.set(doc.id, pleaBase);
+            createdAt: data.createdAt?.toDate?.() || new Date(),
+          });
         });
 
         currentPleasRef.current = newPleasMap;
 
-        // Set up encouragement listeners for any new pleas
+        // Ensure encouragement listeners for visible pleas
         snapshot.docs.forEach((doc) => {
+          const data = doc.data() as any;
           const pleaId = doc.id;
-          const data = doc.data();
-          // --- Don't create listeners for your own pleas ---
-          if (data.uid === currentUserId) return;
+          if (shouldHide(data.uid)) return;
 
-          // Only set up listener if we don't already have one
-          if (encouragementListenersRef.current[pleaId]) {
-            return;
-          }
+          if (encouragementListenersRef.current[pleaId]) return;
 
           const encouragementsQuery = query(
             collection(db, "pleas", pleaId, "encouragements"),
@@ -100,46 +108,42 @@ export function usePendingPleas() {
           const unsub = onSnapshot(encouragementsQuery, (encSnap) => {
             const encouragementCount = encSnap.size;
             const hasUserResponded = encSnap.docs.some(
-              (doc) => doc.data().helperUid === currentUserId
+              (d) => (d.data() as any).helperUid === uid
             );
 
-            // Update state using the current base plea data
-            setPendingPleas((oldPleas) => {
-              const pleaBase = currentPleasRef.current.get(pleaId);
-              if (!pleaBase) return oldPleas; // Plea no longer exists
+            setPendingPleas((old) => {
+              const base = currentPleasRef.current.get(pleaId);
+              if (!base) return old;
 
-              // --- FILTER: Don't add/update current user's own plea ---
-              if (pleaBase.uid === currentUserId) return oldPleas;
+              // re-check hidden in case block lists changed
+              if (shouldHide(base.uid)) return old;
 
-              // Remove old version of this plea and add updated version
-              const otherPleas = oldPleas.filter((p) => p.id !== pleaId);
-              const updatedPlea: PleaData = {
-                ...pleaBase,
+              const others = old.filter((p) => p.id !== pleaId);
+              const updated: PleaData = {
+                ...base,
                 encouragementCount,
                 hasUserResponded,
               };
 
-              const newPleas = [...otherPleas, updatedPlea];
-
-              // Sort: lowest count first, then oldest first
-              return newPleas.sort((a, b) => {
-                if (a.encouragementCount !== b.encouragementCount) {
-                  return a.encouragementCount - b.encouragementCount;
-                }
-                return a.createdAt.getTime() - b.createdAt.getTime();
-              });
+              const next = [...others, updated];
+              // Sort: fewest encouragements first, then oldest first
+              next.sort((a, b) =>
+                a.encouragementCount !== b.encouragementCount
+                  ? a.encouragementCount - b.encouragementCount
+                  : a.createdAt.getTime() - b.createdAt.getTime()
+              );
+              return next;
             });
           });
 
           encouragementListenersRef.current[pleaId] = unsub;
         });
 
-        // Remove pleas from state that are no longer in the current set
-        setPendingPleas(
-          (oldPleas) =>
-            oldPleas
-              .filter((plea) => currentPleaIds.has(plea.id))
-              .filter((plea) => plea.uid !== currentUserId) // <--- FILTER!
+        // Prune state to current & visible
+        setPendingPleas((old) =>
+          old
+            .filter((p) => currentPleaIds.has(p.id))
+            .filter((p) => !shouldHide(p.uid))
         );
 
         setError(null);
@@ -160,11 +164,18 @@ export function usePendingPleas() {
       encouragementListenersRef.current = {};
       currentPleasRef.current.clear();
     };
-  }, [auth.currentUser]);
+  }, [
+    uid,
+    blockedLoading,
+    blockedByLoading,
+    // When either set changes, rebuild listeners/filters
+    blockedUserIds,
+    blockedByUserIds,
+  ]);
 
   return {
-    pendingPleas, // These are ALREADY filtered!
-    loading,
+    pendingPleas,
+    loading: loading || blockedLoading || blockedByLoading,
     error,
   };
 }

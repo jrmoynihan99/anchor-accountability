@@ -1,4 +1,5 @@
 // components/messages/PleaResponseInputScreen.tsx
+import { BlockUserIcon } from "@/components/BlockUserIcon";
 import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -129,6 +130,7 @@ export function PleaResponseInputScreen({
                   {anonymousUsername}
                 </ThemedText>
                 <UserStreakDisplay userId={plea.uid} size="small" />
+                <BlockUserIcon userIdToBlock={plea.uid} />
               </View>
               <View style={styles.metaInfo}>
                 <ThemedText
