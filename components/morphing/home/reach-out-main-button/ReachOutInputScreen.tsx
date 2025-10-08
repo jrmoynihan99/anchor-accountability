@@ -1,6 +1,6 @@
 // ReachOutInputScreen.tsx
 import { MessageInput } from "@/components/MessageInput";
-import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
+import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";

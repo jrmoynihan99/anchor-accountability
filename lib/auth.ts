@@ -1,7 +1,12 @@
 // lib/auth.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
-import { auth } from "./firebase";
+import {
+  deleteUser,
+  onAuthStateChanged,
+  signInAnonymously,
+} from "firebase/auth";
+import { deleteDoc, doc } from "firebase/firestore";
+import { auth, db } from "./firebase";
 
 const isDev = __DEV__;
 
@@ -55,6 +60,57 @@ export async function signOut() {
     }
   } catch (error) {
     console.error("Error during sign out:", error);
+    throw error;
+  }
+}
+
+export async function deleteAccount() {
+  try {
+    const user = auth.currentUser;
+
+    if (!user) {
+      throw new Error("No user is currently signed in");
+    }
+
+    if (isDev) {
+      console.log("Starting account deletion for user:", user.uid);
+    }
+
+    // Delete user document from Firestore users collection
+    try {
+      const userDocRef = doc(db, "users", user.uid);
+      await deleteDoc(userDocRef);
+
+      if (isDev) {
+        console.log("User document deleted from Firestore");
+      }
+    } catch (firestoreError) {
+      console.error(
+        "Error deleting user document from Firestore:",
+        firestoreError
+      );
+      // Continue with auth deletion even if Firestore deletion fails
+    }
+
+    // Delete the user account from Firebase Auth
+    await deleteUser(user);
+
+    // Clear onboarding flag
+    await AsyncStorage.removeItem("hasCompletedOnboarding");
+
+    if (isDev) {
+      console.log("Account deletion completed successfully");
+    }
+  } catch (error: any) {
+    console.error("Error during account deletion:", error);
+
+    // Handle re-authentication requirement
+    if (error.code === "auth/requires-recent-login") {
+      throw new Error(
+        "For security reasons, please sign out and sign back in before deleting your account."
+      );
+    }
+
     throw error;
   }
 }

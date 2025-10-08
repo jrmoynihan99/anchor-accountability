@@ -1,7 +1,7 @@
 // components/LoginForm.tsx
-import { AnonymousBadge } from "@/components/morphing/anonymous-badge/AnonymousBadge";
-import { AnonymousBadgeModal } from "@/components/morphing/anonymous-badge/AnonymousBadgeModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
+import { AnonymousBadgeModal } from "@/components/morphing/login/anonymous-badge/AnonymousBadgeModal";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -24,6 +24,10 @@ import { ensureSignedIn } from "../../lib/auth";
 import { auth } from "../../lib/firebase";
 import { setHasOnboarded } from "../../lib/onboarding";
 import { ThemedText } from "../ThemedText";
+import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
+import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
+import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
+import { TermsOfServiceModal } from "@/components/morphing/login/terms-of-service/TermsOfServiceModal";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -345,12 +349,90 @@ export function LoginForm({
 
       {/* Footer */}
       <View style={styles.footer}>
-        <ThemedText
-          type="small"
-          style={[styles.footerText, { color: colors.textSecondary }]}
-        >
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </ThemedText>
+        <View style={styles.footerTextContainer}>
+          <ThemedText
+            type="small"
+            style={[styles.footerText, { color: colors.textSecondary }]}
+          >
+            By continuing, you agree to our{" "}
+          </ThemedText>
+
+          {/* Terms of Service - clickable */}
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.85}
+            modalHeightPercent={0.7}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              modalAnimatedStyle,
+              buttonAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => (
+              <>
+                <TermsOfServiceBadge
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <TermsOfServiceModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            )}
+          </ButtonModalTransitionBridge>
+
+          <ThemedText
+            type="small"
+            style={[styles.footerText, { color: colors.textSecondary }]}
+          >
+            {" "}
+            and{" "}
+          </ThemedText>
+
+          {/* Privacy Policy - clickable */}
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.85}
+            modalHeightPercent={0.7}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              modalAnimatedStyle,
+              buttonAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => (
+              <>
+                <PrivacyPolicyBadge
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <PrivacyPolicyModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            )}
+          </ButtonModalTransitionBridge>
+        </View>
       </View>
     </View>
   );
@@ -445,6 +527,14 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingBottom: 32,
+    alignItems: "center",
+  },
+  footerTextContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
   footerText: {
     textAlign: "center",

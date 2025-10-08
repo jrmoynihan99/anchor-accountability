@@ -1,5 +1,6 @@
 // components/morphing/settings/FloatingSettingsModal.tsx
 import { useTheme } from "@/hooks/ThemeContext";
+import { useLegalContent } from "@/hooks/useLegalContent";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import Animated, {
 import { BaseModal } from "../BaseModal";
 import { AboutSection } from "./AboutSection";
 import { AppearanceSection } from "./AppearanceSection";
+import { DeleteAccountButton } from "./DeleteAccountButton";
 import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
 import { SettingsHeader } from "./SettingsHeader";
@@ -44,11 +46,11 @@ export function FloatingSettingsModal({
   initialScreen = "settings",
 }: FloatingSettingsModalProps) {
   const { colors, effectiveTheme } = useTheme();
+  const { termsOfService, privacyPolicy, loading } = useLegalContent();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("settings");
   const [textContentData, setTextContentData] =
     useState<TextContentData | null>(null);
   const screenTransition = useSharedValue(0);
-
   const [shouldLoadNotifications, setShouldLoadNotifications] = useState(false);
 
   // Delay loading notifications until modal is fully open
@@ -57,9 +59,9 @@ export function FloatingSettingsModal({
     if (isVisible && currentScreen === "settings") {
       timer = setTimeout(() => {
         setShouldLoadNotifications(true);
-      }, 350); // Match your modal open animation duration (in ms)
+      }, 350);
     } else {
-      setShouldLoadNotifications(false); // reset on close or when leaving settings screen
+      setShouldLoadNotifications(false);
     }
     return () => {
       if (timer) clearTimeout(timer);
@@ -72,9 +74,8 @@ export function FloatingSettingsModal({
       const content = getTextContent("community");
       setTextContentData({ title: "Guidelines", content: content.content });
       setCurrentScreen("textContent");
-      screenTransition.value = 1; // Skip animation, go directly to guidelines
+      screenTransition.value = 1;
     } else if (isVisible && initialScreen === "settings") {
-      // Ensure we're on settings screen
       setCurrentScreen("settings");
       screenTransition.value = 0;
     }
@@ -109,7 +110,6 @@ export function FloatingSettingsModal({
       duration: 300,
       easing: Easing.out(Easing.quad),
     });
-
     // Delay state change until after animation completes
     setTimeout(() => {
       setCurrentScreen("settings");
@@ -125,70 +125,12 @@ export function FloatingSettingsModal({
       case "privacy":
         return {
           title: "Privacy Policy",
-          content: `Your privacy and anonymity are fundamental to our mission. We believe seeking help should never come with shame or fear of judgment.
-
-Our Commitment to Anonymity
-This app was built with anonymity at its core. We don't track who you are, what you share, or who you talk to. Your struggles and conversations remain completely private.
-
-What We Collect
-We collect only the minimum information necessary to make the app function:
-- Firebase authentication (email for account recovery only)
-- Anonymous messages and encouragement you choose to send
-- Basic app usage data to prevent abuse and improve functionality
-
-We never collect your real name, personal details, or link your identity to your activity in the app.
-
-How We Use Information
-The information we collect is used solely to:
-- Enable anonymous communication between users
-- Deliver daily verses and prayer content
-- Prevent spam, trolling, and abuse
-- Maintain the technical operation of the app
-
-We never sell, share, or use your data for advertising or any other purpose.
-
-Your Data Security
-All data is stored securely using Firebase's enterprise-grade security. Messages and interactions are designed to be untraceable to your identity.
-
-Your Control
-You can delete your account at any time, which will remove all associated data. You have complete control over what you share and when.
-
-Contact Us
-If you have questions about privacy, please reach out: jrmoynihan99@gmail.com`,
+          content: privacyPolicy,
         };
       case "terms":
         return {
           title: "Terms of Service",
-          content: `These terms help us maintain a safe, supportive community for everyone seeking help and healing.
-
-Acceptance of Terms
-By using this app, you agree to these terms and commit to using it as intended - for mutual support and encouragement.
-
-Our Purpose
-This app exists to provide anonymous support for those struggling with pornography and related challenges. While it has a Christian foundation, all people seeking genuine help are welcome.
-
-Prohibited Uses
-To protect our community, the following are strictly prohibited:
-- Spam, trolling, or abusive behavior
-- Sharing inappropriate content or links
-- Attempting to identify or contact other users outside the app
-- Using the platform for any purpose other than seeking or providing support
-- Creating multiple accounts to abuse the system
-
-Our Commitment to Safety
-We actively monitor for abuse and will remove users who violate these terms. While we respect anonymity, we reserve the right to prevent harmful behavior.
-
-Disclaimer
-This app is designed to supplement, not replace, professional help or real-world accountability relationships. For serious mental health concerns, please seek professional support.
-
-No Guarantees
-We provide this service as-is and cannot guarantee specific outcomes. Recovery is a personal journey that requires commitment beyond any app.
-
-Community Guidelines
-Be kind, be encouraging, be real. We're all in this struggle together, and every person deserves compassion and support.
-
-Changes to Terms
-We may update these terms as needed. Continued use of the app means you accept any changes.`,
+          content: termsOfService,
         };
       case "about":
         return {
@@ -312,13 +254,13 @@ Thank you for helping us keep this a safe and welcoming space!`,
           showsVerticalScrollIndicator={false}
         >
           <SettingsHeader />
-
           <View style={styles.settingsSection}>
             <NotificationsSection shouldLoad={shouldLoadNotifications} />
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
             <SignOutButton />
+            <DeleteAccountButton />
           </View>
         </ScrollView>
       </Animated.View>
