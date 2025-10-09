@@ -56,14 +56,14 @@ You’ll see a QR code in the terminal. Open the Expo Go app on your iOS or Andr
 
 ## 📱 App Store
 
-Download the app for free: [Anchor on the App Store](https://apps.apple.com/your-app)
+Download the app for free: [Anchor on the App Store](https://apps.apple.com/us/app/anchor-quit-porn-together/id6752869901)
 
 ---
 
 ## 📖 Case Study
 
 Want to see how it was designed and built?  
-Check out the [Anchor Case Study](https://jasonmoynihan.com/projects/anchor).
+Check out the [Anchor Case Study](https://jasonmoynihan.com/case-studies/anchor).
 
 ---
 
