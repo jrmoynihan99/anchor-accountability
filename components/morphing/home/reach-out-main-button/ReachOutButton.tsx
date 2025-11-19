@@ -23,22 +23,17 @@ export function ReachOutButton({
   const { colors } = useTheme();
 
   return (
-    <Animated.View
-      style={[
-        styles.shadowContainer,
-        {
-          shadowColor: colors.shadow,
-        },
-        style,
-      ]}
-    >
+    <Animated.View style={style}>
       <TouchableOpacity
         ref={buttonRef}
-        style={[styles.button, { backgroundColor: colors.tint }]}
+        activeOpacity={1}
         onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
-        activeOpacity={1}
+        style={[
+          styles.container,
+          { backgroundColor: colors.tint, shadowColor: colors.shadow },
+        ]}
       >
         <View style={styles.textContainer}>
           <Ionicons
@@ -47,22 +42,14 @@ export function ReachOutButton({
             color={colors.white}
             style={{ marginRight: 8 }}
           />
-          <ThemedText
-            type="buttonXLarge"
-            style={[styles.text, { color: colors.white }]}
-          >
+          <ThemedText type="buttonXLarge" style={{ color: colors.white }}>
             Reach Out
           </ThemedText>
         </View>
+
         <ThemedText
           type="body"
-          style={[
-            styles.subduedText,
-            {
-              color: colors.white,
-              letterSpacing: 0.2,
-            },
-          ]}
+          style={{ color: colors.white, letterSpacing: 0.2 }}
         >
           Get anonymous help
         </ThemedText>
@@ -72,29 +59,26 @@ export function ReachOutButton({
 }
 
 const styles = StyleSheet.create({
-  shadowContainer: {
+  container: {
+    paddingVertical: 100, // OPTION B — preserve original huge padding
+    borderRadius: 20,
+    marginBottom: 16,
+    marginTop: 16,
+    alignItems: "center",
+    justifyContent: "center",
+
+    // iOS shadows
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 8,
+
+    // Android shadows
     elevation: 5,
-    borderRadius: 20,
   },
-  button: {
-    paddingVertical: 100,
-    borderRadius: 20,
-    alignItems: "center",
-    marginBottom: 16,
-    marginTop: 16,
-  },
-  text: {
-    // Typography styles moved to Typography.styles.buttonXLarge
-  },
+
   textContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 4,
-  },
-  subduedText: {
-    // Typography styles moved to Typography.styles.body + inline styles
   },
 });
