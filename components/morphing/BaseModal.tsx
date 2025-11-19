@@ -2,7 +2,13 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   Easing,
@@ -187,7 +193,7 @@ export function BaseModal({
         {blurReady && (
           <Animated.View style={[StyleSheet.absoluteFill, blurBackgroundStyle]}>
             <BlurView
-              intensity={50}
+              intensity={Platform.OS === "android" ? 100 : 50}
               tint={theme === "dark" ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             >
