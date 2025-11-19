@@ -5,7 +5,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { BlurView } from "expo-blur";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { InfoButton } from "../../morphing/messages/message-thread-info/InfoButton";
 import { ThreadInfoModal } from "../../morphing/messages/message-thread-info/InfoModal";
@@ -27,7 +27,7 @@ export function MessageThreadHeader({
   return (
     <View style={styles.headerContainer}>
       <BlurView
-        intensity={80}
+        intensity={Platform.OS === "android" ? 100 : 50}
         tint={colorScheme === "dark" ? "dark" : "light"}
         style={styles.blurContainer}
       >

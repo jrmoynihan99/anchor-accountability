@@ -244,21 +244,21 @@ export function BaseModal({
 
         {/* Modal Content - WITHOUT GestureDetector */}
         <Animated.View style={[styles.modalContent, modalContentStyle]}>
-          <GestureDetector gesture={closeButtonGesture}>
-            <Animated.View
-              style={[
-                styles.closeButton,
-                { backgroundColor: colors.closeButtonBackground },
-              ]}
-            >
-              <IconSymbol
-                name="xmark"
-                size={18}
-                weight="light"
-                color={buttonColor}
-              />
-            </Animated.View>
-          </GestureDetector>
+          <TouchableOpacity
+            style={[
+              styles.closeButton,
+              { backgroundColor: colors.closeButtonBackground },
+            ]}
+            onPress={() => close()}
+            activeOpacity={0.7}
+          >
+            <IconSymbol
+              name="xmark"
+              size={18}
+              weight="light"
+              color={buttonColor}
+            />
+          </TouchableOpacity>
 
           {children}
 

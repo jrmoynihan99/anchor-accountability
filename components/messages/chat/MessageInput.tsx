@@ -2,7 +2,13 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
-import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MessageInputProps } from "./types";
 
@@ -27,7 +33,7 @@ export const MessageInput = forwardRef<
     return (
       <View style={styles.inputContainer}>
         <BlurView
-          intensity={80}
+          intensity={Platform.OS === "android" ? 100 : 50}
           tint={colorScheme === "dark" ? "dark" : "light"}
           style={styles.blurContainer}
         >

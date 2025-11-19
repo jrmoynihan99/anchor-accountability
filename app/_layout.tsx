@@ -4,7 +4,6 @@ import "react-native-reanimated";
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
-import { ensureSignedIn } from "@/lib/auth";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
   Stack,

@@ -62,6 +62,10 @@ const MAPPING = {
   "play.fill": "play",
   "arrow.left": "arrow-left",
   "bubble.left.and.bubble.right.fill": "message-processing",
+  clock: "clock-outline",
+  "exclamationmark.triangle": "alert",
+  flag: "flag-outline",
+  "chevron.down": "chevron-down",
 } as const;
 
 // 3. Fallback icon for unmapped symbols on Android

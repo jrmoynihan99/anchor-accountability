@@ -3,7 +3,13 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";
-import { LayoutChangeEvent, Pressable, StyleSheet, View } from "react-native";
+import {
+  LayoutChangeEvent,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -113,7 +119,7 @@ export function FloatingPillNavigation({
     <View style={[styles.container, { bottom: insets.bottom + 15 }]}>
       <View style={[styles.shadowParent, { shadowColor: colors.shadow }]}>
         <BlurView
-          intensity={80}
+          intensity={Platform.OS === "android" ? 100 : 50}
           tint={effectiveTheme === "dark" ? "dark" : "light"}
           style={styles.roundedChild}
         >

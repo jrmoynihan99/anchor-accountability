@@ -1,23 +1,24 @@
 // components/messages/chat/ContextSection.tsx
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ActivityIndicator,
-} from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  interpolate,
-  Easing,
-} from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Typography } from "@/constants/Typography";
+import { BlurView } from "expo-blur";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface ContextSectionProps {
   plea?: string | null;
@@ -153,7 +154,7 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
         ]}
       >
         <BlurView
-          intensity={70}
+          intensity={Platform.OS === "android" ? 100 : 50}
           tint={colorScheme === "dark" ? "dark" : "light"}
           style={[
             styles.blurContainer,
