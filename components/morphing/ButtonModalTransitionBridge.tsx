@@ -177,7 +177,11 @@ export function ButtonModalTransitionBridge({
   const open = () => {
     // If we don't have a measured origin, use originless slide-up fallback
     const hasOrigin = buttonLayout.width > 0 && buttonLayout.height > 0;
-    openMode.value = hasOrigin ? 0 : 1;
+
+    // iOS: morph when we have origin, otherwise slide-up
+    // Android: ALWAYS use slide-up (perf-friendly)
+    const shouldMorph = Platform.OS === "ios" && hasOrigin;
+    openMode.value = shouldMorph ? 0 : 1;
 
     setIsModalVisible(true);
     requestAnimationFrame(() => {

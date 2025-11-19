@@ -1,50 +1,78 @@
-// Fallback for using MaterialIcons on Android and web.
+// Cross-platform IconSymbol
+// iOS → SF Symbols via expo-symbols
+// Android/Web → MaterialCommunityIcons fallback
 
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { SymbolViewProps, SymbolWeight } from "expo-symbols";
-import { ComponentProps } from "react";
-import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { SymbolView, type SymbolWeight } from "expo-symbols";
+import {
+  OpaqueColorValue,
+  Platform,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from "react-native";
 
-type IconMapping = Record<
-  SymbolViewProps["name"],
-  ComponentProps<typeof MaterialIcons>["name"]
->;
-export type IconSymbolName = keyof typeof MAPPING;
+// 1. Allow ANY icon name, but keep autocomplete for mapped symbols
+export type IconSymbolName = keyof typeof MAPPING | (string & {});
 
-/**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
+// 2. Mapping from SF Symbols → MaterialCommunityIcons
 const MAPPING = {
   "house.fill": "home",
+  paperplane: "send",
   "paperplane.fill": "send",
-  "chevron.left.forwardslash.chevron.right": "code",
+  "chevron.left": "chevron-left",
   "chevron.right": "chevron-right",
+  "chevron.left.forwardslash.chevron.right": "code-tags",
   "message.fill": "message",
-  "person.3.fill": "group",
+  message: "message-outline",
+  "message.badge": "message-alert",
+  "person.3.fill": "account-group",
+  "person.2": "account-multiple",
   "checkmark.circle.fill": "check-circle",
-  "xmark.circle.fill": "cancel",
-  "flame.fill": "whatshot",
-  // 👇 ADD THIS
-  "megaphone.fill": "campaign", // "campaign" looks like a megaphone in MaterialIcons
-  "trophy.fill": "emoji-events", // Trophy
-  calendar: "calendar-today", // Calendar
-  "chart.bar.fill": "bar-chart", // Bar Chart
-  "eye.slash": "visibility-off",
-  "questionmark.circle": "help",
-} as IconMapping;
+  checkmark: "check",
+  "xmark.circle.fill": "close-circle",
+  xmark: "close",
+  "flame.fill": "fire",
+  "megaphone.fill": "bullhorn",
+  megaphone: "bullhorn-outline",
+  "trophy.fill": "trophy",
+  calendar: "calendar",
+  "chart.bar.fill": "chart-bar",
+  "eye.slash": "eye-off",
+  "questionmark.circle": "help-circle",
+  "arrow.up": "arrow-up",
+  "arrow.right.square": "arrow-right-box",
+  heart: "heart-outline",
+  trash: "trash-can",
+  bell: "bell",
+  "lock.shield": "shield-lock",
+  "info.circle": "information",
+  paintbrush: "brush",
+  exclamationmark: "alert",
+  "heart.fill": "heart",
+  plus: "plus",
+  book: "book-outline",
+  star: "star-outline",
+  "ellipsis.circle": "dots-horizontal-circle",
+  "arrow.right": "arrow-right",
+  "hand.raised.slash": "hand-back-right-off",
+  "arrowshape.turn.up.left": "reply",
+  "list.bullet": "format-list-bulleted",
+  "arrow.up.left.and.arrow.down.right": "arrow-expand",
+  "play.fill": "play",
+  "arrow.left": "arrow-left",
+  "bubble.left.and.bubble.right.fill": "message-processing",
+} as const;
 
-/**
- * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
- * This ensures a consistent look across platforms, and optimal resource usage.
- * Icon `name`s are based on SF Symbols and require manual mapping to Material Icons.
- */
+// 3. Fallback icon for unmapped symbols on Android
+const FALLBACK_ANDROID_ICON = "help-circle-outline";
+
 export function IconSymbol({
   name,
   size = 24,
   color,
   style,
+  weight = "regular",
 }: {
   name: IconSymbolName;
   size?: number;
@@ -52,11 +80,33 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
+  // -------------------------------------
+  // iOS — use SF Symbols exactly as before
+  // -------------------------------------
+  if (Platform.OS === "ios") {
+    return (
+      <SymbolView
+        name={name as any}
+        size={size}
+        tintColor={color}
+        weight={weight}
+        style={style as StyleProp<ViewStyle>}
+      />
+    );
+  }
+
+  // -------------------------------------
+  // Android/Web — use MaterialCommunityIcons
+  // with proper fallback
+  // -------------------------------------
+  const mapped = MAPPING[name as keyof typeof MAPPING];
+  const iconName = mapped ?? FALLBACK_ANDROID_ICON;
+
   return (
-    <MaterialIcons
-      color={color}
+    <MaterialCommunityIcons
+      name={iconName}
       size={size}
-      name={MAPPING[name]}
+      color={color}
       style={style}
     />
   );
