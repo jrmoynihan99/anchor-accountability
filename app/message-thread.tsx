@@ -1,4 +1,5 @@
-// app/message-thread.tsx
+// app/message-thread.tsx - FlatList Version
+// PARENT COMPONENT - Nearly identical to ScrollView version
 
 import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { MessageInput } from "@/components/messages/chat/MessageInput";
@@ -22,9 +23,9 @@ import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
+  FlatList,
   Keyboard,
   Platform,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -82,11 +83,15 @@ export default function MessageThreadScreen() {
   const { messages, loading, error, loadingMore, hasMore, loadMoreMessages } =
     useThreadMessages(actualThreadId);
   const { refreshUnreadCount } = useUnreadCount();
-  const scrollViewRef = useRef<ScrollView>(null);
+  const flatListRef = useRef<FlatList>(null); // Changed from ScrollView to FlatList
   const inputRef = useRef<TextInput>(null);
 
   // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
+
+  const isUserAtBottomRef = useRef(true);
+  const previousMessageCountRef = useRef(0);
+  const hasInitiallyLoadedRef = useRef(false);
 
   // 1. Resolve context IDs (from params or Firestore)
   useEffect(() => {
@@ -123,6 +128,8 @@ export default function MessageThreadScreen() {
   useEffect(() => {
     if (actualThreadId) {
       setCurrentThreadId(actualThreadId);
+      // Reset initial load flag when thread changes
+      hasInitiallyLoadedRef.current = false;
     }
     return () => {
       setCurrentThreadId(null);
@@ -197,16 +204,12 @@ export default function MessageThreadScreen() {
     };
   }, [contextPleaId, contextEncouragementId]);
 
-  // Keyboard & scroll logic (identical to previous)
+  // Keyboard & scroll logic
   const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
-    if (!scrollViewRef.current) return;
-    if (Platform.OS === "ios") {
-      scrollViewRef.current.setNativeProps({
-        contentInset: { top: keyboardHeight, bottom: 0 },
-        scrollIndicatorInsets: { top: keyboardHeight, bottom: 0 },
-      });
-    }
+    // Note: For FlatList, we don't need contentInset adjustments
+    // The Animated.View transform handles everything
   };
+
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -244,6 +247,7 @@ export default function MessageThreadScreen() {
       keyboardDidHide.remove();
     };
   }, []);
+
   const animatedInputStyle = useAnimatedStyle(() => ({
     transform: [
       {
@@ -254,6 +258,7 @@ export default function MessageThreadScreen() {
       },
     ],
   }));
+
   const animatedMessagesStyle = useAnimatedStyle(() => ({
     transform: [
       {
@@ -264,6 +269,43 @@ export default function MessageThreadScreen() {
       },
     ],
   }));
+
+  // Track scroll position to determine if user is at bottom
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+
+    // For inverted FlatList, contentOffset.y is negative when at bottom
+    // At bottom: contentOffset.y is close to 0
+    const distanceFromBottom = Math.abs(contentOffset.y);
+
+    // Consider "at bottom" if within 50 pixels
+    isUserAtBottomRef.current = distanceFromBottom < 50;
+  };
+
+  // Handle content size changes - simplified for FlatList
+  const handleContentSizeChange = (
+    contentWidth: number,
+    contentHeight: number
+  ) => {
+    // On initial load, scroll to bottom (offset 0 for inverted FlatList)
+    if (!hasInitiallyLoadedRef.current && messages.length > 0) {
+      hasInitiallyLoadedRef.current = true;
+      previousMessageCountRef.current = messages.length;
+      setTimeout(() => {
+        // For inverted FlatList, offset 0 is the bottom (newest message)
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      }, 100);
+      return;
+    }
+
+    // FlatList with maintainVisibleContentPosition handles scroll position automatically
+    // when loading more messages, so we don't need manual adjustment!
+
+    // Only auto-scroll if user is at bottom
+    if (isUserAtBottomRef.current && hasInitiallyLoadedRef.current) {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
+  };
 
   // Fetch missing thread data if coming from notification
   useEffect(() => {
@@ -301,15 +343,19 @@ export default function MessageThreadScreen() {
     };
     fetchThreadData();
   }, [threadId, threadName, otherUserId, currentUserId]);
+
   useEffect(() => {
     if (messageId && messages.length > 0) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
+        // For inverted FlatList, offset 0 is the bottom
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       }, 500);
     }
   }, [messageId, messages]);
+
   const displayThreadName = threadName || fetchedThreadName || "Unknown User";
   const displayOtherUserId = otherUserId || fetchedOtherUserId;
+
   useEffect(() => {
     const userId = auth.currentUser?.uid;
     if (userId) {
@@ -319,6 +365,7 @@ export default function MessageThreadScreen() {
       router.back();
     }
   }, []);
+
   useEffect(() => {
     if (!currentUserId || !isNewThread || !displayOtherUserId) return;
     const setupNewThread = async () => {
@@ -336,13 +383,26 @@ export default function MessageThreadScreen() {
     };
     setupNewThread();
   }, [currentUserId, isNewThread, displayOtherUserId, pleaId, encouragementId]);
+
+  // Only auto-scroll when user is at bottom AND it's a new message (not loading more)
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+    // Skip if not initially loaded yet
+    if (!hasInitiallyLoadedRef.current) return;
+    if (!isUserAtBottomRef.current) return;
+    if (messages.length === 0) return;
+
+    // Check if this is new messages being added vs loading more
+    const messageDelta = messages.length - previousMessageCountRef.current;
+
+    // Only scroll if it's likely a new message (1-5 new messages), not a batch load (>5)
+    if (messageDelta > 0 && messageDelta <= 5) {
+      // For inverted FlatList, offset 0 is the bottom
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
+
+    previousMessageCountRef.current = messages.length;
   }, [messages]);
+
   useEffect(() => {
     if (actualThreadId && !isNewThread) {
       markMessagesAsRead(actualThreadId)
@@ -357,7 +417,8 @@ export default function MessageThreadScreen() {
     setInputText("");
     setSending(true);
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      // For inverted FlatList, offset 0 is the bottom
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 100);
     try {
       await sendMessage(actualThreadId, messageText);
@@ -371,17 +432,21 @@ export default function MessageThreadScreen() {
   };
 
   const handleInputFocus = () => {
+    // Always scroll to bottom when input is focused
+    // For inverted FlatList, offset 0 is the bottom
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 300);
+  };
+
+  const handleLoadMore = () => {
+    if (loadMoreMessages && !loadingMore) {
+      loadMoreMessages();
+    }
   };
 
   const handleBack = () => {
     router.back();
-  };
-
-  const handleContentSizeChange = () => {
-    scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
   if (loading || loadingThreadData) {
@@ -456,7 +521,7 @@ export default function MessageThreadScreen() {
         {/* Animated transform for message list */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
           <MessagesList
-            ref={scrollViewRef}
+            ref={flatListRef}
             messages={messages || []}
             currentUserId={currentUserId}
             isNewThread={isNewThread}
@@ -465,8 +530,9 @@ export default function MessageThreadScreen() {
             onContentSizeChange={handleContentSizeChange}
             loadingMore={loadingMore}
             hasMore={hasMore}
-            onLoadMore={loadMoreMessages}
+            onLoadMore={handleLoadMore}
             keyboardHeight={keyboardHeight}
+            onScroll={handleScroll}
           />
         </Animated.View>
 

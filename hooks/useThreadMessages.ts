@@ -2,14 +2,13 @@
 import { db } from "@/lib/firebase";
 import {
   collection,
-  endBefore,
   getDocs,
   limit,
-  limitToLast,
   onSnapshot,
   orderBy,
   query,
   QueryDocumentSnapshot,
+  startAfter,
   Timestamp,
   Unsubscribe,
 } from "firebase/firestore";
@@ -128,11 +127,12 @@ export function useThreadMessages(threadId: string | null) {
 
     try {
       const messagesRef = collection(db, "threads", threadId, "messages");
+
       const olderMessagesQuery = query(
         messagesRef,
         orderBy("createdAt", "desc"),
-        endBefore(oldestDocRef.current),
-        limitToLast(MESSAGES_PER_PAGE)
+        startAfter(oldestDocRef.current), // ⬅️ CORRECT
+        limit(MESSAGES_PER_PAGE) // ⬅️ CORRECT
       );
 
       const snapshot = await getDocs(olderMessagesQuery);
@@ -146,16 +146,16 @@ export function useThreadMessages(threadId: string | null) {
             } as MessageData)
         );
 
-        // Reverse to maintain chronological order
+        // Reverse to chronological display order
         const sortedOlderMessages = olderMessages.reverse();
 
-        // Prepend older messages to existing messages
+        // Prepend older messages
         setMessages((prev) => [...sortedOlderMessages, ...prev]);
 
-        // Update the oldest document reference
+        // Update oldest doc
         oldestDocRef.current = snapshot.docs[snapshot.docs.length - 1];
 
-        // Check if there are more messages
+        // More messages exist if we loaded a full page
         setHasMore(snapshot.docs.length === MESSAGES_PER_PAGE);
       } else {
         setHasMore(false);
