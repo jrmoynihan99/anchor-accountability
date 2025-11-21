@@ -297,6 +297,7 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 24,
+    zIndex: 15,
   },
   closeButton: {
     position: "absolute",

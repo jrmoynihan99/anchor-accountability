@@ -2,7 +2,7 @@
 import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { ChapterTextRenderer } from "./ChapterTextRenderer";
 
 // Define the structured chapter text type
