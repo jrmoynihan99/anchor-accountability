@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
 import { CarouselDots } from "../../../CarouselDots";
 
 interface VerseCardContentProps {
@@ -86,22 +86,45 @@ export function VerseCardContent({
       </ThemedText>
 
       {/* Main verse text, max 3 lines */}
-      <ThemedText
-        type="verse"
-        numberOfLines={4}
-        ellipsizeMode="tail"
-        style={[
-          styles.verseText,
-          {
-            color: colors.textSecondary,
-            textAlign: "center",
-            marginTop: 40,
-            marginBottom: 32,
-          },
-        ]}
-      >
-        {verse}
-      </ThemedText>
+      {Platform.OS === "android" ? (
+        <ThemedText
+          type="verse"
+          numberOfLines={5}
+          ellipsizeMode="tail"
+          // @ts-ignore - includeFontPadding exists on Text but not in ThemedText types
+          includeFontPadding={false}
+          style={[
+            styles.verseText,
+            {
+              color: colors.textSecondary,
+              textAlign: "center",
+              marginTop: 40,
+              marginBottom: 32,
+              maxHeight: 4 * 24, // Constrain to 4 visible lines (adjust line height as needed)
+              overflow: "hidden",
+            },
+          ]}
+        >
+          {verse}
+        </ThemedText>
+      ) : (
+        <ThemedText
+          type="verse"
+          numberOfLines={4}
+          ellipsizeMode="tail"
+          style={[
+            styles.verseText,
+            {
+              color: colors.textSecondary,
+              textAlign: "center",
+              marginTop: 40,
+              marginBottom: 32,
+            },
+          ]}
+        >
+          {verse}
+        </ThemedText>
+      )}
 
       {/* Reference */}
       <View style={styles.referenceContainer}>
