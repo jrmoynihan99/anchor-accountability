@@ -72,7 +72,6 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
   const topOffset = insets.top + HEADER_CONTENT_HEIGHT + DESIRED_GAP;
   const HEADER_HEIGHT = 48;
 
-  // Update animation when expanded state changes
   useEffect(() => {
     animatedHeight.value = withTiming(isExpanded ? 1 : 0, {
       duration: 300,
@@ -85,7 +84,6 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
   }, [isExpanded]);
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    // Use actual content height instead of hardcoded max
     const targetHeight = HEADER_HEIGHT + (contentHeight || 0);
     return {
       height: interpolate(
@@ -118,23 +116,141 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
     };
   });
 
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
+  const toggleExpanded = () => setIsExpanded(!isExpanded);
 
-  // Measure content height
   const onContentLayout = (event: any) => {
     const { height } = event.nativeEvent.layout;
     setContentHeight(height);
   };
 
-  // Don't render if no context and not loading
-  if (!loading && !plea && !encouragement) {
-    return null;
-  }
+  if (!loading && !plea && !encouragement) return null;
 
   const hasEncouragement = encouragement && encouragement.trim().length > 0;
 
+  // ------------------------------------------------------------
+  // SHARED CONTENT FOR BOTH ANDROID + IOS
+  // ------------------------------------------------------------
+  const renderContent = () => (
+    <>
+      {/* Header */}
+      <TouchableOpacity
+        style={styles.headerBar}
+        onPress={toggleExpanded}
+        activeOpacity={0.7}
+      >
+        <View style={styles.headerContent}>
+          <View
+            style={[styles.dot, { backgroundColor: colors.tint, opacity: 1 }]}
+          />
+          <ThemedText
+            type="captionMedium"
+            style={[
+              styles.headerText,
+              { color: colors.text, ...Typography.styles.captionMedium },
+            ]}
+          >
+            Conversation Context
+          </ThemedText>
+        </View>
+
+        {loading ? (
+          <ActivityIndicator size="small" color={colors.textSecondary} />
+        ) : (
+          <Animated.View style={animatedChevronStyle}>
+            <IconSymbol
+              name="chevron.down"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Animated.View>
+        )}
+      </TouchableOpacity>
+
+      {/* Expandable Content */}
+      {!loading && (
+        <Animated.View
+          style={[styles.content, animatedContentStyle]}
+          onLayout={onContentLayout}
+        >
+          {/* Plea */}
+          <View
+            style={[
+              styles.section,
+              hasEncouragement && styles.sectionWithMargin,
+            ]}
+          >
+            <ThemedText
+              type="caption"
+              style={[
+                styles.sectionLabel,
+                {
+                  color: colors.textSecondary,
+                  ...Typography.styles.caption,
+                },
+              ]}
+            >
+              {getPleaLabel(currentUserId, pleaOwnerUid)}
+            </ThemedText>
+
+            {plea && plea.trim().length > 0 ? (
+              <ThemedText
+                type="body"
+                style={[
+                  styles.sectionText,
+                  { color: colors.text, ...Typography.styles.body },
+                ]}
+              >
+                {plea}
+              </ThemedText>
+            ) : (
+              <ThemedText
+                type="body"
+                style={[
+                  styles.sectionText,
+                  {
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                    ...Typography.styles.body,
+                  },
+                ]}
+              >
+                No additional context provided.
+              </ThemedText>
+            )}
+          </View>
+
+          {/* Encouragement */}
+          {hasEncouragement && (
+            <View style={styles.section}>
+              <ThemedText
+                type="caption"
+                style={[
+                  styles.sectionLabel,
+                  { color: colors.textSecondary, ...Typography.styles.caption },
+                ]}
+              >
+                {getEncLabel(currentUserId, encouragementOwnerUid)}
+              </ThemedText>
+
+              <ThemedText
+                type="body"
+                style={[
+                  styles.sectionText,
+                  { color: colors.text, ...Typography.styles.body },
+                ]}
+              >
+                {encouragement}
+              </ThemedText>
+            </View>
+          )}
+        </Animated.View>
+      )}
+    </>
+  );
+
+  // ------------------------------------------------------------
+  // RETURN
+  // ------------------------------------------------------------
   return (
     <View style={[styles.wrapper, { marginTop: topOffset }]}>
       <Animated.View
@@ -153,135 +269,33 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
           },
         ]}
       >
-        <BlurView
-          intensity={Platform.OS === "android" ? 100 : 50}
-          tint={colorScheme === "dark" ? "dark" : "light"}
-          style={[
-            styles.blurContainer,
-            {
-              backgroundColor: `${colors.cardBackground}80`, // Add 80% opacity
-            },
-          ]}
-        >
-          {/* Header bar - always visible */}
-          <TouchableOpacity
-            style={styles.headerBar}
-            onPress={toggleExpanded}
-            activeOpacity={0.7}
+        {/* ANDROID — NO BLURVIEW */}
+        {Platform.OS === "android" ? (
+          <View
+            style={[
+              styles.blurContainer,
+              {
+                backgroundColor: colors.cardBackground,
+              },
+            ]}
           >
-            <View style={styles.headerContent}>
-              <View
-                style={[
-                  styles.dot,
-                  { backgroundColor: colors.tint, opacity: 1 },
-                ]}
-              />
-              <ThemedText
-                type="captionMedium"
-                style={[
-                  styles.headerText,
-                  { color: colors.text, ...Typography.styles.captionMedium },
-                ]}
-              >
-                Conversation Context
-              </ThemedText>
-            </View>
-
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.textSecondary} />
-            ) : (
-              <Animated.View style={animatedChevronStyle}>
-                <IconSymbol
-                  name="chevron.down"
-                  size={20}
-                  color={colors.textSecondary}
-                />
-              </Animated.View>
-            )}
-          </TouchableOpacity>
-
-          {/* Expandable content */}
-          {!loading && (
-            <Animated.View
-              style={[styles.content, animatedContentStyle]}
-              onLayout={onContentLayout}
-            >
-              {/* Plea section */}
-              <View
-                style={[
-                  styles.section,
-                  // Only add bottom margin if there's encouragement after it
-                  hasEncouragement && styles.sectionWithMargin,
-                ]}
-              >
-                <ThemedText
-                  type="caption"
-                  style={[
-                    styles.sectionLabel,
-                    {
-                      color: colors.textSecondary,
-                      ...Typography.styles.caption,
-                    },
-                  ]}
-                >
-                  {getPleaLabel(currentUserId, pleaOwnerUid)}
-                </ThemedText>
-                {plea && plea.trim().length > 0 ? (
-                  <ThemedText
-                    type="body"
-                    style={[
-                      styles.sectionText,
-                      { color: colors.text, ...Typography.styles.body },
-                    ]}
-                  >
-                    {plea}
-                  </ThemedText>
-                ) : (
-                  <ThemedText
-                    type="body"
-                    style={[
-                      styles.sectionText,
-                      {
-                        color: colors.textSecondary,
-                        fontStyle: "italic",
-                        ...Typography.styles.body,
-                      },
-                    ]}
-                  >
-                    No additional context provided.
-                  </ThemedText>
-                )}
-              </View>
-
-              {/* Encouragement section */}
-              {hasEncouragement && (
-                <View style={styles.section}>
-                  <ThemedText
-                    type="caption"
-                    style={[
-                      styles.sectionLabel,
-                      {
-                        color: colors.textSecondary,
-                        ...Typography.styles.caption,
-                      },
-                    ]}
-                  >
-                    {getEncLabel(currentUserId, encouragementOwnerUid)}
-                  </ThemedText>
-                  <ThemedText
-                    type="body"
-                    style={[
-                      styles.sectionText,
-                      { color: colors.text, ...Typography.styles.body },
-                    ]}
-                  >
-                    {encouragement}
-                  </ThemedText>
-                </View>
-              )}
-            </Animated.View>
-          )}
-        </BlurView>
+            {renderContent()}
+          </View>
+        ) : (
+          /* iOS — BlurView */
+          <BlurView
+            intensity={50}
+            tint={colorScheme === "dark" ? "dark" : "light"}
+            style={[
+              styles.blurContainer,
+              {
+                backgroundColor: `${colors.cardBackground}80`,
+              },
+            ]}
+          >
+            {renderContent()}
+          </BlurView>
+        )}
       </Animated.View>
     </View>
   );
@@ -325,11 +339,9 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 12,
   },
-  section: {
-    // Remove default margin bottom
-  },
+  section: {},
   sectionWithMargin: {
-    marginBottom: 12, // Only add margin when there's content after
+    marginBottom: 12,
   },
   sectionLabel: {
     marginBottom: 4,

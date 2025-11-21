@@ -1,9 +1,9 @@
 // app/message-thread.tsx
 
+import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
-import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
@@ -19,7 +19,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { doc, getDoc } from "firebase/firestore";
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -245,10 +245,24 @@ export default function MessageThreadScreen() {
     };
   }, []);
   const animatedInputStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -keyboardHeight.value * 0.9 }],
+    transform: [
+      {
+        translateY:
+          Platform.OS === "ios"
+            ? -keyboardHeight.value * 0.9
+            : -keyboardHeight.value,
+      },
+    ],
   }));
   const animatedMessagesStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -keyboardHeight.value * 0.9 }],
+    transform: [
+      {
+        translateY:
+          Platform.OS === "ios"
+            ? -keyboardHeight.value * 0.9
+            : -keyboardHeight.value,
+      },
+    ],
   }));
 
   // Fetch missing thread data if coming from notification

@@ -30,69 +30,99 @@ export const MessageInput = forwardRef<
   ) => {
     const insets = useSafeAreaInsets();
 
+    // ------------------------------------------------------------
+    // Shared inner content (used for iOS BlurView + Android solid View)
+    // ------------------------------------------------------------
+    const renderContent = () => (
+      <View
+        style={[
+          styles.inputContent,
+          {
+            backgroundColor: colors.navBackground,
+            borderTopColor: colors.navBorder,
+            paddingBottom: insets.bottom + 8,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.inputWrapper,
+            {
+              backgroundColor: colors.textInputBackground,
+              borderColor: colors.border,
+            },
+          ]}
+        >
+          <TextInput
+            ref={ref}
+            style={[styles.textInput, { color: colors.text }]}
+            placeholder="Message..."
+            placeholderTextColor={colors.textSecondary}
+            value={inputText}
+            onChangeText={onInputChange}
+            onFocus={onFocus}
+            multiline
+            maxLength={1000}
+            submitBehavior="newline"
+          />
+
+          <TouchableOpacity
+            style={[
+              styles.sendButton,
+              {
+                backgroundColor:
+                  inputText.trim().length > 0 ? colors.tint : colors.border,
+              },
+            ]}
+            onPress={onSend}
+            disabled={inputText.trim().length === 0 || disabled}
+            activeOpacity={0.8}
+          >
+            <IconSymbol
+              name="arrow.up"
+              size={16}
+              color={
+                inputText.trim().length > 0
+                  ? colors.white
+                  : colors.textSecondary
+              }
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+
     return (
       <View style={styles.inputContainer}>
-        <BlurView
-          intensity={Platform.OS === "android" ? 100 : 50}
-          tint={colorScheme === "dark" ? "dark" : "light"}
-          style={styles.blurContainer}
-        >
+        {/* -------------------------------------------- */}
+        {/* ANDROID — remove BlurView entirely            */}
+        {/* -------------------------------------------- */}
+        {Platform.OS === "android" ? (
           <View
             style={[
-              styles.inputContent,
+              styles.blurContainer,
               {
-                backgroundColor: colors.navBackground,
-                borderTopColor: colors.navBorder,
-                paddingBottom: insets.bottom + 8,
+                backgroundColor:
+                  Platform.OS === "android"
+                    ? colors.background // 100% opaque
+                    : colors.navBackground, // translucent + blur on iOS
               },
             ]}
           >
-            <View
-              style={[
-                styles.inputWrapper,
-                {
-                  backgroundColor: colors.textInputBackground,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <TextInput
-                ref={ref}
-                style={[styles.textInput, { color: colors.text }]}
-                placeholder="Message..."
-                placeholderTextColor={colors.textSecondary}
-                value={inputText}
-                onChangeText={onInputChange}
-                onFocus={onFocus}
-                multiline
-                maxLength={1000}
-                submitBehavior="newline"
-              />
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  {
-                    backgroundColor:
-                      inputText.trim().length > 0 ? colors.tint : colors.border,
-                  },
-                ]}
-                onPress={onSend}
-                disabled={inputText.trim().length === 0 || disabled}
-                activeOpacity={0.8}
-              >
-                <IconSymbol
-                  name="arrow.up"
-                  size={16}
-                  color={
-                    inputText.trim().length > 0
-                      ? colors.white
-                      : colors.textSecondary
-                  }
-                />
-              </TouchableOpacity>
-            </View>
+            {renderContent()}
           </View>
-        </BlurView>
+        ) : (
+          /* -------------------------------------------- */
+          /* iOS — use BlurView exactly as before          */
+          /* -------------------------------------------- */
+          <BlurView
+            intensity={50}
+            tint={colorScheme === "dark" ? "dark" : "light"}
+            style={styles.blurContainer}
+          >
+            {renderContent()}
+          </BlurView>
+        )}
       </View>
     );
   }
@@ -102,7 +132,7 @@ MessageInput.displayName = "MessageInput";
 
 const styles = StyleSheet.create({
   inputContainer: {
-    // No absolute positioning - now part of flex layout
+    // No absolute positioning - part of flex layout
   },
   blurContainer: {
     overflow: "hidden",

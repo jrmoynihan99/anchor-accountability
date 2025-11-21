@@ -13,7 +13,6 @@ import Animated, {
   FadeInDown,
   LinearTransition,
   SharedValue,
-  useAnimatedStyle,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EmptyMessagesState } from "./EmptyMessagesState";
@@ -66,16 +65,6 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
 
     // Calculate input height
     const inputHeight = 60 + insets.bottom;
-
-    // For Android: Add padding at the top to simulate contentInset behavior
-    const animatedContentStyle = useAnimatedStyle(() => {
-      if (Platform.OS === "android" && keyboardHeight) {
-        return {
-          paddingTop: keyboardHeight.value, // Add scrollable space at top
-        };
-      }
-      return {};
-    });
 
     const handleScroll = (event: any) => {
       const { contentOffset, contentSize, layoutMeasurement } =
@@ -144,11 +133,6 @@ export const MessagesList = forwardRef<ScrollView, MessagesListProps>(
           },
         ]}
       >
-        {/* For Android: Add animated padding at top */}
-        {Platform.OS === "android" && (
-          <Animated.View style={animatedContentStyle} />
-        )}
-
         {renderLoadingHeader()}
 
         {messages.length === 0 ? (
