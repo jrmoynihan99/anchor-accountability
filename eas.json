@@ -20,6 +20,9 @@
       }
     },
     "production": {
+      "android": {
+        "buildType": "apk"
+      },
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_FB_API_KEY": "AIzaSyBPufxWH7c-MuWykuEgTkB0nbbDV2_ZzE0",
