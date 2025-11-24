@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -125,7 +126,7 @@ export default function PleaViewAllScreen() {
         {/* Header with blur effect */}
         <View style={styles.headerContainer}>
           <BlurView
-            intensity={80}
+            intensity={Platform.OS === "android" ? 100 : 80}
             tint={effectiveTheme === "dark" ? "dark" : "light"}
             style={styles.blurContainer}
           >
@@ -162,11 +163,7 @@ export default function PleaViewAllScreen() {
                     { backgroundColor: colors.iconCircleBackground },
                   ]}
                 >
-                  <IconSymbol
-                    name="hand.raised"
-                    size={20}
-                    color={colors.icon}
-                  />
+                  <IconSymbol name="megaphone" size={20} color={colors.icon} />
                 </View>
                 <View style={styles.headerText}>
                   <ThemedText type="bodyMedium" style={{ color: colors.text }}>

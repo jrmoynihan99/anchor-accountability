@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Platform,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -129,7 +130,7 @@ export default function MyReachOutsAllScreen() {
         {/* Header with blur effect */}
         <View style={styles.headerContainer}>
           <BlurView
-            intensity={80}
+            intensity={Platform.OS === "android" ? 100 : 80}
             tint={effectiveTheme === "dark" ? "dark" : "light"}
             style={styles.blurContainer}
           >

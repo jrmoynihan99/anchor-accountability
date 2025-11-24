@@ -102,7 +102,7 @@ function StickyHeader({ animatedStyle }: { animatedStyle: any }) {
       ]}
     >
       <BlurView
-        intensity={50}
+        intensity={Platform.OS === "android" ? 100 : 50}
         tint={effectiveTheme === "dark" ? "dark" : "light"}
         style={StyleSheet.absoluteFillObject}
       />

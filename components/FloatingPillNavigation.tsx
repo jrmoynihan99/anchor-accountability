@@ -127,7 +127,10 @@ export function FloatingPillNavigation({
             style={[
               styles.pillContainer,
               {
-                backgroundColor: colors.navBackground,
+                backgroundColor:
+                  Platform.OS === "android"
+                    ? colors.background // or whatever your opaque background color is
+                    : colors.navBackground,
                 borderColor: colors.navBorder,
               },
             ]}
