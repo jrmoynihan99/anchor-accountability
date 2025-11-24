@@ -66,6 +66,7 @@ const MAPPING = {
   "exclamationmark.triangle": "alert",
   flag: "flag-outline",
   "chevron.down": "chevron-down",
+  "square.and.pencil": "pencil-box-outline",
 } as const;
 
 // 3. Fallback icon for unmapped symbols on Android
