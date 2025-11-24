@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { EmptyStateProps } from "./types";
 
 export function EmptyMessagesState({
@@ -11,7 +11,15 @@ export function EmptyMessagesState({
   colors,
 }: EmptyStateProps) {
   return (
-    <View style={styles.emptyStateWrapper}>
+    <View
+      style={[
+        styles.emptyStateWrapper,
+        Platform.OS === "ios" && { transform: [{ scaleY: -1 }] },
+        Platform.OS === "android" && {
+          transform: [{ scaleX: -1 }, { scaleY: -1 }], // ← FIX BOTH AXES
+        },
+      ]}
+    >
       <View style={styles.emptyState}>
         <IconSymbol
           name="message"
@@ -43,7 +51,6 @@ export function EmptyMessagesState({
 const styles = StyleSheet.create({
   emptyStateWrapper: {
     flex: 1,
-    transform: [{ scaleY: -1 }], // Counter-invert to fix upside-down rendering
   },
   emptyState: {
     alignItems: "center",

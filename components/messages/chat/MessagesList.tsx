@@ -199,10 +199,7 @@ export const MessagesList = forwardRef<FlatList, MessagesListProps>(
         contentContainerStyle={[
           styles.messagesContent,
           {
-            paddingTop:
-              Platform.OS === "android" && keyboardHeight
-                ? inputHeight + keyboardHeight.value + 16
-                : inputHeight + 16,
+            paddingTop: inputHeight + 16,
             paddingBottom: paddingTop,
           },
         ]}
