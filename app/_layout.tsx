@@ -1,9 +1,10 @@
-// app/_layout.tsx
+// FIXED - app/_layout.tsx
 import "react-native-reanimated";
 
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
+import { auth } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
   Stack,
@@ -127,6 +128,7 @@ function AppContent() {
 
   const [appReady, setAppReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   const navigationState = useRootNavigationState();
   const segments = useSegments();
@@ -134,9 +136,19 @@ function AppContent() {
 
   useNotificationHandler({ currentThreadId, currentPleaId });
 
+  // ✅ FIX: Wait for auth to initialize before doing anything
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setAuthInitialized(true);
+    });
+    return () => unsubscribe();
+  }, []);
+
   // --- Core: Only show spinner until the decision is made ---
   useEffect(() => {
-    if (!spectralLoaded || !navigationState?.key) return;
+    if (!spectralLoaded || !navigationState?.key || !authInitialized) {
+      return;
+    }
 
     const checkAndRoute = async () => {
       setRedirecting(true);
@@ -171,10 +183,10 @@ function AppContent() {
     checkAndRoute();
     // Only run on initial load (not on segments/naviationState change)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spectralLoaded, navigationState?.key]);
+  }, [spectralLoaded, navigationState?.key, authInitialized]);
 
-  // --- Don't mount stack until all fonts loaded, check finished, and redirect done ---
-  if (!spectralLoaded || !appReady || redirecting) {
+  // --- Don't mount stack until all fonts loaded, auth initialized, check finished, and redirect done ---
+  if (!spectralLoaded || !appReady || redirecting || !authInitialized) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View
