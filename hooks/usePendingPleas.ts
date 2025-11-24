@@ -16,12 +16,21 @@ import { useBlockedUsers } from "./useBlockedUsers";
 
 const MAX_RECENT_PLEAS = 20;
 
-export function usePendingPleas() {
+interface UsePendingPleasOptions {
+  pageSize?: number;
+  enablePagination?: boolean;
+}
+
+export function usePendingPleas(options: UsePendingPleasOptions = {}) {
+  const { pageSize = MAX_RECENT_PLEAS, enablePagination = false } = options;
+
   const uid = auth.currentUser?.uid ?? null;
 
   const [pendingPleas, setPendingPleas] = useState<PleaData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentLimit, setCurrentLimit] = useState(pageSize);
+  const [hasMore, setHasMore] = useState(true);
 
   // block lists
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
@@ -38,6 +47,12 @@ export function usePendingPleas() {
     return blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
   };
 
+  // Function to load more pleas
+  const loadMore = () => {
+    if (!enablePagination || !hasMore) return;
+    setCurrentLimit((prev) => prev + pageSize);
+  };
+
   useEffect(() => {
     if (!uid) {
       setPendingPleas([]);
@@ -52,13 +67,32 @@ export function usePendingPleas() {
       collection(db, "pleas"),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
-      limit(MAX_RECENT_PLEAS)
+      limit(enablePagination ? currentLimit : pageSize)
     );
 
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
         const currentPleaIds = new Set(snapshot.docs.map((d) => d.id));
+
+        // Count how many docs we got that aren't hidden
+        const visibleDocsCount = snapshot.docs.filter((doc) => {
+          const data = doc.data() as any;
+          return !shouldHide(data.uid);
+        }).length;
+
+        // Check if we've reached the end
+        // We have more if the number of visible docs equals the current limit
+        // (meaning Firestore might have more to show)
+        if (enablePagination) {
+          // If we got fewer total docs than requested, there's definitely no more
+          if (snapshot.docs.length < currentLimit) {
+            setHasMore(false);
+          } else {
+            // If we got the full limit, there might be more
+            setHasMore(true);
+          }
+        }
 
         // cleanup removed pleas
         Object.keys(encouragementListenersRef.current).forEach((id) => {
@@ -109,7 +143,7 @@ export function usePendingPleas() {
             );
 
             setPendingPleas((prev) => {
-              // merge only this specific plea’s encouragement data
+              // merge only this specific plea's encouragement data
               const base = currentPleasRef.current.get(pleaId);
               if (!base || shouldHide(base.uid)) return prev;
 
@@ -173,11 +207,22 @@ export function usePendingPleas() {
       encouragementListenersRef.current = {};
       currentPleasRef.current.clear();
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
+  }, [
+    uid,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+    currentLimit,
+    enablePagination,
+    pageSize,
+  ]);
 
   return {
     pendingPleas,
     loading: loading || blockedLoading || blockedByLoading,
     error,
+    loadMore: enablePagination ? loadMore : undefined,
+    hasMore: enablePagination ? hasMore : undefined,
   };
 }

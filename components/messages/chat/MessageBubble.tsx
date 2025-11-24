@@ -11,13 +11,56 @@ export function MessageBubble({
   colors,
 }: MessageDisplayProps) {
   const formatTime = (timestamp: Date) => {
-    return timestamp
-      .toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      })
-      .toLowerCase();
+    const now = new Date();
+    const messageDate = new Date(timestamp);
+
+    // Reset hours for day comparison
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+    const messageDateStart = new Date(
+      messageDate.getFullYear(),
+      messageDate.getMonth(),
+      messageDate.getDate()
+    );
+
+    const daysDiff = Math.floor(
+      (todayStart.getTime() - messageDateStart.getTime()) /
+        (1000 * 60 * 60 * 24)
+    );
+
+    // Format time (e.g., "2:30 PM")
+    const timeStr = messageDate.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    if (daysDiff === 0) {
+      // Today
+      return `Today ${timeStr}`;
+    } else if (daysDiff === 1) {
+      // Yesterday
+      return `Yesterday ${timeStr}`;
+    } else if (daysDiff >= 2 && daysDiff <= 6) {
+      // 2-6 days ago: full day name
+      const dayName = messageDate.toLocaleDateString("en-US", {
+        weekday: "long",
+      });
+      return `${dayName} ${timeStr}`;
+    } else {
+      // 7+ days ago: abbreviated day + date + "at" + time
+      const dayAbbr = messageDate.toLocaleDateString("en-US", {
+        weekday: "short",
+      });
+      const monthAbbr = messageDate.toLocaleDateString("en-US", {
+        month: "short",
+      });
+      const dayNum = messageDate.getDate();
+      return `${dayAbbr}, ${monthAbbr} ${dayNum} at ${timeStr}`;
+    }
   };
 
   const getStatusIcon = (status?: string) => {

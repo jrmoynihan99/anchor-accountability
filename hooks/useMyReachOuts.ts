@@ -21,12 +21,22 @@ type EncouragementStats = {
   lastEncouragementAt?: Date;
 };
 
-export function useMyReachOuts() {
+interface UseMyReachOutsOptions {
+  pageSize?: number;
+  enablePagination?: boolean;
+}
+
+export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
+  const { pageSize = MAX_RECENT_REACH_OUTS, enablePagination = false } =
+    options;
+
   const uid = auth.currentUser?.uid ?? null;
 
   const [myReachOuts, setMyReachOuts] = useState<MyReachOutData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentLimit, setCurrentLimit] = useState(pageSize);
+  const [hasMore, setHasMore] = useState(true);
 
   // 2-way block state
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
@@ -38,6 +48,12 @@ export function useMyReachOuts() {
   // helper: hide items from helperUid if blocked either direction
   const shouldHideHelper = (helperUid: string) =>
     blockedUserIds.has(helperUid) || blockedByUserIds.has(helperUid);
+
+  // Function to load more reach outs
+  const loadMore = () => {
+    if (!enablePagination || !hasMore) return;
+    setCurrentLimit((prev) => prev + pageSize);
+  };
 
   useEffect(() => {
     if (!uid) {
@@ -53,13 +69,24 @@ export function useMyReachOuts() {
       where("uid", "==", uid),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
-      limit(MAX_RECENT_REACH_OUTS)
+      limit(enablePagination ? currentLimit : pageSize)
     );
 
     const unsubPleas = onSnapshot(
       pleasQuery,
       (snapshot) => {
         const currentReachOutIds = new Set(snapshot.docs.map((d) => d.id));
+
+        // Check if we've reached the end
+        if (enablePagination) {
+          // If we got fewer total docs than requested, there's definitely no more
+          if (snapshot.docs.length < currentLimit) {
+            setHasMore(false);
+          } else {
+            // If we got the full limit, there might be more
+            setHasMore(true);
+          }
+        }
 
         // cleanup listeners for pleads no longer in set
         Object.keys(encouragementListenersRef.current).forEach((id) => {
@@ -159,11 +186,22 @@ export function useMyReachOuts() {
       encouragementListenersRef.current = {};
       encouragementStatsRef.current = {};
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
+  }, [
+    uid,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+    currentLimit,
+    enablePagination,
+    pageSize,
+  ]);
 
   return {
     myReachOuts,
     loading: loading || blockedLoading || blockedByLoading,
     error,
+    loadMore: enablePagination ? loadMore : undefined,
+    hasMore: enablePagination ? hasMore : undefined,
   };
 }

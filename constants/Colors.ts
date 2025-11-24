@@ -241,7 +241,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#2D3A2E", // Deep forest green
-      textSecondary: "#6B7A6F", // Muted sage
+      textSecondary: "#4A5952", // Muted sage
       textMuted: "rgba(45, 58, 46, 0.6)",
 
       background: "#F7F9F7", // Very light sage
@@ -360,7 +360,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#1E293B", // Dark navy
-      textSecondary: "#64748B", // Slate gray
+      textSecondary: "#4A5568", // Slate gray
       textMuted: "rgba(30, 41, 59, 0.6)",
       background: "#F1F5F9", // Navy tinted light background
       tint: "#C2730C", // Brighter bronze

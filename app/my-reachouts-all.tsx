@@ -15,6 +15,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -27,12 +29,15 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MAX_REACH_OUTS = 20; // Show latest 20 reach outs
+const PAGE_SIZE = 20; // Load 20 reach outs at a time
 
 export default function MyReachOutsAllScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { myReachOuts, loading, error } = useMyReachOuts();
+  const { myReachOuts, loading, error, loadMore, hasMore } = useMyReachOuts({
+    pageSize: PAGE_SIZE,
+    enablePagination: true,
+  });
 
   // Get the pleaId from navigation params for notification deep linking
   const { openPleaId, originless } = useLocalSearchParams<{
@@ -88,18 +93,33 @@ export default function MyReachOutsAllScreen() {
         }, 500);
       }
     }
-  }, [openPleaId, useOriginless, myReachOuts, loading]); // 👈 Removed selectedReachOut dependency
+  }, [openPleaId, useOriginless, myReachOuts, loading]);
 
   const handleBack = () => {
     router.back();
   };
 
-  // Sort reach outs by creation date, newest first
-  const sortedReachOuts = [...myReachOuts].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
-  );
+  // Track if we're loading more
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const displayedReachOuts = sortedReachOuts.slice(0, MAX_REACH_OUTS);
+  // Handle scroll to bottom
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMore || isLoadingMore || loading) return;
+
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100; // Trigger when within 100px of bottom
+
+    const isCloseToBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && loadMore) {
+      setIsLoadingMore(true);
+      loadMore();
+      // Reset loading more state after a brief delay
+      setTimeout(() => setIsLoadingMore(false), 500);
+    }
+  };
 
   return (
     <GestureHandlerRootView style={styles.gestureRoot}>
@@ -177,8 +197,10 @@ export default function MyReachOutsAllScreen() {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={400}
         >
-          {loading ? (
+          {loading && myReachOuts.length === 0 ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.textSecondary} />
               <ThemedText
@@ -232,67 +254,120 @@ export default function MyReachOutsAllScreen() {
               </ThemedText>
             </View>
           ) : (
-            <View style={styles.reachOutsContainer}>
-              {displayedReachOuts.map((reachOut, index) => (
-                <Animated.View
-                  key={reachOut.id}
-                  entering={FadeInDown}
-                  layout={LinearTransition.duration(300)}
-                  style={{ width: "100%" }}
-                >
-                  <ButtonModalTransitionBridge
-                    buttonBorderRadius={16}
-                    modalBorderRadius={28}
+            <>
+              <View style={styles.reachOutsContainer}>
+                {myReachOuts.map((reachOut, index) => (
+                  <Animated.View
+                    key={reachOut.id}
+                    entering={FadeInDown}
+                    layout={LinearTransition.duration(300)}
+                    style={{ width: "100%" }}
                   >
-                    {({
-                      open,
-                      openOriginless, // 👈 NEW
-                      close,
-                      isModalVisible,
-                      progress,
-                      buttonAnimatedStyle,
-                      modalAnimatedStyle,
-                      buttonRef,
-                      handlePressIn,
-                      handlePressOut,
-                    }) => {
-                      // Store the open functions for notification deep linking
-                      modalRefs.current[reachOut.id] = { open, openOriginless }; // 👈 store both
+                    <ButtonModalTransitionBridge
+                      buttonBorderRadius={16}
+                      modalBorderRadius={28}
+                    >
+                      {({
+                        open,
+                        openOriginless,
+                        close,
+                        isModalVisible,
+                        progress,
+                        buttonAnimatedStyle,
+                        modalAnimatedStyle,
+                        buttonRef,
+                        handlePressIn,
+                        handlePressOut,
+                      }) => {
+                        // Store the open functions for notification deep linking
+                        modalRefs.current[reachOut.id] = {
+                          open,
+                          openOriginless,
+                        };
 
-                      return (
-                        <>
-                          <MyReachOutCard
-                            reachOut={reachOut}
-                            index={index}
-                            buttonRef={buttonRef}
-                            style={buttonAnimatedStyle}
-                            now={now}
-                            onPress={() => {
-                              setSelectedReachOut(reachOut);
-                              open(); // user taps → keep morph animation
-                            }}
-                            onPressIn={handlePressIn}
-                            onPressOut={handlePressOut}
-                          />
-                          <MyReachOutModal
-                            isVisible={isModalVisible}
-                            progress={progress}
-                            modalAnimatedStyle={modalAnimatedStyle}
-                            close={close}
-                            reachOut={
-                              myReachOuts.find(
-                                (r) => r.id === selectedReachOut?.id
-                              ) ?? selectedReachOut
-                            }
-                            now={now}
-                          />
-                        </>
-                      );
-                    }}
-                  </ButtonModalTransitionBridge>
-                </Animated.View>
-              ))}
-            </View>
+                        return (
+                          <>
+                            <MyReachOutCard
+                              reachOut={reachOut}
+                              index={index}
+                              buttonRef={buttonRef}
+                              style={buttonAnimatedStyle}
+                              now={now}
+                              onPress={() => {
+                                setSelectedReachOut(reachOut);
+                                open(); // user taps → keep morph animation
+                              }}
+                              onPressIn={handlePressIn}
+                              onPressOut={handlePressOut}
+                            />
+                            <MyReachOutModal
+                              isVisible={isModalVisible}
+                              progress={progress}
+                              modalAnimatedStyle={modalAnimatedStyle}
+                              close={close}
+                              reachOut={
+                                myReachOuts.find(
+                                  (r) => r.id === selectedReachOut?.id
+                                ) ?? selectedReachOut
+                              }
+                              now={now}
+                            />
+                          </>
+                        );
+                      }}
+                    </ButtonModalTransitionBridge>
+                  </Animated.View>
+                ))}
+              </View>
+
+              {/* Loading more indicator */}
+              {(isLoadingMore || (hasMore && !loading)) && (
+                <View style={styles.loadingMoreContainer}>
+                  {isLoadingMore ? (
+                    <>
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.textSecondary}
+                      />
+                      <ThemedText
+                        type="caption"
+                        style={[
+                          styles.loadingMoreText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Loading more...
+                      </ThemedText>
+                    </>
+                  ) : (
+                    <ThemedText
+                      type="caption"
+                      style={[
+                        styles.loadingMoreText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Scroll to load more
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+
+              {/* End of list indicator */}
+              {!hasMore && myReachOuts.length > 0 && (
+                <View style={styles.endOfListContainer}>
+                  <ThemedText
+                    type="caption"
+                    style={[
+                      styles.endOfListText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    You've reached the end
+                  </ThemedText>
+                </View>
+              )}
+            </>
           )}
         </ScrollView>
       </View>
@@ -379,5 +454,22 @@ const styles = StyleSheet.create({
   },
   reachOutsContainer: {
     gap: 16,
+  },
+  loadingMoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+    gap: 12,
+  },
+  loadingMoreText: {
+    opacity: 0.7,
+  },
+  endOfListContainer: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
+  endOfListText: {
+    opacity: 0.6,
   },
 });

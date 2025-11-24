@@ -12,6 +12,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
@@ -25,12 +27,15 @@ import Animated, {
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MAX_PLEAS = 20; // Show latest 20 pleas
+const PAGE_SIZE = 20; // Load 20 pleas at a time
 
 export default function PleaViewAllScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
-  const { pendingPleas, loading, error } = usePendingPleas();
+  const { pendingPleas, loading, error, loadMore, hasMore } = usePendingPleas({
+    pageSize: PAGE_SIZE,
+    enablePagination: true,
+  });
 
   // Get the pleaId from navigation params for notification deep linking
   const { openPleaId, originless } = useLocalSearchParams<{
@@ -57,11 +62,8 @@ export default function PleaViewAllScreen() {
     [key: string]: { open: () => void; openOriginless?: () => void };
   }>({});
 
-  // In /app/plea-view-all.tsx
-
   const [handledPleaId, setHandledPleaId] = useState<string | null>(null);
 
-  // Prevent double opening
   // Prevent double opening
   useEffect(() => {
     if (
@@ -93,19 +95,27 @@ export default function PleaViewAllScreen() {
     router.back();
   };
 
-  // Sort pleas the same way as the preview section
-  const sortedPleas = [...pendingPleas].sort((a, b) => {
-    const aIsUrgent =
-      a.encouragementCount === 0 && getHoursAgo(a.createdAt, now) > 2;
-    const bIsUrgent =
-      b.encouragementCount === 0 && getHoursAgo(b.createdAt, now) > 2;
-    if (aIsUrgent !== bIsUrgent) return Number(bIsUrgent) - Number(aIsUrgent);
-    if (a.encouragementCount !== b.encouragementCount)
-      return a.encouragementCount - b.encouragementCount;
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
+  // Track if we're loading more
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const displayedPleas = sortedPleas.slice(0, MAX_PLEAS);
+  // Handle scroll to bottom
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMore || isLoadingMore || loading) return;
+
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100; // Trigger when within 100px of bottom
+
+    const isCloseToBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && loadMore) {
+      setIsLoadingMore(true);
+      loadMore();
+      // Reset loading more state after a brief delay
+      setTimeout(() => setIsLoadingMore(false), 500);
+    }
+  };
 
   return (
     <GestureHandlerRootView style={styles.gestureRoot}>
@@ -189,8 +199,10 @@ export default function PleaViewAllScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
+          onScroll={handleScroll}
+          scrollEventThrottle={400}
         >
-          {loading ? (
+          {loading && pendingPleas.length === 0 ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.textSecondary} />
               <ThemedText
@@ -243,75 +255,120 @@ export default function PleaViewAllScreen() {
               </ThemedText>
             </View>
           ) : (
-            <View style={styles.pleasContainer}>
-              {displayedPleas.map((plea, index) => (
-                <Animated.View
-                  key={plea.id}
-                  entering={FadeInDown}
-                  layout={LinearTransition.duration(300)}
-                  style={{ width: "100%" }}
-                >
-                  <ButtonModalTransitionBridge
-                    buttonBorderRadius={16}
-                    modalBorderRadius={28}
-                    modalWidthPercent={0.95}
-                    modalHeightPercent={0.7}
+            <>
+              <View style={styles.pleasContainer}>
+                {pendingPleas.map((plea, index) => (
+                  <Animated.View
+                    key={plea.id}
+                    entering={FadeInDown}
+                    layout={LinearTransition.duration(300)}
+                    style={{ width: "100%" }}
                   >
-                    {({
-                      open,
-                      openOriginless, // 👈 NEW
-                      close,
-                      isModalVisible,
-                      progress,
-                      buttonAnimatedStyle,
-                      modalAnimatedStyle,
-                      buttonRef,
-                      handlePressIn,
-                      handlePressOut,
-                    }) => {
-                      // Store both open variants for deep linking
-                      modalRefs.current[plea.id] = { open, openOriginless }; // 👈 store both
+                    <ButtonModalTransitionBridge
+                      buttonBorderRadius={16}
+                      modalBorderRadius={28}
+                      modalWidthPercent={0.95}
+                      modalHeightPercent={0.7}
+                    >
+                      {({
+                        open,
+                        openOriginless,
+                        close,
+                        isModalVisible,
+                        progress,
+                        buttonAnimatedStyle,
+                        modalAnimatedStyle,
+                        buttonRef,
+                        handlePressIn,
+                        handlePressOut,
+                      }) => {
+                        // Store both open variants for deep linking
+                        modalRefs.current[plea.id] = { open, openOriginless };
 
-                      return (
-                        <>
-                          <PleaCard
-                            plea={plea}
-                            now={now}
-                            index={index}
-                            buttonRef={buttonRef}
-                            style={buttonAnimatedStyle}
-                            onPress={() => {
-                              setSelectedPleaId(plea.id);
-                              open(); // user taps → keep morph animation
-                            }}
-                            onPressIn={handlePressIn}
-                            onPressOut={handlePressOut}
-                          />
-                          <PleaResponseModal
-                            isVisible={isModalVisible}
-                            progress={progress}
-                            modalAnimatedStyle={modalAnimatedStyle}
-                            close={close}
-                            plea={selectedPlea}
-                            now={now}
-                          />
-                        </>
-                      );
-                    }}
-                  </ButtonModalTransitionBridge>
-                </Animated.View>
-              ))}
-            </View>
+                        return (
+                          <>
+                            <PleaCard
+                              plea={plea}
+                              now={now}
+                              index={index}
+                              buttonRef={buttonRef}
+                              style={buttonAnimatedStyle}
+                              onPress={() => {
+                                setSelectedPleaId(plea.id);
+                                open(); // user taps → keep morph animation
+                              }}
+                              onPressIn={handlePressIn}
+                              onPressOut={handlePressOut}
+                            />
+                            <PleaResponseModal
+                              isVisible={isModalVisible}
+                              progress={progress}
+                              modalAnimatedStyle={modalAnimatedStyle}
+                              close={close}
+                              plea={selectedPlea}
+                              now={now}
+                            />
+                          </>
+                        );
+                      }}
+                    </ButtonModalTransitionBridge>
+                  </Animated.View>
+                ))}
+              </View>
+
+              {/* Loading more indicator */}
+              {(isLoadingMore || (hasMore && !loading)) && (
+                <View style={styles.loadingMoreContainer}>
+                  {isLoadingMore ? (
+                    <>
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.textSecondary}
+                      />
+                      <ThemedText
+                        type="caption"
+                        style={[
+                          styles.loadingMoreText,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Loading more...
+                      </ThemedText>
+                    </>
+                  ) : (
+                    <ThemedText
+                      type="caption"
+                      style={[
+                        styles.loadingMoreText,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      Scroll to load more
+                    </ThemedText>
+                  )}
+                </View>
+              )}
+
+              {/* End of list indicator */}
+              {!hasMore && pendingPleas.length > 0 && (
+                <View style={styles.endOfListContainer}>
+                  <ThemedText
+                    type="caption"
+                    style={[
+                      styles.endOfListText,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    You've reached the end
+                  </ThemedText>
+                </View>
+              )}
+            </>
           )}
         </ScrollView>
       </View>
     </GestureHandlerRootView>
   );
-}
-
-// Helper function for urgency calculation
-function getHoursAgo(date: Date, now: Date): number {
-  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 const styles = StyleSheet.create({
@@ -393,5 +450,22 @@ const styles = StyleSheet.create({
   },
   pleasContainer: {
     gap: 16,
+  },
+  loadingMoreContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 24,
+    gap: 12,
+  },
+  loadingMoreText: {
+    opacity: 0.7,
+  },
+  endOfListContainer: {
+    alignItems: "center",
+    paddingVertical: 24,
+  },
+  endOfListText: {
+    opacity: 0.6,
   },
 });
