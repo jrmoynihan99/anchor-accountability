@@ -25,7 +25,11 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.jrmoynihan99.anchor"
+      "package": "com.jrmoynihan99.anchor",
+      "androidNavigationBar": {
+        "visible": "translucent",
+        "backgroundColor": "#00000000"
+      }
     },
     "web": {
       "bundler": "metro",

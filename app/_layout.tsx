@@ -27,7 +27,9 @@ import {
 } from "@expo-google-fonts/spectral";
 
 // Notifications
+import * as NavigationBar from "expo-navigation-bar"; // <-- Add this import at the top
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 // --- Notification handler logic remains unchanged ---
 let getCurrentThreadId: (() => string | null) | null = null;
@@ -135,6 +137,12 @@ function AppContent() {
   const { currentThreadId, currentPleaId } = useThread();
 
   useNotificationHandler({ currentThreadId, currentPleaId });
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync("transparent");
+    }
+  }, []);
 
   // ✅ FIX: Wait for auth to initialize before doing anything
   useEffect(() => {
