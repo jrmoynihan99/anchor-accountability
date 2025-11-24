@@ -116,7 +116,7 @@ export function FloatingPillNavigation({
   });
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + 15 }]}>
+    <View style={[styles.container, { bottom: insets.bottom }]}>
       <View style={[styles.shadowParent, { shadowColor: colors.shadow }]}>
         <BlurView
           intensity={Platform.OS === "android" ? 100 : 50}

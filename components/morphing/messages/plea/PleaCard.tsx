@@ -1,5 +1,6 @@
 // components/messages/PleaCard.tsx
 import { useTheme } from "@/hooks/ThemeContext";
+import { usePleaUrgencySettings } from "@/hooks/usePleaUrgencySettings";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -36,13 +37,21 @@ export function PleaCard({
   onPressOut,
 }: PleaCardProps) {
   const { colors } = useTheme();
+  const { urgentHoursLimit, urgentEncouragementThreshold } =
+    usePleaUrgencySettings();
 
   const handlePress = () => {
     onPress();
   };
 
   // Use the parent-passed "now" for urgency, not Date.now()
-  const isUrgent = plea.encouragementCount === 0;
+  const hoursAgo =
+    (now.getTime() - plea.createdAt.getTime()) / (1000 * 60 * 60);
+
+  const isUrgent =
+    hoursAgo <= urgentHoursLimit &&
+    plea.encouragementCount < urgentEncouragementThreshold &&
+    !plea.hasUserResponded;
 
   return (
     <TouchableOpacity

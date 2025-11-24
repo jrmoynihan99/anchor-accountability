@@ -48,7 +48,7 @@ export const FloatingMainCTAButton = forwardRef<
         style={[
           styles.absoluteContainer,
           {
-            bottom: insets.bottom + 10,
+            bottom: insets.bottom - 5,
             left: Dimensions.get("window").width / 2 - size / 2,
             width: size,
             height: size,

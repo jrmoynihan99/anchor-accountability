@@ -23,18 +23,15 @@ export function usePendingPleas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // who I blocked / who blocked me
+  // block lists
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
   const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers();
 
-  // encouragement listeners
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
-  // base plea data (without encouragement counts)
   const currentPleasRef = useRef<
     Map<string, Omit<PleaData, "encouragementCount" | "hasUserResponded">>
   >(new Map());
 
-  // Utility: hide if self OR blocked either direction
   const shouldHide = (authorUid: string) => {
     if (!uid) return true;
     if (authorUid === uid) return true;
@@ -48,7 +45,7 @@ export function usePendingPleas() {
       return;
     }
 
-    // Wait for both block lists
+    // wait for block list readiness
     if (blockedLoading || blockedByLoading) return;
 
     const pleasQuery = query(
@@ -63,17 +60,17 @@ export function usePendingPleas() {
       (snapshot) => {
         const currentPleaIds = new Set(snapshot.docs.map((d) => d.id));
 
-        // Clean up listeners for pleas no longer present
-        Object.keys(encouragementListenersRef.current).forEach((pleaId) => {
-          if (!currentPleaIds.has(pleaId)) {
-            encouragementListenersRef.current[pleaId]?.();
-            delete encouragementListenersRef.current[pleaId];
-            currentPleasRef.current.delete(pleaId);
+        // cleanup removed pleas
+        Object.keys(encouragementListenersRef.current).forEach((id) => {
+          if (!currentPleaIds.has(id)) {
+            encouragementListenersRef.current[id]?.();
+            delete encouragementListenersRef.current[id];
+            currentPleasRef.current.delete(id);
           }
         });
 
-        // Rebuild base map (skip hidden)
-        const newPleasMap = new Map<
+        // rebuild base plea map
+        const newMap = new Map<
           string,
           Omit<PleaData, "encouragementCount" | "hasUserResponded">
         >();
@@ -82,7 +79,7 @@ export function usePendingPleas() {
           const data = doc.data() as any;
           if (shouldHide(data.uid)) return;
 
-          newPleasMap.set(doc.id, {
+          newMap.set(doc.id, {
             id: doc.id,
             message: data.message || "",
             uid: data.uid,
@@ -90,9 +87,9 @@ export function usePendingPleas() {
           });
         });
 
-        currentPleasRef.current = newPleasMap;
+        currentPleasRef.current = newMap;
 
-        // Ensure encouragement listeners for visible pleas
+        // ensure encouragement listeners exist
         snapshot.docs.forEach((doc) => {
           const data = doc.data() as any;
           const pleaId = doc.id;
@@ -111,46 +108,60 @@ export function usePendingPleas() {
               (d) => (d.data() as any).helperUid === uid
             );
 
-            setPendingPleas((old) => {
+            setPendingPleas((prev) => {
+              // merge only this specific plea’s encouragement data
               const base = currentPleasRef.current.get(pleaId);
-              if (!base) return old;
+              if (!base || shouldHide(base.uid)) return prev;
 
-              // re-check hidden in case block lists changed
-              if (shouldHide(base.uid)) return old;
+              const others = prev.filter((p) => p.id !== pleaId);
 
-              const others = old.filter((p) => p.id !== pleaId);
-              const updated: PleaData = {
-                ...base,
-                encouragementCount,
-                hasUserResponded,
-              };
+              const merged = [
+                ...others,
+                {
+                  ...base,
+                  encouragementCount,
+                  hasUserResponded,
+                },
+              ];
 
-              const next = [...others, updated];
-              // Sort: fewest encouragements first, then oldest first
-              next.sort((a, b) =>
-                a.encouragementCount !== b.encouragementCount
-                  ? a.encouragementCount - b.encouragementCount
-                  : a.createdAt.getTime() - b.createdAt.getTime()
+              // always sort by recency
+              return merged.sort(
+                (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
               );
-              return next;
             });
           });
 
           encouragementListenersRef.current[pleaId] = unsub;
         });
 
-        // Prune state to current & visible
-        setPendingPleas((old) =>
-          old
-            .filter((p) => currentPleaIds.has(p.id))
-            .filter((p) => !shouldHide(p.uid))
-        );
+        //
+        // 🔥 FULL REBUILD of state on outer snapshot
+        //
+        setPendingPleas((prev) => {
+          const merged: PleaData[] = [];
+
+          currentPleasRef.current.forEach((base, id) => {
+            if (shouldHide(base.uid)) return;
+
+            const prevEntry = prev.find((p) => p.id === id);
+
+            merged.push({
+              ...base,
+              encouragementCount: prevEntry?.encouragementCount ?? 0,
+              hasUserResponded: prevEntry?.hasUserResponded ?? false,
+            });
+          });
+
+          return merged.sort(
+            (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+          );
+        });
 
         setError(null);
         setLoading(false);
       },
       (err) => {
-        console.error("Error listening to pending pleas:", err);
+        console.error("pending pleas error:", err);
         setError("Failed to load pending requests");
         setLoading(false);
       }
@@ -158,20 +169,11 @@ export function usePendingPleas() {
 
     return () => {
       unsubPleas();
-      Object.values(encouragementListenersRef.current).forEach((unsub) =>
-        unsub()
-      );
+      Object.values(encouragementListenersRef.current).forEach((u) => u());
       encouragementListenersRef.current = {};
       currentPleasRef.current.clear();
     };
-  }, [
-    uid,
-    blockedLoading,
-    blockedByLoading,
-    // When either set changes, rebuild listeners/filters
-    blockedUserIds,
-    blockedByUserIds,
-  ]);
+  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
   return {
     pendingPleas,

@@ -95,24 +95,12 @@ export function PendingPleasSection() {
     );
   }
 
-  // Use now for urgency and sorting
-  const sortedPleas = [...pendingPleas].sort((a, b) => {
-    const aIsUrgent =
-      a.encouragementCount === 0 && getHoursAgo(a.createdAt, now) > 2;
-    const bIsUrgent =
-      b.encouragementCount === 0 && getHoursAgo(b.createdAt, now) > 2;
-    if (aIsUrgent !== bIsUrgent) return Number(bIsUrgent) - Number(aIsUrgent); // Urgent (red) at bottom
-    if (a.encouragementCount !== b.encouragementCount)
-      return a.encouragementCount - b.encouragementCount;
-    return a.createdAt.getTime() - b.createdAt.getTime();
-  });
-
-  const displayedPleas = sortedPleas.slice(0, PREVIEW_LIMIT);
+  const displayedPleas = pendingPleas.slice(0, PREVIEW_LIMIT);
   const hasMorePleas = pendingPleas.length > PREVIEW_LIMIT;
 
   return (
     <View style={styles.sectionContainer}>
-      <SectionHeader colors={colors} totalCount={pendingPleas.length} />
+      <SectionHeader colors={colors} />
 
       {pendingPleas.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -205,7 +193,7 @@ export function PendingPleasSection() {
                 type="button"
                 style={[styles.viewAllText, { color: colors.white }]}
               >
-                View All ({pendingPleas.length})
+                View All
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -220,13 +208,7 @@ function getHoursAgo(date: Date, now: Date): number {
   return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
-function SectionHeader({
-  colors,
-  totalCount,
-}: {
-  colors: any;
-  totalCount?: number;
-}) {
+function SectionHeader({ colors }: { colors: any; totalCount?: number }) {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
@@ -249,11 +231,12 @@ function SectionHeader({
             type="caption"
             style={[styles.headerSubtitle, { color: colors.textSecondary }]}
           >
-            {totalCount !== undefined
-              ? `${totalCount} ${
-                  totalCount === 1 ? "person needs" : "people need"
-                } support`
-              : "People who need encouragement"}
+            <ThemedText
+              type="caption"
+              style={[styles.headerSubtitle, { color: colors.textSecondary }]}
+            >
+              People who need encouragement
+            </ThemedText>
           </ThemedText>
         </View>
       </View>

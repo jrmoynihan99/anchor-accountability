@@ -8,6 +8,7 @@ const {
   onDocumentCreated,
   onDocumentUpdated,
   onDocumentDeleted,
+  onDocumentWritten,
 } = require("firebase-functions/v2/firestore");
 const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
@@ -1030,6 +1031,97 @@ exports.onBlockDelete = onDocumentDeleted(
         uid,
         blockedUid,
       });
+    }
+  }
+);
+
+exports.recalculateUserStreak = onDocumentWritten(
+  "/users/{uid}/streak/{date}",
+  async (event) => {
+    try {
+      const uid = event.params.uid;
+
+      const streakRef = admin
+        .firestore()
+        .collection("users")
+        .doc(uid)
+        .collection("streak");
+
+      const snapshot = await streakRef.orderBy("__name__", "asc").get();
+
+      // Convert docs to array of {date, status}
+      const entries = snapshot.docs.map((doc) => ({
+        date: doc.id,
+        status: doc.data().status,
+      }));
+
+      console.log("ENTRIES DEBUG:", JSON.stringify(entries, null, 2));
+
+      // --- determine "today" in YYYY-MM-DD (local time)
+      const now = new Date();
+      const today = now.toISOString().split("T")[0];
+
+      // ============================================================
+      // 🔥 CURRENT STREAK LOGIC (matches your app EXACTLY)
+      // - Ignore today
+      // - Ignore pending (do not count, do not break)
+      // - Count consecutive successes backward from yesterday
+      // - Stop only when hitting a fail
+      // ============================================================
+      let currentStreak = 0;
+
+      for (let i = entries.length - 1; i >= 0; i--) {
+        const entry = entries[i];
+        if (entry.date === today) continue; // 🔥 ignore today completely
+        if (entry.status === "fail") break; // ❌ streak ends
+        if (entry.status === "success") {
+          currentStreak++; // ✅ add to streak
+          continue;
+        }
+        if (entry.status === "pending") {
+          continue; // ❗ pending does NOT break streak
+        }
+      }
+
+      // ============================================================
+      // 🔥 BEST STREAK LOGIC (personal best)
+      // - Ignore today
+      // - Success: increment
+      // - Fail: reset
+      // - Pending: ignore
+      // ============================================================
+      let bestStreak = 0;
+      let continuous = 0;
+
+      for (const entry of entries) {
+        if (entry.date === today) continue; // ignore today
+
+        if (entry.status === "success") {
+          continuous++;
+          bestStreak = Math.max(bestStreak, continuous);
+        } else if (entry.status === "fail") {
+          continuous = 0;
+        }
+        // "pending" → ignore (doesn’t increment, doesn’t reset)
+      }
+
+      // ============================================================
+      // 🔥 Write back results to /users/{uid}
+      // ============================================================
+      await admin.firestore().collection("users").doc(uid).set(
+        {
+          currentStreak,
+          bestStreak,
+          lastUpdated: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      console.log(
+        `🔥 Updated streak for ${uid}: current=${currentStreak}, best=${bestStreak}`
+      );
+    } catch (err) {
+      console.error("Error recalculating streak:", err);
     }
   }
 );

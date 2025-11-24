@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
+import { usePleaUrgencySettings } from "@/hooks/usePleaUrgencySettings";
 import React from "react";
 import {
   Alert,
@@ -39,13 +40,21 @@ export function PleaResponseInputScreen({
   onToggleOpenToChat,
 }: PleaResponseInputScreenProps) {
   const { colors } = useTheme();
+  const { urgentHoursLimit, urgentEncouragementThreshold } =
+    usePleaUrgencySettings();
 
   // Generate anonymous username from UID
   const anonymousUsername = `user-${plea.uid.substring(0, 5)}`;
 
   // Use parent-passed "now"!
   const timeAgo = getTimeAgo(plea.createdAt, now);
-  const isUrgent = plea.encouragementCount === 0;
+  const hoursAgo =
+    (now.getTime() - plea.createdAt.getTime()) / (1000 * 60 * 60);
+
+  const isUrgent =
+    hoursAgo <= urgentHoursLimit &&
+    plea.encouragementCount < urgentEncouragementThreshold &&
+    !plea.hasUserResponded;
 
   const hasResponded = plea.hasUserResponded || false;
 
