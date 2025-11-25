@@ -9,6 +9,7 @@ export interface NotificationPreferences {
   pleas: boolean;
   encouragements: boolean;
   messages: boolean;
+  general: boolean;
 }
 
 export interface NotificationState {
@@ -25,6 +26,7 @@ const EMPTY_NOTIFICATION_PREFS: NotificationPreferences = {
   pleas: true,
   encouragements: true,
   messages: true,
+  general: true,
 };
 
 export function useNotificationPreferences(enabled: boolean = true) {

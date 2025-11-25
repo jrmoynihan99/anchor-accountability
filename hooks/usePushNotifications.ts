@@ -61,6 +61,7 @@ export async function savePushTokenToFirestore() {
           pleas: true,
           encouragements: true,
           messages: true,
+          general: true,
         },
       },
       { merge: true }

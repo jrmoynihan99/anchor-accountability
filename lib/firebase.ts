@@ -1,5 +1,6 @@
 // lib/firebase.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Localization from "expo-localization";
 import { getApps, initializeApp } from "firebase/app";
 import { Auth, getAuth, initializeAuth } from "firebase/auth";
 import {
@@ -7,14 +8,11 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
-  setDoc,
   getFirestore,
-  query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
-  where,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -191,5 +189,24 @@ export async function markEncouragementAsRead(pleaId: string): Promise<void> {
   } catch (error) {
     console.error("❌ Error marking encouragements as read:", error);
     throw error;
+  }
+}
+
+export async function updateUserTimezone(): Promise<void> {
+  const currentUserId = auth.currentUser?.uid;
+  if (!currentUserId) return; // Silently return if not authenticated
+
+  try {
+    // Get timezone from device - this is the correct way for expo-localization
+    const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+    const userRef = doc(db, "users", currentUserId);
+
+    await updateDoc(userRef, {
+      timezone: timezone,
+      lastUpdated: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error("Failed to update user timezone:", error);
+    // Don't throw - we don't want to break app initialization if this fails
   }
 }

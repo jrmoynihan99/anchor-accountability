@@ -6,11 +6,11 @@ import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
   StyleSheet,
   TouchableOpacity,
   View,
-  AppState,
-  AppStateStatus,
 } from "react-native";
 
 interface NotificationsSectionProps {
@@ -32,7 +32,7 @@ export function NotificationsSection({
     systemPermissionDenied,
     enableNotifications,
     updatePreference,
-    reload, // <-- this is important!
+    reload,
   } = useNotificationPreferences(shouldLoad);
 
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -53,7 +53,7 @@ export function NotificationsSection({
         if (status === "granted") {
           await enableNotifications();
         } else {
-          await reload(); // <--- this covers disabling in Settings
+          await reload();
         }
       }
       appState.current = nextAppState;
@@ -129,7 +129,7 @@ export function NotificationsSection({
             style={[
               styles.enableButton,
               {
-                backgroundColor: colors.tint, // Always use tint for consistency
+                backgroundColor: colors.tint,
               },
             ]}
             onPress={handleEnablePress}
@@ -216,6 +216,29 @@ export function NotificationsSection({
               <ThemedToggle
                 value={preferences.messages}
                 onValueChange={(value) => updatePreference("messages", value)}
+              />
+            </View>
+          </View>
+
+          {/* 🆕 NEW: General notifications toggle */}
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <View style={styles.settingTextContainer}>
+                <ThemedText type="body" style={styles.settingLabel}>
+                  General
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  lightColor={colors.textSecondary}
+                  darkColor={colors.textSecondary}
+                  style={styles.settingDescription}
+                >
+                  App reminders and updates
+                </ThemedText>
+              </View>
+              <ThemedToggle
+                value={preferences.general}
+                onValueChange={(value) => updatePreference("general", value)}
               />
             </View>
           </View>
