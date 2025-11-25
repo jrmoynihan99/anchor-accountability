@@ -1,7 +1,7 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { forwardRef } from "react";
-import { Dimensions, Pressable, StyleSheet } from "react-native";
+import { Dimensions, Platform, Pressable, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -39,6 +39,9 @@ export const FloatingMainCTAButton = forwardRef<
     ref
   ) => {
     const insets = useSafeAreaInsets();
+    const bottomOffset =
+      Platform.OS === "android" ? insets.bottom + 7 : insets.bottom - 5;
+
     const { colors } = useTheme();
 
     return (
@@ -48,7 +51,7 @@ export const FloatingMainCTAButton = forwardRef<
         style={[
           styles.absoluteContainer,
           {
-            bottom: insets.bottom - 5,
+            bottom: bottomOffset,
             left: Dimensions.get("window").width / 2 - size / 2,
             width: size,
             height: size,

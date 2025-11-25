@@ -77,6 +77,8 @@ export function FloatingPillNavigation({
   showMessagesNotification,
 }: FloatingPillNavigationProps) {
   const insets = useSafeAreaInsets();
+  const bottomOffset =
+    Platform.OS === "android" ? insets.bottom + 12 : insets.bottom;
   const { colors, effectiveTheme } = useTheme();
   const ICONS = [...LEFT_ICONS, ...RIGHT_ICONS];
   const [tabLayouts, setTabLayouts] = useState<TabLayout[]>([]);
@@ -116,7 +118,7 @@ export function FloatingPillNavigation({
   });
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom }]}>
+    <View style={[styles.container, { bottom: bottomOffset }]}>
       <View style={[styles.shadowParent, { shadowColor: colors.shadow }]}>
         <BlurView
           intensity={Platform.OS === "android" ? 100 : 50}
