@@ -1228,7 +1228,7 @@ exports.sendStreakReminders = onSchedule(
             to: userData.expoPushToken,
             sound: "default",
             title: "Don't forget to log your streak!",
-            body: "Tap here to update yesterday's accountability check-in.",
+            body: "Tap here to update yesterday's streak check-in.",
             data: {
               type: "streak_reminder",
               date: yesterdayDate,
