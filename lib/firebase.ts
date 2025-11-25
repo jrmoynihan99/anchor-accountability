@@ -194,19 +194,21 @@ export async function markEncouragementAsRead(pleaId: string): Promise<void> {
 
 export async function updateUserTimezone(): Promise<void> {
   const currentUserId = auth.currentUser?.uid;
-  if (!currentUserId) return; // Silently return if not authenticated
+  if (!currentUserId) return;
 
   try {
-    // Get timezone from device - this is the correct way for expo-localization
     const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
     const userRef = doc(db, "users", currentUserId);
 
-    await updateDoc(userRef, {
-      timezone: timezone,
-      lastUpdated: serverTimestamp(),
-    });
+    await setDoc(
+      userRef,
+      {
+        timezone: timezone,
+        lastUpdated: serverTimestamp(),
+      },
+      { merge: true }
+    );
   } catch (error) {
     console.error("Failed to update user timezone:", error);
-    // Don't throw - we don't want to break app initialization if this fails
   }
 }

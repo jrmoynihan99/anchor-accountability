@@ -10,9 +10,6 @@ import { auth, db, updateUserTimezone } from "./firebase";
 
 const isDev = __DEV__;
 
-// Add this import at the top
-
-// Update the ensureSignedIn function
 export async function ensureSignedIn() {
   try {
     let isNewUser = false;
