@@ -141,7 +141,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
         // Permissions were explicitly denied - guide to settings (no loading state)
         Alert.alert(
           "Notifications Disabled",
-          "You previously declined notifications. To enable them:\n\n1. Open iPhone Settings\n2. Find this app\n3. Tap Notifications\n4. Turn on Allow Notifications",
+          "You previously declined notifications. To enable them:\n\n1. Open Phone Settings\n2. Find this app\n3. Tap Notifications\n4. Turn on Allow Notifications",
           [
             { text: "Cancel", style: "cancel" },
             {
