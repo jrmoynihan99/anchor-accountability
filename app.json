@@ -30,7 +30,10 @@
       "androidNavigationBar": {
         "visible": "translucent",
         "backgroundColor": "#00000000"
-      }
+      },
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true,
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
