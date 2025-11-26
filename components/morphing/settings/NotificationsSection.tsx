@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   AppState,
   AppStateStatus,
+  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -22,7 +23,6 @@ export function NotificationsSection({
 }: NotificationsSectionProps) {
   const { colors } = useTheme();
 
-  // Always call the hook; lazy loading inside
   const {
     preferences,
     loading: notificationLoading,
@@ -30,6 +30,7 @@ export function NotificationsSection({
     shouldShowEnableButton,
     shouldShowPreferences,
     systemPermissionDenied,
+    androidDenialCount,
     enableNotifications,
     updatePreference,
     reload,
@@ -37,24 +38,21 @@ export function NotificationsSection({
 
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // --- AppState effect: Auto-refresh on returning from iOS Settings ---
   useEffect(() => {
     if (!shouldLoad) return;
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      console.log("=== APP STATE CHANGE ===");
+      console.log("Previous state:", appState.current);
+      console.log("Next state:", nextAppState);
+
       if (
         (appState.current === "inactive" ||
           appState.current === "background") &&
         nextAppState === "active"
       ) {
-        const { status } = await import("expo-notifications").then((m) =>
-          m.getPermissionsAsync()
-        );
-        if (status === "granted") {
-          await enableNotifications();
-        } else {
-          await reload();
-        }
+        console.log("App became active, reloading...");
+        await reload();
       }
       appState.current = nextAppState;
     };
@@ -74,21 +72,30 @@ export function NotificationsSection({
   };
 
   const getEnableButtonText = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "Open Settings";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "Open Settings";
     }
     return "Enable Notifications";
   };
 
   const getEnableButtonIcon = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "gear";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "gear";
     }
     return "bell.badge";
   };
 
   const getEnableDescription = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "You've declined notifications multiple times. Tap to open Settings and enable them manually.";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "Notifications are disabled in your device settings. Tap to open Settings and enable them manually.";
     }
     return "Enable push notifications to receive alerts for new incoming help requests, encouragements, and messages.";
@@ -220,7 +227,6 @@ export function NotificationsSection({
             </View>
           </View>
 
-          {/* 🆕 NEW: General notifications toggle */}
           <View style={styles.settingItem}>
             <View style={styles.settingContent}>
               <View style={styles.settingTextContainer}>

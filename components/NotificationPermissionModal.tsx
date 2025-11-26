@@ -4,10 +4,15 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
-import { Linking } from "react-native";
-import React, { useEffect, useState, useRef } from "react";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useRef, useState } from "react";
+import {
+  Linking,
+  Modal,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -20,32 +25,25 @@ interface NotificationPermissionModalProps {
   isVisible: boolean;
   onClose: () => void;
   onPermissionResult: (granted: boolean) => void;
+  permissionStatus?: string | null;
+  androidDenialCount?: number;
 }
 
 export function NotificationPermissionModal({
   isVisible,
   onClose,
   onPermissionResult,
+  permissionStatus: propPermissionStatus,
+  androidDenialCount = 0,
 }: NotificationPermissionModalProps) {
   const { colors } = useTheme();
   const { enableNotifications, loading } = useNotificationPreferences();
   const translateY = useSharedValue(1000);
-  const [permissionStatus, setPermissionStatus] =
-    useState<string>("undetermined");
   const [isAnimating, setIsAnimating] = useState(false);
   const pendingCallback = useRef<(() => void) | null>(null);
 
-  // Check permission status when modal becomes visible
-  useEffect(() => {
-    if (isVisible) {
-      checkPermissionStatus();
-    }
-  }, [isVisible]);
-
-  const checkPermissionStatus = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setPermissionStatus(status);
-  };
+  // Use the prop if provided, otherwise default to undetermined
+  const permissionStatus = propPermissionStatus || "undetermined";
 
   // Handle show animation
   React.useEffect(() => {
@@ -67,7 +65,7 @@ export function NotificationPermissionModal({
           pendingCallback.current = null;
         }
         setIsAnimating(false);
-      }, 300); // Match animation duration
+      }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -81,9 +79,8 @@ export function NotificationPermissionModal({
     opacity: interpolate(translateY.value, [1000, 0], [0, 0.4]),
   }));
 
-  // Animated close function that starts animation and sets up callback
   const animatedClose = (callback: () => void) => {
-    if (isAnimating) return; // Prevent multiple animations
+    if (isAnimating) return;
 
     setIsAnimating(true);
     pendingCallback.current = callback;
@@ -97,10 +94,14 @@ export function NotificationPermissionModal({
   const handleEnableNotifications = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    if (permissionStatus === "denied") {
-      // Guide to settings instead of trying to enable
+    // Check if Android user is locked out (2+ denials) OR if iOS user has denied
+    const isLockedOut =
+      (Platform.OS === "android" && androidDenialCount >= 2) ||
+      (Platform.OS === "ios" && permissionStatus === "denied");
+
+    if (isLockedOut) {
+      // Open settings directly
       Linking.openSettings();
-      // Wait a bit for the settings to open, then close with animation
       setTimeout(() => {
         animatedClose(() => {
           onPermissionResult(false);
@@ -112,7 +113,6 @@ export function NotificationPermissionModal({
 
     const success = await enableNotifications();
 
-    // Close with animation regardless of success/failure
     animatedClose(() => {
       onPermissionResult(success);
       onClose();
@@ -134,15 +134,18 @@ export function NotificationPermissionModal({
     });
   };
 
-  // Don't render if not visible and not animating
   if (!isVisible && !isAnimating) return null;
 
-  // Determine content based on permission status
-  const isDenied = permissionStatus === "denied";
+  // Determine content based on permission status and Android denial count
+  const isDenied =
+    permissionStatus === "denied" ||
+    (Platform.OS === "android" && androidDenialCount >= 2);
   const buttonText = isDenied ? "Open Settings" : "Enable Notifications";
   const buttonIcon = isDenied ? "gear" : "bell.badge";
   const noteText = isDenied
-    ? "Notifications are currently disabled for this app. Tap below to open Settings and enable them manually."
+    ? Platform.OS === "android" && androidDenialCount >= 2
+      ? "You've declined notifications multiple times. Tap below to open Settings and enable them manually."
+      : "Notifications are currently disabled for this app. Tap below to open Settings and enable them manually."
     : "Without notifications, you won't know when someone needs your support, or when you've received encouragement from others!";
 
   return (
@@ -153,7 +156,6 @@ export function NotificationPermissionModal({
       animationType="none"
       onRequestClose={handleNotNow}
     >
-      {/* Overlay */}
       <Animated.View
         style={[
           styles.overlay,
@@ -169,7 +171,6 @@ export function NotificationPermissionModal({
         />
       </Animated.View>
 
-      {/* Modal */}
       <View style={styles.container} pointerEvents="box-none">
         <Animated.View
           style={[
@@ -182,7 +183,6 @@ export function NotificationPermissionModal({
           ]}
           pointerEvents="auto"
         >
-          {/* Close button */}
           <TouchableOpacity
             onPress={handleNotNow}
             style={[
@@ -200,7 +200,6 @@ export function NotificationPermissionModal({
             />
           </TouchableOpacity>
 
-          {/* Header Icon */}
           <View
             style={[
               styles.iconContainer,
@@ -215,14 +214,12 @@ export function NotificationPermissionModal({
             />
           </View>
 
-          {/* Title */}
           <ThemedText type="title" style={styles.title}>
             {isDenied
               ? "Notifications Are Disabled"
               : "Enable Notifications To Help"}
           </ThemedText>
 
-          {/* Description */}
           <ThemedText
             type="body"
             style={[styles.description, { color: colors.textSecondary }]}
@@ -231,7 +228,6 @@ export function NotificationPermissionModal({
             to offer support.
           </ThemedText>
 
-          {/* Important Note */}
           <View
             style={[
               styles.importantNote,
@@ -252,7 +248,6 @@ export function NotificationPermissionModal({
             </ThemedText>
           </View>
 
-          {/* Customization Note - only show if not denied */}
           {!isDenied && (
             <ThemedText
               type="caption"
@@ -263,7 +258,6 @@ export function NotificationPermissionModal({
             </ThemedText>
           )}
 
-          {/* Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={[
