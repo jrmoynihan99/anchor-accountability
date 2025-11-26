@@ -1,30 +1,32 @@
-// components/community/PostDetailView.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { BlockUserIcon } from "../BlockUserIcon";
-import { CommunityPost, PostCategory } from "./types";
+import { CommunityPost, PostCategory } from "../../community/types";
 
-interface PostDetailViewProps {
+interface CommunityPostCardContentProps {
   post: CommunityPost;
   isOwnPost?: boolean;
   isLiked?: boolean;
   likeCount?: number;
   onLikePress?: (e?: any) => void;
+  onCommentPress?: () => void; // <- NEW
   actionLoading?: boolean;
+  showReadMoreHint?: boolean;
 }
 
-export function PostDetailView({
+export function CommunityPostCardContent({
   post,
   isOwnPost,
   isLiked,
   likeCount,
   onLikePress,
+  onCommentPress, // <- NEW
   actionLoading,
-}: PostDetailViewProps) {
+  showReadMoreHint = true,
+}: CommunityPostCardContentProps) {
   const { colors } = useTheme();
 
   const getCategoryIcon = (category: PostCategory) => {
@@ -44,21 +46,21 @@ export function PostDetailView({
   const getCategoryColor = (category: PostCategory) => {
     switch (category) {
       case "questions":
-        return "#3B82F6"; // Blue
+        return "#3B82F6"; // Blue - keep as is
       case "resources":
-        return colors.success; // Green
+        return colors.success; // Green - keep as is since it's working
       case "testimonies":
-        return "#F59E0B"; // Orange/amber
+        return "#F59E0B"; // Orange/amber - distinct from blue
       case "other":
       default:
-        return colors.textSecondary;
+        return colors.textSecondary; // Gray - keep as is
     }
   };
 
   const timeAgo = getTimeAgo(post.createdAt);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.inner}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.userInfo}>
@@ -84,7 +86,6 @@ export function PostDetailView({
                 {post.authorUsername}
               </ThemedText>
               <UserStreakDisplay userId={post.uid} size="small" />
-              {!isOwnPost && <BlockUserIcon userIdToBlock={post.uid} />}
             </View>
             <ThemedText
               type="caption"
@@ -95,46 +96,8 @@ export function PostDetailView({
             </ThemedText>
           </View>
         </View>
-
-        {/* Like Button - moved to top right */}
-        <TouchableOpacity
-          style={[
-            styles.likeButton,
-            {
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.border,
-            },
-            isLiked && {
-              backgroundColor: colors.error + "11",
-              borderColor: colors.error + "33",
-            },
-          ]}
-          onPress={onLikePress}
-          disabled={actionLoading}
-          activeOpacity={0.75}
-          hitSlop={8}
-        >
-          <IconSymbol
-            name={isLiked ? "heart.fill" : "heart"}
-            size={18}
-            color={isLiked ? colors.error : colors.textSecondary}
-            style={{ marginRight: 4 }}
-          />
-          <ThemedText
-            type="captionMedium"
-            style={{
-              color: isLiked ? colors.error : colors.textSecondary,
-              fontWeight: isLiked ? "700" : "400",
-            }}
-          >
-            {likeCount}
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {/* Categories - now without icons */}
-      {post.categories.length > 0 && (
-        <View style={styles.categoriesRow}>
+        {/* Categories */}
+        <View style={styles.categories}>
           {post.categories.map((category, index) => (
             <View
               key={index}
@@ -143,37 +106,117 @@ export function PostDetailView({
                 { backgroundColor: `${getCategoryColor(category)}20` },
               ]}
             >
-              <ThemedText
-                type="caption"
-                style={{
-                  color: getCategoryColor(category),
-                  fontWeight: "500",
-                }}
-              >
-                {category}
-              </ThemedText>
+              <IconSymbol
+                name={getCategoryIcon(category)}
+                size={12}
+                color={getCategoryColor(category)}
+              />
             </View>
           ))}
         </View>
-      )}
+      </View>
 
       {/* Title */}
-      <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
+      <ThemedText
+        type="subtitleSemibold"
+        numberOfLines={2}
+        style={[styles.title, { color: colors.text }]}
+      >
         {post.title}
       </ThemedText>
 
       {/* Content */}
       <ThemedText
         type="body"
+        numberOfLines={showReadMoreHint ? 3 : 999}
+        ellipsizeMode="tail"
         style={[styles.content, { color: colors.textSecondary }]}
       >
         {post.content}
       </ThemedText>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <View style={styles.stats}>
+          {/* Like Button */}
+          <TouchableOpacity
+            style={[
+              styles.statButton,
+              {
+                backgroundColor: colors.cardBackground,
+                borderColor: colors.border,
+              },
+              isLiked && {
+                backgroundColor: colors.error + "11",
+                borderColor: colors.error + "33",
+              },
+            ]}
+            onPress={onLikePress}
+            disabled={actionLoading}
+            activeOpacity={0.75}
+            hitSlop={8}
+          >
+            <IconSymbol
+              name={isLiked ? "heart.fill" : "heart"}
+              size={18}
+              color={isLiked ? colors.error : colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <ThemedText
+              type="captionMedium"
+              style={{
+                color: isLiked ? colors.error : colors.textSecondary,
+                fontWeight: isLiked ? "700" : "400",
+              }}
+            >
+              {likeCount}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {/* Comment "Button" - not touchable */}
+          <View
+            style={[
+              styles.statButton,
+              {
+                backgroundColor: colors.cardBackground,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <IconSymbol
+              name="message"
+              size={18}
+              color={colors.textSecondary}
+              style={{ marginRight: 4 }}
+            />
+            <ThemedText
+              type="captionMedium"
+              style={{ color: colors.textSecondary }}
+            >
+              {post.commentCount}
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* Read More hint (hide in modal) */}
+        {showReadMoreHint && (
+          <View style={styles.readMore}>
+            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
+              Tap to read more
+            </ThemedText>
+            <IconSymbol
+              name="arrow.right"
+              size={12}
+              color={colors.textSecondary}
+            />
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
-// Helper function for time ago
+// Helpers
 function getTimeAgo(date: Date): string {
   const now = new Date();
   const diffInMinutes = Math.floor(
@@ -196,14 +239,14 @@ function getTimeAgo(date: Date): string {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  inner: {
     width: "100%",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   userInfo: {
     flexDirection: "row",
@@ -236,34 +279,47 @@ const styles = StyleSheet.create({
     marginTop: 1,
     opacity: 0.8,
   },
-  categoriesRow: {
+  categories: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
+    gap: 6,
   },
   categoryBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
   title: {
-    marginBottom: 12,
-    lineHeight: 26,
+    marginBottom: 8,
+    lineHeight: 22,
   },
   content: {
-    lineHeight: 22,
-    marginBottom: 20,
+    lineHeight: 20,
+    marginBottom: 16,
   },
-  likeButton: {
+  footer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 6,
+    justifyContent: "space-between",
+  },
+  stats: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  statButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 16,
+    marginRight: 8,
     borderWidth: 1,
-    right: 44,
+  },
+  readMore: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    opacity: 0.6,
   },
 });

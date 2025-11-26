@@ -1,7 +1,7 @@
 // app/plea-view-all.tsx
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { PleaCard } from "@/components/morphing/messages/plea/PleaCard";
-import { PleaResponseModal } from "@/components/morphing/messages/plea/PleaResponseModal";
+import { PleaCard } from "@/components/morphing/pleas/plea/PleaCard";
+import { PleaResponseModal } from "@/components/morphing/pleas/plea/PleaResponseModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
