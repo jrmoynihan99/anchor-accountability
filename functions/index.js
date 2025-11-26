@@ -687,6 +687,117 @@ exports.moderateEncouragement = onDocumentCreated(
   }
 );
 
+exports.moderateEncouragementTEST = onDocumentCreated(
+  "pleas_test/{pleaId}/encouragements/{encId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+    const encouragement = snap.data();
+    const message = (encouragement?.message || "").trim();
+
+    let rejectionReason = null;
+
+    // If blank, auto-reject
+    if (!message) {
+      await snap.ref.update({
+        status: "rejected",
+        rejectionReason: "Message cannot be empty",
+      });
+      logger.info(`Encouragement ${snap.id} was blank, auto-rejected.`);
+      return;
+    }
+
+    // Fetch the original plea for context
+    const pleaId = event.params.pleaId;
+    let originalPlea = "";
+
+    try {
+      logger.info(`Fetching plea document: pleas/${pleaId}`);
+      const pleaSnap = await admin.firestore().doc(`pleas/${pleaId}`).get();
+
+      if (!pleaSnap.exists) {
+        logger.error(`Plea document ${pleaId} does not exist`);
+        originalPlea = "(Original plea not found)";
+      } else {
+        const pleaData = pleaSnap.data();
+        originalPlea = pleaData?.message || "(No message in plea)";
+        logger.info(
+          `Successfully fetched plea message: ${originalPlea.substring(
+            0,
+            50
+          )}...`
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to fetch original plea:", err);
+      originalPlea = "(Unable to retrieve original plea)";
+    }
+
+    // GPT moderation with Firestore prompt and context
+    let gptFlagged = false;
+    try {
+      const filteringPrompt = await getFilteringPrompt("encouragement");
+      logger.info(`[moderateEncouragement] Using prompt: ${filteringPrompt}`);
+
+      const promptText = filteringPrompt
+        .replace("{originalPlea}", originalPlea)
+        .replace("{message}", message);
+
+      logger.info(`[moderateEncouragement] Sending prompt text: ${promptText}`);
+
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 30,
+      });
+
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderateEncouragement] GPT result: ${result}`);
+
+      const cleanResult = result.toLowerCase().trim();
+      logger.info(`[moderateEncouragement] Clean result: "${cleanResult}"`);
+
+      if (cleanResult !== "allow") {
+        gptFlagged = true;
+
+        // Match the actual BLOCK format from the prompt
+        if (
+          cleanResult.includes("hateful") ||
+          cleanResult.includes("derogatory")
+        ) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (
+          cleanResult.includes("spam") ||
+          cleanResult.includes("trolling")
+        ) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
+          // Fallback for any unexpected responses
+          rejectionReason = "Message doesn't align with community guidelines";
+        }
+      }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process message at this time";
+    }
+
+    const newStatus = gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for encouragement ${snap.id}: ${newStatus}`);
+
+    const updateData = {
+      status: newStatus,
+    };
+
+    if (rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
+    await snap.ref.update(updateData);
+  }
+);
+
 exports.moderatePost = onDocumentCreated(
   "communityPosts/{postId}",
   async (event) => {
@@ -862,6 +973,7 @@ async function getFilteringPrompt(type = "plea") {
   const docMap = {
     plea: "pleaFilteringPrompt",
     encouragement: "encouragementFilteringPrompt",
+    encouragementTEST: "encouragementFilteringPromptTEST",
     post: "postFilteringPrompt",
     comment: "commentFilteringPrompt",
   };
