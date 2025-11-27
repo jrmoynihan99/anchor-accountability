@@ -611,33 +611,33 @@ exports.moderatePlea = onDocumentCreated("pleas/{pleaId}", async (event) => {
   await snap.ref.update(updateData);
 });
 
-exports.moderateEncouragement = onDocumentCreated(
-  "pleas/{pleaId}/encouragements/{encId}",
+exports.moderatePleaTEST = onDocumentCreated(
+  "pleas_test/{pleaId}",
   async (event) => {
     const snap = event.data;
     if (!snap) return;
-    const encouragement = snap.data();
-    const message = (encouragement?.message || "").trim();
+    const plea = snap.data();
+    const message = (plea?.message || "").trim();
 
-    let rejectionReason = null;
+    // Log incoming fields
+    logger.info(`[moderatePleaTEST] Message: "${message}"`);
 
-    // If blank, auto-reject
+    // If message/context is blank, auto-approve
     if (!message) {
-      await snap.ref.update({
-        status: "rejected",
-        rejectionReason: "Message cannot be empty",
-      });
-      logger.info(`Encouragement ${snap.id} was blank, auto-rejected.`);
+      await snap.ref.update({ status: "approved" });
+      logger.info(`Plea ${snap.id} has empty context, auto-approved.`);
       return;
     }
+
+    let rejectionReason = null;
 
     // GPT moderation with Firestore prompt
     let gptFlagged = false;
     try {
-      const filteringPrompt = await getFilteringPrompt("encouragement");
-      logger.info(`[moderateEncouragement] Using prompt: ${filteringPrompt}`);
+      const filteringPrompt = await getFilteringPrompt("pleaTEST");
+      logger.info(`[moderatePleaTEST] Using prompt: ${filteringPrompt}`);
       const promptText = filteringPrompt.replace("{message}", message);
-      logger.info(`[moderateEncouragement] Sending prompt text: ${promptText}`);
+      logger.info(`[moderatePleaTEST] Sending prompt text: ${promptText}`);
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "system", content: promptText }],
@@ -645,21 +645,13 @@ exports.moderateEncouragement = onDocumentCreated(
         max_tokens: 20, // Enough for our specific responses
       });
       const result = gptCheck.choices[0].message.content.trim();
-      logger.info(`[moderateEncouragement] GPT result: ${result}`);
+      logger.info(`[moderatePleaTEST] GPT result: ${result}`);
 
-      const cleanResult = result.toLowerCase().trim();
-      logger.info(`[moderateEncouragement] Clean result: "${cleanResult}"`);
-      if (cleanResult !== "allow") {
+      if (result !== "ALLOW") {
         gptFlagged = true;
-        if (
-          cleanResult.includes("hateful") ||
-          cleanResult.includes("derogatory")
-        ) {
+        if (result === "BLOCK: hateful/derogatory") {
           rejectionReason = "Content contains hateful or derogatory language";
-        } else if (
-          cleanResult.includes("spam") ||
-          cleanResult.includes("trolling")
-        ) {
+        } else if (result === "BLOCK: spam/trolling") {
           rejectionReason = "Content appears to be spam or trolling";
         } else {
           // Fallback for any unexpected responses
@@ -673,10 +665,11 @@ exports.moderateEncouragement = onDocumentCreated(
     }
 
     const newStatus = gptFlagged ? "rejected" : "approved";
-    logger.info(`Moderation result for encouragement ${snap.id}: ${newStatus}`);
+    logger.info(`Moderation result for plea ${snap.id}: ${newStatus}`);
 
     const updateData = {
       status: newStatus,
+      unreadEncouragementCount: 0,
     };
 
     if (rejectionReason) {
@@ -687,8 +680,8 @@ exports.moderateEncouragement = onDocumentCreated(
   }
 );
 
-exports.moderateEncouragementTEST = onDocumentCreated(
-  "pleas_test/{pleaId}/encouragements/{encId}",
+exports.moderateEncouragement = onDocumentCreated(
+  "pleas/{pleaId}/encouragements/{encId}",
   async (event) => {
     const snap = event.data;
     if (!snap) return;
@@ -798,53 +791,88 @@ exports.moderateEncouragementTEST = onDocumentCreated(
   }
 );
 
-exports.moderatePost = onDocumentCreated(
-  "communityPosts/{postId}",
+exports.moderateEncouragementTEST = onDocumentCreated(
+  "pleas_test/{pleaId}/encouragements/{encId}",
   async (event) => {
     const snap = event.data;
     if (!snap) return;
-    const post = snap.data();
-    const title = (post?.title || "").trim();
-    const content = (post?.content || "").trim();
-    const combinedText = `${title} ${content}`.trim();
+    const encouragement = snap.data();
+    const message = (encouragement?.message || "").trim();
 
     let rejectionReason = null;
 
-    // Log incoming fields
-    logger.info(
-      `[moderatePost] Title: "${title}" | Content: "${content}" | Combined: "${combinedText}"`
-    );
-
-    // If both title and content are blank, auto-reject
-    if (!combinedText) {
+    // If blank, auto-reject
+    if (!message) {
       await snap.ref.update({
         status: "rejected",
-        rejectionReason: "Post cannot be empty",
+        rejectionReason: "Message cannot be empty",
       });
-      logger.info(`Post ${snap.id} was blank, auto-rejected.`);
+      logger.info(`Encouragement ${snap.id} was blank, auto-rejected.`);
       return;
     }
 
-    // GPT moderation with Firestore prompt
+    // Fetch the original plea for context
+    const pleaId = event.params.pleaId;
+    let originalPlea = "";
+
+    try {
+      logger.info(`Fetching plea document: pleas_test/${pleaId}`);
+      const pleaSnap = await admin
+        .firestore()
+        .doc(`pleas_test/${pleaId}`)
+        .get();
+
+      if (!pleaSnap.exists) {
+        logger.error(`Plea document ${pleaId} does not exist`);
+        originalPlea = "(Original plea not found)";
+      } else {
+        const pleaData = pleaSnap.data();
+        originalPlea = pleaData?.message || "(No message in plea)";
+        logger.info(
+          `Successfully fetched plea message: ${originalPlea.substring(
+            0,
+            50
+          )}...`
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to fetch original plea:", err);
+      originalPlea = "(Unable to retrieve original plea)";
+    }
+
+    // GPT moderation with Firestore prompt and context
     let gptFlagged = false;
     try {
-      const filteringPrompt = await getFilteringPrompt("post");
-      logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", combinedText);
-      logger.info(`[moderatePost] Sending prompt text: ${promptText}`);
+      const filteringPrompt = await getFilteringPrompt("encouragementTEST");
+      logger.info(
+        `[moderateEncouragementTEST] Using prompt: ${filteringPrompt}`
+      );
+
+      const promptText = filteringPrompt
+        .replace("{originalPlea}", originalPlea)
+        .replace("{message}", message);
+
+      logger.info(
+        `[moderateEncouragementTEST] Sending prompt text: ${promptText}`
+      );
+
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [{ role: "system", content: promptText }],
         temperature: 0,
-        max_tokens: 20, // Enough for our specific responses
+        max_tokens: 30,
       });
+
       const result = gptCheck.choices[0].message.content.trim();
-      logger.info(`[moderatePost] GPT result: ${result}`);
+      logger.info(`[moderateEncouragementTEST] GPT result: ${result}`);
 
       const cleanResult = result.toLowerCase().trim();
-      logger.info(`[moderatePost] Clean result: "${cleanResult}"`);
+      logger.info(`[moderateEncouragementTEST] Clean result: "${cleanResult}"`);
+
       if (cleanResult !== "allow") {
         gptFlagged = true;
+
+        // Match the actual BLOCK format from the prompt
         if (
           cleanResult.includes("hateful") ||
           cleanResult.includes("derogatory")
@@ -857,6 +885,88 @@ exports.moderatePost = onDocumentCreated(
           rejectionReason = "Content appears to be spam or trolling";
         } else {
           // Fallback for any unexpected responses
+          rejectionReason = "Message doesn't align with community guidelines";
+        }
+      }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process message at this time";
+    }
+
+    const newStatus = gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for encouragement ${snap.id}: ${newStatus}`);
+
+    const updateData = {
+      status: newStatus,
+    };
+
+    if (rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
+    await snap.ref.update(updateData);
+  }
+);
+
+exports.moderatePost = onDocumentCreated(
+  "communityPosts/{postId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const post = snap.data();
+    const title = (post?.title || "").trim();
+    const content = (post?.content || "").trim();
+
+    let rejectionReason = null;
+
+    // Log incoming fields
+    logger.info(`[moderatePost] Title: "${title}" | Content: "${content}"`);
+
+    // If both fields are blank, auto-reject
+    if (!title && !content) {
+      await snap.ref.update({
+        status: "rejected",
+        rejectionReason: "Post cannot be empty",
+      });
+      logger.info(`Post ${snap.id} was blank, auto-rejected.`);
+      return;
+    }
+
+    // GPT moderation using prompt with title + content
+    let gptFlagged = false;
+    try {
+      const filteringPrompt = await getFilteringPrompt("post");
+      logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
+
+      const promptText = filteringPrompt
+        .replace("{title}", title)
+        .replace("{content}", content);
+
+      logger.info(`[moderatePost] Prompt text: ${promptText}`);
+
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 30,
+      });
+
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderatePost] GPT result: ${result}`);
+
+      const clean = result.toLowerCase().trim();
+      logger.info(`[moderatePost] Clean result: "${clean}"`);
+
+      if (clean !== "allow") {
+        gptFlagged = true;
+
+        if (clean.includes("hateful") || clean.includes("derogatory")) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (clean.includes("spam") || clean.includes("trolling")) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
           rejectionReason = "Post doesn't align with community guidelines";
         }
       }
@@ -869,13 +979,85 @@ exports.moderatePost = onDocumentCreated(
     const newStatus = gptFlagged ? "rejected" : "approved";
     logger.info(`Moderation result for post ${snap.id}: ${newStatus}`);
 
-    const updateData = {
-      status: newStatus,
-    };
+    const updateData = { status: newStatus };
+    if (rejectionReason) updateData.rejectionReason = rejectionReason;
 
-    if (rejectionReason) {
-      updateData.rejectionReason = rejectionReason;
+    await snap.ref.update(updateData);
+  }
+);
+
+exports.moderatePostTEST = onDocumentCreated(
+  "communityPosts_test/{postId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const post = snap.data();
+    const title = (post?.title || "").trim();
+    const content = (post?.content || "").trim();
+
+    let rejectionReason = null;
+
+    // Log incoming fields
+    logger.info(`[moderatePostTEST] Title: "${title}" | Content: "${content}"`);
+
+    // If both fields are blank, auto-reject
+    if (!title && !content) {
+      await snap.ref.update({
+        status: "rejected",
+        rejectionReason: "Post cannot be empty",
+      });
+      logger.info(`Post ${snap.id} was blank, auto-rejected.`);
+      return;
     }
+
+    // GPT moderation using prompt with title + content
+    let gptFlagged = false;
+    try {
+      const filteringPrompt = await getFilteringPrompt("postTEST");
+      logger.info(`[moderatePostTEST] Using prompt: ${filteringPrompt}`);
+
+      const promptText = filteringPrompt
+        .replace("{title}", title)
+        .replace("{content}", content);
+
+      logger.info(`[moderatePostTEST] Prompt text: ${promptText}`);
+
+      const gptCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "system", content: promptText }],
+        temperature: 0,
+        max_tokens: 30,
+      });
+
+      const result = gptCheck.choices[0].message.content.trim();
+      logger.info(`[moderatePostTEST] GPT result: ${result}`);
+
+      const clean = result.toLowerCase().trim();
+      logger.info(`[moderatePostTEST] Clean result: "${clean}"`);
+
+      if (clean !== "allow") {
+        gptFlagged = true;
+
+        if (clean.includes("hateful") || clean.includes("derogatory")) {
+          rejectionReason = "Content contains hateful or derogatory language";
+        } else if (clean.includes("spam") || clean.includes("trolling")) {
+          rejectionReason = "Content appears to be spam or trolling";
+        } else {
+          rejectionReason = "Post doesn't align with community guidelines";
+        }
+      }
+    } catch (err) {
+      logger.error("GPT moderation failed:", err);
+      gptFlagged = true;
+      rejectionReason = "Unable to process post at this time";
+    }
+
+    const newStatus = gptFlagged ? "rejected" : "approved";
+    logger.info(`Moderation result for post ${snap.id}: ${newStatus}`);
+
+    const updateData = { status: newStatus };
+    if (rejectionReason) updateData.rejectionReason = rejectionReason;
 
     await snap.ref.update(updateData);
   }
@@ -972,9 +1154,11 @@ exports.moderateComment = onDocumentCreated(
 async function getFilteringPrompt(type = "plea") {
   const docMap = {
     plea: "pleaFilteringPrompt",
+    pleaTEST: "pleaFilteringPromptTEST",
     encouragement: "encouragementFilteringPrompt",
     encouragementTEST: "encouragementFilteringPromptTEST",
     post: "postFilteringPrompt",
+    postTEST: "postFilteringPromptTEST",
     comment: "commentFilteringPrompt",
   };
 
