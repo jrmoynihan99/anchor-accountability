@@ -7,8 +7,8 @@ import { BlurView } from "expo-blur";
 import React from "react";
 import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { InfoButton } from "../../morphing/pleas/message-thread-info/InfoButton";
-import { ThreadInfoModal } from "../../morphing/pleas/message-thread-info/InfoModal";
+import { InfoButton } from "../../morphing/message-thread/InfoButton";
+import { ThreadInfoModal } from "../../morphing/message-thread/InfoModal";
 import { ThreadHeaderProps } from "./types";
 
 export function MessageThreadHeader({
