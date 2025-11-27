@@ -19,7 +19,7 @@ import {
   View,
 } from "react-native";
 import { SharedValue } from "react-native-reanimated";
-import { BaseModal } from "../../BaseModal";
+import { BaseModal } from "../BaseModal";
 
 interface ThreadInfoModalProps {
   isVisible: boolean;

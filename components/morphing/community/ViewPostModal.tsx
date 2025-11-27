@@ -6,11 +6,11 @@ import { usePostComments } from "@/hooks/usePostComments";
 import { auth } from "@/lib/firebase";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { CommentInput, CommentInputRef } from "./CommentInput";
-import { CommunityPostCardContent } from "./CommunityPostCardContent";
+import { CommentInput, CommentInputRef } from "../community/CommentInput";
+import { CommunityPostCardContent } from "../community/CommunityPostCardContent";
+import { CommunityPost } from "../../community/types";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostDetailView } from "./PostDetailView";
-import { CommunityPost } from "./types";
 
 const COMMENTS_PER_PAGE = 15;
 

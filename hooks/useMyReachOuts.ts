@@ -1,5 +1,5 @@
 // hooks/useMyReachOuts.ts
-import { MyReachOutData } from "@/components/morphing/messages/my-reach-outs/MyReachOutCard";
+import { MyReachOutData } from "@/components/morphing/pleas/my-reach-outs/MyReachOutCard";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,

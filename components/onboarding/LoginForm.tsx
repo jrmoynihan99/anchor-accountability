@@ -2,6 +2,10 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
 import { AnonymousBadgeModal } from "@/components/morphing/login/anonymous-badge/AnonymousBadgeModal";
+import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
+import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
+import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
+import { TermsOfServiceModal } from "@/components/morphing/login/terms-of-service/TermsOfServiceModal";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -21,13 +25,9 @@ import {
 } from "react-native";
 import { useTheme } from "../../hooks/useTheme";
 import { ensureSignedIn } from "../../lib/auth";
-import { auth } from "../../lib/firebase";
+import { auth, updateUserTimezone } from "../../lib/firebase";
 import { setHasOnboarded } from "../../lib/onboarding";
 import { ThemedText } from "../ThemedText";
-import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
-import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
-import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
-import { TermsOfServiceModal } from "@/components/morphing/login/terms-of-service/TermsOfServiceModal";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -129,6 +129,7 @@ export function LoginForm({
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
+      await updateUserTimezone();
       await completeOnboarding();
     } catch (error: any) {
       showAuthError({ error, isSignUp, setIsSignUp });

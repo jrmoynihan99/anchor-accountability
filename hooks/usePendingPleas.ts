@@ -1,5 +1,5 @@
 // hooks/usePendingPleas.ts
-import { PleaData } from "@/components/morphing/messages/plea/PleaCard";
+import { PleaData } from "@/components/morphing/pleas/plea/PleaCard";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,

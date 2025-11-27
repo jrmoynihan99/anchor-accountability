@@ -1,9 +1,9 @@
 // app/(tabs)/community.tsx
 import { CommunityHeader } from "@/components/community/CommunityHeader";
 import { CommunityPostList } from "@/components/community/CommunityPostList";
-import { CreatePostFAB } from "@/components/community/CreatePostFAB";
-import { CreatePostModal } from "@/components/community/CreatePostModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { CreatePostFAB } from "@/components/morphing/community/CreatePostFAB";
+import { CreatePostModal } from "@/components/morphing/community/CreatePostModal";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";

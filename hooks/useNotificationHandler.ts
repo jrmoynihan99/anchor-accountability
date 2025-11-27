@@ -101,6 +101,12 @@ export function useNotificationHandler(
       // Close any open modals before navigating
       globalModalManager.closeAllModals();
 
+      // 🆕 Handle streak reminder notifications
+      if (data.type === "streak_reminder") {
+        router.push("/(tabs)");
+        return;
+      }
+
       // 2. Existing logic for app routing
       if (data.pleaId) {
         if (data.type === "encouragement") {

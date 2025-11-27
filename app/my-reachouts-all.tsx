@@ -3,8 +3,8 @@ import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTr
 import {
   MyReachOutCard,
   MyReachOutData,
-} from "@/components/morphing/messages/my-reach-outs/MyReachOutCard";
-import { MyReachOutModal } from "@/components/morphing/messages/my-reach-outs/MyReachOutModal";
+} from "@/components/morphing/pleas/my-reach-outs/MyReachOutCard";
+import { MyReachOutModal } from "@/components/morphing/pleas/my-reach-outs/MyReachOutModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
