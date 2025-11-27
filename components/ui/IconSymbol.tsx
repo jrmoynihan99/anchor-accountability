@@ -62,11 +62,20 @@ const MAPPING = {
   "play.fill": "play",
   "arrow.left": "arrow-left",
   "bubble.left.and.bubble.right.fill": "message-processing",
+  "bubble.left.and.bubble.right": "message-processing",
   clock: "clock-outline",
   "exclamationmark.triangle": "alert",
   flag: "flag-outline",
   "chevron.down": "chevron-down",
   "square.and.pencil": "pencil-box-outline",
+  gear: "cog-outline",
+  gearshape: "cog-outline",
+  "gearshape.fill": "cog",
+  "bell.badge": "bell-badge-outline",
+  "bell.badge.fill": "bell-badge",
+  "bell.fill": "bell",
+  "bell.slash": "bell-off-outline",
+  "bell.slash.fill": "bell-off",
 } as const;
 
 // 3. Fallback icon for unmapped symbols on Android

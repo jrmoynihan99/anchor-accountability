@@ -2,7 +2,7 @@
   "expo": {
     "name": "Anchor",
     "slug": "my-accountability-app",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "anchor",
@@ -30,7 +30,10 @@
       "androidNavigationBar": {
         "visible": "translucent",
         "backgroundColor": "#00000000"
-      }
+      },
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true,
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
@@ -49,7 +52,8 @@
         }
       ],
       "expo-font",
-      "expo-notifications"
+      "expo-notifications",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

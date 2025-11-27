@@ -27,6 +27,7 @@ import {
 } from "@expo-google-fonts/spectral";
 
 // Notifications
+import { updateUserTimezone } from "@/lib/firebase";
 import * as NavigationBar from "expo-navigation-bar"; // <-- Add this import at the top
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -151,6 +152,13 @@ function AppContent() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!authInitialized || !auth.currentUser) return;
+
+    // Update timezone in background (don't block UI)
+    updateUserTimezone();
+  }, [authInitialized]);
 
   // --- Core: Only show spinner until the decision is made ---
   useEffect(() => {

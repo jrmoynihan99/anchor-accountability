@@ -18,9 +18,9 @@ import Animated, {
   SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CommunityPostCard } from "../morphing/community/CommunityPostCard";
+import { ViewPostModal } from "../morphing/community/ViewPostModal";
 import { COMMUNITY_HEADER_CONSTANTS, SectionHeader } from "./CommunityHeader";
-import { CommunityPostCard } from "./CommunityPostCard";
-import { ViewPostModal } from "./ViewPostModal";
 import { CommunityPost } from "./types";
 
 // --- Animation wrapper for post entry ---

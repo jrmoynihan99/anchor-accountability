@@ -6,11 +6,12 @@ import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  AppState,
+  AppStateStatus,
+  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
-  AppState,
-  AppStateStatus,
 } from "react-native";
 
 interface NotificationsSectionProps {
@@ -22,7 +23,6 @@ export function NotificationsSection({
 }: NotificationsSectionProps) {
   const { colors } = useTheme();
 
-  // Always call the hook; lazy loading inside
   const {
     preferences,
     loading: notificationLoading,
@@ -30,31 +30,29 @@ export function NotificationsSection({
     shouldShowEnableButton,
     shouldShowPreferences,
     systemPermissionDenied,
+    androidDenialCount,
     enableNotifications,
     updatePreference,
-    reload, // <-- this is important!
+    reload,
   } = useNotificationPreferences(shouldLoad);
 
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // --- AppState effect: Auto-refresh on returning from iOS Settings ---
   useEffect(() => {
     if (!shouldLoad) return;
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      console.log("=== APP STATE CHANGE ===");
+      console.log("Previous state:", appState.current);
+      console.log("Next state:", nextAppState);
+
       if (
         (appState.current === "inactive" ||
           appState.current === "background") &&
         nextAppState === "active"
       ) {
-        const { status } = await import("expo-notifications").then((m) =>
-          m.getPermissionsAsync()
-        );
-        if (status === "granted") {
-          await enableNotifications();
-        } else {
-          await reload(); // <--- this covers disabling in Settings
-        }
+        console.log("App became active, reloading...");
+        await reload();
       }
       appState.current = nextAppState;
     };
@@ -74,21 +72,30 @@ export function NotificationsSection({
   };
 
   const getEnableButtonText = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "Open Settings";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "Open Settings";
     }
     return "Enable Notifications";
   };
 
   const getEnableButtonIcon = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "gear";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "gear";
     }
     return "bell.badge";
   };
 
   const getEnableDescription = () => {
-    if (systemPermissionDenied) {
+    if (Platform.OS === "android" && androidDenialCount >= 2) {
+      return "You've declined notifications multiple times. Tap to open Settings and enable them manually.";
+    }
+    if (systemPermissionDenied && Platform.OS === "ios") {
       return "Notifications are disabled in your device settings. Tap to open Settings and enable them manually.";
     }
     return "Enable push notifications to receive alerts for new incoming help requests, encouragements, and messages.";
@@ -129,7 +136,7 @@ export function NotificationsSection({
             style={[
               styles.enableButton,
               {
-                backgroundColor: colors.tint, // Always use tint for consistency
+                backgroundColor: colors.tint,
               },
             ]}
             onPress={handleEnablePress}
@@ -216,6 +223,28 @@ export function NotificationsSection({
               <ThemedToggle
                 value={preferences.messages}
                 onValueChange={(value) => updatePreference("messages", value)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <View style={styles.settingTextContainer}>
+                <ThemedText type="body" style={styles.settingLabel}>
+                  General
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  lightColor={colors.textSecondary}
+                  darkColor={colors.textSecondary}
+                  style={styles.settingDescription}
+                >
+                  App reminders and updates
+                </ThemedText>
+              </View>
+              <ThemedToggle
+                value={preferences.general}
+                onValueChange={(value) => updatePreference("general", value)}
               />
             </View>
           </View>

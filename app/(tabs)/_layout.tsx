@@ -14,14 +14,14 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useThreads } from "@/hooks/useThreads";
+import MaskedView from "@react-native-masked-view/masked-view";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { Tabs, useRouter, useSegments } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
+import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { BlurView } from "expo-blur";
-import MaskedView from "@react-native-masked-view/masked-view";
-import { LinearGradient } from "expo-linear-gradient";
-import { Platform, StyleSheet, View } from "react-native";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
@@ -34,8 +34,13 @@ export default function TabLayout() {
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
 
   // Notification permission management
-  const { shouldShowModal, handlePermissionResult, closeModal } =
-    useNotificationPermission();
+  const {
+    shouldShowModal,
+    permissionStatus,
+    handlePermissionResult,
+    closeModal,
+    androidDenialCount, // ADD THIS
+  } = useNotificationPermission();
 
   // Settings modal state management
   const settingsModalOpenRef = useRef<(() => void) | null>(null);
@@ -279,6 +284,8 @@ export default function TabLayout() {
         isVisible={shouldShowModal}
         onClose={closeModal}
         onPermissionResult={handlePermissionResult}
+        permissionStatus={permissionStatus}
+        androidDenialCount={androidDenialCount}
       />
     </GestureHandlerRootView>
   );
