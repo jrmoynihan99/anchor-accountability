@@ -2,14 +2,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import { router } from "expo-router";
+import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
-import { AccountabilityHomeContent } from "./home/accountability/AccountabilityHomeContent";
 import { AccountabilityMessagesContent } from "../messages/AccountabilityMessagesContent";
 import { BaseModal } from "./BaseModal";
+import { AccountabilityHomeContent } from "./home/accountability/AccountabilityHomeContent";
 
 interface AccountabilityListModalProps {
   isVisible: boolean;
@@ -17,11 +16,6 @@ interface AccountabilityListModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   variant?: "home" | "messages"; // NEW: to determine which button content to show
-}
-
-interface UserInfo {
-  displayName?: string;
-  email?: string;
 }
 
 export function AccountabilityListModal({
@@ -33,58 +27,6 @@ export function AccountabilityListModal({
 }: AccountabilityListModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const { mentor, mentees, loading } = useAccountabilityRelationships();
-
-  const [mentorInfo, setMentorInfo] = useState<UserInfo | null>(null);
-  const [menteesInfo, setMenteesInfo] = useState<
-    Record<string, UserInfo | null>
-  >({});
-
-  // Fetch user info for mentor
-  useEffect(() => {
-    if (!mentor) return;
-
-    const fetchMentorInfo = async () => {
-      try {
-        const userDoc = await getDoc(doc(db, "users", mentor.mentorUid));
-        if (userDoc.exists()) {
-          setMentorInfo(userDoc.data() as UserInfo);
-        }
-      } catch (err) {
-        console.error("Failed to fetch mentor info:", err);
-      }
-    };
-
-    fetchMentorInfo();
-  }, [mentor]);
-
-  // Fetch user info for all mentees
-  useEffect(() => {
-    if (mentees.length === 0) return;
-
-    const fetchMenteesInfo = async () => {
-      const infoMap: Record<string, UserInfo | null> = {};
-
-      await Promise.all(
-        mentees.map(async (mentee) => {
-          try {
-            const userDoc = await getDoc(doc(db, "users", mentee.menteeUid));
-            if (userDoc.exists()) {
-              infoMap[mentee.menteeUid] = userDoc.data() as UserInfo;
-            }
-          } catch (err) {
-            console.error(
-              `Failed to fetch mentee info for ${mentee.menteeUid}:`,
-              err
-            );
-          }
-        })
-      );
-
-      setMenteesInfo(infoMap);
-    };
-
-    fetchMenteesInfo();
-  }, [mentees]);
 
   const buttonContent = (
     <View style={styles.buttonContent}>
@@ -128,83 +70,47 @@ export function AccountabilityListModal({
           >
             MY MENTOR
           </ThemedText>
-          <View
+          <TouchableOpacity
             style={[
-              styles.partnerCard,
+              styles.partnerRow,
               {
                 backgroundColor: colors.modalCardBackground,
                 borderColor: colors.modalCardBorder,
               },
             ]}
+            onPress={() => {
+              close();
+              router.push({
+                pathname: "/accountability-dashboard",
+                params: {
+                  relationshipId: mentor.id,
+                  role: "mentor",
+                },
+              });
+            }}
+            activeOpacity={0.7}
           >
-            <View style={styles.partnerHeader}>
-              <View style={styles.partnerInfo}>
-                <ThemedText type="title" style={{ marginBottom: 4 }}>
-                  {mentorInfo?.displayName || "Loading..."}
-                </ThemedText>
-                {mentorInfo?.email && (
-                  <ThemedText
-                    type="caption"
-                    style={{ color: colors.textSecondary, opacity: 0.8 }}
-                  >
-                    {mentorInfo.email}
-                  </ThemedText>
-                )}
-              </View>
-            </View>
-
-            {/* Streak Info */}
-            <View style={styles.streakContainer}>
-              <View style={styles.streakBadge}>
-                <ThemedText style={{ fontSize: 24, marginBottom: 4 }}>
-                  🔥
-                </ThemedText>
-                <ThemedText type="title" style={{ marginBottom: 2 }}>
-                  {mentor.streak}
-                </ThemedText>
-                <ThemedText
-                  type="caption"
-                  style={{ color: colors.textSecondary }}
-                >
-                  day streak
+            <View style={styles.partnerContent}>
+              <View
+                style={[
+                  styles.partnerAvatar,
+                  { backgroundColor: colors.iconCircleSecondaryBackground },
+                ]}
+              >
+                <ThemedText type="caption" style={{ color: colors.icon }}>
+                  {mentor.mentorUid[0]?.toUpperCase() || "U"}
                 </ThemedText>
               </View>
-
-              <View style={styles.checkInInfo}>
-                <ThemedText
-                  type="caption"
-                  style={{ color: colors.textSecondary, marginBottom: 4 }}
-                >
-                  Last check-in:
-                </ThemedText>
-                <ThemedText type="subtitleMedium">
-                  {mentor.lastCheckIn || "Never"}
-                </ThemedText>
-              </View>
-            </View>
-
-            {/* Message Button */}
-            <TouchableOpacity
-              style={[
-                styles.messageButton,
-                { backgroundColor: colors.buttonBackground },
-              ]}
-              onPress={() => {
-                // TODO: Navigate to DM with mentor
-                close();
-              }}
-            >
-              <IconSymbol
-                name="message"
-                size={18}
-                color={colors.white}
-                style={{ marginRight: 8 }}
-              />
-              <ThemedText type="button" style={{ color: colors.white }}>
-                Message
+              <ThemedText type="title">
+                user-{mentor.mentorUid.slice(0, 5)}
               </ThemedText>
-            </TouchableOpacity>
-          </View>
+            </View>
+            <IconSymbol
+              name="chevron.right"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
         </View>
       )}
 
@@ -218,87 +124,50 @@ export function AccountabilityListModal({
             MY MENTEES
           </ThemedText>
           {mentees.map((mentee) => {
-            const info = menteesInfo[mentee.menteeUid];
             return (
-              <View
+              <TouchableOpacity
                 key={mentee.id}
                 style={[
-                  styles.partnerCard,
+                  styles.partnerRow,
                   {
                     backgroundColor: colors.modalCardBackground,
                     borderColor: colors.modalCardBorder,
-                    marginBottom: 12,
+                    marginBottom: 8,
                   },
                 ]}
+                onPress={() => {
+                  close();
+                  router.push({
+                    pathname: "/accountability-dashboard",
+                    params: {
+                      relationshipId: mentee.id,
+                      role: "mentee",
+                    },
+                  });
+                }}
+                activeOpacity={0.7}
               >
-                <View style={styles.partnerHeader}>
-                  <View style={styles.partnerInfo}>
-                    <ThemedText type="title" style={{ marginBottom: 4 }}>
-                      {info?.displayName || "Loading..."}
-                    </ThemedText>
-                    {info?.email && (
-                      <ThemedText
-                        type="caption"
-                        style={{ color: colors.textSecondary, opacity: 0.8 }}
-                      >
-                        {info.email}
-                      </ThemedText>
-                    )}
-                  </View>
-                </View>
-
-                {/* Streak Info */}
-                <View style={styles.streakContainer}>
-                  <View style={styles.streakBadge}>
-                    <ThemedText style={{ fontSize: 24, marginBottom: 4 }}>
-                      🔥
-                    </ThemedText>
-                    <ThemedText type="title" style={{ marginBottom: 2 }}>
-                      {mentee.streak}
-                    </ThemedText>
-                    <ThemedText
-                      type="caption"
-                      style={{ color: colors.textSecondary }}
-                    >
-                      day streak
+                <View style={styles.partnerContent}>
+                  <View
+                    style={[
+                      styles.partnerAvatar,
+                      { backgroundColor: colors.iconCircleSecondaryBackground },
+                    ]}
+                  >
+                    <ThemedText type="caption" style={{ color: colors.icon }}>
+                      {mentee.menteeUid[0]?.toUpperCase() || "U"}
                     </ThemedText>
                   </View>
-
-                  <View style={styles.checkInInfo}>
-                    <ThemedText
-                      type="caption"
-                      style={{ color: colors.textSecondary, marginBottom: 4 }}
-                    >
-                      Last check-in:
-                    </ThemedText>
-                    <ThemedText type="subtitleMedium">
-                      {mentee.lastCheckIn || "Never"}
-                    </ThemedText>
-                  </View>
-                </View>
-
-                {/* Message Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.messageButton,
-                    { backgroundColor: colors.buttonBackground },
-                  ]}
-                  onPress={() => {
-                    // TODO: Navigate to DM with mentee
-                    close();
-                  }}
-                >
-                  <IconSymbol
-                    name="message"
-                    size={18}
-                    color={colors.white}
-                    style={{ marginRight: 8 }}
-                  />
-                  <ThemedText type="button" style={{ color: colors.white }}>
-                    Message
+                  <ThemedText type="title">
+                    user-{mentee.menteeUid.slice(0, 5)}
                   </ThemedText>
-                </TouchableOpacity>
-              </View>
+                </View>
+                <IconSymbol
+                  name="chevron.right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -369,38 +238,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     opacity: 0.7,
   },
-  partnerCard: {
+  partnerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     borderWidth: 1,
     padding: 20,
     borderRadius: 16,
   },
-  partnerHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  partnerInfo: {
-    flex: 1,
-  },
-  streakContainer: {
+  partnerContent: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
-    gap: 24,
+    gap: 12,
   },
-  streakBadge: {
-    alignItems: "center",
-  },
-  checkInInfo: {
-    flex: 1,
-  },
-  messageButton: {
-    flexDirection: "row",
+  partnerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
   },
   emptyState: {
     alignItems: "center",
