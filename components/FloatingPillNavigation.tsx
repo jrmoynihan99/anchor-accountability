@@ -41,7 +41,7 @@ const LEFT_ICONS = [
 ];
 const RIGHT_ICONS = [
   { key: "messages", icon: "message.fill" },
-  { key: "community", icon: "person.3.fill" },
+  { key: "accountability", icon: "person.3.fill" },
 ];
 
 // --- Notification Dot Component ---

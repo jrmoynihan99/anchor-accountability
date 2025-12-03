@@ -1,6 +1,4 @@
-import { AccountabilityListModal } from "@/components/morphing/AccountabilityListModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { AccountabilityHomeCard } from "@/components/morphing/home/accountability/AccountabilityHomeCard";
 import { GuidedPrayer } from "@/components/morphing/home/guided-prayer/GuidedPrayer";
 import { GuidedPrayerModal } from "@/components/morphing/home/guided-prayer/GuidedPrayerModal";
 import { ReachOutButton } from "@/components/morphing/home/reach-out-main-button/ReachOutButton";
@@ -14,7 +12,6 @@ import {
 } from "@/components/morphing/home/verse/VerseCarousel";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useStreakData } from "@/hooks/useStreakData";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
@@ -26,11 +23,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const { streakData, updateStreakStatus } = useStreakData();
-  const {
-    mentor,
-    mentees,
-    loading: accountabilityLoading,
-  } = useAccountabilityRelationships();
 
   const guidedPrayerOpenRef = useRef<(() => void) | null>(null);
   const reachOutCloseRef = useRef<((velocity?: number) => void) | null>(null);
@@ -69,10 +61,6 @@ export default function HomeScreen() {
       await updateStreakStatus(today, status);
     }
   };
-
-  // Check if user has any accountability partners
-  const hasAccountabilityPartners =
-    !accountabilityLoading && (mentor !== null || mentees.length > 0);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -130,40 +118,6 @@ export default function HomeScreen() {
             );
           }}
         </ButtonModalTransitionBridge>
-
-        {/* ---- Accountability Partners (Home Version) ---- */}
-        {hasAccountabilityPartners && (
-          <ButtonModalTransitionBridge>
-            {({
-              open,
-              close,
-              isModalVisible,
-              progress,
-              buttonAnimatedStyle,
-              modalAnimatedStyle,
-              buttonRef,
-              handlePressIn,
-              handlePressOut,
-            }) => (
-              <>
-                <AccountabilityHomeCard
-                  buttonRef={buttonRef}
-                  style={buttonAnimatedStyle}
-                  onPress={open}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                />
-                <AccountabilityListModal
-                  isVisible={isModalVisible}
-                  progress={progress}
-                  modalAnimatedStyle={modalAnimatedStyle}
-                  close={close}
-                  variant="home"
-                />
-              </>
-            )}
-          </ButtonModalTransitionBridge>
-        )}
 
         {/* ---- Streak Card ---- */}
         <ButtonModalTransitionBridge>

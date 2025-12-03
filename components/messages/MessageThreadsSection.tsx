@@ -1,13 +1,9 @@
-import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { AccountabilityListModal } from "../morphing/AccountabilityListModal";
-import { AccountabilityListButton } from "./AccountabilityListButton";
 import { SectionHeader } from "./MessageThreadsHeader";
 import { ThreadItem } from "./ThreadItem";
 
@@ -22,11 +18,6 @@ export function MessageThreadsSection({
 }: MessageThreadsSectionProps) {
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
-  const {
-    mentor,
-    mentees,
-    loading: accountabilityLoading,
-  } = useAccountabilityRelationships();
 
   // Timer for updating relative timestamps
   const [now, setNow] = useState<Date>(() => new Date());
@@ -34,10 +25,6 @@ export function MessageThreadsSection({
     const interval = setInterval(() => setNow(new Date()), 30000); // Update every 30 seconds
     return () => clearInterval(interval);
   }, []);
-
-  // Check if user has any accountability partners
-  const hasAccountabilityPartners =
-    !accountabilityLoading && (mentor !== null || mentees.length > 0);
 
   if (loading) {
     return (
@@ -86,41 +73,6 @@ export function MessageThreadsSection({
   return (
     <View style={styles.section}>
       <SectionHeader scrollY={scrollY} threadsCount={threads.length} />
-
-      {/* Accountability Partners - Pinned at Top */}
-      {hasAccountabilityPartners && (
-        <ButtonModalTransitionBridge>
-          {({
-            open,
-            close,
-            isModalVisible,
-            progress,
-            buttonAnimatedStyle,
-            modalAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => (
-            <>
-              <AccountabilityListButton
-                buttonRef={buttonRef}
-                style={buttonAnimatedStyle}
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-              />
-              <AccountabilityListModal
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-                variant="messages"
-              />
-            </>
-          )}
-        </ButtonModalTransitionBridge>
-      )}
-
       {threads.length === 0 ? (
         <View style={styles.emptyContainer}>
           <IconSymbol
