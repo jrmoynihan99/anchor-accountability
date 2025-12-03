@@ -1,9 +1,15 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { AccountabilityMessagesContent } from "./AccountabilityMessagesContent";
+import { MenteeCardContent } from "./MenteeCardContent";
 
-interface AccountabilityListButtonProps {
+interface MenteeCardProps {
+  menteeUid: string;
+  recoveryStreak: number;
+  checkInStreak: number;
+  lastCheckIn: string | null;
+  onRemind?: () => void;
+  onMessage?: () => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
@@ -12,13 +18,19 @@ interface AccountabilityListButtonProps {
   onPressOut?: () => void;
 }
 
-export function AccountabilityListButton({
+export function MenteeCard({
+  menteeUid,
+  recoveryStreak,
+  checkInStreak,
+  lastCheckIn,
+  onRemind,
+  onMessage,
   buttonRef,
   style,
   onPress,
   onPressIn,
   onPressOut,
-}: AccountabilityListButtonProps) {
+}: MenteeCardProps) {
   const { colors } = useTheme();
 
   // If we have modal bridge props, make it touchable
@@ -33,7 +45,15 @@ export function AccountabilityListButton({
           onPressOut={onPressOut}
           activeOpacity={1}
         >
-          <AccountabilityMessagesContent showExpandIcon={true} />
+          <MenteeCardContent
+            menteeUid={menteeUid}
+            recoveryStreak={recoveryStreak}
+            checkInStreak={checkInStreak}
+            lastCheckIn={lastCheckIn}
+            showExpandIcon={true}
+            onRemind={onRemind}
+            onMessage={onMessage}
+          />
         </TouchableOpacity>
       </Animated.View>
     );
@@ -44,7 +64,15 @@ export function AccountabilityListButton({
     <View
       style={[styles.container, { backgroundColor: colors.cardBackground }]}
     >
-      <AccountabilityMessagesContent showExpandIcon={true} />
+      <MenteeCardContent
+        menteeUid={menteeUid}
+        recoveryStreak={recoveryStreak}
+        checkInStreak={checkInStreak}
+        lastCheckIn={lastCheckIn}
+        showExpandIcon={true}
+        onRemind={onRemind}
+        onMessage={onMessage}
+      />
     </View>
   );
 }
@@ -53,7 +81,8 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     borderRadius: 20,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 8,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },

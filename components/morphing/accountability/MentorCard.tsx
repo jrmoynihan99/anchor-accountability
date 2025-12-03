@@ -1,9 +1,14 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { AccountabilityHomeContent } from "./AccountabilityHomeContent";
+import { MentorCardContent } from "./MentorCardContent";
 
-interface AccountabilityHomeCardProps {
+interface MentorCardProps {
+  mentorUid: string;
+  streak: number;
+  lastCheckIn: string | null;
+  onCheckIn?: () => void;
+  onSOS?: () => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
@@ -12,13 +17,18 @@ interface AccountabilityHomeCardProps {
   onPressOut?: () => void;
 }
 
-export function AccountabilityHomeCard({
+export function MentorCard({
+  mentorUid,
+  streak,
+  lastCheckIn,
+  onCheckIn,
+  onSOS,
   buttonRef,
   style,
   onPress,
   onPressIn,
   onPressOut,
-}: AccountabilityHomeCardProps) {
+}: MentorCardProps) {
   const { colors } = useTheme();
 
   // If we have modal bridge props, make it touchable
@@ -33,7 +43,14 @@ export function AccountabilityHomeCard({
           onPressOut={onPressOut}
           activeOpacity={1}
         >
-          <AccountabilityHomeContent showExpandIcon={true} />
+          <MentorCardContent
+            mentorUid={mentorUid}
+            streak={streak}
+            lastCheckIn={lastCheckIn}
+            onCheckIn={onCheckIn}
+            onSOS={onSOS}
+            showExpandIcon={true}
+          />
         </TouchableOpacity>
       </Animated.View>
     );
@@ -44,7 +61,14 @@ export function AccountabilityHomeCard({
     <View
       style={[styles.container, { backgroundColor: colors.cardBackground }]}
     >
-      <AccountabilityHomeContent showExpandIcon={true} />
+      <MentorCardContent
+        mentorUid={mentorUid}
+        streak={streak}
+        lastCheckIn={lastCheckIn}
+        onCheckIn={onCheckIn}
+        onSOS={onSOS}
+        showExpandIcon={true}
+      />
     </View>
   );
 }

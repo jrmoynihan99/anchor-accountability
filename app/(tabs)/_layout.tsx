@@ -77,6 +77,8 @@ export default function TabLayout() {
       router.push("/(tabs)/messages");
     } else if (tab === "community") {
       router.push("/(tabs)/community");
+    } else if (tab === "accountability") {
+      router.push("/(tabs)/accountability");
     }
   };
 
@@ -161,9 +163,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="community"
+          name="accountability"
           options={{
-            title: "Community",
+            title: "Accountability",
             tabBarIcon: ({ color }) => (
               <IconSymbol size={28} name="person.3.fill" color={color} />
             ),
