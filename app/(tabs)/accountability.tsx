@@ -50,6 +50,8 @@ export default function AccountabilityScreen() {
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="interactive"
       >
         {/* Supporting You Section Header */}
         <SupportingYouSection scrollY={scrollY} />

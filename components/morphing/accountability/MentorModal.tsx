@@ -1,7 +1,8 @@
+import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
-import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
@@ -19,7 +20,7 @@ interface MentorModalProps {
   close: (velocity?: number) => void;
 }
 
-type CheckInStatus = "clean" | "struggled" | "relapsed" | null;
+type CheckInStatus = "great" | "struggling" | "support" | null;
 
 export function MentorModal({
   mentorUid,
@@ -33,16 +34,12 @@ export function MentorModal({
 }: MentorModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const [selectedStatus, setSelectedStatus] = useState<CheckInStatus>(null);
-  const [note, setNote] = useState("");
+  const [checkInNote, setCheckInNote] = useState("");
 
-  const handleCheckIn = () => {
-    // TODO: Submit check-in to Firestore
-    console.log("Check-in:", selectedStatus, note);
-    // Reset and close
-    setSelectedStatus(null);
-    setNote("");
-    close();
-  };
+  const anonymousUsername = `user-${mentorUid.slice(0, 5)}`;
+
+  // Check if user has already checked in today
+  const hasCheckedInToday = lastCheckIn ? isToday(lastCheckIn) : false;
 
   const buttonContent = (
     <View style={styles.buttonContent}>
@@ -56,257 +53,293 @@ export function MentorModal({
   );
 
   const modalContent = (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.modalHeader}>
-        <ThemedText style={{ fontSize: 48, lineHeight: 48, marginBottom: 12 }}>
-          🙏
-        </ThemedText>
-        <ThemedText
-          type="titleLarge"
-          style={{ textAlign: "center", marginBottom: 4 }}
+    <View style={styles.screenContainer}>
+      <View style={[styles.screenWrapper, styles.screenBackground]}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 42, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
-          Daily Check-In
-        </ThemedText>
-        <ThemedText
-          type="subtitleMedium"
-          lightColor={colors.textSecondary}
-          darkColor={colors.textSecondary}
-          style={{ textAlign: "center", opacity: 0.8 }}
-        >
-          with user-{mentorUid.slice(0, 5)}
-        </ThemedText>
-      </View>
-
-      {/* Check-In Form */}
-      <View
-        style={[
-          styles.section,
-          {
-            backgroundColor: colors.modalCardBackground,
-            borderColor: colors.modalCardBorder,
-          },
-        ]}
-      >
-        <ThemedText
-          type="subtitleMedium"
-          style={{ marginBottom: 16, color: colors.text }}
-        >
-          How was yesterday?
-        </ThemedText>
-
-        <TouchableOpacity
-          style={[
-            styles.statusOption,
-            {
-              backgroundColor:
-                selectedStatus === "clean"
-                  ? colors.buttonBackground
-                  : colors.cardBackground,
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={() => setSelectedStatus("clean")}
-        >
-          <ThemedText style={{ fontSize: 24, marginRight: 12 }}>✅</ThemedText>
-          <ThemedText
-            type="bodyMedium"
-            style={{
-              color: selectedStatus === "clean" ? colors.white : colors.text,
-            }}
-          >
-            Stayed clean
-          </ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.statusOption,
-            {
-              backgroundColor:
-                selectedStatus === "struggled"
-                  ? colors.buttonBackground
-                  : colors.cardBackground,
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={() => setSelectedStatus("struggled")}
-        >
-          <ThemedText style={{ fontSize: 24, marginRight: 12 }}>⚠️</ThemedText>
-          <ThemedText
-            type="bodyMedium"
-            style={{
-              color:
-                selectedStatus === "struggled" ? colors.white : colors.text,
-            }}
-          >
-            Struggled but made it
-          </ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.statusOption,
-            {
-              backgroundColor:
-                selectedStatus === "relapsed"
-                  ? colors.buttonBackground
-                  : colors.cardBackground,
-              borderColor: colors.border,
-            },
-          ]}
-          onPress={() => setSelectedStatus("relapsed")}
-        >
-          <ThemedText style={{ fontSize: 24, marginRight: 12 }}>💔</ThemedText>
-          <ThemedText
-            type="bodyMedium"
-            style={{
-              color: selectedStatus === "relapsed" ? colors.white : colors.text,
-            }}
-          >
-            Relapsed
-          </ThemedText>
-        </TouchableOpacity>
-
-        {/* Submit Button */}
-        {selectedStatus && (
-          <TouchableOpacity
+          {/* ----------- TOP USER HEADER TILE ----------- */}
+          <View
             style={[
-              styles.submitButton,
-              { backgroundColor: colors.buttonBackground },
-            ]}
-            onPress={handleCheckIn}
-          >
-            <ThemedText type="button" style={{ color: colors.white }}>
-              Submit Check-In
-            </ThemedText>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Your Streaks */}
-      <View
-        style={[
-          styles.section,
-          {
-            backgroundColor: colors.modalCardBackground,
-            borderColor: colors.modalCardBorder,
-          },
-        ]}
-      >
-        <ThemedText
-          type="subtitleMedium"
-          style={{ marginBottom: 16, color: colors.text }}
-        >
-          Your Streaks
-        </ThemedText>
-        <View style={styles.streaksRow}>
-          <View style={styles.streakItem}>
-            <ThemedText style={{ fontSize: 32, marginBottom: 4 }}>
-              🔥
-            </ThemedText>
-            <ThemedText type="title" style={{ color: colors.text }}>
-              12 days
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
-              Recovery
-            </ThemedText>
-          </View>
-          <View style={styles.streakItem}>
-            <ThemedText style={{ fontSize: 32, marginBottom: 4 }}>
-              🤝
-            </ThemedText>
-            <ThemedText type="title" style={{ color: colors.text }}>
-              45 days
-            </ThemedText>
-            <ThemedText type="caption" style={{ color: colors.textSecondary }}>
-              Check-ins
-            </ThemedText>
-          </View>
-        </View>
-      </View>
-
-      {/* Recent Check-Ins */}
-      <View
-        style={[
-          styles.section,
-          {
-            backgroundColor: colors.modalCardBackground,
-            borderColor: colors.modalCardBorder,
-          },
-        ]}
-      >
-        <ThemedText
-          type="subtitleMedium"
-          style={{ marginBottom: 16, color: colors.text }}
-        >
-          Recent Check-Ins (Last 7 Days)
-        </ThemedText>
-        <View style={styles.checkInHistory}>
-          {["✅", "✅", "✅", "⚠️", "✅", "✅", "✅"].map((status, i) => (
-            <View
-              key={i}
-              style={[
-                styles.historyDot,
-                { backgroundColor: colors.cardBackground },
-              ]}
-            >
-              <ThemedText style={{ fontSize: 20 }}>{status}</ThemedText>
-            </View>
-          ))}
-        </View>
-        <TouchableOpacity
-          style={styles.viewAllButton}
-          onPress={() => {
-            close();
-            router.push({
-              pathname: "/accountability-dashboard",
-              params: {
-                relationshipId,
-                role: "mentor",
+              styles.tile,
+              {
+                backgroundColor: colors.modalCardBackground,
+                borderColor: colors.modalCardBorder,
               },
-            });
-          }}
-        >
-          <ThemedText
-            type="captionMedium"
-            style={{ color: colors.textSecondary }}
+            ]}
           >
-            View full history
-          </ThemedText>
-          <IconSymbol
-            name="chevron.right"
-            size={16}
-            color={colors.textSecondary}
-          />
-        </TouchableOpacity>
-      </View>
+            {/* The inline header row */}
+            <View style={styles.headerRow}>
+              <View
+                style={[
+                  styles.avatarCircle,
+                  { backgroundColor: colors.iconCircleSecondaryBackground },
+                ]}
+              >
+                <ThemedText
+                  type="subtitleSemibold"
+                  style={{ color: colors.icon }}
+                >
+                  {anonymousUsername[5]?.toUpperCase()}
+                </ThemedText>
+              </View>
 
-      {/* Message Button */}
-      <TouchableOpacity
-        style={[
-          styles.messageButton,
-          {
-            backgroundColor: colors.cardBackground,
-            borderColor: colors.border,
-          },
-        ]}
-        onPress={() => {
-          // TODO: Open DM with mentor
-          console.log("Open DM");
-        }}
-      >
-        <IconSymbol
-          name="message"
-          size={20}
-          color={colors.text}
-          style={{ marginRight: 8 }}
-        />
-        <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-          Message Your Mentor
-        </ThemedText>
-      </TouchableOpacity>
-    </ScrollView>
+              <View style={styles.headerUserInfo}>
+                <ThemedText
+                  type="subtitleSemibold"
+                  style={{ color: colors.text, marginRight: 8 }}
+                >
+                  {anonymousUsername}
+                </ThemedText>
+
+                <UserStreakDisplay userId={mentorUid} size="small" />
+              </View>
+            </View>
+
+            {/* Quick Actions */}
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
+              <TouchableOpacity
+                style={[
+                  styles.quickButton,
+                  {
+                    backgroundColor: `${colors.buttonBackground}30`,
+                    borderWidth: 1,
+                    borderColor: colors.buttonBackground,
+                  },
+                ]}
+                onPress={() => {
+                  console.log("Open DM with mentor");
+                }}
+              >
+                <IconSymbol
+                  name="message.fill"
+                  size={18}
+                  color={colors.buttonBackground}
+                />
+                <ThemedText
+                  type="button"
+                  style={{ color: colors.buttonBackground }}
+                >
+                  Message
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* ----------- CHECK-IN TILE ----------- */}
+          <View
+            style={[
+              styles.tile,
+              {
+                backgroundColor: colors.modalCardBackground,
+                borderColor: colors.modalCardBorder,
+              },
+            ]}
+          >
+            {/* Section Header with Icon */}
+            <View style={styles.sectionHeader}>
+              <View
+                style={[
+                  styles.sectionIconCircle,
+                  { backgroundColor: `${colors.iconCircleBackground}50` },
+                ]}
+              >
+                <IconSymbol
+                  name="checkmark.circle"
+                  size={16}
+                  color={colors.icon}
+                />
+              </View>
+              <View style={styles.sectionHeaderText}>
+                <ThemedText
+                  type="subtitleSemibold"
+                  style={{ color: colors.text }}
+                >
+                  Daily Check-In
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{ color: colors.textSecondary }}
+                >
+                  {hasCheckedInToday
+                    ? "You've checked in today"
+                    : "How are you doing today?"}
+                </ThemedText>
+              </View>
+            </View>
+
+            {hasCheckedInToday ? (
+              /* Already Checked In State */
+              <View style={styles.checkedInContainer}>
+                <View
+                  style={[
+                    styles.checkedInBadge,
+                    { backgroundColor: `${colors.success}20` },
+                  ]}
+                >
+                  <IconSymbol
+                    name="checkmark.circle.fill"
+                    size={48}
+                    color={colors.success}
+                  />
+                </View>
+                <ThemedText
+                  type="subtitleMedium"
+                  style={{ color: colors.text, textAlign: "center" }}
+                >
+                  Check-in complete!
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: colors.textSecondary,
+                    textAlign: "center",
+                    marginTop: 4,
+                  }}
+                >
+                  Come back tomorrow for your next check-in
+                </ThemedText>
+              </View>
+            ) : (
+              <>
+                {/* Status Options */}
+                <View style={{ marginTop: 16 }}>
+                  {renderCheckOption(
+                    "great",
+                    "Doing Great!",
+                    "checkmark.circle.fill",
+                    selectedStatus,
+                    setSelectedStatus,
+                    colors
+                  )}
+                  {renderCheckOption(
+                    "struggling",
+                    "Struggling",
+                    "exclamationmark.triangle.fill",
+                    selectedStatus,
+                    setSelectedStatus,
+                    colors
+                  )}
+                  {renderCheckOption(
+                    "support",
+                    "Need Support",
+                    "xmark.circle.fill",
+                    selectedStatus,
+                    setSelectedStatus,
+                    colors
+                  )}
+                </View>
+
+                {/* Optional Note Input */}
+                {selectedStatus && (
+                  <View style={{ marginTop: 16 }}>
+                    <MessageInput
+                      value={checkInNote}
+                      onChangeText={setCheckInNote}
+                      placeholder="Add a note (optional)..."
+                      maxLength={200}
+                      minHeight={60}
+                      showBorder={false}
+                    />
+                  </View>
+                )}
+
+                {selectedStatus && (
+                  <TouchableOpacity
+                    style={[
+                      styles.submitButton,
+                      { backgroundColor: colors.buttonBackground },
+                    ]}
+                    onPress={() => {
+                      console.log(
+                        "Submit check-in",
+                        selectedStatus,
+                        checkInNote
+                      );
+                      close();
+                    }}
+                  >
+                    <ThemedText type="button" style={{ color: colors.white }}>
+                      Submit Check-In
+                    </ThemedText>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
+          </View>
+
+          {/* ----------- CHECK-IN HISTORY TILE ----------- */}
+          <View
+            style={[
+              styles.tile,
+              {
+                backgroundColor: colors.modalCardBackground,
+                borderColor: colors.modalCardBorder,
+              },
+            ]}
+          >
+            {/* Section Header with Icon */}
+            <View style={styles.sectionHeader}>
+              <View
+                style={[
+                  styles.sectionIconCircle,
+                  { backgroundColor: `${colors.iconCircleBackground}50` },
+                ]}
+              >
+                <IconSymbol name="chart.bar" size={16} color={colors.icon} />
+              </View>
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.text }}
+              >
+                Recent Check-Ins
+              </ThemedText>
+            </View>
+
+            <View style={styles.historyRow}>
+              {[
+                "great",
+                "great",
+                "struggling",
+                "great",
+                "support",
+                "great",
+                "struggling",
+              ].map((status, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.historyDot,
+                    { backgroundColor: colors.cardBackground },
+                  ]}
+                >
+                  <IconSymbol
+                    name={
+                      status === "great"
+                        ? "checkmark.circle.fill"
+                        : status === "struggling"
+                        ? "exclamationmark.triangle.fill"
+                        : "xmark.circle.fill"
+                    }
+                    size={18}
+                    color={
+                      status === "great"
+                        ? colors.success
+                        : status === "struggling"
+                        ? colors.textSecondary
+                        : colors.error
+                    }
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </View>
   );
 
   return (
@@ -324,67 +357,186 @@ export function MentorModal({
   );
 }
 
+/* ---------- Helper Functions ---------- */
+
+function isToday(dateInput: Date | string): boolean {
+  const today = new Date();
+  let checkDate: Date;
+
+  // If it's a string in YYYY-MM-DD format, parse it carefully
+  if (typeof dateInput === "string") {
+    const [year, month, day] = dateInput.split("-").map(Number);
+    checkDate = new Date(year, month - 1, day); // month is 0-indexed
+  } else {
+    checkDate = dateInput;
+  }
+
+  return (
+    checkDate.getDate() === today.getDate() &&
+    checkDate.getMonth() === today.getMonth() &&
+    checkDate.getFullYear() === today.getFullYear()
+  );
+}
+
+/* ---------- Helper for Check-In Options ---------- */
+
+function renderCheckOption(
+  value: CheckInStatus,
+  label: string,
+  icon: string,
+  selectedStatus: CheckInStatus,
+  setSelectedStatus: (v: CheckInStatus) => void,
+  colors: any
+) {
+  const isSelected = selectedStatus === value;
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.statusOption,
+        {
+          backgroundColor: isSelected
+            ? colors.buttonBackground
+            : colors.cardBackground,
+          borderColor: colors.border,
+        },
+      ]}
+      onPress={() => setSelectedStatus(value)}
+    >
+      <IconSymbol
+        name={icon}
+        size={22}
+        color={isSelected ? colors.white : colors.text}
+        style={{ marginRight: 12 }}
+      />
+      <ThemedText
+        type="bodyMedium"
+        style={{
+          color: isSelected ? colors.white : colors.text,
+        }}
+      >
+        {label}
+      </ThemedText>
+    </TouchableOpacity>
+  );
+}
+
+/* ---------- Styles ---------- */
+
 const styles = StyleSheet.create({
   buttonContent: {
-    alignItems: "stretch",
+    padding: 0,
   },
-  modalHeader: {
-    alignItems: "center",
-    marginTop: 60,
-    marginBottom: 32,
+  screenContainer: {
+    flex: 1,
+    position: "relative",
   },
-  section: {
+  screenWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  screenBackground: {
+    backgroundColor: "transparent",
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+  tile: {
+    borderRadius: 16,
     borderWidth: 1,
     padding: 20,
-    borderRadius: 16,
     marginBottom: 16,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  avatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  headerUserInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sectionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  sectionHeaderText: {
+    flex: 1,
+  },
+  quickButton: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
   statusOption: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 12,
   },
   submitButton: {
-    padding: 16,
+    marginTop: 16,
+    padding: 14,
     borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  streaksRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-  },
-  streakItem: {
+    justifyContent: "center",
     alignItems: "center",
   },
-  checkInHistory: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
+  checkedInContainer: {
+    alignItems: "center",
+    paddingVertical: 32,
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
-  historyDot: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  checkedInBadge: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 16,
+  },
+  historyRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  historyDot: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
   },
   viewAllButton: {
     flexDirection: "row",
-    alignItems: "center",
+    gap: 6,
     justifyContent: "center",
+    alignItems: "center",
     paddingTop: 8,
-  },
-  messageButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 32,
   },
 });

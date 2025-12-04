@@ -53,7 +53,7 @@ export function SupportingYouSection({
             type="caption"
             style={[styles.headerSubtitle, { color: colors.textSecondary }]}
           >
-            Your mentor & accountability partner
+            Your accountability partner lead
           </ThemedText>
         </View>
       </View>
