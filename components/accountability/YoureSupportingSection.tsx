@@ -34,7 +34,7 @@ export function YoureSupportingSection() {
             type="caption"
             style={[styles.headerSubtitle, { color: colors.textSecondary }]}
           >
-            People who have you as their accountability partner
+            People who have you as their accountability partner lead
           </ThemedText>
         </View>
       </View>

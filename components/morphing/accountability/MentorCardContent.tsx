@@ -1,5 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -37,10 +38,26 @@ export function MentorCardContent({
   // Generate anonymous username
   const anonymousUsername = `user-${mentorUid.slice(0, 5)}`;
 
-  // Calculate time since last check-in
+  // Helper to format time ago
+  const formatTimeAgo = (diffHours: number) => {
+    const days = Math.floor(diffHours / 24);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+
+    if (months > 0) return `${months}mo ago`;
+    if (weeks > 0) return `${weeks}wk ago`;
+    return `${days}d ago`;
+  };
+
+  // ---- CHECK-IN STATUS LOGIC (NEW WITH ICONS) ----
   const getCheckInStatus = () => {
-    if (!lastCheckIn)
-      return { text: "Not checked in yet", color: colors.textSecondary };
+    if (!lastCheckIn) {
+      return {
+        text: "Not checked in yet",
+        icon: "clock.fill",
+        color: colors.textSecondary,
+      };
+    }
 
     const now = new Date();
     const checkInDate = new Date(lastCheckIn);
@@ -48,35 +65,40 @@ export function MentorCardContent({
       (now.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
     );
 
-    if (diffHours < 24)
-      return { text: "✅ Checked in today", color: colors.success };
-    if (diffHours < 48)
+    if (diffHours < 24) {
       return {
-        text: "⚠️ Last check-in yesterday",
+        text: "Checked in today",
+        icon: "checkmark.circle.fill",
+        color: colors.success,
+      };
+    }
+
+    if (diffHours < 48) {
+      return {
+        text: "Last check-in yesterday",
+        icon: "exclamationmark.triangle.fill",
         color: colors.textSecondary,
       };
-    return { text: "❌ Overdue check-in", color: colors.error };
+    }
+
+    return {
+      text: `Overdue check-in (${formatTimeAgo(diffHours)})`,
+      icon: "xmark.circle.fill",
+      color: colors.error,
+    };
   };
 
   const checkInStatus = getCheckInStatus();
+  const hasCheckedInToday = checkInStatus.text === "Checked in today";
 
-  const handleCheckIn = () => {
-    // TODO: Implement check-in logic
-    console.log("Check in with mentor");
-    onCheckIn?.();
-  };
-
-  const handleSOS = () => {
-    // TODO: Send SOS notification to mentor
-    console.log("Send SOS to mentor");
-    onSOS?.();
-  };
+  const handleCheckIn = () => onCheckIn?.();
+  const handleSOS = () => onSOS?.();
 
   return (
     <View style={{ position: "relative" }}>
       <ExpandIcon />
 
-      {/* Header - matching PleaCardContent */}
+      {/* ----- HEADER ----- */}
       <View style={styles.cardHeader}>
         <View style={styles.userInfo}>
           <View
@@ -92,6 +114,7 @@ export function MentorCardContent({
               {anonymousUsername[5]?.toUpperCase() || "U"}
             </ThemedText>
           </View>
+
           <View style={styles.userDetails}>
             <View style={styles.usernameRow}>
               <ThemedText
@@ -100,22 +123,21 @@ export function MentorCardContent({
               >
                 {anonymousUsername}
               </ThemedText>
-            </View>
-            <View style={styles.subtitleRow}>
-              <ThemedText
-                type="caption"
-                style={[styles.subtitle, { color: colors.textSecondary }]}
-              >
-                Your Mentor
-              </ThemedText>
+              <UserStreakDisplay userId={mentorUid} size="small" />
             </View>
           </View>
         </View>
       </View>
 
-      {/* Check-in status */}
+      {/* ----- CHECK-IN STATUS (icon + text) ----- */}
       <View style={styles.footer}>
         <View style={styles.actionHint}>
+          <IconSymbol
+            name={checkInStatus.icon}
+            size={14}
+            color={checkInStatus.color}
+            style={{ marginRight: 6 }}
+          />
           <ThemedText
             type="caption"
             style={[styles.hintText, { color: checkInStatus.color }]}
@@ -125,45 +147,77 @@ export function MentorCardContent({
         </View>
       </View>
 
-      {/* Action Buttons */}
+      {/* ----- ACTION BUTTONS ----- */}
       <View style={styles.buttonRow}>
+        {/* CHECK IN BUTTON (active or disabled) */}
+        {hasCheckedInToday ? (
+          <View
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: colors.bannerBackground,
+                borderColor: colors.bannerBorder,
+                borderWidth: 1,
+              },
+            ]}
+          >
+            <IconSymbol
+              name="checkmark.circle"
+              color={colors.textSecondary}
+              size={18}
+              style={{ marginRight: 6, opacity: 0.7 }}
+            />
+            <ThemedText
+              type="button"
+              style={{
+                color: colors.textSecondary,
+                opacity: 0.8,
+              }}
+            >
+              Checked In
+            </ThemedText>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              { backgroundColor: colors.buttonBackground },
+            ]}
+            onPress={handleCheckIn}
+            activeOpacity={0.85}
+          >
+            <IconSymbol
+              name="checkmark.circle.fill"
+              color={colors.white}
+              size={18}
+              style={{ marginRight: 6 }}
+            />
+            <ThemedText type="button" style={{ color: colors.white }}>
+              Check In
+            </ThemedText>
+          </TouchableOpacity>
+        )}
+
+        {/* MESSAGE BUTTON */}
         <TouchableOpacity
           style={[
             styles.actionButton,
-            { backgroundColor: colors.buttonBackground },
+            {
+              backgroundColor: `${colors.buttonBackground}30`,
+              borderWidth: 1,
+              borderColor: colors.buttonBackground,
+            },
           ]}
-          onPress={handleCheckIn}
           activeOpacity={0.85}
         >
           <IconSymbol
-            name="checkmark.circle.fill"
-            color={colors.white}
+            name="message.fill"
+            color={colors.buttonBackground}
             size={18}
             style={{ marginRight: 6 }}
           />
-          <ThemedText
-            type="button"
-            style={[styles.buttonText, { color: colors.white }]}
-          >
-            Check In Today
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.error }]}
-          onPress={handleSOS}
-          activeOpacity={0.85}
-        >
-          <IconSymbol
-            name="exclamationmark.circle.fill"
-            color={colors.white}
-            size={18}
-            style={{ marginRight: 6 }}
-          />
-          <ThemedText
-            type="button"
-            style={[styles.buttonText, { color: colors.white }]}
-          >
-            I'm Struggling
+          <ThemedText type="button" style={{ color: colors.buttonBackground }}>
+            Message
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -211,27 +265,13 @@ const styles = StyleSheet.create({
   username: {
     lineHeight: 18,
   },
-  subtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 1,
-  },
   subtitle: {
+    marginTop: 1,
     opacity: 0.8,
-  },
-  stats: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
   },
   footer: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "flex-start",
     marginBottom: 12,
   },
   actionHint: {
@@ -240,7 +280,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   hintText: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   buttonRow: {
     flexDirection: "row",
@@ -254,8 +294,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     justifyContent: "center",
-  },
-  buttonText: {
-    fontSize: 14,
   },
 });
