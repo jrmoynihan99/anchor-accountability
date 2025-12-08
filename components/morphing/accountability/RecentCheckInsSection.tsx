@@ -1,14 +1,19 @@
+// components/morphing/accountability/RecentCheckInsSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import {
-  formatDate,
-  getStatusColor,
-  getStatusIcon,
-  getStatusLabel,
-} from "./accountabilityUtils";
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { CheckInDropdown } from "./recent-check-ins/CheckInDropdown";
+import { CompactTimeline } from "./recent-check-ins/CompactTimeline";
+import { ExpandedCalendar } from "./recent-check-ins/ExpandedCalendar";
 
 interface CheckInRecord {
   date: string;
@@ -39,6 +44,12 @@ export function RecentCheckInsSection({
   const [selectedCheckIn, setSelectedCheckIn] = useState<TimelineItem | null>(
     null
   );
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [calendarHeight, setCalendarHeight] = useState(0);
+
+  const animatedHeight = useSharedValue(0);
+  const rotateValue = useSharedValue(0);
 
   // Sync selectedCheckIn with updated timeline data
   useEffect(() => {
@@ -51,6 +62,18 @@ export function RecentCheckInsSection({
       }
     }
   }, [checkIns]);
+
+  // Animate expansion
+  useEffect(() => {
+    animatedHeight.value = withTiming(isExpanded ? 1 : 0, {
+      duration: 300,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+    rotateValue.value = withTiming(isExpanded ? 1 : 0, {
+      duration: 300,
+      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+    });
+  }, [isExpanded]);
 
   const isMissing = (item: TimelineItem): item is MissingCheckIn => {
     return "isMissing" in item && item.isMissing === true;
@@ -69,6 +92,67 @@ export function RecentCheckInsSection({
     }
   };
 
+  const handleCalendarDateSelect = (
+    dateString: string,
+    isMissingDay: boolean
+  ) => {
+    const item: TimelineItem = isMissingDay
+      ? { date: dateString, status: null, isMissing: true }
+      : checkIns.find((ci) => ci.date === dateString) || {
+          date: dateString,
+          status: null,
+          isMissing: true,
+        };
+
+    handleItemClick(item);
+  };
+
+  const handleCloseDropdown = () => {
+    setSelectedCheckIn(null);
+    if (onSelectFilled) onSelectFilled();
+  };
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
+    );
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
+    );
+  };
+
+  // Animated styles
+  const animatedCalendarStyle = useAnimatedStyle(() => {
+    const targetHeight = calendarHeight || 300;
+    return {
+      height: interpolate(animatedHeight.value, [0, 1], [0, targetHeight]),
+      opacity: interpolate(animatedHeight.value, [0, 0.3, 1], [0, 0, 1]),
+      transform: [
+        {
+          translateY: interpolate(animatedHeight.value, [0, 1], [10, 0]),
+        },
+      ],
+    };
+  });
+
+  const animatedChevronStyle = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          rotate: `${interpolate(rotateValue.value, [0, 1], [0, 180])}deg`,
+        },
+      ],
+    };
+  });
+
+  const onCalendarLayout = (event: any) => {
+    const { height } = event.nativeEvent.layout;
+    setCalendarHeight(height);
+  };
+
   return (
     <View
       style={[
@@ -81,181 +165,59 @@ export function RecentCheckInsSection({
     >
       {/* Section Header with Icon */}
       <View style={styles.sectionHeader}>
-        <View
-          style={[
-            styles.sectionIconCircle,
-            { backgroundColor: `${colors.iconCircleBackground}50` },
-          ]}
-        >
-          <IconSymbol name="chart.bar" size={16} color={colors.icon} />
-        </View>
-        <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
-          Recent Check-Ins
-        </ThemedText>
-      </View>
-
-      <View style={styles.historyRow}>
-        {checkIns.map((item, i) => {
-          const missing = isMissing(item);
-          const isSelected = selectedCheckIn?.date === item.date;
-
-          return (
-            <TouchableOpacity
-              key={i}
-              style={[
-                styles.historyDot,
-                {
-                  backgroundColor: missing
-                    ? isSelected
-                      ? `${colors.textSecondary}30`
-                      : colors.cardBackground
-                    : isSelected
-                    ? `${getStatusColor(item.status, colors)}30`
-                    : colors.cardBackground,
-                  borderWidth: 2,
-                  borderColor: missing
-                    ? isSelected
-                      ? colors.textSecondary
-                      : colors.textSecondary
-                    : isSelected
-                    ? getStatusColor(item.status, colors)
-                    : "transparent",
-                  borderStyle: missing ? "dashed" : "solid",
-                  opacity: missing && !isSelected ? 0.5 : 1,
-                },
-              ]}
-              onPress={() => handleItemClick(item)}
-            >
-              {missing ? (
-                <IconSymbol
-                  name="xmark"
-                  size={18}
-                  color={colors.textSecondary}
-                />
-              ) : (
-                <IconSymbol
-                  name={getStatusIcon(item.status)}
-                  size={18}
-                  color={getStatusColor(item.status, colors)}
-                />
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Selected Check-In Details */}
-      {selectedCheckIn && !isMissing(selectedCheckIn) && (
-        <View
-          style={[
-            styles.selectedCheckInDetails,
-            {
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.detailsHeader}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <IconSymbol
-                name={getStatusIcon(selectedCheckIn.status)}
-                size={20}
-                color={getStatusColor(selectedCheckIn.status, colors)}
-                style={{ marginRight: 8 }}
-              />
-              <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-                {getStatusLabel(selectedCheckIn.status)}
-              </ThemedText>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedCheckIn(null);
-                if (onSelectFilled) onSelectFilled();
-              }}
-            >
-              <IconSymbol name="xmark" size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          <ThemedText
-            type="caption"
-            style={{ color: colors.textSecondary, marginTop: 4 }}
-          >
-            {formatDate(selectedCheckIn.date)}
-          </ThemedText>
-          {selectedCheckIn.note && (
-            <View style={styles.detailsNote}>
-              <ThemedText
-                type="caption"
-                style={{ color: colors.textSecondary, marginBottom: 4 }}
-              >
-                Note:
-              </ThemedText>
-              <ThemedText type="body" style={{ color: colors.text }}>
-                {selectedCheckIn.note}
-              </ThemedText>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Missing Day Info */}
-      {selectedCheckIn && isMissing(selectedCheckIn) && (
-        <View
-          style={[
-            styles.selectedCheckInDetails,
-            {
-              backgroundColor: colors.cardBackground,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.detailsHeader}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <IconSymbol
-                name="exclamationmark.circle"
-                size={20}
-                color={colors.textSecondary}
-                style={{ marginRight: 8 }}
-              />
-              <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-                No Check-In
-              </ThemedText>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedCheckIn(null);
-                if (onSelectFilled) onSelectFilled();
-              }}
-            >
-              <IconSymbol name="xmark" size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-          <ThemedText
-            type="caption"
-            style={{ color: colors.textSecondary, marginTop: 4 }}
-          >
-            {formatDate(selectedCheckIn.date)}
-          </ThemedText>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <View
             style={[
-              styles.missingDayHint,
-              { backgroundColor: `${colors.textSecondary}15` },
+              styles.sectionIconCircle,
+              { backgroundColor: `${colors.iconCircleBackground}50` },
             ]}
           >
-            <ThemedText
-              type="caption"
-              style={{
-                color: colors.textSecondary,
-                textAlign: "center",
-              }}
-            >
-              {onFillMissing
-                ? "Use the section above to add a check-in for this day"
-                : "User did not check in on this day"}
-            </ThemedText>
+            <IconSymbol name="chart.bar" size={16} color={colors.icon} />
           </View>
+          <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
+            Recent Check-Ins
+          </ThemedText>
         </View>
-      )}
+        <TouchableOpacity
+          onPress={() => setIsExpanded(!isExpanded)}
+          style={styles.expandButton}
+        >
+          <Animated.View style={animatedChevronStyle}>
+            <IconSymbol
+              name="chevron.down"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Compact Timeline (7 dots) */}
+      <CompactTimeline
+        checkIns={checkIns}
+        selectedDate={selectedCheckIn?.date || null}
+        onSelectItem={handleItemClick}
+      />
+
+      {/* Expanded Calendar View */}
+      <Animated.View style={animatedCalendarStyle}>
+        <ExpandedCalendar
+          currentMonth={currentMonth}
+          checkIns={checkIns}
+          selectedDate={selectedCheckIn?.date || null}
+          onSelectDate={handleCalendarDateSelect}
+          onPreviousMonth={goToPreviousMonth}
+          onNextMonth={goToNextMonth}
+          onLayout={onCalendarLayout}
+        />
+      </Animated.View>
+
+      {/* Check-In Dropdown */}
+      <CheckInDropdown
+        selectedCheckIn={selectedCheckIn}
+        onClose={handleCloseDropdown}
+        showFillHint={!!onFillMissing}
+      />
     </View>
   );
 }
@@ -270,6 +232,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   sectionIconCircle: {
     width: 32,
@@ -279,39 +242,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  historyRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  historyDot: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  selectedCheckInDetails: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  detailsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  detailsNote: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(128, 128, 128, 0.2)",
-  },
-  missingDayHint: {
-    marginTop: 12,
-    padding: 10,
-    borderRadius: 8,
+  expandButton: {
+    padding: 8,
   },
 });
