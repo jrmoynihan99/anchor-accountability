@@ -9,9 +9,14 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
+import {
+  calculateCheckInStatus,
+  CheckInStatus,
+} from "../components/morphing/accountability/accountabilityUtils";
 
 interface AccountabilityWithId extends AccountabilityRelationship {
   id: string;
+  checkInStatus: CheckInStatus;
 }
 
 export function useAccountabilityRelationships() {
@@ -49,10 +54,12 @@ export function useAccountabilityRelationships() {
       (snapshot) => {
         if (!snapshot.empty) {
           const doc = snapshot.docs[0];
+          const data = doc.data() as AccountabilityRelationship;
 
           setMentor({
-            ...(doc.data() as AccountabilityRelationship),
+            ...data,
             id: doc.id,
+            checkInStatus: calculateCheckInStatus(data.lastCheckIn || null),
           });
         } else {
           setMentor(null);
@@ -76,10 +83,14 @@ export function useAccountabilityRelationships() {
     menteesUnsubRef.current = onSnapshot(
       menteesQuery,
       (snapshot) => {
-        const results: AccountabilityWithId[] = snapshot.docs.map((doc) => ({
-          ...(doc.data() as AccountabilityRelationship),
-          id: doc.id,
-        }));
+        const results: AccountabilityWithId[] = snapshot.docs.map((doc) => {
+          const data = doc.data() as AccountabilityRelationship;
+          return {
+            ...data,
+            id: doc.id,
+            checkInStatus: calculateCheckInStatus(data.lastCheckIn || null),
+          };
+        });
 
         // Sort by createdAt descending (newest first)
         results.sort((a, b) => {

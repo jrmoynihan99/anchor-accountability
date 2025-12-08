@@ -1,13 +1,14 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { CheckInStatus } from "./accountabilityUtils";
 import { MenteeCardContent } from "./MenteeCardContent";
 
 interface MenteeCardProps {
   menteeUid: string;
   recoveryStreak: number;
   checkInStreak: number;
-  lastCheckIn: string | null;
+  checkInStatus: CheckInStatus;
   onRemind?: () => void;
   onMessage?: () => void;
   // ButtonModalTransitionBridge props
@@ -22,7 +23,7 @@ export function MenteeCard({
   menteeUid,
   recoveryStreak,
   checkInStreak,
-  lastCheckIn,
+  checkInStatus,
   onRemind,
   onMessage,
   buttonRef,
@@ -49,7 +50,7 @@ export function MenteeCard({
             menteeUid={menteeUid}
             recoveryStreak={recoveryStreak}
             checkInStreak={checkInStreak}
-            lastCheckIn={lastCheckIn}
+            checkInStatus={checkInStatus}
             showExpandIcon={true}
             onRemind={onRemind}
             onMessage={onMessage}
@@ -68,7 +69,7 @@ export function MenteeCard({
         menteeUid={menteeUid}
         recoveryStreak={recoveryStreak}
         checkInStreak={checkInStreak}
-        lastCheckIn={lastCheckIn}
+        checkInStatus={checkInStatus}
         showExpandIcon={true}
         onRemind={onRemind}
         onMessage={onMessage}

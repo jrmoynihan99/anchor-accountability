@@ -1,12 +1,13 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { CheckInStatus } from "./accountabilityUtils";
 import { MentorCardContent } from "./MentorCardContent";
 
 interface MentorCardProps {
   mentorUid: string;
   streak: number;
-  lastCheckIn: string | null;
+  checkInStatus: CheckInStatus;
   onCheckIn?: () => void;
   onSOS?: () => void;
   // ButtonModalTransitionBridge props
@@ -20,7 +21,7 @@ interface MentorCardProps {
 export function MentorCard({
   mentorUid,
   streak,
-  lastCheckIn,
+  checkInStatus,
   onCheckIn,
   onSOS,
   buttonRef,
@@ -46,7 +47,7 @@ export function MentorCard({
           <MentorCardContent
             mentorUid={mentorUid}
             streak={streak}
-            lastCheckIn={lastCheckIn}
+            checkInStatus={checkInStatus}
             onCheckIn={onCheckIn}
             onSOS={onSOS}
             showExpandIcon={true}
@@ -64,7 +65,7 @@ export function MentorCard({
       <MentorCardContent
         mentorUid={mentorUid}
         streak={streak}
-        lastCheckIn={lastCheckIn}
+        checkInStatus={checkInStatus}
         onCheckIn={onCheckIn}
         onSOS={onSOS}
         showExpandIcon={true}

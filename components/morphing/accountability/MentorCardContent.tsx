@@ -3,11 +3,12 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { CheckInStatus } from "./accountabilityUtils";
 
 interface MentorCardContentProps {
   mentorUid: string;
   streak: number;
-  lastCheckIn: string | null;
+  checkInStatus: CheckInStatus;
   showExpandIcon?: boolean;
   onCheckIn?: () => void;
   onSOS?: () => void;
@@ -15,11 +16,9 @@ interface MentorCardContentProps {
 
 export function MentorCardContent({
   mentorUid,
-  streak,
-  lastCheckIn,
+  checkInStatus,
   showExpandIcon = true,
   onCheckIn,
-  onSOS,
 }: MentorCardContentProps) {
   const { colors } = useTheme();
 
@@ -38,61 +37,10 @@ export function MentorCardContent({
   // Generate anonymous username
   const anonymousUsername = `user-${mentorUid.slice(0, 5)}`;
 
-  // Helper to format time ago
-  const formatTimeAgo = (diffHours: number) => {
-    const days = Math.floor(diffHours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-
-    if (months > 0) return `${months}mo ago`;
-    if (weeks > 0) return `${weeks}wk ago`;
-    return `${days}d ago`;
-  };
-
-  // ---- CHECK-IN STATUS LOGIC (NEW WITH ICONS) ----
-  const getCheckInStatus = () => {
-    if (!lastCheckIn) {
-      return {
-        text: "Not checked in yet",
-        icon: "clock.fill",
-        color: colors.textSecondary,
-      };
-    }
-
-    const now = new Date();
-    const checkInDate = new Date(lastCheckIn);
-    const diffHours = Math.floor(
-      (now.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
-    );
-
-    if (diffHours < 24) {
-      return {
-        text: "Checked in today",
-        icon: "checkmark.circle.fill",
-        color: colors.success,
-      };
-    }
-
-    if (diffHours < 48) {
-      return {
-        text: "Last check-in yesterday",
-        icon: "exclamationmark.triangle.fill",
-        color: colors.textSecondary,
-      };
-    }
-
-    return {
-      text: `Overdue check-in (${formatTimeAgo(diffHours)})`,
-      icon: "xmark.circle.fill",
-      color: colors.error,
-    };
-  };
-
-  const checkInStatus = getCheckInStatus();
-  const hasCheckedInToday = checkInStatus.text === "Checked in today";
+  // Get the actual color from the theme
+  const statusColor = colors[checkInStatus.colorKey];
 
   const handleCheckIn = () => onCheckIn?.();
-  const handleSOS = () => onSOS?.();
 
   return (
     <View style={{ position: "relative" }}>
@@ -135,14 +83,16 @@ export function MentorCardContent({
           <IconSymbol
             name={checkInStatus.icon}
             size={14}
-            color={checkInStatus.color}
+            color={statusColor}
             style={{ marginRight: 6 }}
           />
           <ThemedText
             type="caption"
-            style={[styles.hintText, { color: checkInStatus.color }]}
+            style={[styles.hintText, { color: statusColor }]}
           >
-            {checkInStatus.text}
+            {checkInStatus.isOverdue && checkInStatus.overdueText
+              ? `${checkInStatus.text} (${checkInStatus.overdueText})`
+              : checkInStatus.text}
           </ThemedText>
         </View>
       </View>
@@ -150,7 +100,7 @@ export function MentorCardContent({
       {/* ----- ACTION BUTTONS ----- */}
       <View style={styles.buttonRow}>
         {/* CHECK IN BUTTON (active or disabled) */}
-        {hasCheckedInToday ? (
+        {checkInStatus.hasCheckedInToday ? (
           <View
             style={[
               styles.actionButton,
@@ -264,10 +214,6 @@ const styles = StyleSheet.create({
   },
   username: {
     lineHeight: 18,
-  },
-  subtitle: {
-    marginTop: 1,
-    opacity: 0.8,
   },
   footer: {
     flexDirection: "row",

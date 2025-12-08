@@ -51,7 +51,7 @@ export function YoureSupportingList() {
                 menteeUid={mentee.menteeUid}
                 recoveryStreak={mentee.streak}
                 checkInStreak={45} // TODO: Get actual check-in streak from data
-                lastCheckIn={mentee.lastCheckIn}
+                checkInStatus={mentee.checkInStatus}
                 onRemind={() => handleRemind(mentee.menteeUid)}
                 onMessage={() => handleMessage(mentee.menteeUid)}
                 buttonRef={buttonRef}
@@ -64,7 +64,7 @@ export function YoureSupportingList() {
                 menteeUid={mentee.menteeUid}
                 recoveryStreak={mentee.streak}
                 checkInStreak={45} // TODO: Get actual check-in streak from data
-                lastCheckIn={mentee.lastCheckIn}
+                checkInStatus={mentee.checkInStatus}
                 relationshipId={mentee.id}
                 isVisible={isModalVisible}
                 progress={progress}
