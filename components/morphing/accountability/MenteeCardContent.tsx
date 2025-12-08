@@ -3,12 +3,13 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { CheckInStatus } from "./accountabilityUtils";
 
 interface MenteeCardContentProps {
   menteeUid: string;
   recoveryStreak: number;
   checkInStreak: number;
-  lastCheckIn: string | null;
+  checkInStatus: CheckInStatus;
   showExpandIcon?: boolean;
   onRemind?: () => void;
   onMessage?: () => void;
@@ -16,11 +17,8 @@ interface MenteeCardContentProps {
 
 export function MenteeCardContent({
   menteeUid,
-  recoveryStreak,
-  checkInStreak,
-  lastCheckIn,
+  checkInStatus,
   showExpandIcon = true,
-  onRemind,
   onMessage,
 }: MenteeCardContentProps) {
   const { colors } = useTheme();
@@ -40,57 +38,8 @@ export function MenteeCardContent({
   // Generate anonymous username
   const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
 
-  // Helper to format time ago
-  const formatTimeAgo = (diffHours: number) => {
-    const days = Math.floor(diffHours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-
-    if (months > 0) return `${months}mo ago`;
-    if (weeks > 0) return `${weeks}wk ago`;
-    return `${days}d ago`;
-  };
-
-  // ---- CHECK-IN STATUS LOGIC (WITH ICONS) ----
-  const getCheckInStatus = () => {
-    if (!lastCheckIn) {
-      return {
-        text: "Not checked in yet",
-        icon: "clock.fill",
-        color: colors.textSecondary,
-      };
-    }
-
-    const now = new Date();
-    const checkInDate = new Date(lastCheckIn);
-    const diffHours = Math.floor(
-      (now.getTime() - checkInDate.getTime()) / (1000 * 60 * 60)
-    );
-
-    if (diffHours < 24) {
-      return {
-        text: "Checked in today",
-        icon: "checkmark.circle.fill",
-        color: colors.success,
-      };
-    }
-
-    if (diffHours < 48) {
-      return {
-        text: "Last check-in yesterday",
-        icon: "exclamationmark.triangle.fill",
-        color: colors.textSecondary,
-      };
-    }
-
-    return {
-      text: `Overdue check-in (${formatTimeAgo(diffHours)})`,
-      icon: "xmark.circle.fill",
-      color: colors.error,
-    };
-  };
-
-  const checkInStatus = getCheckInStatus();
+  // Get the actual color from the theme
+  const statusColor = colors[checkInStatus.colorKey];
 
   return (
     <View style={{ position: "relative" }}>
@@ -132,48 +81,48 @@ export function MenteeCardContent({
           <IconSymbol
             name={checkInStatus.icon}
             size={14}
-            color={checkInStatus.color}
+            color={statusColor}
             style={{ marginRight: 6 }}
           />
           <ThemedText
             type="caption"
-            style={[styles.hintText, { color: checkInStatus.color }]}
+            style={[styles.hintText, { color: statusColor }]}
           >
-            {checkInStatus.text}
+            {checkInStatus.isOverdue && checkInStatus.overdueText
+              ? `${checkInStatus.text} (${checkInStatus.overdueText})`
+              : checkInStatus.text}
           </ThemedText>
         </View>
       </View>
 
       {/* Quick Actions */}
-      {(onRemind || onMessage) && (
+      {onMessage && (
         <View style={styles.buttonRow}>
-          {onMessage && (
-            <TouchableOpacity
-              style={[
-                styles.actionButton,
-                {
-                  backgroundColor: `${colors.buttonBackground}30`,
-                  borderWidth: 1,
-                  borderColor: colors.buttonBackground,
-                },
-              ]}
-              onPress={onMessage}
-              activeOpacity={0.85}
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              {
+                backgroundColor: `${colors.buttonBackground}30`,
+                borderWidth: 1,
+                borderColor: colors.buttonBackground,
+              },
+            ]}
+            onPress={onMessage}
+            activeOpacity={0.85}
+          >
+            <IconSymbol
+              name="message.fill"
+              color={colors.buttonBackground}
+              size={18}
+              style={{ marginRight: 6 }}
+            />
+            <ThemedText
+              type="button"
+              style={{ color: colors.buttonBackground }}
             >
-              <IconSymbol
-                name="message.fill"
-                color={colors.buttonBackground}
-                size={18}
-                style={{ marginRight: 6 }}
-              />
-              <ThemedText
-                type="button"
-                style={{ color: colors.buttonBackground }}
-              >
-                Message
-              </ThemedText>
-            </TouchableOpacity>
-          )}
+              Message
+            </ThemedText>
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -220,29 +169,6 @@ const styles = StyleSheet.create({
   username: {
     lineHeight: 18,
   },
-  subtitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 1,
-  },
-  subtitle: {
-    opacity: 0.8,
-  },
-  bullet: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-  },
-  stats: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  statItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
   footer: {
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -268,8 +194,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 12,
     justifyContent: "center",
-  },
-  outlineButton: {
-    borderWidth: 2,
   },
 });

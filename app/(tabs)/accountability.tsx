@@ -91,7 +91,7 @@ export default function AccountabilityScreen() {
                   <MentorCard
                     mentorUid={mentor.mentorUid}
                     streak={mentor.streak}
-                    lastCheckIn={mentor.lastCheckIn}
+                    checkInStatus={mentor.checkInStatus}
                     onCheckIn={handleCheckIn}
                     onSOS={handleSOS}
                     buttonRef={buttonRef}
@@ -103,7 +103,7 @@ export default function AccountabilityScreen() {
                   <MentorModal
                     mentorUid={mentor.mentorUid}
                     streak={mentor.streak}
-                    lastCheckIn={mentor.lastCheckIn}
+                    checkInStatus={mentor.checkInStatus}
                     relationshipId={mentor.id}
                     isVisible={isModalVisible}
                     progress={progress}
