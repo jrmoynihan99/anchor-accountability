@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -8,7 +9,7 @@ import { SectionHeader } from "./MessageThreadsHeader";
 import { ThreadItem } from "./ThreadItem";
 
 interface MessageThreadsSectionProps {
-  scrollY: any; // SharedValue<number> but keeping it simple
+  scrollY: any; // SharedValue<number>
   onScroll: (event: any) => void;
 }
 
@@ -19,13 +20,19 @@ export function MessageThreadsSection({
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
-  // Timer for updating relative timestamps
+  // Load accountability relationships
+  const { mentor, mentees } = useAccountabilityRelationships();
+
+  // Timer to refresh relative timestamps
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 30000); // Update every 30 seconds
+    const interval = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(interval);
   }, []);
 
+  // -----------------------------
+  // LOADING STATE
+  // -----------------------------
   if (loading) {
     return (
       <View style={styles.section}>
@@ -48,6 +55,9 @@ export function MessageThreadsSection({
     );
   }
 
+  // -----------------------------
+  // ERROR STATE
+  // -----------------------------
   if (error) {
     return (
       <View style={styles.section}>
@@ -70,10 +80,81 @@ export function MessageThreadsSection({
     );
   }
 
+  // -----------------------------
+  // BUILD PINNED SECTIONS
+  // -----------------------------
+  let mentorThread: any = null;
+  const menteeThreads: any[] = [];
+  const regularThreads: any[] = [];
+
+  const menteeIds = new Set(mentees.map((m) => m.menteeUid));
+  const mentorId = mentor?.mentorUid ?? null;
+
+  threads.forEach((t) => {
+    if (mentorId && t.otherUserId === mentorId) {
+      mentorThread = t;
+    } else if (menteeIds.has(t.otherUserId)) {
+      menteeThreads.push(t);
+    } else {
+      regularThreads.push(t);
+    }
+  });
+
   return (
     <View style={styles.section}>
       <SectionHeader scrollY={scrollY} threadsCount={threads.length} />
-      {threads.length === 0 ? (
+
+      {/* -----------------------
+          🔵 MENTOR SECTION
+      ------------------------ */}
+      {mentorThread && (
+        <View style={{ marginBottom: 24 }}>
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 6,
+              marginLeft: 4,
+            }}
+          >
+            YOUR ACCOUNTABILITY PARTNER
+          </ThemedText>
+
+          <ThreadItem
+            key={mentorThread.id}
+            thread={mentorThread}
+            colors={colors}
+            now={now}
+          />
+        </View>
+      )}
+
+      {/* -----------------------
+          🟢 MENTEES SECTION
+      ------------------------ */}
+      {menteeThreads.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 6,
+              marginLeft: 4,
+            }}
+          >
+            PEOPLE YOU SUPPORT
+          </ThemedText>
+
+          {menteeThreads.map((t) => (
+            <ThreadItem key={t.id} thread={t} colors={colors} now={now} />
+          ))}
+        </View>
+      )}
+
+      {/* -----------------------
+          🟣 REGULAR THREADS
+      ------------------------ */}
+      {regularThreads.length === 0 ? (
         <View style={styles.emptyContainer}>
           <IconSymbol
             name="message"
@@ -97,19 +178,29 @@ export function MessageThreadsSection({
         </View>
       ) : (
         <View style={styles.threadsList}>
-          {threads.map((thread) => (
-            <ThreadItem
-              key={thread.id}
-              thread={thread}
-              colors={colors}
-              now={now}
-            />
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 6,
+              marginLeft: 4,
+            }}
+          >
+            CONVERSATIONS
+          </ThemedText>
+
+          {regularThreads.map((t) => (
+            <ThreadItem key={t.id} thread={t} colors={colors} now={now} />
           ))}
         </View>
       )}
     </View>
   );
 }
+
+// -----------------------------
+// STYLES
+// -----------------------------
 
 const styles = StyleSheet.create({
   section: {
