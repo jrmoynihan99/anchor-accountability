@@ -12,6 +12,7 @@ interface MentorCardContentProps {
   showExpandIcon?: boolean;
   onCheckIn?: () => void;
   onSOS?: () => void;
+  onMessage?: () => void;
 }
 
 export function MentorCardContent({
@@ -19,6 +20,7 @@ export function MentorCardContent({
   checkInStatus,
   showExpandIcon = true,
   onCheckIn,
+  onMessage,
 }: MentorCardContentProps) {
   const { colors } = useTheme();
 
@@ -158,6 +160,7 @@ export function MentorCardContent({
               borderColor: colors.buttonBackground,
             },
           ]}
+          onPress={onMessage}
           activeOpacity={0.85}
         >
           <IconSymbol

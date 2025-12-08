@@ -10,6 +10,7 @@ interface MentorCardProps {
   checkInStatus: CheckInStatus;
   onCheckIn?: () => void;
   onSOS?: () => void;
+  onMessage?: () => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
@@ -24,6 +25,7 @@ export function MentorCard({
   checkInStatus,
   onCheckIn,
   onSOS,
+  onMessage,
   buttonRef,
   style,
   onPress,
@@ -50,6 +52,7 @@ export function MentorCard({
             checkInStatus={checkInStatus}
             onCheckIn={onCheckIn}
             onSOS={onSOS}
+            onMessage={onMessage}
             showExpandIcon={true}
           />
         </TouchableOpacity>
@@ -68,6 +71,7 @@ export function MentorCard({
         checkInStatus={checkInStatus}
         onCheckIn={onCheckIn}
         onSOS={onSOS}
+        onMessage={onMessage}
         showExpandIcon={true}
       />
     </View>
