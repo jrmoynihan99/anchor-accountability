@@ -1565,3 +1565,393 @@ exports.sendStreakReminders = onSchedule(
     }
   }
 );
+
+exports.sendAccountabilityCheckInReminders = onSchedule(
+  {
+    schedule: "0 * * * *", // Every hour at minute 0
+    timeZone: "UTC",
+  },
+  async () => {
+    console.log("🔔 Running accountability check-in reminder check...");
+
+    try {
+      const db = admin.firestore();
+      const now = new Date();
+
+      // Get all users with accountability notifications enabled
+      const usersSnap = await db
+        .collection("users")
+        .where("notificationPreferences.accountability", "==", true)
+        .get();
+
+      if (usersSnap.empty) {
+        console.log("No users with accountability notifications enabled.");
+        return;
+      }
+
+      const notifications = [];
+
+      for (const userDoc of usersSnap.docs) {
+        const userData = userDoc.data();
+        const userId = userDoc.id;
+
+        // Skip if no push token or timezone
+        if (
+          !userData.expoPushToken ||
+          !userData.expoPushToken.startsWith("ExponentPushToken") ||
+          !userData.timezone
+        ) {
+          continue;
+        }
+
+        // Calculate current time in user's timezone
+        const userTime = new Date(
+          now.toLocaleString("en-US", { timeZone: userData.timezone })
+        );
+        const userHour = userTime.getHours();
+
+        // Only process if it's between 8:00 PM (20) and 8:59 PM (20)
+        // TODO: Make this configurable via systemConfig collection
+        if (userHour !== 20) {
+          continue;
+        }
+
+        // Check if we already sent an accountability reminder today
+        const todayDate = formatDate(userTime);
+        const lastNotificationDate = userData.lastAccountabilityReminderDate;
+
+        if (lastNotificationDate === todayDate) {
+          console.log(
+            `Already sent accountability reminder to ${userId} today.`
+          );
+          continue;
+        }
+
+        // Find the relationship where this user is the mentee
+        const menteeRelationshipsSnap = await db
+          .collection("accountabilityRelationships")
+          .where("menteeUid", "==", userId)
+          .where("status", "==", "active")
+          .limit(1)
+          .get();
+
+        if (menteeRelationshipsSnap.empty) {
+          console.log(
+            `${userId} has no active accountability relationship as mentee.`
+          );
+          continue;
+        }
+
+        const relationshipDoc = menteeRelationshipsSnap.docs[0];
+        const relationshipData = relationshipDoc.data();
+        const lastCheckIn = relationshipData.lastCheckIn; // Format: "YYYY-MM-DD"
+
+        // Calculate days since last check-in
+        let daysSinceCheckIn = 0;
+        if (lastCheckIn) {
+          const lastCheckInDate = new Date(lastCheckIn);
+          const today = new Date(todayDate);
+          const diffTime = today - lastCheckInDate;
+          daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        } else {
+          // No check-in ever recorded - calculate from relationship creation
+          const createdAt = relationshipData.createdAt?.toDate();
+          if (createdAt) {
+            const today = new Date(todayDate);
+            const diffTime = today - createdAt;
+            daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          }
+        }
+
+        // Determine notification message based on days missed
+        let title = "Accountability Check-In";
+        let body = "";
+
+        if (daysSinceCheckIn === 0) {
+          // Haven't checked in today yet (or already checked in today)
+          // Only send if they haven't checked in today
+          if (lastCheckIn === todayDate) {
+            console.log(`${userId} already checked in today.`);
+            continue;
+          }
+          body =
+            "Don't forget to check in with your accountability partner today";
+        } else if (daysSinceCheckIn === 1) {
+          body = "You haven't checked in with your partner in 1 day";
+        } else if (daysSinceCheckIn >= 7) {
+          body = "You haven't checked in with your partner in over a week";
+        } else {
+          body = `You haven't checked in with your partner in ${daysSinceCheckIn} days`;
+        }
+
+        // Send notification
+        notifications.push({
+          to: userData.expoPushToken,
+          sound: "default",
+          title: title,
+          body: body,
+          data: {
+            type: "accountability_reminder",
+            relationshipId: relationshipDoc.id,
+            daysSinceCheckIn: daysSinceCheckIn,
+          },
+        });
+
+        // Mark that we sent the accountability reminder today
+        await db.collection("users").doc(userId).update({
+          lastAccountabilityReminderDate: todayDate,
+        });
+
+        console.log(
+          `✅ Queued accountability reminder for ${userId} (${daysSinceCheckIn} days since check-in)`
+        );
+      }
+
+      // Send notifications in batches
+      if (notifications.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < notifications.length; i += batchSize) {
+          const chunk = notifications.slice(i, i + batchSize);
+          const res = await axios.post(
+            "https://exp.host/--/api/v2/push/send",
+            chunk,
+            { headers: { "Content-Type": "application/json" } }
+          );
+          console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
+        }
+        console.log(
+          `✅ Total accountability reminders sent: ${notifications.length}`
+        );
+      } else {
+        console.log("No accountability reminders to send this hour.");
+      }
+    } catch (error) {
+      console.error("❌ Error in sendAccountabilityCheckInReminders:", error);
+    }
+  }
+);
+
+exports.notifyMentorOnCheckIn = onDocumentWritten(
+  "accountabilityRelationships/{relationshipId}/checkIns/{checkInId}",
+  async (event) => {
+    // This triggers when a check-in is created or updated
+    const checkIn = event.data?.after?.data();
+    if (!checkIn) return;
+
+    const relationshipId = event.params.relationshipId;
+
+    // Get the relationship to find the mentor
+    const relationshipDoc = await admin
+      .firestore()
+      .collection("accountabilityRelationships")
+      .doc(relationshipId)
+      .get();
+
+    if (!relationshipDoc.exists) return;
+
+    const relationship = relationshipDoc.data();
+    const mentorUid = relationship.mentorUid;
+    const menteeUid = relationship.menteeUid;
+
+    // Get mentor's user data
+    const mentorDoc = await admin
+      .firestore()
+      .collection("users")
+      .doc(mentorUid)
+      .get();
+
+    if (!mentorDoc.exists) return;
+
+    const mentorData = mentorDoc.data();
+
+    // Check if mentor wants accountability notifications
+    if (!mentorData.notificationPreferences?.accountability) {
+      console.log(
+        `Mentor ${mentorUid} has accountability notifications disabled.`
+      );
+      return;
+    }
+
+    if (!mentorData.expoPushToken?.startsWith("ExponentPushToken")) {
+      console.log(`Mentor ${mentorUid} has no valid push token.`);
+      return;
+    }
+
+    // Send notification
+    const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
+
+    await axios.post(
+      "https://exp.host/--/api/v2/push/send",
+      [
+        {
+          to: mentorData.expoPushToken,
+          sound: "default",
+          title: "Check-in completed!",
+          body: `${anonymousUsername} completed their daily check-in`,
+          data: {
+            type: "mentee_checked_in",
+            relationshipId: relationshipId,
+          },
+        },
+      ],
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    console.log(`✅ Notified mentor ${mentorUid} about mentee check-in`);
+  }
+);
+
+exports.sendMissedCheckInNotifications = onSchedule(
+  {
+    schedule: "0 * * * *", // Every hour at minute 0
+    timeZone: "UTC",
+  },
+  async () => {
+    console.log("🔔 Running missed check-in notification check for mentors...");
+
+    try {
+      const db = admin.firestore();
+      const now = new Date();
+
+      // Get all active relationships
+      const relationshipsSnap = await db
+        .collection("accountabilityRelationships")
+        .where("status", "==", "active")
+        .get();
+
+      if (relationshipsSnap.empty) {
+        console.log("No active accountability relationships.");
+        return;
+      }
+
+      const notifications = [];
+
+      for (const relationshipDoc of relationshipsSnap.docs) {
+        const relationship = relationshipDoc.data();
+        const mentorUid = relationship.mentorUid;
+        const menteeUid = relationship.menteeUid;
+
+        // Get mentor's data
+        const mentorDoc = await db.collection("users").doc(mentorUid).get();
+        if (!mentorDoc.exists) continue;
+
+        const mentorData = mentorDoc.data();
+
+        // Skip if no push token, timezone, or notifications disabled
+        if (
+          !mentorData.expoPushToken?.startsWith("ExponentPushToken") ||
+          !mentorData.timezone ||
+          !mentorData.notificationPreferences?.accountability
+        ) {
+          continue;
+        }
+
+        // Calculate current time in mentor's timezone
+        const mentorTime = new Date(
+          now.toLocaleString("en-US", { timeZone: mentorData.timezone })
+        );
+        const mentorHour = mentorTime.getHours();
+
+        // Only process if it's between 10:00 AM (10) and 10:59 AM (10)
+        if (mentorHour !== 10) {
+          continue;
+        }
+
+        // Check if we already sent this notification today
+        const todayDate = formatDate(mentorTime);
+        const lastNotificationKey = `lastMissedCheckInNotification_${relationshipDoc.id}`;
+        const lastNotificationDate = mentorData[lastNotificationKey];
+
+        if (lastNotificationDate === todayDate) {
+          console.log(
+            `Already sent missed check-in notification to ${mentorUid} today for relationship ${relationshipDoc.id}.`
+          );
+          continue;
+        }
+
+        const lastCheckIn = relationship.lastCheckIn;
+
+        // Calculate days since last check-in
+        let daysSinceCheckIn = 0;
+        if (lastCheckIn) {
+          const lastCheckInDate = new Date(lastCheckIn);
+          const today = new Date(todayDate);
+          const diffTime = today - lastCheckInDate;
+          daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        } else {
+          // No check-in ever recorded - calculate from relationship creation
+          const createdAt = relationship.createdAt?.toDate();
+          if (createdAt) {
+            const today = new Date(todayDate);
+            const diffTime = today - createdAt;
+            daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          }
+        }
+
+        // Only notify if mentee has actually missed at least 1 day
+        if (daysSinceCheckIn < 1) {
+          console.log(`${menteeUid} is up to date with check-ins.`);
+          continue;
+        }
+
+        // Generate escalating message
+        const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
+        let title = "Missed check-in";
+        let body = "";
+
+        if (daysSinceCheckIn === 1) {
+          body = `${anonymousUsername} hasn't checked in for 1 day`;
+        } else if (daysSinceCheckIn >= 7) {
+          body = `${anonymousUsername} hasn't checked in for over a week`;
+        } else {
+          body = `${anonymousUsername} hasn't checked in for ${daysSinceCheckIn} days`;
+        }
+
+        notifications.push({
+          to: mentorData.expoPushToken,
+          sound: "default",
+          title: title,
+          body: body,
+          data: {
+            type: "mentee_missed_checkin",
+            relationshipId: relationshipDoc.id,
+            daysSinceCheckIn: daysSinceCheckIn,
+          },
+        });
+
+        // Mark that we sent this notification today
+        await db
+          .collection("users")
+          .doc(mentorUid)
+          .update({
+            [lastNotificationKey]: todayDate,
+          });
+
+        console.log(
+          `✅ Queued missed check-in notification for mentor ${mentorUid} (${daysSinceCheckIn} days)`
+        );
+      }
+
+      // Send notifications in batches
+      if (notifications.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < notifications.length; i += batchSize) {
+          const chunk = notifications.slice(i, i + batchSize);
+          const res = await axios.post(
+            "https://exp.host/--/api/v2/push/send",
+            chunk,
+            { headers: { "Content-Type": "application/json" } }
+          );
+          console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
+        }
+        console.log(
+          `✅ Total missed check-in notifications sent: ${notifications.length}`
+        );
+      } else {
+        console.log("No missed check-in notifications to send this hour.");
+      }
+    } catch (error) {
+      console.error("❌ Error in sendMissedCheckInNotifications:", error);
+    }
+  }
+);

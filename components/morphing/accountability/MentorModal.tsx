@@ -1,6 +1,8 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { getTodayDateString, useCheckIns } from "@/hooks/useCheckIns";
+import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
+import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
@@ -38,11 +40,30 @@ export function MentorModal({
   // State for retroactive check-in date selection
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  const { threads } = useThreads();
+
   // Bidirectional hook - READ and WRITE
   const { timeline, loading, submitCheckIn } = useCheckIns(relationshipId, 7);
 
   const handleMessage = () => {
-    console.log("Open DM with mentor");
+    // Find thread for this mentee
+    const thread = threads.find((t) => t.otherUserId === mentorUid);
+
+    // Always close the modal immediately
+    close();
+
+    if (!thread) {
+      console.log("No thread found for this mentee");
+      return;
+    }
+
+    // Wait for modal animation to complete
+    setTimeout(() => {
+      router.push({
+        pathname: "/message-thread",
+        params: { threadId: thread.id },
+      });
+    }, 300); // adjust if your morph animation is longer
   };
 
   const handleSubmitCheckIn = async (status: any, note: string) => {

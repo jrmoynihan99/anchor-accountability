@@ -1,5 +1,7 @@
 import { useTheme } from "@/hooks/ThemeContext";
 import { useCheckIns } from "@/hooks/useCheckIns";
+import { useThreads } from "@/hooks/useThreads";
+import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
@@ -38,6 +40,8 @@ export function MenteeModal({
   // Bidirectional hook - READ and WRITE
   const { checkIns, timeline, loading } = useCheckIns(relationshipId, 7);
 
+  const { threads } = useThreads();
+
   // Get the most recent check-in (if exists and not missing)
   const latestCheckIn =
     checkIns.length > 0 && !("isMissing" in checkIns[0])
@@ -45,7 +49,24 @@ export function MenteeModal({
       : undefined;
 
   const handleMessage = () => {
-    console.log("Open DM with mentee");
+    // Find thread for this mentee
+    const thread = threads.find((t) => t.otherUserId === menteeUid);
+
+    // Always close the modal immediately
+    close();
+
+    if (!thread) {
+      console.log("No thread found for this mentee");
+      return;
+    }
+
+    // Wait for modal animation to complete
+    setTimeout(() => {
+      router.push({
+        pathname: "/message-thread",
+        params: { threadId: thread.id },
+      });
+    }, 300); // adjust if your morph animation is longer
   };
 
   const handleReminder = () => {

@@ -8,6 +8,9 @@ import { MentorModal } from "@/components/morphing/accountability/MentorModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
+import { useThreads } from "@/hooks/useThreads";
+import { auth } from "@/lib/firebase";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { StyleSheet, View } from "react-native";
@@ -22,6 +25,8 @@ export default function AccountabilityScreen() {
   const insets = useSafeAreaInsets();
 
   const { mentor, mentees, loading } = useAccountabilityRelationships();
+  const { threads } = useThreads();
+  const currentUid = auth.currentUser?.uid;
   const hasMentor = !loading && mentor !== null;
 
   // Scroll animation values
@@ -33,6 +38,27 @@ export default function AccountabilityScreen() {
       scrollY.value = event.contentOffset.y;
     },
   });
+
+  const handleMessageMentor = (mentorUid: string) => {
+    if (!currentUid) return;
+
+    // find the thread where this mentor is the other user
+    const thread = threads.find(
+      (t) =>
+        (t.userA === currentUid && t.userB === mentorUid) ||
+        (t.userB === currentUid && t.userA === mentorUid)
+    );
+
+    if (!thread) {
+      console.log("No thread found with that mentor!");
+      return;
+    }
+
+    router.push({
+      pathname: "/message-thread",
+      params: { threadId: thread.id },
+    });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -94,6 +120,7 @@ export default function AccountabilityScreen() {
                     checkInStatus={mentor.checkInStatus}
                     onCheckIn={handleCheckIn}
                     onSOS={handleSOS}
+                    onMessage={() => handleMessageMentor(mentor.mentorUid)}
                     buttonRef={buttonRef}
                     style={buttonAnimatedStyle}
                     onPress={open}
