@@ -3,13 +3,14 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { CheckInStatus } from "./accountabilityUtils";
+import { CheckInStatus, getLocalTimeForTimezone } from "./accountabilityUtils";
 
 interface MenteeCardContentProps {
   menteeUid: string;
   recoveryStreak: number;
   checkInStreak: number;
   checkInStatus: CheckInStatus;
+  menteeTimezone?: string;
   showExpandIcon?: boolean;
   onRemind?: () => void;
   onMessage?: () => void;
@@ -18,10 +19,12 @@ interface MenteeCardContentProps {
 export function MenteeCardContent({
   menteeUid,
   checkInStatus,
+  menteeTimezone,
   showExpandIcon = true,
   onMessage,
 }: MenteeCardContentProps) {
   const { colors } = useTheme();
+  const localTime = getLocalTimeForTimezone(menteeTimezone);
 
   const ExpandIcon = () => {
     if (!showExpandIcon) return null;
@@ -94,6 +97,19 @@ export function MenteeCardContent({
           </ThemedText>
         </View>
       </View>
+      {localTime && (
+        <ThemedText
+          type="caption"
+          style={{
+            marginTop: -6,
+            marginBottom: 10,
+            color: colors.textSecondary,
+            opacity: 0.7,
+          }}
+        >
+          Local time: {localTime}
+        </ThemedText>
+      )}
 
       {/* Quick Actions */}
       {onMessage && (

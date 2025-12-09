@@ -73,6 +73,7 @@ export function YoureSupportingList() {
                 recoveryStreak={mentee.streak}
                 checkInStreak={45} // TODO: Get actual check-in streak from data
                 checkInStatus={mentee.checkInStatus}
+                menteeTimezone={mentee.menteeTimezone}
                 onRemind={() => handleRemind(mentee.menteeUid)}
                 onMessage={() => handleMessage(mentee.menteeUid)}
                 buttonRef={buttonRef}
