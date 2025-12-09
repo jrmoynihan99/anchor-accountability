@@ -5,8 +5,8 @@ import { router, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";
 
 interface NotificationHandlerOptions {
-  currentThreadId?: string | null; // Add current thread tracking
-  currentPleaId?: string | null; // Add current plea tracking
+  currentThreadId?: string | null;
+  currentPleaId?: string | null;
 }
 
 /**
@@ -101,20 +101,46 @@ export function useNotificationHandler(
       // Close any open modals before navigating
       globalModalManager.closeAllModals();
 
-      // 🆕 Handle streak reminder notifications
+      // Handle streak reminder notifications
       if (data.type === "streak_reminder") {
         router.push("/(tabs)");
         return;
       }
 
-      // 2. Existing logic for app routing
+      // 🆕 Handle accountability notifications
+      if (data.type === "accountability_reminder") {
+        // Mentee needs to check in - open MentorModal
+        router.push({
+          pathname: "/(tabs)/accountability",
+          params: {
+            openMentorModal: "true",
+          },
+        });
+        return;
+      }
+
+      if (
+        data.type === "mentee_checked_in" ||
+        data.type === "mentee_missed_checkin"
+      ) {
+        // Mentor notification - open specific MenteeModal
+        router.push({
+          pathname: "/(tabs)/accountability",
+          params: {
+            openMenteeRelationship: data.relationshipId,
+          },
+        });
+        return;
+      }
+
+      // Existing logic for app routing
       if (data.pleaId) {
         if (data.type === "encouragement") {
           router.push({
             pathname: "/my-reachouts-all",
             params: {
               openPleaId: data.pleaId,
-              originless: "1", // 👈 tell the screen to use slide-up
+              originless: "1",
             },
           });
         } else if (data.type === "plea") {
@@ -122,7 +148,7 @@ export function useNotificationHandler(
             pathname: "/plea-view-all",
             params: {
               openPleaId: data.pleaId,
-              originless: "1", // 👈 tell the screen to use slide-up
+              originless: "1",
             },
           });
         } else {
@@ -131,7 +157,7 @@ export function useNotificationHandler(
             pathname: "/plea-view-all",
             params: {
               openPleaId: data.pleaId,
-              originless: "1", // 👈 tell the screen to use slide-up
+              originless: "1",
             },
           });
         }
