@@ -10,9 +10,9 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedScrollHandler,
@@ -29,8 +29,17 @@ export default function AccountabilityScreen() {
   const currentUid = auth.currentUser?.uid;
   const hasMentor = !loading && mentor !== null;
 
+  // Get notification params
+  const { openMentorModal, openMenteeRelationship } = useLocalSearchParams<{
+    openMentorModal?: string;
+    openMenteeRelationship?: string;
+  }>();
+
   // Scroll animation values
   const scrollY = useSharedValue(0);
+
+  // Refs for modal controls
+  const mentorModalRef = useRef<{ open: () => void } | null>(null);
 
   // Scroll handler
   const scrollHandler = useAnimatedScrollHandler({
@@ -59,6 +68,22 @@ export default function AccountabilityScreen() {
       params: { threadId: thread.id },
     });
   };
+
+  // Handle opening MentorModal from notification
+  useEffect(() => {
+    if (
+      openMentorModal === "true" &&
+      hasMentor &&
+      !loading &&
+      mentorModalRef.current
+    ) {
+      setTimeout(() => {
+        mentorModalRef.current?.open();
+        // Clear the param so it doesn't re-trigger
+        router.setParams({ openMentorModal: undefined });
+      }, 500);
+    }
+  }, [openMentorModal, hasMentor, loading]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -101,15 +126,22 @@ export default function AccountabilityScreen() {
               handlePressIn,
               handlePressOut,
             }) => {
-              const handleCheckIn = () => {
-                // Open the modal for check-in
-                open();
-              };
+              // Store the open function for notification deep linking
+              mentorModalRef.current = { open };
 
-              const handleSOS = () => {
-                // TODO: Send SOS notification to mentor
-                console.log("Send SOS to mentor:", mentor.mentorUid);
-                // Maybe show a toast confirmation
+              // ✅ One-time measurement to enable proper morph animation
+              React.useEffect(() => {
+                const timer = setTimeout(() => {
+                  handlePressIn();
+                  setTimeout(() => {
+                    handlePressOut();
+                  }, 10);
+                }, 100);
+                return () => clearTimeout(timer);
+              }, []);
+
+              const handleCheckIn = () => {
+                open();
               };
 
               return (
@@ -119,7 +151,6 @@ export default function AccountabilityScreen() {
                     streak={mentor.streak}
                     checkInStatus={mentor.checkInStatus}
                     onCheckIn={handleCheckIn}
-                    onSOS={handleSOS}
                     onMessage={() => handleMessageMentor(mentor.mentorUid)}
                     buttonRef={buttonRef}
                     style={buttonAnimatedStyle}
@@ -149,7 +180,11 @@ export default function AccountabilityScreen() {
         <YoureSupportingSection />
 
         {/* Mentees List (includes empty states) */}
-        {!loading && <YoureSupportingList />}
+        {!loading && (
+          <YoureSupportingList
+            openMenteeRelationship={openMenteeRelationship}
+          />
+        )}
       </Animated.ScrollView>
 
       {/* Sticky Header */}

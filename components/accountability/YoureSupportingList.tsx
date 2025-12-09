@@ -3,7 +3,7 @@ import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelatio
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
 import { EmptyMenteeCard } from "../morphing/accountability/EmptyMenteeCard";
 import { MenteeCard } from "../morphing/accountability/MenteeCard";
@@ -11,10 +11,21 @@ import { MenteeModal } from "../morphing/accountability/MenteeModal";
 
 const MAX_MENTEES = 3;
 
-export function YoureSupportingList() {
-  const { mentees } = useAccountabilityRelationships();
+interface YoureSupportingListProps {
+  openMenteeRelationship?: string;
+}
+
+export function YoureSupportingList({
+  openMenteeRelationship,
+}: YoureSupportingListProps) {
+  const { mentees, loading } = useAccountabilityRelationships();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
+
+  // Store refs to modal controls for each mentee
+  const modalRefs = useRef<{
+    [key: string]: { open: () => void };
+  }>({});
 
   const handleRemind = (menteeUid: string) => {
     // TODO: Send reminder notification
@@ -42,6 +53,24 @@ export function YoureSupportingList() {
     });
   };
 
+  // Auto-open modal if openMenteeRelationship is provided (from notification)
+  useEffect(() => {
+    if (openMenteeRelationship && mentees.length > 0 && !loading) {
+      const targetMentee = mentees.find((m) => m.id === openMenteeRelationship);
+      if (targetMentee) {
+        // Small delay to ensure the screen is fully rendered and refs are set
+        setTimeout(() => {
+          const controls = modalRefs.current[openMenteeRelationship];
+          if (controls) {
+            controls.open();
+            // Clear the param so it doesn't re-trigger
+            router.setParams({ openMenteeRelationship: undefined });
+          }
+        }, 500);
+      }
+    }
+  }, [openMenteeRelationship, mentees, loading]);
+
   // Calculate how many empty slots to show
   const emptySlots = MAX_MENTEES - mentees.length;
 
@@ -66,34 +95,50 @@ export function YoureSupportingList() {
             buttonRef,
             handlePressIn,
             handlePressOut,
-          }) => (
-            <>
-              <MenteeCard
-                menteeUid={mentee.menteeUid}
-                recoveryStreak={mentee.streak}
-                checkInStreak={45} // TODO: Get actual check-in streak from data
-                checkInStatus={mentee.checkInStatus}
-                menteeTimezone={mentee.menteeTimezone}
-                onRemind={() => handleRemind(mentee.menteeUid)}
-                onMessage={() => handleMessage(mentee.menteeUid)}
-                buttonRef={buttonRef}
-                style={buttonAnimatedStyle}
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-              />
-              <MenteeModal
-                menteeUid={mentee.menteeUid}
-                recoveryStreak={mentee.streak}
-                checkInStreak={45} // TODO: Get actual check-in streak from data
-                relationshipId={mentee.id}
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-              />
-            </>
-          )}
+          }) => {
+            // Store the open function for notification deep linking
+            modalRefs.current[mentee.id] = { open };
+
+            // ✅ One-time measurement to enable proper morph animation
+            React.useEffect(() => {
+              const timer = setTimeout(() => {
+                handlePressIn();
+                setTimeout(() => {
+                  handlePressOut();
+                }, 10);
+              }, 100);
+              return () => clearTimeout(timer);
+            }, []);
+
+            return (
+              <>
+                <MenteeCard
+                  menteeUid={mentee.menteeUid}
+                  recoveryStreak={mentee.streak}
+                  checkInStreak={45}
+                  checkInStatus={mentee.checkInStatus}
+                  menteeTimezone={mentee.menteeTimezone}
+                  onRemind={() => handleRemind(mentee.menteeUid)}
+                  onMessage={() => handleMessage(mentee.menteeUid)}
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <MenteeModal
+                  menteeUid={mentee.menteeUid}
+                  recoveryStreak={mentee.streak}
+                  checkInStreak={45}
+                  relationshipId={mentee.id}
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            );
+          }}
         </ButtonModalTransitionBridge>
       ))}
 
