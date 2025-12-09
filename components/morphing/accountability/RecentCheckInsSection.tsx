@@ -31,14 +31,18 @@ type TimelineItem = CheckInRecord | MissingCheckIn;
 
 interface RecentCheckInsSectionProps {
   checkIns: TimelineItem[];
+  userTimezone?: string; // Timezone of the user whose check-ins are being displayed
   onFillMissing?: (date: string) => void; // Optional callback for retroactive fill
   onSelectFilled?: () => void; // Optional callback when filled day is selected
+  showTimezoneNote?: boolean; // Show timezone subtitle
 }
 
 export function RecentCheckInsSection({
   checkIns,
+  userTimezone,
   onFillMissing,
   onSelectFilled,
+  showTimezoneNote = false,
 }: RecentCheckInsSectionProps) {
   const { colors } = useTheme();
   const [selectedCheckIn, setSelectedCheckIn] = useState<TimelineItem | null>(
@@ -165,7 +169,7 @@ export function RecentCheckInsSection({
     >
       {/* Section Header with Icon */}
       <View style={styles.sectionHeader}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <View
             style={[
               styles.sectionIconCircle,
@@ -174,9 +178,19 @@ export function RecentCheckInsSection({
           >
             <IconSymbol name="chart.bar" size={16} color={colors.icon} />
           </View>
-          <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
-            Recent Check-Ins
-          </ThemedText>
+          <View style={{ flex: 1 }}>
+            <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
+              Recent Check-Ins
+            </ThemedText>
+            {showTimezoneNote && (
+              <ThemedText
+                type="caption"
+                style={{ color: colors.textSecondary, marginTop: 2 }}
+              >
+                Displayed in user's local time
+              </ThemedText>
+            )}
+          </View>
         </View>
         <TouchableOpacity
           onPress={() => setIsExpanded(!isExpanded)}
@@ -197,6 +211,7 @@ export function RecentCheckInsSection({
         checkIns={checkIns}
         selectedDate={selectedCheckIn?.date || null}
         onSelectItem={handleItemClick}
+        userTimezone={userTimezone}
       />
 
       {/* Expanded Calendar View */}
@@ -209,6 +224,7 @@ export function RecentCheckInsSection({
           onPreviousMonth={goToPreviousMonth}
           onNextMonth={goToNextMonth}
           onLayout={onCalendarLayout}
+          userTimezone={userTimezone}
         />
       </Animated.View>
 
@@ -217,6 +233,7 @@ export function RecentCheckInsSection({
         selectedCheckIn={selectedCheckIn}
         onClose={handleCloseDropdown}
         showFillHint={!!onFillMissing}
+        userTimezone={userTimezone}
       />
     </View>
   );

@@ -34,6 +34,7 @@ interface ExpandedCalendarProps {
   onPreviousMonth: () => void;
   onNextMonth: () => void;
   onLayout?: (event: any) => void;
+  userTimezone?: string; // Timezone of the user whose check-ins are being displayed
 }
 
 type MonthCell =
@@ -57,6 +58,7 @@ function ExpandedCalendarComponent({
   onPreviousMonth,
   onNextMonth,
   onLayout,
+  userTimezone,
 }: ExpandedCalendarProps) {
   const { colors } = useTheme();
 
@@ -84,7 +86,7 @@ function ExpandedCalendarComponent({
       const dayNumber = Number(dateString.slice(8, 10));
       const isMissingDay =
         !checkIn || ("isMissing" in checkIn && checkIn.isMissing === true);
-      const isFuture = isDateInFuture(dateString);
+      const isFuture = isDateInFuture(dateString, userTimezone);
 
       return {
         empty: false,
@@ -95,7 +97,7 @@ function ExpandedCalendarComponent({
         isFuture,
       };
     });
-  }, [currentMonth, checkInMap]);
+  }, [currentMonth, checkInMap, userTimezone]);
 
   return (
     <View onLayout={onLayout}>

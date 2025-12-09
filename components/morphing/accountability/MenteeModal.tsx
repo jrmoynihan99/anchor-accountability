@@ -1,4 +1,5 @@
 import { useTheme } from "@/hooks/ThemeContext";
+import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useCheckIns } from "@/hooks/useCheckIns";
 import { useThreads } from "@/hooks/useThreads";
 import { router } from "expo-router";
@@ -7,7 +8,6 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../BaseModal";
 import { AccountabilityModalHeader } from "./AccountabilityModalHeader";
-import { CheckInStatus } from "./accountabilityUtils";
 import { LatestCheckInSection } from "./LatestCheckInSection";
 import { MenteeCardContent } from "./MenteeCardContent";
 import { RecentCheckInsSection } from "./RecentCheckInsSection";
@@ -16,7 +16,6 @@ interface MenteeModalProps {
   menteeUid: string;
   recoveryStreak: number;
   checkInStreak: number;
-  checkInStatus: CheckInStatus;
   relationshipId: string;
   isVisible: boolean;
   progress: SharedValue<number>;
@@ -28,7 +27,6 @@ export function MenteeModal({
   menteeUid,
   recoveryStreak,
   checkInStreak,
-  checkInStatus,
   relationshipId,
   isVisible,
   progress,
@@ -36,23 +34,34 @@ export function MenteeModal({
   close,
 }: MenteeModalProps) {
   const { colors, effectiveTheme } = useTheme();
-
-  // Bidirectional hook - READ and WRITE
-  const { checkIns, timeline, loading } = useCheckIns(relationshipId, 7);
-
   const { threads } = useThreads();
+  const { mentees } = useAccountabilityRelationships();
 
-  // Get the most recent check-in (if exists and not missing)
+  // Get relationship data for UI
+  const relationship = mentees.find((m) => m.id === relationshipId);
+  const checkInStatus = relationship?.checkInStatus || {
+    text: "Loading...",
+    icon: "clock.fill",
+    colorKey: "textSecondary" as const,
+    isOverdue: false,
+    overdueText: null,
+    hasCheckedInToday: false,
+  };
+
+  // Hook now auto-loads mentee timezone
+  const { checkIns, timeline, loading, userTimezone } = useCheckIns(
+    relationshipId,
+    menteeUid,
+    7
+  );
+
   const latestCheckIn =
     checkIns.length > 0 && !("isMissing" in checkIns[0])
       ? checkIns[0]
       : undefined;
 
   const handleMessage = () => {
-    // Find thread for this mentee
     const thread = threads.find((t) => t.otherUserId === menteeUid);
-
-    // Always close the modal immediately
     close();
 
     if (!thread) {
@@ -60,18 +69,17 @@ export function MenteeModal({
       return;
     }
 
-    // Wait for modal animation to complete
     setTimeout(() => {
       router.push({
         pathname: "/message-thread",
         params: { threadId: thread.id },
       });
-    }, 300); // adjust if your morph animation is longer
+    }, 300);
   };
 
   const handleReminder = () => {
     console.log("Send reminder to mentee");
-    // TODO: Implement push notification or in-app notification
+    // TODO: Implement push notification
   };
 
   const buttonContent = (
@@ -96,7 +104,6 @@ export function MenteeModal({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
         >
-          {/* Header Tile */}
           <AccountabilityModalHeader
             uid={menteeUid}
             actionButtons={[
@@ -108,16 +115,18 @@ export function MenteeModal({
             ]}
           />
 
-          {/* Latest Check-In Section */}
           <LatestCheckInSection
-            checkInStatus={checkInStatus}
             latestCheckIn={latestCheckIn}
             onRemind={handleReminder}
+            userTimezone={userTimezone}
           />
 
-          {/* Recent Check-Ins Section */}
           {!loading && timeline.length > 0 && (
-            <RecentCheckInsSection checkIns={timeline} />
+            <RecentCheckInsSection
+              checkIns={timeline}
+              userTimezone={userTimezone}
+              showTimezoneNote={true}
+            />
           )}
         </ScrollView>
       </View>

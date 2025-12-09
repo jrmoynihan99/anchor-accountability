@@ -1,10 +1,9 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/hooks/ThemeContext";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import {
-  CheckInStatus,
   formatCheckInTime,
   getStatusColor,
   getStatusIcon,
@@ -18,17 +17,72 @@ interface CheckInRecord {
 }
 
 interface LatestCheckInSectionProps {
-  checkInStatus: CheckInStatus;
   latestCheckIn?: CheckInRecord;
   onRemind: () => void;
+  userTimezone?: string | null;
 }
 
 export function LatestCheckInSection({
-  checkInStatus,
   latestCheckIn,
   onRemind,
+  userTimezone,
 }: LatestCheckInSectionProps) {
   const { colors } = useTheme();
+
+  // Calculate check-in status from the actual latest check-in (real-time!)
+  const checkInStatus = useMemo(() => {
+    if (!latestCheckIn) {
+      return {
+        hasCheckedInToday: false,
+        isOverdue: false,
+        overdueText: null,
+      };
+    }
+
+    // Get today's date in the user's timezone
+    let todayString: string;
+    if (userTimezone) {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: userTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+      todayString = `${year}-${month}-${day}`;
+    } else {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      todayString = `${year}-${month}-${day}`;
+    }
+
+    const isToday = latestCheckIn.date === todayString;
+
+    if (isToday) {
+      return {
+        hasCheckedInToday: true,
+        isOverdue: false,
+        overdueText: null,
+      };
+    }
+
+    // Calculate days overdue
+    const lastDate = new Date(latestCheckIn.date);
+    const today = new Date(todayString);
+    const diffMs = today.getTime() - lastDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    return {
+      hasCheckedInToday: false,
+      isOverdue: diffDays > 0,
+      overdueText: diffDays === 1 ? "1d ago" : `${diffDays}d ago`,
+    };
+  }, [latestCheckIn, userTimezone]);
 
   return (
     <View

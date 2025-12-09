@@ -85,7 +85,6 @@ export function YoureSupportingList() {
                 menteeUid={mentee.menteeUid}
                 recoveryStreak={mentee.streak}
                 checkInStreak={45} // TODO: Get actual check-in streak from data
-                checkInStatus={mentee.checkInStatus}
                 relationshipId={mentee.id}
                 isVisible={isModalVisible}
                 progress={progress}

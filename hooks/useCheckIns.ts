@@ -38,6 +38,7 @@ interface UseCheckInsResult {
   timeline: TimelineItem[];
   loading: boolean;
   error: string | null;
+  userTimezone: string | undefined;
   submitCheckIn: (
     date: string,
     status: CheckInStatusType,
@@ -47,18 +48,45 @@ interface UseCheckInsResult {
 }
 
 /**
- * Bidirectional hook for check-ins - READ and WRITE
+ * Hook for reading check-ins, computing timeline, and submitting new check-ins.
+ * NOW AUTO-FETCHES TIMEZONE FROM users/{menteeUid}.
  */
 export function useCheckIns(
   relationshipId: string | null,
+  menteeUid: string | null,
   daysCount: number = 7
 ): UseCheckInsResult {
   const [checkIns, setCheckIns] = useState<CheckInRecord[]>([]);
+  const [userTimezone, setUserTimezone] = useState<string | undefined>(
+    undefined
+  );
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // ========================================
-  // READ: Real-time listener
+  // FETCH USER TIMEZONE FROM USERS/{UID}
+  // ========================================
+  useEffect(() => {
+    if (!menteeUid) return;
+
+    const fetchTimezone = async () => {
+      try {
+        const userRef = doc(db, "users", menteeUid);
+        const userSnap = await getDoc(userRef);
+
+        const tz = userSnap.data()?.timezone ?? undefined;
+        setUserTimezone(tz);
+      } catch (err) {
+        console.error("Failed to fetch user timezone:", err);
+      }
+    };
+
+    fetchTimezone();
+  }, [menteeUid]);
+
+  // ========================================
+  // READ: Real-time listener for check-ins
   // ========================================
   useEffect(() => {
     if (!relationshipId) {
@@ -105,7 +133,7 @@ export function useCheckIns(
     status: CheckInStatusType,
     note: string,
     userId: string
-  ): Promise<void> => {
+  ) => {
     if (!relationshipId) {
       throw new Error("No relationship ID provided");
     }
@@ -126,11 +154,9 @@ export function useCheckIns(
       createdBy: userId,
     };
 
-    // Set the check-in document (will create or overwrite)
     await setDoc(checkInRef, checkInData);
 
-    // Update the parent relationship's lastCheckIn field
-    // BUT only if this date is more recent than the current lastCheckIn
+    // Update lastCheckIn in relationship
     const relationshipRef = doc(
       db,
       "accountabilityRelationships",
@@ -139,7 +165,6 @@ export function useCheckIns(
     const relationshipSnap = await getDoc(relationshipRef);
     const currentLastCheckIn = relationshipSnap.data()?.lastCheckIn;
 
-    // Only update if no lastCheckIn exists OR the new date is more recent
     if (!currentLastCheckIn || date > currentLastCheckIn) {
       await updateDoc(relationshipRef, {
         lastCheckIn: date,
@@ -150,13 +175,14 @@ export function useCheckIns(
   // ========================================
   // Generate timeline with missing days
   // ========================================
-  const timeline = generateCheckInTimeline(checkIns, daysCount);
+  const timeline = generateCheckInTimeline(checkIns, daysCount, userTimezone);
 
   return {
     checkIns,
     timeline,
     loading,
     error,
+    userTimezone,
     submitCheckIn,
   };
 }
@@ -165,33 +191,26 @@ export function useCheckIns(
 // Helper Functions
 // ========================================
 
-/**
- * Generate array of last N days with check-in status
- * (including missing days)
- * Returns in chronological order: oldest → newest (left to right)
- */
 function generateCheckInTimeline(
   checkIns: CheckInRecord[],
-  daysCount: number = 7
+  daysCount: number,
+  userTimezone: string | undefined
 ): TimelineItem[] {
   const timeline: TimelineItem[] = [];
 
-  // Create a map for quick lookup
   const checkInMap = new Map<string, CheckInRecord>();
-  checkIns.forEach((checkIn) => {
-    checkInMap.set(checkIn.date, checkIn);
-  });
+  checkIns.forEach((c) => checkInMap.set(c.date, c));
 
-  // Generate last N days (including today)
-  const today = new Date();
+  const today = userTimezone ? getTodayInTimezone(userTimezone) : new Date();
+
   for (let i = daysCount - 1; i >= 0; i--) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
-    const dateString = formatDateToYYYYMMDD(date);
 
-    const checkIn = checkInMap.get(dateString);
-    if (checkIn) {
-      timeline.push(checkIn);
+    const dateString = formatDate(date);
+
+    if (checkInMap.has(dateString)) {
+      timeline.push(checkInMap.get(dateString)!);
     } else {
       timeline.push({
         date: dateString,
@@ -204,19 +223,33 @@ function generateCheckInTimeline(
   return timeline;
 }
 
-/**
- * Helper to format date to YYYY-MM-DD
- */
-function formatDateToYYYYMMDD(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+function getTodayInTimezone(timezone: string): Date {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = fmt.formatToParts(new Date());
+  const y = parseInt(parts.find((p) => p.type === "year")!.value);
+  const m = parseInt(parts.find((p) => p.type === "month")!.value) - 1;
+  const d = parseInt(parts.find((p) => p.type === "day")!.value);
+
+  return new Date(y, m, d);
 }
 
-/**
- * Helper to get today's date in YYYY-MM-DD format
- */
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function getTodayDateString(): string {
-  return formatDateToYYYYMMDD(new Date());
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

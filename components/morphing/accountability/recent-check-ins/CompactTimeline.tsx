@@ -24,12 +24,14 @@ interface CompactTimelineProps {
   checkIns: TimelineItem[];
   selectedDate: string | null;
   onSelectItem: (item: TimelineItem) => void;
+  userTimezone?: string | null;
 }
 
 export function CompactTimeline({
   checkIns,
   selectedDate,
   onSelectItem,
+  userTimezone,
 }: CompactTimelineProps) {
   const { colors } = useTheme();
 
@@ -37,11 +39,39 @@ export function CompactTimeline({
     return "isMissing" in item && item.isMissing === true;
   };
 
-  // Get day label (e.g., "Mon", "Tue", or "Today")
-  const getDayLabel = (dateString: string, isToday: boolean): string => {
-    if (isToday) return "Today";
+  // Get today's date string in the appropriate timezone
+  const getTodayDateString = (): string => {
+    if (userTimezone) {
+      const formatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: userTimezone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
 
-    const date = new Date(dateString);
+      const parts = formatter.formatToParts(new Date());
+      const year = parts.find((p) => p.type === "year")?.value;
+      const month = parts.find((p) => p.type === "month")?.value;
+      const day = parts.find((p) => p.type === "day")?.value;
+
+      return `${year}-${month}-${day}`;
+    } else {
+      // Use device local time
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+  };
+
+  const todayDateString = getTodayDateString();
+
+  // Get day label (e.g., "Mon", "Tue", or "Today")
+  const getDayLabel = (dateString: string): string => {
+    if (dateString === todayDateString) return "Today";
+
+    const date = new Date(dateString + "T00:00:00");
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     return dayNames[date.getDay()];
   };
@@ -51,9 +81,8 @@ export function CompactTimeline({
       {checkIns.map((item, i) => {
         const missing = isMissing(item);
         const isSelected = selectedDate === item.date;
-        // The rightmost item (last in array) is always today
-        const isTodayItem = i === checkIns.length - 1;
-        const dayLabel = getDayLabel(item.date, isTodayItem);
+        const isTodayItem = item.date === todayDateString;
+        const dayLabel = getDayLabel(item.date);
 
         return (
           <View key={i} style={styles.dotContainer}>
@@ -79,7 +108,6 @@ export function CompactTimeline({
                   borderStyle: missing ? "dashed" : "solid",
                   opacity: missing && !isSelected ? 0.5 : 1,
                 },
-                // Add extra styling for today
                 isTodayItem && styles.todayDot,
               ]}
               onPress={() => onSelectItem(item)}
