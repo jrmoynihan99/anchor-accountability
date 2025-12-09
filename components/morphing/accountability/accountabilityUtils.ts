@@ -294,3 +294,30 @@ export function isToday(
     checkDate.getFullYear() === today.getFullYear()
   );
 }
+
+export function getLocalTimeForTimezone(timezone?: string): string | null {
+  if (!timezone) return null;
+
+  try {
+    const now = new Date();
+
+    // Time (e.g., "3:41 AM")
+    const time = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(now);
+
+    // Date (e.g., "Dec 10")
+    const date = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      month: "short",
+      day: "numeric",
+    }).format(now);
+
+    return `${time}, ${date}`;
+  } catch {
+    return null;
+  }
+}

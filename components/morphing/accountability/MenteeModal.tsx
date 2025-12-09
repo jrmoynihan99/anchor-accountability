@@ -47,6 +47,7 @@ export function MenteeModal({
     overdueText: null,
     hasCheckedInToday: false,
   };
+  const menteeTimezone = relationship?.menteeTimezone;
 
   // Hook now auto-loads mentee timezone
   const { checkIns, timeline, loading, userTimezone } = useCheckIns(
@@ -89,6 +90,7 @@ export function MenteeModal({
         recoveryStreak={recoveryStreak}
         checkInStreak={checkInStreak}
         checkInStatus={checkInStatus}
+        menteeTimezone={menteeTimezone}
         showExpandIcon={true}
         onMessage={handleMessage}
       />

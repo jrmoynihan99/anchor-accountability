@@ -9,6 +9,7 @@ interface MenteeCardProps {
   recoveryStreak: number;
   checkInStreak: number;
   checkInStatus: CheckInStatus;
+  menteeTimezone?: string;
   onRemind?: () => void;
   onMessage?: () => void;
   // ButtonModalTransitionBridge props
@@ -24,6 +25,7 @@ export function MenteeCard({
   recoveryStreak,
   checkInStreak,
   checkInStatus,
+  menteeTimezone,
   onRemind,
   onMessage,
   buttonRef,
@@ -51,6 +53,7 @@ export function MenteeCard({
             recoveryStreak={recoveryStreak}
             checkInStreak={checkInStreak}
             checkInStatus={checkInStatus}
+            menteeTimezone={menteeTimezone}
             showExpandIcon={true}
             onRemind={onRemind}
             onMessage={onMessage}
