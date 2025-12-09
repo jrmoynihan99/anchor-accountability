@@ -248,6 +248,29 @@ export function NotificationsSection({
               />
             </View>
           </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingContent}>
+              <View style={styles.settingTextContainer}>
+                <ThemedText type="body" style={styles.settingLabel}>
+                  Accountability
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  lightColor={colors.textSecondary}
+                  darkColor={colors.textSecondary}
+                  style={styles.settingDescription}
+                >
+                  Check-in reminders and partner updates
+                </ThemedText>
+              </View>
+              <ThemedToggle
+                value={preferences.accountability}
+                onValueChange={(value) =>
+                  updatePreference("accountability", value)
+                }
+              />
+            </View>
+          </View>
         </>
       ) : null}
 

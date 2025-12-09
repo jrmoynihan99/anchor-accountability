@@ -11,6 +11,7 @@ export interface NotificationPreferences {
   encouragements: boolean;
   messages: boolean;
   general: boolean;
+  accountability: boolean;
 }
 
 export interface NotificationState {
@@ -27,6 +28,7 @@ const EMPTY_NOTIFICATION_PREFS: NotificationPreferences = {
   encouragements: true,
   messages: true,
   general: true,
+  accountability: true,
 };
 
 const ANDROID_DENIAL_COUNT_KEY = "androidNotificationDenialCount";
