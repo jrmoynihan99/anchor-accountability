@@ -43,13 +43,43 @@ export function formatDateToYYYYMMDD(date: Date): string {
 /**
  * Check if a date string (YYYY-MM-DD) is in the future
  * Uses date-only comparison to avoid timezone issues
+ * @param dateString - Date in YYYY-MM-DD format
+ * @param userTimezone - Optional timezone (e.g., "America/New_York"). If not provided, uses device local time.
  */
-export function isDateInFuture(dateString: string): boolean {
-  // Parse the date string (YYYY-MM-DD) - same pattern as accountabilityUtils
+export function isDateInFuture(
+  dateString: string,
+  userTimezone?: string
+): boolean {
+  // Parse the date string (YYYY-MM-DD)
   const [year, month, day] = dateString.split("-").map(Number);
-  const checkDate = new Date(year, month - 1, day); // Month is 0-indexed
+  const checkDate = new Date(year, month - 1, day);
 
-  const today = new Date();
+  // Get "today" in the appropriate timezone
+  let today: Date;
+  if (userTimezone) {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: userTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    const parts = formatter.formatToParts(new Date());
+    const todayYear = parseInt(
+      parts.find((p) => p.type === "year")?.value || "0"
+    );
+    const todayMonth =
+      parseInt(parts.find((p) => p.type === "month")?.value || "0") - 1;
+    const todayDay = parseInt(
+      parts.find((p) => p.type === "day")?.value || "0"
+    );
+
+    today = new Date(todayYear, todayMonth, todayDay);
+  } else {
+    const now = new Date();
+    today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+
   const todayDateOnly = new Date(
     today.getFullYear(),
     today.getMonth(),

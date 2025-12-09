@@ -29,12 +29,14 @@ interface CheckInDropdownProps {
   selectedCheckIn: TimelineItem | null;
   onClose: () => void;
   showFillHint?: boolean; // Show "Use section above" hint (MentorModal only)
+  userTimezone?: string; // Timezone of the user whose check-ins are being displayed
 }
 
 export function CheckInDropdown({
   selectedCheckIn,
   onClose,
   showFillHint = false,
+  userTimezone,
 }: CheckInDropdownProps) {
   const { colors } = useTheme();
 
@@ -85,7 +87,7 @@ export function CheckInDropdown({
         type="caption"
         style={{ color: colors.textSecondary, marginTop: 4 }}
       >
-        {formatDate(selectedCheckIn.date)}
+        {formatDate(selectedCheckIn.date, userTimezone)}
       </ThemedText>
 
       {missing ? (

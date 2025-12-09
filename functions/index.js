@@ -1604,11 +1604,17 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
           continue;
         }
 
-        // Calculate current time in user's timezone
-        const userTime = new Date(
-          now.toLocaleString("en-US", { timeZone: userData.timezone })
+        // Calculate current hour in user's timezone using Intl.DateTimeFormat
+        const hourFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: userData.timezone,
+          hour: "numeric",
+          hour12: false,
+        });
+
+        const userHour = parseInt(
+          hourFormatter.formatToParts(now).find((p) => p.type === "hour")
+            ?.value || "0"
         );
-        const userHour = userTime.getHours();
 
         // Only process if it's between 8:00 PM (20) and 8:59 PM (20)
         // TODO: Make this configurable via systemConfig collection
@@ -1616,8 +1622,21 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
           continue;
         }
 
+        // Get today's date in user's timezone
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: userData.timezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+
+        const dateParts = dateFormatter.formatToParts(now);
+        const todayYear = dateParts.find((p) => p.type === "year")?.value;
+        const todayMonth = dateParts.find((p) => p.type === "month")?.value;
+        const todayDay = dateParts.find((p) => p.type === "day")?.value;
+        const todayDate = `${todayYear}-${todayMonth}-${todayDay}`;
+
         // Check if we already sent an accountability reminder today
-        const todayDate = formatDate(userTime);
         const lastNotificationDate = userData.lastAccountabilityReminderDate;
 
         if (lastNotificationDate === todayDate) {
@@ -1677,11 +1696,12 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
           body =
             "Don't forget to check in with your accountability partner today";
         } else if (daysSinceCheckIn === 1) {
-          body = "You haven't checked in with your partner in 1 day";
+          body = "You didn't check in with your partner yesterday, do it now!";
         } else if (daysSinceCheckIn >= 7) {
-          body = "You haven't checked in with your partner in over a week";
+          body =
+            "You haven't checked in with your partner in over a week. Update them now!";
         } else {
-          body = `You haven't checked in with your partner in ${daysSinceCheckIn} days`;
+          body = `You haven't checked in with your partner in ${daysSinceCheckIn} days. Update them now!`;
         }
 
         // Send notification
@@ -1734,13 +1754,12 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
 exports.notifyMentorOnCheckIn = onDocumentWritten(
   "accountabilityRelationships/{relationshipId}/checkIns/{checkInId}",
   async (event) => {
-    // This triggers when a check-in is created or updated
     const checkIn = event.data?.after?.data();
     if (!checkIn) return;
 
     const relationshipId = event.params.relationshipId;
 
-    // Get the relationship to find the mentor
+    // Get relationship
     const relationshipDoc = await admin
       .firestore()
       .collection("accountabilityRelationships")
@@ -1753,7 +1772,44 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
     const mentorUid = relationship.mentorUid;
     const menteeUid = relationship.menteeUid;
 
-    // Get mentor's user data
+    // ❗ FIXED: Must use admin.firestore()
+    const menteeUserDoc = await admin
+      .firestore()
+      .collection("users")
+      .doc(menteeUid)
+      .get();
+
+    const menteeTimezone = menteeUserDoc.data()?.timezone;
+
+    if (!menteeTimezone) {
+      console.log(`❌ No timezone found for mentee ${menteeUid}`);
+      return;
+    }
+
+    // Get "today" in mentee's timezone
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: menteeTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    const parts = formatter.formatToParts(new Date());
+    const year = parts.find((p) => p.type === "year")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const day = parts.find((p) => p.type === "day")?.value;
+
+    const todayInMenteeTZ = `${year}-${month}-${day}`;
+
+    // Only notify for a check-in that matches TODAY *in their timezone*
+    if (checkIn.date !== todayInMenteeTZ) {
+      console.log(
+        `⏭️ Skipping notification: check-in for ${checkIn.date} != ${todayInMenteeTZ}`
+      );
+      return;
+    }
+
+    // Fetch mentor user
     const mentorDoc = await admin
       .firestore()
       .collection("users")
@@ -1764,20 +1820,30 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
 
     const mentorData = mentorDoc.data();
 
-    // Check if mentor wants accountability notifications
     if (!mentorData.notificationPreferences?.accountability) {
-      console.log(
-        `Mentor ${mentorUid} has accountability notifications disabled.`
-      );
+      console.log(`🔕 Mentor ${mentorUid} has notifications off`);
       return;
     }
 
     if (!mentorData.expoPushToken?.startsWith("ExponentPushToken")) {
-      console.log(`Mentor ${mentorUid} has no valid push token.`);
+      console.log(`No valid push token for mentor ${mentorUid}`);
       return;
     }
 
-    // Send notification
+    // Build notification
+    const getStatusLabel = (status) => {
+      switch (status) {
+        case "great":
+          return "is doing great";
+        case "struggling":
+          return "is struggling today";
+        case "support":
+          return "needs support";
+        default:
+          return "checked in";
+      }
+    };
+
     const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
 
     await axios.post(
@@ -1786,24 +1852,25 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
         {
           to: mentorData.expoPushToken,
           sound: "default",
-          title: "Check-in completed!",
-          body: `${anonymousUsername} completed their daily check-in`,
+          title: "One of your partners checked in!",
+          body: `${anonymousUsername} ${getStatusLabel(checkIn.status)}`,
           data: {
             type: "mentee_checked_in",
-            relationshipId: relationshipId,
+            relationshipId,
+            status: checkIn.status,
           },
         },
       ],
       { headers: { "Content-Type": "application/json" } }
     );
 
-    console.log(`✅ Notified mentor ${mentorUid} about mentee check-in`);
+    console.log(`✅ Sent check-in notification to mentor ${mentorUid}`);
   }
 );
 
 exports.sendMissedCheckInNotifications = onSchedule(
   {
-    schedule: "0 * * * *", // Every hour at minute 0
+    schedule: "0 * * * *",
     timeZone: "UTC",
   },
   async () => {
@@ -1813,7 +1880,6 @@ exports.sendMissedCheckInNotifications = onSchedule(
       const db = admin.firestore();
       const now = new Date();
 
-      // Get all active relationships
       const relationshipsSnap = await db
         .collection("accountabilityRelationships")
         .where("status", "==", "active")
@@ -1831,74 +1897,100 @@ exports.sendMissedCheckInNotifications = onSchedule(
         const mentorUid = relationship.mentorUid;
         const menteeUid = relationship.menteeUid;
 
-        // Get mentor's data
+        // FIXED: use admin.firestore()
+        const menteeUserDoc = await db.collection("users").doc(menteeUid).get();
+        const menteeTimezone = menteeUserDoc.data()?.timezone;
+
+        if (!menteeTimezone) {
+          console.log(
+            `Mentee ${menteeUid} has no timezone in relationship ${relationshipDoc.id}`
+          );
+          continue;
+        }
+
+        const hourFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: menteeTimezone,
+          hour: "numeric",
+          hour12: false,
+        });
+
+        const menteeHour = parseInt(
+          hourFormatter.formatToParts(now).find((p) => p.type === "hour")
+            ?.value || "0"
+        );
+
+        if (menteeHour !== 10) continue;
+
         const mentorDoc = await db.collection("users").doc(mentorUid).get();
         if (!mentorDoc.exists) continue;
 
         const mentorData = mentorDoc.data();
 
-        // Skip if no push token, timezone, or notifications disabled
         if (
           !mentorData.expoPushToken?.startsWith("ExponentPushToken") ||
-          !mentorData.timezone ||
           !mentorData.notificationPreferences?.accountability
         ) {
           continue;
         }
 
-        // Calculate current time in mentor's timezone
-        const mentorTime = new Date(
-          now.toLocaleString("en-US", { timeZone: mentorData.timezone })
+        const dateFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: menteeTimezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        });
+
+        const dateParts = dateFormatter.formatToParts(now);
+        const todayYear = dateParts.find((p) => p.type === "year").value;
+        const todayMonth = dateParts.find((p) => p.type === "month").value;
+        const todayDay = dateParts.find((p) => p.type === "day").value;
+        const todayDate = `${todayYear}-${todayMonth}-${todayDay}`;
+
+        const menteeToday = new Date(
+          parseInt(todayYear),
+          parseInt(todayMonth) - 1,
+          parseInt(todayDay)
         );
-        const mentorHour = mentorTime.getHours();
+        const menteeYesterday = new Date(menteeToday);
+        menteeYesterday.setDate(menteeYesterday.getDate() - 1);
 
-        // Only process if it's between 10:00 AM (10) and 10:59 AM (10)
-        if (mentorHour !== 10) {
-          continue;
-        }
+        const yesterdayDate = `${menteeYesterday.getFullYear()}-${String(
+          menteeYesterday.getMonth() + 1
+        ).padStart(2, "0")}-${String(menteeYesterday.getDate()).padStart(
+          2,
+          "0"
+        )}`;
 
-        // Check if we already sent this notification today
-        const todayDate = formatDate(mentorTime);
         const lastNotificationKey = `lastMissedCheckInNotification_${relationshipDoc.id}`;
         const lastNotificationDate = mentorData[lastNotificationKey];
 
-        if (lastNotificationDate === todayDate) {
-          console.log(
-            `Already sent missed check-in notification to ${mentorUid} today for relationship ${relationshipDoc.id}.`
-          );
-          continue;
-        }
+        if (lastNotificationDate === todayDate) continue;
 
         const lastCheckIn = relationship.lastCheckIn;
 
-        // Calculate days since last check-in
+        if (lastCheckIn === yesterdayDate) continue;
+
         let daysSinceCheckIn = 0;
+
         if (lastCheckIn) {
           const lastCheckInDate = new Date(lastCheckIn);
-          const today = new Date(todayDate);
-          const diffTime = today - lastCheckInDate;
+          const todayCompare = new Date(todayDate);
+          const diffTime = todayCompare - lastCheckInDate;
           daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
         } else {
-          // No check-in ever recorded - calculate from relationship creation
           const createdAt = relationship.createdAt?.toDate();
           if (createdAt) {
-            const today = new Date(todayDate);
-            const diffTime = today - createdAt;
+            const todayCompare = new Date(todayDate);
+            const diffTime = todayCompare - createdAt;
             daysSinceCheckIn = Math.floor(diffTime / (1000 * 60 * 60 * 24));
           }
         }
 
-        // Only notify if mentee has actually missed at least 1 day
-        if (daysSinceCheckIn < 1) {
-          console.log(`${menteeUid} is up to date with check-ins.`);
-          continue;
-        }
+        if (daysSinceCheckIn < 1) continue;
 
-        // Generate escalating message
         const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
-        let title = "Missed check-in";
-        let body = "";
 
+        let body = "";
         if (daysSinceCheckIn === 1) {
           body = `${anonymousUsername} hasn't checked in for 1 day`;
         } else if (daysSinceCheckIn >= 7) {
@@ -1910,48 +2002,239 @@ exports.sendMissedCheckInNotifications = onSchedule(
         notifications.push({
           to: mentorData.expoPushToken,
           sound: "default",
-          title: title,
-          body: body,
+          title: "Missed check-in",
+          body,
           data: {
             type: "mentee_missed_checkin",
             relationshipId: relationshipDoc.id,
-            daysSinceCheckIn: daysSinceCheckIn,
+            daysSinceCheckIn,
           },
         });
 
-        // Mark that we sent this notification today
         await db
           .collection("users")
           .doc(mentorUid)
           .update({
             [lastNotificationKey]: todayDate,
           });
-
-        console.log(
-          `✅ Queued missed check-in notification for mentor ${mentorUid} (${daysSinceCheckIn} days)`
-        );
       }
 
-      // Send notifications in batches
       if (notifications.length > 0) {
         const batchSize = 100;
         for (let i = 0; i < notifications.length; i += batchSize) {
           const chunk = notifications.slice(i, i + batchSize);
-          const res = await axios.post(
-            "https://exp.host/--/api/v2/push/send",
-            chunk,
-            { headers: { "Content-Type": "application/json" } }
-          );
-          console.log(`✅ Sent batch of ${chunk.length}:`, res.data?.data);
+          await axios.post("https://exp.host/--/api/v2/push/send", chunk, {
+            headers: { "Content-Type": "application/json" },
+          });
         }
-        console.log(
-          `✅ Total missed check-in notifications sent: ${notifications.length}`
-        );
-      } else {
-        console.log("No missed check-in notifications to send this hour.");
       }
     } catch (error) {
       console.error("❌ Error in sendMissedCheckInNotifications:", error);
     }
   }
 );
+
+exports.testAccountabilityReminder = onRequest(async (req, res) => {
+  try {
+    const menteeUid = req.query.menteeUid;
+    if (!menteeUid) {
+      return res.status(400).send("Missing menteeUid");
+    }
+
+    const db = admin.firestore();
+    const userDoc = await db.collection("users").doc(menteeUid).get();
+
+    if (!userDoc.exists) return res.status(404).send("User not found");
+
+    const user = userDoc.data();
+
+    if (!user.expoPushToken) return res.send("User has no Expo push token");
+    if (!user.notificationPreferences?.accountability)
+      return res.send("User has accountability notifications OFF");
+    if (!user.timezone) return res.send("User has no timezone set");
+
+    const now = new Date();
+
+    // Compute their local date and hour
+    const dateFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: user.timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    const hourFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: user.timezone,
+      hour: "numeric",
+      hour12: false,
+    });
+
+    const parts = dateFormatter.formatToParts(now);
+    const todayDate = `${parts.find((p) => p.type === "year").value}-${
+      parts.find((p) => p.type === "month").value
+    }-${parts.find((p) => p.type === "day").value}`;
+
+    // Fetch their accountability relationship
+    const relSnap = await db
+      .collection("accountabilityRelationships")
+      .where("menteeUid", "==", menteeUid)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
+
+    if (relSnap.empty) return res.send("No active relationship");
+
+    const relDoc = relSnap.docs[0];
+    const rel = relDoc.data();
+
+    const lastCheckIn = rel.lastCheckIn;
+
+    // Calculate days since check-in
+    let daysSince = 0;
+    if (lastCheckIn) {
+      daysSince = Math.floor(
+        (new Date(todayDate) - new Date(lastCheckIn)) / (1000 * 60 * 60 * 24)
+      );
+    }
+
+    // Build message
+    let body = "";
+    if (lastCheckIn === todayDate) {
+      body = "You already checked in today";
+    } else if (daysSince === 0) {
+      body = "Don't forget to check in with your accountability partner today";
+    } else if (daysSince === 1) {
+      body = "You haven't checked in for 1 day";
+    } else if (daysSince >= 7) {
+      body = "You haven't checked in for over a week";
+    } else {
+      body = `You haven't checked in for ${daysSince} days`;
+    }
+
+    // Send push notification
+    const message = {
+      to: user.expoPushToken,
+      sound: "default",
+      title: "Accountability Check-In",
+      body,
+      data: {
+        type: "accountability_reminder",
+        relationshipId: relDoc.id,
+        daysSinceCheckIn: daysSince,
+      },
+    };
+
+    await axios.post("https://exp.host/--/api/v2/push/send", message, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.send({
+      status: "OK",
+      sentTo: menteeUid,
+      message,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Error: " + err.toString());
+  }
+});
+
+exports.testMissedCheckInNotification = onRequest(async (req, res) => {
+  try {
+    const menteeUid = req.query.menteeUid;
+    if (!menteeUid) return res.status(400).send("Missing menteeUid");
+
+    const db = admin.firestore();
+
+    const relSnap = await db
+      .collection("accountabilityRelationships")
+      .where("menteeUid", "==", menteeUid)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
+
+    if (relSnap.empty) return res.send("No active relationship");
+
+    const relDoc = relSnap.docs[0];
+    const rel = relDoc.data();
+
+    const mentorUid = rel.mentorUid;
+
+    // FIXED: must use admin.firestore()
+    const menteeUserDoc = await db.collection("users").doc(menteeUid).get();
+    const menteeTimezone = menteeUserDoc.data()?.timezone;
+
+    if (!menteeTimezone) return res.send("Relationship missing menteeTimezone");
+
+    const mentorDoc = await db.collection("users").doc(mentorUid).get();
+    if (!mentorDoc.exists) return res.send("Mentor user not found");
+
+    const mentor = mentorDoc.data();
+
+    if (!mentor.notificationPreferences?.accountability)
+      return res.send("Mentor has notifications OFF");
+
+    if (!mentor.expoPushToken) return res.send("Mentor has no push token");
+
+    const now = new Date();
+
+    const dateFormatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: menteeTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
+    const parts = dateFormatter.formatToParts(now);
+    const todayDate = `${parts.find((p) => p.type === "year").value}-${
+      parts.find((p) => p.type === "month").value
+    }-${parts.find((p) => p.type === "day").value}`;
+
+    const menteeToday = new Date(
+      parts.find((p) => p.type === "year").value,
+      parts.find((p) => p.type === "month").value - 1,
+      parts.find((p) => p.type === "day").value
+    );
+    const menteeYesterday = new Date(menteeToday);
+    menteeYesterday.setDate(menteeYesterday.getDate() - 1);
+
+    const yesterdayDate = `${menteeYesterday.getFullYear()}-${String(
+      menteeYesterday.getMonth() + 1
+    ).padStart(2, "0")}-${String(menteeYesterday.getDate()).padStart(2, "0")}`;
+
+    const lastCheckIn = rel.lastCheckIn;
+
+    const missed = lastCheckIn !== yesterdayDate;
+
+    const anon = "user-" + menteeUid.slice(0, 5);
+    const body = missed
+      ? `${anon} hasn't checked in since ${lastCheckIn || "never"}`
+      : `${anon} checked in yesterday.`;
+
+    const message = {
+      to: mentor.expoPushToken,
+      sound: "default",
+      title: "Missed check-in",
+      body,
+      data: {
+        type: "mentee_missed_checkin",
+        relationshipId: relDoc.id,
+        lastCheckIn,
+      },
+    };
+
+    await axios.post("https://exp.host/--/api/v2/push/send", message, {
+      headers: { "Content-Type": "application/json" },
+    });
+
+    return res.send({
+      status: "OK",
+      sentTo: mentorUid,
+      missedYesterday: missed,
+      message,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Error: " + err.toString());
+  }
+});

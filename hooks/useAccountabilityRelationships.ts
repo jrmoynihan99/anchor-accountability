@@ -1,8 +1,11 @@
 // hooks/useAccountabilityRelationships.ts
+
 import { auth, db } from "@/lib/firebase";
 import { AccountabilityRelationship } from "@/types/AccountabilityRelationship";
 import {
   collection,
+  doc,
+  getDoc,
   onSnapshot,
   query,
   Unsubscribe,
@@ -17,6 +20,8 @@ import {
 interface AccountabilityWithId extends AccountabilityRelationship {
   id: string;
   checkInStatus: CheckInStatus;
+  menteeTimezone?: string;
+  mentorTimezone?: string;
 }
 
 export function useAccountabilityRelationships() {
@@ -30,6 +35,21 @@ export function useAccountabilityRelationships() {
   const mentorUnsubRef = useRef<Unsubscribe | null>(null);
   const menteesUnsubRef = useRef<Unsubscribe | null>(null);
 
+  // Cache to avoid refetching user docs repeatedly
+  const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
+
+  // Fetch user timezone from Firestore (with caching)
+  const getTimezoneForUser = async (
+    userId: string
+  ): Promise<string | undefined> => {
+    if (timezoneCache[userId]) return timezoneCache[userId];
+
+    const snap = await getDoc(doc(db, "users", userId));
+    const tz = snap.data()?.timezone;
+    timezoneCache[userId] = tz;
+    return tz;
+  };
+
   useEffect(() => {
     if (!uid) {
       setMentor(null);
@@ -40,9 +60,9 @@ export function useAccountabilityRelationships() {
 
     setLoading(true);
 
-    //
-    // 🔵 LISTEN FOR MY MENTOR (relationship where I am the mentee)
-    //
+    // ===============================
+    // 🔵 LISTEN FOR MY MENTOR (I am the mentee)
+    // ===============================
     const mentorQuery = query(
       collection(db, "accountabilityRelationships"),
       where("menteeUid", "==", uid),
@@ -51,15 +71,22 @@ export function useAccountabilityRelationships() {
 
     mentorUnsubRef.current = onSnapshot(
       mentorQuery,
-      (snapshot) => {
+      async (snapshot) => {
         if (!snapshot.empty) {
-          const doc = snapshot.docs[0];
-          const data = doc.data() as AccountabilityRelationship;
+          const docSnap = snapshot.docs[0];
+          const data = docSnap.data() as AccountabilityRelationship;
+
+          // Fetch MY timezone
+          const myTimezone = await getTimezoneForUser(uid);
 
           setMentor({
             ...data,
-            id: doc.id,
-            checkInStatus: calculateCheckInStatus(data.lastCheckIn || null),
+            id: docSnap.id,
+            mentorTimezone: myTimezone,
+            checkInStatus: calculateCheckInStatus(
+              data.lastCheckIn || null,
+              myTimezone
+            ),
           });
         } else {
           setMentor(null);
@@ -71,9 +98,9 @@ export function useAccountabilityRelationships() {
       }
     );
 
-    //
-    // 🟢 LISTEN FOR MY MENTEES (relationships where I am the mentor)
-    //
+    // ===============================
+    // 🟢 LISTEN FOR MY MENTEES (I am the mentor)
+    // ===============================
     const menteesQuery = query(
       collection(db, "accountabilityRelationships"),
       where("mentorUid", "==", uid),
@@ -82,17 +109,27 @@ export function useAccountabilityRelationships() {
 
     menteesUnsubRef.current = onSnapshot(
       menteesQuery,
-      (snapshot) => {
-        const results: AccountabilityWithId[] = snapshot.docs.map((doc) => {
-          const data = doc.data() as AccountabilityRelationship;
-          return {
-            ...data,
-            id: doc.id,
-            checkInStatus: calculateCheckInStatus(data.lastCheckIn || null),
-          };
-        });
+      async (snapshot) => {
+        const results: AccountabilityWithId[] = [];
 
-        // Sort by createdAt descending (newest first)
+        for (const docSnap of snapshot.docs) {
+          const data = docSnap.data() as AccountabilityRelationship;
+
+          // Fetch each mentee's timezone
+          const menteeTimezone = await getTimezoneForUser(data.menteeUid);
+
+          results.push({
+            ...data,
+            id: docSnap.id,
+            menteeTimezone,
+            checkInStatus: calculateCheckInStatus(
+              data.lastCheckIn || null,
+              menteeTimezone
+            ),
+          });
+        }
+
+        // Sort by newest relationship first
         results.sort((a, b) => {
           const aTime = a.createdAt?.toMillis?.() ?? 0;
           const bTime = b.createdAt?.toMillis?.() ?? 0;
@@ -109,9 +146,6 @@ export function useAccountabilityRelationships() {
 
     setLoading(false);
 
-    //
-    // 🧹 CLEANUP
-    //
     return () => {
       mentorUnsubRef.current?.();
       menteesUnsubRef.current?.();

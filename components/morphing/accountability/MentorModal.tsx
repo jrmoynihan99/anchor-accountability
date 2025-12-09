@@ -35,7 +35,7 @@ export function MentorModal({
   close,
 }: MentorModalProps) {
   const { colors, effectiveTheme } = useTheme();
-  const uid = auth.currentUser?.uid;
+  const uid = auth.currentUser?.uid || null;
 
   // State for retroactive check-in date selection
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -43,17 +43,22 @@ export function MentorModal({
   const { threads } = useThreads();
 
   // Bidirectional hook - READ and WRITE
-  const { timeline, loading, submitCheckIn } = useCheckIns(relationshipId, 7);
+  // NEW SIGNATURE: (relationshipId, menteeUid, daysCount)
+  const { timeline, loading, submitCheckIn } = useCheckIns(
+    relationshipId,
+    uid,
+    7
+  );
 
   const handleMessage = () => {
-    // Find thread for this mentee
+    // Find thread for this mentor
     const thread = threads.find((t) => t.otherUserId === mentorUid);
 
     // Always close the modal immediately
     close();
 
     if (!thread) {
-      console.log("No thread found for this mentee");
+      console.log("No thread found for this mentee/mentor");
       return;
     }
 
@@ -63,7 +68,7 @@ export function MentorModal({
         pathname: "/message-thread",
         params: { threadId: thread.id },
       });
-    }, 300); // adjust if your morph animation is longer
+    }, 300);
   };
 
   const handleSubmitCheckIn = async (status: any, note: string) => {
