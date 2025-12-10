@@ -7,9 +7,9 @@ import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import {
@@ -62,24 +62,8 @@ export default function MessageThreadScreen() {
   const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
-  // Get relationship params if this is an accountability partner
-  const relationshipType = params.relationshipType as
-    | "mentor"
-    | "mentee"
-    | undefined;
-  const relationshipId = params.relationshipId as string | undefined;
-
-  // Load accountability relationships to get full relationship data
-  const { mentor, mentees } = useAccountabilityRelationships();
-
-  // Determine if this is an accountability partner and get relationship details
-  const isAccountabilityPartner = !!relationshipType;
-  const relationshipData =
-    relationshipType === "mentor"
-      ? mentor
-      : relationshipType === "mentee"
-      ? mentees.find((m) => m.id === relationshipId)
-      : null;
+  // Load accountability relationships from context
+  const { mentor, mentees } = useAccountability();
 
   const [inputText, setInputText] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -125,6 +109,32 @@ export default function MessageThreadScreen() {
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
+  // Get the actual other user ID (from params or fetched from thread)
+  const actualOtherUserId = otherUserId || fetchedOtherUserId;
+
+  // Self-determine relationship by checking if otherUserId matches any accountability relationships
+  // This will recalculate when actualOtherUserId, mentor, or mentees change
+  const isMentor = React.useMemo(
+    () => mentor?.mentorUid === actualOtherUserId,
+    [mentor, actualOtherUserId]
+  );
+
+  const menteeRelationship = React.useMemo(
+    () => mentees.find((m) => m.menteeUid === actualOtherUserId),
+    [mentees, actualOtherUserId]
+  );
+
+  const isMentee = !!menteeRelationship;
+
+  // Derive relationship type and data
+  const relationshipType = isMentor
+    ? "mentor"
+    : isMentee
+    ? "mentee"
+    : undefined;
+  const relationshipData = isMentor ? mentor : menteeRelationship || undefined;
+  const isAccountabilityPartner = !!relationshipType;
+
   // Animated values for smooth keyboard handling
   const keyboardHeight = useSharedValue(0);
 
@@ -157,6 +167,13 @@ export default function MessageThreadScreen() {
         return;
       }
 
+      // Never show banner if user already has a mentor
+      if (mentor) {
+        setShowBanner(false);
+        setBannerDismissed(true);
+        return;
+      }
+
       try {
         const storageKey = `${BANNER_STORAGE_KEY}${actualThreadId}`;
         const dismissed = await AsyncStorage.getItem(storageKey);
@@ -183,7 +200,8 @@ export default function MessageThreadScreen() {
     messages.length,
     loadingContext,
     isAccountabilityPartner,
-  ]); // Added isAccountabilityPartner dependency
+    mentor,
+  ]); // Added mentor dependency
 
   const handleBannerDismiss = async () => {
     try {

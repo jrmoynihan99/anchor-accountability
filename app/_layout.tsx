@@ -1,6 +1,7 @@
 // FIXED - app/_layout.tsx
 import "react-native-reanimated";
 
+import { AccountabilityProvider } from "@/context/AccountabilityContext";
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/useNotificationHandler";
@@ -226,11 +227,13 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <ModalIntentProvider>
-          <ThreadProvider>
-            <AppContent />
-          </ThreadProvider>
-        </ModalIntentProvider>
+        <AccountabilityProvider>
+          <ModalIntentProvider>
+            <ThreadProvider>
+              <AppContent />
+            </ThreadProvider>
+          </ModalIntentProvider>
+        </AccountabilityProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

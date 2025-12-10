@@ -6,8 +6,8 @@ import { EmptyMentorCard } from "@/components/morphing/accountability/EmptyMento
 import { MentorCard } from "@/components/morphing/accountability/MentorCard";
 import { MentorModal } from "@/components/morphing/accountability/MentorModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
 import { router, useLocalSearchParams } from "expo-router";
@@ -24,7 +24,7 @@ export default function AccountabilityScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { mentor, mentees, loading } = useAccountabilityRelationships();
+  const { mentor, mentees, loading } = useAccountability();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
   const hasMentor = !loading && mentor !== null;
@@ -65,7 +65,9 @@ export default function AccountabilityScreen() {
 
     router.push({
       pathname: "/message-thread",
-      params: { threadId: thread.id },
+      params: {
+        threadId: thread.id,
+      },
     });
   };
 

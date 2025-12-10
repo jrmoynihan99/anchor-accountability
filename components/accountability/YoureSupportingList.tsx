@@ -1,5 +1,5 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
@@ -18,7 +18,7 @@ interface YoureSupportingListProps {
 export function YoureSupportingList({
   openMenteeRelationship,
 }: YoureSupportingListProps) {
-  const { mentees, loading } = useAccountabilityRelationships();
+  const { mentees, loading } = useAccountability();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
 
@@ -49,7 +49,9 @@ export function YoureSupportingList({
 
     router.push({
       pathname: "/message-thread",
-      params: { threadId: thread.id },
+      params: {
+        threadId: thread.id,
+      },
     });
   };
 
