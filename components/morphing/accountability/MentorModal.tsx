@@ -17,12 +17,13 @@ interface MentorModalProps {
   mentorUid: string;
   streak: number;
   checkInStatus: CheckInStatus;
-  mentorTimezone?: string; // ADD THIS
+  mentorTimezone?: string;
   relationshipId: string;
   isVisible: boolean;
   progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+  buttonContent?: React.ReactNode; // Optional override
 }
 
 export function MentorModal({
@@ -35,6 +36,7 @@ export function MentorModal({
   progress,
   modalAnimatedStyle,
   close,
+  buttonContent: customButtonContent, // Optional override
 }: MentorModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const uid = auth.currentUser?.uid || null;
@@ -104,17 +106,19 @@ export function MentorModal({
     console.log("Selected filled day - reset to today");
   };
 
-  const buttonContent = (
+  const defaultButtonContent = (
     <View style={styles.buttonContent}>
       <MentorCardContent
         mentorUid={mentorUid}
         streak={streak}
         checkInStatus={checkInStatus}
-        mentorTimezone={mentorTimezone} // PASS IT DOWN
+        mentorTimezone={mentorTimezone}
         showExpandIcon={true}
       />
     </View>
   );
+
+  const buttonContent = customButtonContent || defaultButtonContent;
 
   const modalContent = (
     <View style={styles.screenContainer}>

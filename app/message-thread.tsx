@@ -9,6 +9,7 @@ import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHea
 import { ThemedText } from "@/components/ThemedText";
 import { useThread } from "@/context/ThreadContext";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import {
@@ -61,6 +62,25 @@ export default function MessageThreadScreen() {
   const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
+  // Get relationship params if this is an accountability partner
+  const relationshipType = params.relationshipType as
+    | "mentor"
+    | "mentee"
+    | undefined;
+  const relationshipId = params.relationshipId as string | undefined;
+
+  // Load accountability relationships to get full relationship data
+  const { mentor, mentees } = useAccountabilityRelationships();
+
+  // Determine if this is an accountability partner and get relationship details
+  const isAccountabilityPartner = !!relationshipType;
+  const relationshipData =
+    relationshipType === "mentor"
+      ? mentor
+      : relationshipType === "mentee"
+      ? mentees.find((m) => m.id === relationshipId)
+      : null;
+
   const [inputText, setInputText] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [actualThreadId, setActualThreadId] = useState<string>(threadId);
@@ -76,8 +96,8 @@ export default function MessageThreadScreen() {
   const pulseFnRef = useRef<(() => void) | null>(null);
   const hasPulsedAtCountRef = useRef<Set<number>>(new Set()); // Track which message counts we've pulsed at
 
-  // Pulse intervals: 23, 38, 53, 68, etc (every 15 after initial 8)
-  const PULSE_INTERVALS = [23, 38, 53]; // First 5 intervals after dismissal
+  // Pulse intervals: only 3 pulses after dismissal at 23, 38, 53
+  const PULSE_INTERVALS = [23, 38, 53];
 
   // Context messages + owner UIDs
   const [pleaMessage, setPleaMessage] = useState<string | null>(null);
@@ -130,6 +150,13 @@ export default function MessageThreadScreen() {
     const checkBannerStatus = async () => {
       if (!actualThreadId || !currentUserId || loadingContext) return; // Wait for context to load
 
+      // Never show banner for accountability partners
+      if (isAccountabilityPartner) {
+        setShowBanner(false);
+        setBannerDismissed(true);
+        return;
+      }
+
       try {
         const storageKey = `${BANNER_STORAGE_KEY}${actualThreadId}`;
         const dismissed = await AsyncStorage.getItem(storageKey);
@@ -150,7 +177,13 @@ export default function MessageThreadScreen() {
     };
 
     checkBannerStatus();
-  }, [actualThreadId, currentUserId, messages.length, loadingContext]); // Added loadingContext dependency
+  }, [
+    actualThreadId,
+    currentUserId,
+    messages.length,
+    loadingContext,
+    isAccountabilityPartner,
+  ]); // Added isAccountabilityPartner dependency
 
   const handleBannerDismiss = async () => {
     try {
@@ -188,6 +221,7 @@ export default function MessageThreadScreen() {
     if (PULSE_INTERVALS.includes(currentCount)) {
       // Only pulse if we haven't pulsed at this count yet
       if (!hasPulsedAtCountRef.current.has(currentCount)) {
+        console.log("🎯 TRIGGERING PULSE at message count:", currentCount);
         pulseFnRef.current();
         hasPulsedAtCountRef.current.add(currentCount);
       }
@@ -581,6 +615,7 @@ export default function MessageThreadScreen() {
           onBack={handleBack}
           colorScheme={effectiveTheme}
           otherUserId={displayOtherUserId}
+          relationshipType={relationshipType}
         />
 
         {/* Context Section - positioned absolutely */}
@@ -646,6 +681,8 @@ export default function MessageThreadScreen() {
             onPulseReady={(pulseFn) => {
               pulseFnRef.current = pulseFn;
             }}
+            relationshipType={relationshipType}
+            relationshipData={relationshipData}
           />
         </Animated.View>
       </View>

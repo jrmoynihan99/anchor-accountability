@@ -18,11 +18,23 @@ export function MessageThreadHeader({
   onBack,
   colorScheme = "light",
   otherUserId,
+  relationshipType,
 }: ThreadHeaderProps & {
   colorScheme?: "light" | "dark";
   otherUserId?: string;
+  relationshipType?: "mentor" | "mentee";
 }) {
   const insets = useSafeAreaInsets();
+
+  // Determine relationship subtitle text
+  const getRelationshipSubtitle = () => {
+    if (!relationshipType) return null;
+    return relationshipType === "mentor"
+      ? "Your Accountability Partner"
+      : "You Support Them";
+  };
+
+  const relationshipSubtitle = getRelationshipSubtitle();
 
   // Shared content for inside BlurView/View
   const renderHeaderContent = () => (
@@ -85,6 +97,16 @@ export function MessageThreadHeader({
                 <UserStreakDisplay userId={otherUserId} size="small" />
               )}
             </View>
+
+            {/* Show relationship subtitle or typing indicator */}
+            {relationshipSubtitle && !isTyping && (
+              <ThemedText
+                type="caption"
+                style={{ color: colors.textSecondary, opacity: 0.8 }}
+              >
+                {relationshipSubtitle}
+              </ThemedText>
+            )}
 
             {isTyping && (
               <ThemedText

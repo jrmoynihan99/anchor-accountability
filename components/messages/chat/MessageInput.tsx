@@ -11,6 +11,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MenteeModal } from "../../morphing/accountability/MenteeModal";
+import { MentorModal } from "../../morphing/accountability/MentorModal";
 import { AccountabilityInviteButton } from "../../morphing/message-thread/accountability/AccountabilityInviteButton";
 import { AccountabilityInviteModal } from "../../morphing/message-thread/accountability/AccountabilityInviteModal";
 import { MessageInputProps } from "./types";
@@ -23,6 +25,8 @@ export const MessageInput = forwardRef<
     threadName?: string;
     onInviteModalReady?: (openFn: () => void) => void;
     onPulseReady?: (pulseFn: () => void) => void;
+    relationshipType?: "mentor" | "mentee";
+    relationshipData?: any;
   }
 >(
   (
@@ -38,6 +42,8 @@ export const MessageInput = forwardRef<
       threadName = "Anonymous User",
       onInviteModalReady,
       onPulseReady,
+      relationshipType,
+      relationshipData,
     },
     ref
   ) => {
@@ -60,13 +66,14 @@ export const MessageInput = forwardRef<
       >
         <View style={styles.row}>
           {/* ------------------------------------------------ */}
-          {/* ACCOUNTABILITY INVITE BUTTON WITH MODAL          */}
+          {/* ACCOUNTABILITY BUTTON WITH MODAL          */}
+          {/* Different icon and modal for existing partners */}
           {/* ------------------------------------------------ */}
           <ButtonModalTransitionBridge
-            buttonBorderRadius={20}
+            buttonBorderRadius={23}
             modalBorderRadius={28}
-            modalWidthPercent={0.9}
-            modalHeightPercent={0.75}
+            modalWidthPercent={relationshipType ? 0.95 : 0.9}
+            modalHeightPercent={relationshipType ? 0.85 : 0.75}
             buttonFadeThreshold={0.01}
           >
             {({
@@ -87,9 +94,9 @@ export const MessageInput = forwardRef<
                 }
               }, [open]);
 
-              // Expose the pulse function to parent component
+              // Expose the pulse function to parent component (only for non-partners)
               React.useEffect(() => {
-                if (onPulseReady && pulseRef.current) {
+                if (!relationshipType && onPulseReady && pulseRef.current) {
                   onPulseReady(() => pulseRef.current?.pulse());
                 }
               }, [pulseRef.current]);
@@ -105,26 +112,79 @@ export const MessageInput = forwardRef<
                 return () => clearTimeout(timer);
               }, []);
 
-              return (
-                <>
+              // Render different button based on relationship status
+              const renderButton = () => {
+                return (
                   <AccountabilityInviteButton
+                    variant={relationshipType ? "partner" : "invite"}
                     colors={colors}
                     onPress={open}
                     buttonRef={buttonRef}
                     style={buttonAnimatedStyle}
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
-                    pulseRef={pulseRef}
+                    pulseRef={relationshipType ? undefined : pulseRef}
                   />
+                );
+              };
 
-                  <AccountabilityInviteModal
-                    isVisible={isModalVisible}
-                    progress={progress}
-                    modalAnimatedStyle={modalAnimatedStyle}
-                    close={close}
-                    otherUserId={otherUserId}
-                    threadName={threadName}
+              // Render different modal based on relationship type
+              const renderModal = () => {
+                // Define custom button content for partner button
+                const partnerButtonContent = relationshipType ? (
+                  <AccountabilityInviteButton
+                    variant="partner"
+                    colors={colors}
                   />
+                ) : undefined;
+
+                if (relationshipType === "mentor" && relationshipData) {
+                  return (
+                    <MentorModal
+                      mentorUid={otherUserId}
+                      streak={relationshipData.streak || 0}
+                      checkInStatus={relationshipData.checkInStatus}
+                      mentorTimezone={relationshipData.mentorTimezone}
+                      relationshipId={relationshipData.id}
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                      buttonContent={partnerButtonContent}
+                    />
+                  );
+                } else if (relationshipType === "mentee" && relationshipData) {
+                  return (
+                    <MenteeModal
+                      menteeUid={otherUserId}
+                      recoveryStreak={relationshipData.streak || 0}
+                      checkInStreak={45} // TODO: Get actual check-in streak
+                      relationshipId={relationshipData.id}
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                      buttonContent={partnerButtonContent}
+                    />
+                  );
+                } else {
+                  return (
+                    <AccountabilityInviteModal
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                      otherUserId={otherUserId}
+                      threadName={threadName}
+                    />
+                  );
+                }
+              };
+
+              return (
+                <>
+                  {renderButton()}
+                  {renderModal()}
                 </>
               );
             }}
