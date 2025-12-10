@@ -3,12 +3,13 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { CheckInStatus } from "./accountabilityUtils";
+import { CheckInStatus, getLocalTimeForTimezone } from "./accountabilityUtils";
 
 interface MentorCardContentProps {
   mentorUid: string;
   streak: number;
   checkInStatus: CheckInStatus;
+  mentorTimezone?: string;
   showExpandIcon?: boolean;
   onCheckIn?: () => void;
   onSOS?: () => void;
@@ -18,11 +19,13 @@ interface MentorCardContentProps {
 export function MentorCardContent({
   mentorUid,
   checkInStatus,
+  mentorTimezone,
   showExpandIcon = true,
   onCheckIn,
   onMessage,
 }: MentorCardContentProps) {
   const { colors } = useTheme();
+  const localTime = getLocalTimeForTimezone(mentorTimezone);
 
   const ExpandIcon = () => {
     if (!showExpandIcon) return null;
@@ -75,6 +78,18 @@ export function MentorCardContent({
               </ThemedText>
               <UserStreakDisplay userId={mentorUid} size="small" />
             </View>
+            {localTime && (
+              <ThemedText
+                type="caption"
+                style={{
+                  color: colors.textSecondary,
+                  opacity: 0.8,
+                  marginTop: 2,
+                }}
+              >
+                Local time: {localTime}
+              </ThemedText>
+            )}
           </View>
         </View>
       </View>

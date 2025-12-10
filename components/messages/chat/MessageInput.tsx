@@ -1,4 +1,5 @@
 // components/messages/MessageInput.tsx
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
@@ -10,11 +11,18 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AccountabilityInviteButton } from "../../morphing/message-thread/accountability/AccountabilityInviteButton";
+import { AccountabilityInviteModal } from "../../morphing/message-thread/accountability/AccountabilityInviteModal";
 import { MessageInputProps } from "./types";
 
 export const MessageInput = forwardRef<
   TextInput,
-  MessageInputProps & { colorScheme?: "light" | "dark" }
+  MessageInputProps & {
+    colorScheme?: "light" | "dark";
+    otherUserId?: string;
+    threadName?: string;
+    onInviteModalReady?: (openFn: () => void) => void;
+  }
 >(
   (
     {
@@ -25,6 +33,9 @@ export const MessageInput = forwardRef<
       colors,
       disabled = false,
       colorScheme = "light",
+      otherUserId = "",
+      threadName = "Anonymous User",
+      onInviteModalReady,
     },
     ref
   ) => {
@@ -44,50 +55,118 @@ export const MessageInput = forwardRef<
           },
         ]}
       >
-        <View
-          style={[
-            styles.inputWrapper,
-            {
-              backgroundColor: colors.textInputBackground,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <TextInput
-            ref={ref}
-            style={[styles.textInput, { color: colors.text }]}
-            placeholder="Message..."
-            placeholderTextColor={colors.textSecondary}
-            value={inputText}
-            onChangeText={onInputChange}
-            onFocus={onFocus}
-            multiline
-            maxLength={1000}
-            submitBehavior="newline"
-          />
+        <View style={styles.row}>
+          {/* ------------------------------------------------ */}
+          {/* ACCOUNTABILITY INVITE BUTTON WITH MODAL          */}
+          {/* ------------------------------------------------ */}
+          <ButtonModalTransitionBridge
+            buttonBorderRadius={20}
+            modalBorderRadius={28}
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.75}
+            buttonFadeThreshold={0.01}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              // Expose the open function to parent component
+              React.useEffect(() => {
+                if (onInviteModalReady) {
+                  onInviteModalReady(open);
+                }
+              }, [open]);
 
-          <TouchableOpacity
+              // One-time measurement to enable proper morph animation
+              React.useEffect(() => {
+                const timer = setTimeout(() => {
+                  handlePressIn();
+                  setTimeout(() => {
+                    handlePressOut();
+                  }, 10);
+                }, 100);
+                return () => clearTimeout(timer);
+              }, []);
+
+              return (
+                <>
+                  <AccountabilityInviteButton
+                    colors={colors}
+                    onPress={open}
+                    buttonRef={buttonRef}
+                    style={buttonAnimatedStyle}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                  />
+
+                  <AccountabilityInviteModal
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                    otherUserId={otherUserId}
+                    threadName={threadName}
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+
+          {/* ------------------------------------------------ */}
+          {/* INPUT FIELD + SEND BUTTON                       */}
+          {/* ------------------------------------------------ */}
+          <View
             style={[
-              styles.sendButton,
+              styles.inputWrapper,
               {
-                backgroundColor:
-                  inputText.trim().length > 0 ? colors.tint : colors.border,
+                backgroundColor: colors.textInputBackground,
+                borderColor: colors.border,
               },
             ]}
-            onPress={onSend}
-            disabled={inputText.trim().length === 0 || disabled}
-            activeOpacity={0.8}
           >
-            <IconSymbol
-              name="arrow.up"
-              size={16}
-              color={
-                inputText.trim().length > 0
-                  ? colors.white
-                  : colors.textSecondary
-              }
+            <TextInput
+              ref={ref}
+              style={[styles.textInput, { color: colors.text }]}
+              placeholder="Message..."
+              placeholderTextColor={colors.textSecondary}
+              value={inputText}
+              onChangeText={onInputChange}
+              onFocus={onFocus}
+              multiline
+              maxLength={1000}
+              submitBehavior="newline"
             />
-          </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                {
+                  backgroundColor:
+                    inputText.trim().length > 0 ? colors.tint : colors.border,
+                },
+              ]}
+              onPress={onSend}
+              disabled={inputText.trim().length === 0 || disabled}
+              activeOpacity={0.8}
+            >
+              <IconSymbol
+                name="arrow.up"
+                size={16}
+                color={
+                  inputText.trim().length > 0
+                    ? colors.white
+                    : colors.textSecondary
+                }
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -95,7 +174,7 @@ export const MessageInput = forwardRef<
     return (
       <View style={styles.inputContainer}>
         {/* -------------------------------------------- */}
-        {/* ANDROID — remove BlurView entirely            */}
+        {/* ANDROID fallback without blur                */}
         {/* -------------------------------------------- */}
         {Platform.OS === "android" ? (
           <View
@@ -104,17 +183,14 @@ export const MessageInput = forwardRef<
               {
                 backgroundColor:
                   Platform.OS === "android"
-                    ? colors.background // 100% opaque
-                    : colors.navBackground, // translucent + blur on iOS
+                    ? colors.background
+                    : colors.navBackground,
               },
             ]}
           >
             {renderContent()}
           </View>
         ) : (
-          /* -------------------------------------------- */
-          /* iOS — use BlurView exactly as before          */
-          /* -------------------------------------------- */
           <BlurView
             intensity={50}
             tint={colorScheme === "dark" ? "dark" : "light"}
@@ -131,9 +207,7 @@ export const MessageInput = forwardRef<
 MessageInput.displayName = "MessageInput";
 
 const styles = StyleSheet.create({
-  inputContainer: {
-    // No absolute positioning - part of flex layout
-  },
+  inputContainer: {},
   blurContainer: {
     overflow: "hidden",
   },
@@ -142,7 +216,17 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
+
+  /* New row wrapper */
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+
+  /* Existing input wrapper (unchanged) */
   inputWrapper: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
     borderRadius: 30,
@@ -152,6 +236,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     minHeight: 40,
   },
+
   textInput: {
     flex: 1,
     fontSize: 16,
@@ -159,6 +244,7 @@ const styles = StyleSheet.create({
     maxHeight: 80,
     paddingVertical: 6,
   },
+
   sendButton: {
     width: 32,
     height: 32,

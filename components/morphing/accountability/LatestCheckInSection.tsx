@@ -18,13 +18,13 @@ interface CheckInRecord {
 
 interface LatestCheckInSectionProps {
   latestCheckIn?: CheckInRecord;
-  onRemind: () => void;
+  onMessage: () => void;
   userTimezone?: string | null;
 }
 
 export function LatestCheckInSection({
   latestCheckIn,
-  onRemind,
+  onMessage,
   userTimezone,
 }: LatestCheckInSectionProps) {
   const { colors } = useTheme();
@@ -225,26 +225,28 @@ export function LatestCheckInSection({
           )}
           <TouchableOpacity
             style={[
-              styles.reminderButton,
+              styles.messageButton,
               {
-                backgroundColor: checkInStatus.isOverdue
-                  ? colors.error
-                  : colors.buttonBackground,
+                backgroundColor: `${colors.buttonBackground}30`,
+                borderWidth: 1,
+                borderColor: colors.buttonBackground,
                 marginTop: 16,
               },
             ]}
-            onPress={onRemind}
+            onPress={onMessage}
+            activeOpacity={0.85}
           >
             <IconSymbol
-              name="bell.fill"
+              name="message.fill"
+              color={colors.buttonBackground}
               size={18}
-              color={colors.white}
               style={{ marginRight: 6 }}
             />
-            <ThemedText type="button" style={{ color: colors.white }}>
-              {checkInStatus.isOverdue
-                ? "Send Urgent Reminder"
-                : "Send Reminder"}
+            <ThemedText
+              type="button"
+              style={{ color: colors.buttonBackground }}
+            >
+              Message Partner
             </ThemedText>
           </TouchableOpacity>
         </View>
@@ -313,11 +315,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
   },
-  reminderButton: {
+  messageButton: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 12,
+    borderRadius: 10,
   },
 });

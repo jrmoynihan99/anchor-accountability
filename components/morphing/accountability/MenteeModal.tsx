@@ -115,19 +115,19 @@ export function MenteeModal({
                 onPress: handleMessage,
               },
             ]}
+            timezone={userTimezone}
           />
 
           <LatestCheckInSection
             latestCheckIn={latestCheckIn}
-            onRemind={handleReminder}
+            onMessage={handleMessage}
             userTimezone={userTimezone}
           />
 
           {!loading && timeline.length > 0 && (
             <RecentCheckInsSection
               checkIns={timeline}
-              userTimezone={userTimezone}
-              showTimezoneNote={true}
+              timezone={userTimezone}
             />
           )}
         </ScrollView>
