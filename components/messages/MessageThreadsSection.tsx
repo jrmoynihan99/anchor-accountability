@@ -107,7 +107,7 @@ export function MessageThreadsSection({
       {/* -----------------------
           🔵 MENTOR SECTION
       ------------------------ */}
-      {mentorThread && (
+      {mentorThread && mentor && (
         <View style={{ marginBottom: 24 }}>
           <ThemedText
             type="captionMedium"
@@ -125,6 +125,13 @@ export function MessageThreadsSection({
             thread={mentorThread}
             colors={colors}
             now={now}
+            relationshipData={{
+              type: "mentor",
+              id: mentor.id,
+              streak: mentor.streak,
+              checkInStatus: mentor.checkInStatus,
+              timezone: mentor.mentorTimezone,
+            }}
           />
         </View>
       )}
@@ -145,9 +152,32 @@ export function MessageThreadsSection({
             PEOPLE YOU SUPPORT
           </ThemedText>
 
-          {menteeThreads.map((t) => (
-            <ThreadItem key={t.id} thread={t} colors={colors} now={now} />
-          ))}
+          {menteeThreads.map((t) => {
+            // Find the mentee relationship for this thread
+            const menteeRelationship = mentees.find(
+              (m) => m.menteeUid === t.otherUserId
+            );
+
+            return (
+              <ThreadItem
+                key={t.id}
+                thread={t}
+                colors={colors}
+                now={now}
+                relationshipData={
+                  menteeRelationship
+                    ? {
+                        type: "mentee",
+                        id: menteeRelationship.id,
+                        streak: menteeRelationship.streak,
+                        checkInStatus: menteeRelationship.checkInStatus,
+                        timezone: menteeRelationship.menteeTimezone,
+                      }
+                    : undefined
+                }
+              />
+            );
+          })}
         </View>
       )}
 

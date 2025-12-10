@@ -12,9 +12,21 @@ interface ThreadItemProps {
   thread: ThreadWithMessages;
   colors: any;
   now: Date;
+  relationshipData?: {
+    type: "mentor" | "mentee";
+    id: string;
+    streak: number;
+    checkInStatus?: any;
+    timezone?: string;
+  };
 }
 
-export function ThreadItem({ thread, colors, now }: ThreadItemProps) {
+export function ThreadItem({
+  thread,
+  colors,
+  now,
+  relationshipData,
+}: ThreadItemProps) {
   const formatMessageTime = (timestamp: any) => {
     if (!timestamp) return "";
 
@@ -67,14 +79,22 @@ export function ThreadItem({ thread, colors, now }: ThreadItemProps) {
   };
 
   const openThread = () => {
+    const params: any = {
+      threadId: thread.id,
+      threadName: thread.otherUserName,
+      otherUserId: thread.otherUserId,
+      isNewThread: "false",
+    };
+
+    // Add relationship params if this is an accountability partner
+    if (relationshipData) {
+      params.relationshipType = relationshipData.type;
+      params.relationshipId = relationshipData.id;
+    }
+
     router.push({
       pathname: "/message-thread",
-      params: {
-        threadId: thread.id,
-        threadName: thread.otherUserName,
-        otherUserId: thread.otherUserId,
-        isNewThread: "false",
-      },
+      params,
     });
   };
 

@@ -21,6 +21,7 @@ interface MenteeModalProps {
   progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+  buttonContent?: React.ReactNode; // Optional override
 }
 
 export function MenteeModal({
@@ -32,6 +33,7 @@ export function MenteeModal({
   progress,
   modalAnimatedStyle,
   close,
+  buttonContent: customButtonContent, // Optional override
 }: MenteeModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const { threads } = useThreads();
@@ -83,7 +85,7 @@ export function MenteeModal({
     // TODO: Implement push notification
   };
 
-  const buttonContent = (
+  const defaultButtonContent = (
     <View style={styles.buttonContent}>
       <MenteeCardContent
         menteeUid={menteeUid}
@@ -96,6 +98,8 @@ export function MenteeModal({
       />
     </View>
   );
+
+  const buttonContent = customButtonContent || defaultButtonContent;
 
   const modalContent = (
     <View style={styles.screenContainer}>
