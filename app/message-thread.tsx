@@ -1,6 +1,7 @@
-// app/message-thread.tsx - FlatList Version
-// PARENT COMPONENT - Nearly identical to ScrollView version
+// app/message-thread.tsx - FlatList Version with Accountability Banner
+// PARENT COMPONENT
 
+import { AccountabilityInviteBanner } from "@/components/messages/chat/AccountabilityInviteBanner";
 import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
@@ -17,6 +18,7 @@ import {
   markMessagesAsRead,
   sendMessage,
 } from "@/lib/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { doc, getDoc } from "firebase/firestore";
@@ -39,11 +41,16 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+const BANNER_STORAGE_KEY = "accountabilityBannerDismissed_";
+const MESSAGE_THRESHOLD = 8;
 
 export default function MessageThreadScreen() {
   const { colors, effectiveTheme } = useTheme();
   const { setCurrentThreadId } = useThread();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   // Get thread info from params
   const threadId = params.threadId as string;
@@ -59,6 +66,11 @@ export default function MessageThreadScreen() {
   const [actualThreadId, setActualThreadId] = useState<string>(threadId);
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
+
+  // Banner state
+  const [showBanner, setShowBanner] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const inviteModalOpenRef = useRef<(() => void) | null>(null);
 
   // Context messages + owner UIDs
   const [pleaMessage, setPleaMessage] = useState<string | null>(null);
@@ -83,7 +95,7 @@ export default function MessageThreadScreen() {
   const { messages, loading, error, loadingMore, hasMore, loadMoreMessages } =
     useThreadMessages(actualThreadId);
   const { refreshUnreadCount } = useUnreadCount();
-  const flatListRef = useRef<FlatList>(null); // Changed from ScrollView to FlatList
+  const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
 
   // Animated values for smooth keyboard handling
@@ -92,6 +104,60 @@ export default function MessageThreadScreen() {
   const isUserAtBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
   const hasInitiallyLoadedRef = useRef(false);
+
+  // Calculate banner top position based on context section
+  const hasContext = !loadingContext && (pleaMessage || encouragementMessage);
+  const HEADER_HEIGHT = 60;
+  const CONTEXT_SECTION_HEIGHT = 48; // Match ContextSection HEADER_HEIGHT
+  const DESIRED_GAP = 12; // Match ContextSection gap
+  const bannerTopPosition = hasContext
+    ? insets.top +
+      HEADER_HEIGHT +
+      DESIRED_GAP +
+      CONTEXT_SECTION_HEIGHT +
+      DESIRED_GAP
+    : insets.top + HEADER_HEIGHT + DESIRED_GAP;
+
+  // Check if banner should be shown
+  useEffect(() => {
+    const checkBannerStatus = async () => {
+      if (!actualThreadId || !currentUserId || loadingContext) return; // Wait for context to load
+
+      try {
+        const storageKey = `${BANNER_STORAGE_KEY}${actualThreadId}`;
+        const dismissed = await AsyncStorage.getItem(storageKey);
+
+        if (!dismissed && messages.length >= MESSAGE_THRESHOLD) {
+          setBannerDismissed(false);
+          setShowBanner(true);
+        } else {
+          setShowBanner(false);
+        }
+      } catch (error) {
+        console.error("Error checking banner status:", error);
+      }
+    };
+
+    checkBannerStatus();
+  }, [actualThreadId, currentUserId, messages.length, loadingContext]); // Added loadingContext dependency
+
+  const handleBannerDismiss = async () => {
+    try {
+      const storageKey = `${BANNER_STORAGE_KEY}${actualThreadId}`;
+      await AsyncStorage.setItem(storageKey, "true");
+      setBannerDismissed(true);
+      setShowBanner(false);
+    } catch (error) {
+      console.error("Error dismissing banner:", error);
+    }
+  };
+
+  const handleBannerLearnMore = () => {
+    // Trigger the modal programmatically
+    if (inviteModalOpenRef.current) {
+      inviteModalOpenRef.current();
+    }
+  };
 
   // 1. Resolve context IDs (from params or Firestore)
   useEffect(() => {
@@ -189,7 +255,6 @@ export default function MessageThreadScreen() {
         setLoadingContext(false);
       }
     }
-    // If no context at all, still show the card but empty.
     if (!contextPleaId) {
       setPleaOwnerUid(null);
       setPleaMessage(null);
@@ -207,7 +272,6 @@ export default function MessageThreadScreen() {
   // Keyboard & scroll logic
   const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
     // Note: For FlatList, we don't need contentInset adjustments
-    // The Animated.View transform handles everything
   };
 
   useEffect(() => {
@@ -270,38 +334,25 @@ export default function MessageThreadScreen() {
     ],
   }));
 
-  // Track scroll position to determine if user is at bottom
   const handleScroll = (event: any) => {
-    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-
-    // For inverted FlatList, contentOffset.y is negative when at bottom
-    // At bottom: contentOffset.y is close to 0
+    const { contentOffset } = event.nativeEvent;
     const distanceFromBottom = Math.abs(contentOffset.y);
-
-    // Consider "at bottom" if within 50 pixels
     isUserAtBottomRef.current = distanceFromBottom < 50;
   };
 
-  // Handle content size changes - simplified for FlatList
   const handleContentSizeChange = (
     contentWidth: number,
     contentHeight: number
   ) => {
-    // On initial load, scroll to bottom (offset 0 for inverted FlatList)
     if (!hasInitiallyLoadedRef.current && messages.length > 0) {
       hasInitiallyLoadedRef.current = true;
       previousMessageCountRef.current = messages.length;
       setTimeout(() => {
-        // For inverted FlatList, offset 0 is the bottom (newest message)
         flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
       }, 100);
       return;
     }
 
-    // FlatList with maintainVisibleContentPosition handles scroll position automatically
-    // when loading more messages, so we don't need manual adjustment!
-
-    // Only auto-scroll if user is at bottom
     if (isUserAtBottomRef.current && hasInitiallyLoadedRef.current) {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }
@@ -347,7 +398,6 @@ export default function MessageThreadScreen() {
   useEffect(() => {
     if (messageId && messages.length > 0) {
       setTimeout(() => {
-        // For inverted FlatList, offset 0 is the bottom
         flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
       }, 500);
     }
@@ -384,19 +434,14 @@ export default function MessageThreadScreen() {
     setupNewThread();
   }, [currentUserId, isNewThread, displayOtherUserId, pleaId, encouragementId]);
 
-  // Only auto-scroll when user is at bottom AND it's a new message (not loading more)
   useEffect(() => {
-    // Skip if not initially loaded yet
     if (!hasInitiallyLoadedRef.current) return;
     if (!isUserAtBottomRef.current) return;
     if (messages.length === 0) return;
 
-    // Check if this is new messages being added vs loading more
     const messageDelta = messages.length - previousMessageCountRef.current;
 
-    // Only scroll if it's likely a new message (1-5 new messages), not a batch load (>5)
     if (messageDelta > 0 && messageDelta <= 5) {
-      // For inverted FlatList, offset 0 is the bottom
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }
 
@@ -417,7 +462,6 @@ export default function MessageThreadScreen() {
     setInputText("");
     setSending(true);
     setTimeout(() => {
-      // For inverted FlatList, offset 0 is the bottom
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 100);
     try {
@@ -432,8 +476,6 @@ export default function MessageThreadScreen() {
   };
 
   const handleInputFocus = () => {
-    // Always scroll to bottom when input is focused
-    // For inverted FlatList, offset 0 is the bottom
     setTimeout(() => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 300);
@@ -516,7 +558,21 @@ export default function MessageThreadScreen() {
           encouragementOwnerUid={encouragementOwnerUid}
           loading={loadingContext}
           isNewThread={isNewThread}
+          colorScheme={effectiveTheme}
         />
+
+        {/* Banner positioned below ContextSection */}
+        {showBanner && !bannerDismissed && (
+          <View style={[styles.bannerContainer, { top: bannerTopPosition }]}>
+            <AccountabilityInviteBanner
+              threadName={displayThreadName}
+              onLearnMore={handleBannerLearnMore}
+              onDismiss={handleBannerDismiss}
+              colors={colors}
+              colorScheme={effectiveTheme}
+            />
+          </View>
+        )}
 
         {/* Animated transform for message list */}
         <Animated.View style={[styles.content, animatedMessagesStyle]}>
@@ -547,6 +603,11 @@ export default function MessageThreadScreen() {
             colors={colors}
             disabled={sending}
             colorScheme={effectiveTheme}
+            otherUserId={displayOtherUserId}
+            threadName={displayThreadName}
+            onInviteModalReady={(openFn) => {
+              inviteModalOpenRef.current = openFn;
+            }}
           />
         </Animated.View>
       </View>
@@ -562,6 +623,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+  },
+  bannerContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 998,
   },
   loadingContainer: {
     flex: 1,

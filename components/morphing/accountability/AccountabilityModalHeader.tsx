@@ -4,6 +4,7 @@ import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/hooks/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { getLocalTimeForTimezone } from "./accountabilityUtils";
 
 interface ActionButton {
   icon: string;
@@ -13,14 +14,17 @@ interface ActionButton {
 
 interface AccountabilityModalHeaderProps {
   uid: string;
+  timezone?: string;
   actionButtons?: ActionButton[];
 }
 
 export function AccountabilityModalHeader({
   uid,
+  timezone,
   actionButtons = [],
 }: AccountabilityModalHeaderProps) {
   const { colors } = useTheme();
+  const localTime = getLocalTimeForTimezone(timezone);
 
   // Generate anonymous username
   const anonymousUsername = `user-${uid.slice(0, 5)}`;
@@ -49,14 +53,28 @@ export function AccountabilityModalHeader({
         </View>
 
         <View style={styles.headerUserInfo}>
-          <ThemedText
-            type="subtitleSemibold"
-            style={{ color: colors.text, marginRight: 8 }}
-          >
-            {anonymousUsername}
-          </ThemedText>
-
-          <UserStreakDisplay userId={uid} size="small" />
+          <View style={{ flex: 1 }}>
+            <View style={styles.usernameRow}>
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.text, marginRight: 8 }}
+              >
+                {anonymousUsername}
+              </ThemedText>
+              <UserStreakDisplay userId={uid} size="small" />
+            </View>
+            {localTime && (
+              <ThemedText
+                type="caption"
+                style={{
+                  color: colors.textSecondary,
+                  marginTop: 4,
+                }}
+              >
+                Local time: {localTime}
+              </ThemedText>
+            )}
+          </View>
         </View>
       </View>
 
@@ -118,6 +136,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+  },
+  usernameRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   quickButton: {
     flex: 1,

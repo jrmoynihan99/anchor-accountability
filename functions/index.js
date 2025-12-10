@@ -1616,9 +1616,9 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
             ?.value || "0"
         );
 
-        // Only process if it's between 8:00 PM (20) and 8:59 PM (20)
+        // Only process if it's between 6:00 PM (18) and 6:59 PM (18)
         // TODO: Make this configurable via systemConfig collection
-        if (userHour !== 20) {
+        if (userHour !== 18) {
           continue;
         }
 
@@ -2021,7 +2021,7 @@ exports.sendMissedCheckInNotifications = onSchedule(
         let body = "";
 
         if (daysSinceCheckIn === 1) {
-          body = `${anonymousUsername} hasn't checked in for 1 day`;
+          body = `${anonymousUsername} missed their daily check in`;
         } else if (daysSinceCheckIn >= 7) {
           body = `${anonymousUsername} hasn't checked in for over a week`;
         } else {

@@ -8,6 +8,7 @@ interface MentorCardProps {
   mentorUid: string;
   streak: number;
   checkInStatus: CheckInStatus;
+  mentorTimezone?: string; // ADD THIS
   onCheckIn?: () => void;
   onSOS?: () => void;
   onMessage?: () => void;
@@ -23,6 +24,7 @@ export function MentorCard({
   mentorUid,
   streak,
   checkInStatus,
+  mentorTimezone, // ADD THIS
   onCheckIn,
   onSOS,
   onMessage,
@@ -50,6 +52,7 @@ export function MentorCard({
             mentorUid={mentorUid}
             streak={streak}
             checkInStatus={checkInStatus}
+            mentorTimezone={mentorTimezone} // PASS IT DOWN
             onCheckIn={onCheckIn}
             onSOS={onSOS}
             onMessage={onMessage}
@@ -69,6 +72,7 @@ export function MentorCard({
         mentorUid={mentorUid}
         streak={streak}
         checkInStatus={checkInStatus}
+        mentorTimezone={mentorTimezone} // PASS IT DOWN
         onCheckIn={onCheckIn}
         onSOS={onSOS}
         onMessage={onMessage}

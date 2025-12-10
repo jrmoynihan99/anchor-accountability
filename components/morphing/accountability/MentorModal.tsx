@@ -17,6 +17,7 @@ interface MentorModalProps {
   mentorUid: string;
   streak: number;
   checkInStatus: CheckInStatus;
+  mentorTimezone?: string; // ADD THIS
   relationshipId: string;
   isVisible: boolean;
   progress: SharedValue<number>;
@@ -28,6 +29,7 @@ export function MentorModal({
   mentorUid,
   streak,
   checkInStatus,
+  mentorTimezone, // ADD THIS
   relationshipId,
   isVisible,
   progress,
@@ -108,6 +110,7 @@ export function MentorModal({
         mentorUid={mentorUid}
         streak={streak}
         checkInStatus={checkInStatus}
+        mentorTimezone={mentorTimezone} // PASS IT DOWN
         showExpandIcon={true}
       />
     </View>
@@ -125,6 +128,7 @@ export function MentorModal({
           {/* Header Tile */}
           <AccountabilityModalHeader
             uid={mentorUid}
+            timezone={mentorTimezone} // PASS IT DOWN (note: prop name is menteeTimezone in the component)
             actionButtons={[
               {
                 icon: "message.fill",
@@ -145,6 +149,7 @@ export function MentorModal({
           {!loading && timeline.length > 0 && (
             <RecentCheckInsSection
               checkIns={timeline}
+              timezone={mentorTimezone}
               onFillMissing={handleFillMissing}
               onSelectFilled={handleSelectFilled}
             />

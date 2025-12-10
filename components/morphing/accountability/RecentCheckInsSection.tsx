@@ -11,6 +11,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { getLocalTimeForTimezone } from "./accountabilityUtils";
 import { CheckInDropdown } from "./recent-check-ins/CheckInDropdown";
 import { CompactTimeline } from "./recent-check-ins/CompactTimeline";
 import { ExpandedCalendar } from "./recent-check-ins/ExpandedCalendar";
@@ -31,18 +32,16 @@ type TimelineItem = CheckInRecord | MissingCheckIn;
 
 interface RecentCheckInsSectionProps {
   checkIns: TimelineItem[];
-  userTimezone?: string; // Timezone of the user whose check-ins are being displayed
+  timezone?: string; // Renamed from userTimezone for consistency
   onFillMissing?: (date: string) => void; // Optional callback for retroactive fill
   onSelectFilled?: () => void; // Optional callback when filled day is selected
-  showTimezoneNote?: boolean; // Show timezone subtitle
 }
 
 export function RecentCheckInsSection({
   checkIns,
-  userTimezone,
+  timezone,
   onFillMissing,
   onSelectFilled,
-  showTimezoneNote = false,
 }: RecentCheckInsSectionProps) {
   const { colors } = useTheme();
   const [selectedCheckIn, setSelectedCheckIn] = useState<TimelineItem | null>(
@@ -54,6 +53,9 @@ export function RecentCheckInsSection({
 
   const animatedHeight = useSharedValue(0);
   const rotateValue = useSharedValue(0);
+
+  // Get local time for the timezone
+  const localTime = getLocalTimeForTimezone(timezone);
 
   // Sync selectedCheckIn with updated timeline data
   useEffect(() => {
@@ -182,12 +184,16 @@ export function RecentCheckInsSection({
             <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
               Recent Check-Ins
             </ThemedText>
-            {showTimezoneNote && (
+            {localTime && (
               <ThemedText
                 type="caption"
-                style={{ color: colors.textSecondary, marginTop: 2 }}
+                style={{
+                  color: colors.textSecondary,
+                  opacity: 1,
+                  marginTop: 2,
+                }}
               >
-                Displayed in user's local time
+                Local time: {localTime}
               </ThemedText>
             )}
           </View>
@@ -211,7 +217,7 @@ export function RecentCheckInsSection({
         checkIns={checkIns}
         selectedDate={selectedCheckIn?.date || null}
         onSelectItem={handleItemClick}
-        userTimezone={userTimezone}
+        userTimezone={timezone}
       />
 
       {/* Expanded Calendar View */}
@@ -224,7 +230,7 @@ export function RecentCheckInsSection({
           onPreviousMonth={goToPreviousMonth}
           onNextMonth={goToNextMonth}
           onLayout={onCalendarLayout}
-          userTimezone={userTimezone}
+          userTimezone={timezone}
         />
       </Animated.View>
 
@@ -233,7 +239,7 @@ export function RecentCheckInsSection({
         selectedCheckIn={selectedCheckIn}
         onClose={handleCloseDropdown}
         showFillHint={!!onFillMissing}
-        userTimezone={userTimezone}
+        userTimezone={timezone}
       />
     </View>
   );

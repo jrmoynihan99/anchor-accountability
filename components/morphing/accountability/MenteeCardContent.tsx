@@ -74,6 +74,18 @@ export function MenteeCardContent({
               </ThemedText>
               <UserStreakDisplay userId={menteeUid} size="small" />
             </View>
+            {localTime && (
+              <ThemedText
+                type="caption"
+                style={{
+                  color: colors.textSecondary,
+                  opacity: 0.8,
+                  marginTop: 2,
+                }}
+              >
+                Local time: {localTime}
+              </ThemedText>
+            )}
           </View>
         </View>
       </View>
@@ -97,19 +109,6 @@ export function MenteeCardContent({
           </ThemedText>
         </View>
       </View>
-      {localTime && (
-        <ThemedText
-          type="caption"
-          style={{
-            marginTop: -6,
-            marginBottom: 10,
-            color: colors.textSecondary,
-            opacity: 0.7,
-          }}
-        >
-          Local time: {localTime}
-        </ThemedText>
-      )}
 
       {/* Quick Actions */}
       {onMessage && (
@@ -196,7 +195,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   hintText: {
-    opacity: 0.85,
+    opacity: 1,
   },
   buttonRow: {
     flexDirection: "row",

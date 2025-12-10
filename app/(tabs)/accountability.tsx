@@ -150,6 +150,7 @@ export default function AccountabilityScreen() {
                     mentorUid={mentor.mentorUid}
                     streak={mentor.streak}
                     checkInStatus={mentor.checkInStatus}
+                    mentorTimezone={mentor.mentorTimezone}
                     onCheckIn={handleCheckIn}
                     onMessage={() => handleMessageMentor(mentor.mentorUid)}
                     buttonRef={buttonRef}
@@ -162,6 +163,7 @@ export default function AccountabilityScreen() {
                     mentorUid={mentor.mentorUid}
                     streak={mentor.streak}
                     checkInStatus={mentor.checkInStatus}
+                    mentorTimezone={mentor.mentorTimezone}
                     relationshipId={mentor.id}
                     isVisible={isModalVisible}
                     progress={progress}
