@@ -1,9 +1,11 @@
 // components/messages/chat/AccountabilityInviteModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { auth } from "@/lib/firebase";
-import React, { useState } from "react";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -34,6 +36,44 @@ export function AccountabilityInviteModal({
   const { colors, effectiveTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const currentUserId = auth.currentUser?.uid;
+
+  // Get current user's mentor status and mentee count from Context
+  const { mentor, currentUserMenteeCount } = useAccountability();
+  const userHasMentor = !!mentor;
+
+  // Check if other user has 3 mentees already
+  const [otherUserMenteeCount, setOtherUserMenteeCount] = useState<
+    number | null
+  >(null);
+  const [loadingMenteeCount, setLoadingMenteeCount] = useState(true);
+  const otherUserHasMaxMentees =
+    otherUserMenteeCount !== null && otherUserMenteeCount >= 3;
+
+  // Load OTHER user's mentee count from their user document
+  useEffect(() => {
+    const fetchMenteeCount = async () => {
+      if (!otherUserId || !isVisible) return;
+
+      setLoadingMenteeCount(true);
+      try {
+        const userDoc = await getDoc(doc(db, "users", otherUserId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          // Default to 0 if field doesn't exist
+          setOtherUserMenteeCount(userData.menteeCount ?? 0);
+        } else {
+          setOtherUserMenteeCount(0);
+        }
+      } catch (error) {
+        console.error("Error fetching mentee count:", error);
+        setOtherUserMenteeCount(0); // Fail safe - assume 0
+      } finally {
+        setLoadingMenteeCount(false);
+      }
+    };
+
+    fetchMenteeCount();
+  }, [otherUserId, isVisible]);
 
   const handleSendInvite = async () => {
     if (!currentUserId) return;
@@ -81,13 +121,25 @@ export function AccountabilityInviteModal({
           <IconSymbol name="person.2.fill" size={32} color={colors.tint} />
         </View>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Accountability Partner
+          {userHasMentor
+            ? "Already Have a Partner"
+            : otherUserHasMaxMentees
+            ? "Partner Unavailable"
+            : "Accountability Partner"}
         </ThemedText>
         <ThemedText
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          Invite {threadName || "this user"} to be your accountability partner
+          {userHasMentor
+            ? "You already have an accountability partner. You can only have one partner at a time."
+            : otherUserHasMaxMentees
+            ? `${
+                threadName || "This user"
+              } already has 3 mentees and cannot accept more accountability partnerships.`
+            : `Invite ${
+                threadName || "this user"
+              } to be your accountability partner`}
         </ThemedText>
       </View>
 
@@ -153,34 +205,60 @@ export function AccountabilityInviteModal({
         style={[
           styles.inviteButton,
           {
-            backgroundColor: colors.tint,
-            opacity: isLoading ? 0.6 : 1,
+            backgroundColor:
+              userHasMentor || otherUserHasMaxMentees
+                ? colors.textSecondary
+                : colors.tint,
+            opacity:
+              isLoading ||
+              userHasMentor ||
+              otherUserHasMaxMentees ||
+              loadingMenteeCount
+                ? 0.6
+                : 1,
           },
         ]}
         onPress={handleSendInvite}
-        disabled={isLoading}
+        disabled={
+          isLoading ||
+          userHasMentor ||
+          otherUserHasMaxMentees ||
+          loadingMenteeCount
+        }
         activeOpacity={0.8}
       >
-        {isLoading ? (
+        {isLoading || loadingMenteeCount ? (
           <ActivityIndicator color={colors.white} />
         ) : (
           <>
-            <IconSymbol name="paperplane.fill" size={18} color={colors.white} />
+            <IconSymbol
+              name={
+                userHasMentor || otherUserHasMaxMentees
+                  ? "xmark.circle.fill"
+                  : "paperplane.fill"
+              }
+              size={18}
+              color={colors.white}
+            />
             <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
-              Send Invite
+              {userHasMentor || otherUserHasMaxMentees
+                ? "Cannot Send Invite"
+                : "Send Invite"}
             </ThemedText>
           </>
         )}
       </TouchableOpacity>
 
       {/* Note */}
-      <ThemedText
-        type="caption"
-        style={[styles.note, { color: colors.textSecondary }]}
-      >
-        They will receive a notification and can choose to accept or decline
-        your invitation.
-      </ThemedText>
+      {!userHasMentor && !otherUserHasMaxMentees && (
+        <ThemedText
+          type="caption"
+          style={[styles.note, { color: colors.textSecondary }]}
+        >
+          They will receive a notification and can choose to accept or decline
+          your invitation.
+        </ThemedText>
+      )}
     </ScrollView>
   );
 
@@ -194,7 +272,7 @@ export function AccountabilityInviteModal({
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.iconCircleSecondaryBackground}
       buttonContentPadding={0}
-      buttonBorderRadius={26}
+      buttonBorderRadius={20}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.2]}
     >
@@ -247,9 +325,9 @@ const styles = StyleSheet.create({
   buttonContent: {
     alignItems: "center",
     justifyContent: "center",
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   scrollContainer: {
     flex: 1,

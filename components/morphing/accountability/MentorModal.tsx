@@ -70,7 +70,9 @@ export function MentorModal({
     setTimeout(() => {
       router.push({
         pathname: "/message-thread",
-        params: { threadId: thread.id },
+        params: {
+          threadId: thread.id,
+        },
       });
     }, 300);
   };

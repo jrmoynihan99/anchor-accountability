@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -20,8 +20,8 @@ export function MessageThreadsSection({
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
-  // Load accountability relationships
-  const { mentor, mentees } = useAccountabilityRelationships();
+  // Load accountability relationships from context
+  const { mentor, mentees } = useAccountability();
 
   // Timer to refresh relative timestamps
   const [now, setNow] = useState<Date>(() => new Date());
