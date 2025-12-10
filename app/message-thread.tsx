@@ -72,6 +72,13 @@ export default function MessageThreadScreen() {
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const inviteModalOpenRef = useRef<(() => void) | null>(null);
 
+  // Pulse tracking
+  const pulseFnRef = useRef<(() => void) | null>(null);
+  const hasPulsedAtCountRef = useRef<Set<number>>(new Set()); // Track which message counts we've pulsed at
+
+  // Pulse intervals: 23, 38, 53, 68, etc (every 15 after initial 8)
+  const PULSE_INTERVALS = [23, 38, 53]; // First 5 intervals after dismissal
+
   // Context messages + owner UIDs
   const [pleaMessage, setPleaMessage] = useState<string | null>(null);
   const [encouragementMessage, setEncouragementMessage] = useState<
@@ -127,7 +134,11 @@ export default function MessageThreadScreen() {
         const storageKey = `${BANNER_STORAGE_KEY}${actualThreadId}`;
         const dismissed = await AsyncStorage.getItem(storageKey);
 
-        if (!dismissed && messages.length >= MESSAGE_THRESHOLD) {
+        // Set bannerDismissed state based on storage
+        if (dismissed) {
+          setBannerDismissed(true);
+          setShowBanner(false);
+        } else if (messages.length >= MESSAGE_THRESHOLD) {
           setBannerDismissed(false);
           setShowBanner(true);
         } else {
@@ -147,6 +158,13 @@ export default function MessageThreadScreen() {
       await AsyncStorage.setItem(storageKey, "true");
       setBannerDismissed(true);
       setShowBanner(false);
+
+      // Trigger immediate pulse when banner is dismissed
+      if (pulseFnRef.current) {
+        setTimeout(() => {
+          pulseFnRef.current?.();
+        }, 300); // Small delay after banner disappears
+      }
     } catch (error) {
       console.error("Error dismissing banner:", error);
     }
@@ -158,6 +176,23 @@ export default function MessageThreadScreen() {
       inviteModalOpenRef.current();
     }
   };
+
+  // Pulse button at predetermined message counts after banner dismissed
+  useEffect(() => {
+    if (!bannerDismissed) return; // Only pulse if banner was dismissed
+    if (!pulseFnRef.current) return; // No pulse function yet
+
+    const currentCount = messages.length;
+
+    // Check if current message count matches any pulse interval
+    if (PULSE_INTERVALS.includes(currentCount)) {
+      // Only pulse if we haven't pulsed at this count yet
+      if (!hasPulsedAtCountRef.current.has(currentCount)) {
+        pulseFnRef.current();
+        hasPulsedAtCountRef.current.add(currentCount);
+      }
+    }
+  }, [messages.length, bannerDismissed]);
 
   // 1. Resolve context IDs (from params or Firestore)
   useEffect(() => {
@@ -607,6 +642,9 @@ export default function MessageThreadScreen() {
             threadName={displayThreadName}
             onInviteModalReady={(openFn) => {
               inviteModalOpenRef.current = openFn;
+            }}
+            onPulseReady={(pulseFn) => {
+              pulseFnRef.current = pulseFn;
             }}
           />
         </Animated.View>

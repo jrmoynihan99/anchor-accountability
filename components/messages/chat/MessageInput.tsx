@@ -22,6 +22,7 @@ export const MessageInput = forwardRef<
     otherUserId?: string;
     threadName?: string;
     onInviteModalReady?: (openFn: () => void) => void;
+    onPulseReady?: (pulseFn: () => void) => void;
   }
 >(
   (
@@ -36,10 +37,12 @@ export const MessageInput = forwardRef<
       otherUserId = "",
       threadName = "Anonymous User",
       onInviteModalReady,
+      onPulseReady,
     },
     ref
   ) => {
     const insets = useSafeAreaInsets();
+    const pulseRef = React.useRef<{ pulse: () => void }>(null);
 
     // ------------------------------------------------------------
     // Shared inner content (used for iOS BlurView + Android solid View)
@@ -84,6 +87,13 @@ export const MessageInput = forwardRef<
                 }
               }, [open]);
 
+              // Expose the pulse function to parent component
+              React.useEffect(() => {
+                if (onPulseReady && pulseRef.current) {
+                  onPulseReady(() => pulseRef.current?.pulse());
+                }
+              }, [pulseRef.current]);
+
               // One-time measurement to enable proper morph animation
               React.useEffect(() => {
                 const timer = setTimeout(() => {
@@ -104,6 +114,7 @@ export const MessageInput = forwardRef<
                     style={buttonAnimatedStyle}
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
+                    pulseRef={pulseRef}
                   />
 
                   <AccountabilityInviteModal
