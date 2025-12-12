@@ -2,6 +2,7 @@
 // PARENT COMPONENT
 
 import { AccountabilityInviteBanner } from "@/components/messages/chat/AccountabilityInviteBanner";
+import { AccountabilityReceivedInviteBanner } from "@/components/messages/chat/AccountabilityReceivedInviteBanner";
 import { ContextSection } from "@/components/messages/chat/ContextSection";
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
@@ -45,6 +46,7 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BANNER_STORAGE_KEY = "accountabilityBannerDismissed_";
+const RECEIVED_INVITE_BANNER_STORAGE_KEY = "receivedInviteBannerDismissed_";
 const MESSAGE_THRESHOLD = 8;
 
 export default function MessageThreadScreen() {
@@ -62,8 +64,9 @@ export default function MessageThreadScreen() {
   const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
-  // Load accountability relationships from context
-  const { mentor, mentees } = useAccountability();
+  // Load accountability relationships and invites from context
+  const { mentor, mentees, receivedInvites, getPendingInviteWith } =
+    useAccountability();
 
   const [inputText, setInputText] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -71,9 +74,16 @@ export default function MessageThreadScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // Banner state
+  // Promotional banner state
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  // Received invite banner state
+  const [showReceivedInviteBanner, setShowReceivedInviteBanner] =
+    useState(false);
+  const [receivedInviteBannerDismissed, setReceivedInviteBannerDismissed] =
+    useState(false);
+
   const inviteModalOpenRef = useRef<(() => void) | null>(null);
 
   // Pulse tracking
@@ -111,6 +121,13 @@ export default function MessageThreadScreen() {
 
   // Get the actual other user ID (from params or fetched from thread)
   const actualOtherUserId = otherUserId || fetchedOtherUserId;
+
+  // Check if there's a received invite for this thread
+  const receivedInvite = getPendingInviteWith(actualOtherUserId);
+  // I RECEIVED an invite if I'm the mentor (they want me as their mentor)
+  const hasReceivedInvite =
+    receivedInvite &&
+    receivedInvites.some((inv) => inv.menteeUid === actualOtherUserId);
 
   // Self-determine relationship by checking if otherUserId matches any accountability relationships
   // This will recalculate when actualOtherUserId, mentor, or mentees change
@@ -155,7 +172,7 @@ export default function MessageThreadScreen() {
       DESIRED_GAP
     : insets.top + HEADER_HEIGHT + DESIRED_GAP;
 
-  // Check if banner should be shown
+  // Check if PROMOTIONAL banner should be shown
   useEffect(() => {
     const checkBannerStatus = async () => {
       if (!actualThreadId || !currentUserId || loadingContext) return; // Wait for context to load
@@ -171,6 +188,12 @@ export default function MessageThreadScreen() {
       if (mentor) {
         setShowBanner(false);
         setBannerDismissed(true);
+        return;
+      }
+
+      // Don't show promotional banner if there's a received invite
+      if (hasReceivedInvite) {
+        setShowBanner(false);
         return;
       }
 
@@ -201,7 +224,57 @@ export default function MessageThreadScreen() {
     loadingContext,
     isAccountabilityPartner,
     mentor,
-  ]); // Added mentor dependency
+    hasReceivedInvite,
+  ]);
+
+  // Check if RECEIVED INVITE banner should be shown
+  useEffect(() => {
+    const checkReceivedInviteBannerStatus = async () => {
+      if (!actualThreadId || !currentUserId || loadingContext) return;
+
+      // Don't show if already partners
+      if (isAccountabilityPartner) {
+        setShowReceivedInviteBanner(false);
+        return;
+      }
+
+      // Don't show if user already has a mentor
+      if (mentor) {
+        setShowReceivedInviteBanner(false);
+        return;
+      }
+
+      // Only show if there's a received invite
+      if (!hasReceivedInvite) {
+        setShowReceivedInviteBanner(false);
+        return;
+      }
+
+      try {
+        const storageKey = `${RECEIVED_INVITE_BANNER_STORAGE_KEY}${actualThreadId}`;
+        const dismissed = await AsyncStorage.getItem(storageKey);
+
+        if (dismissed) {
+          setReceivedInviteBannerDismissed(true);
+          setShowReceivedInviteBanner(false);
+        } else {
+          setReceivedInviteBannerDismissed(false);
+          setShowReceivedInviteBanner(true);
+        }
+      } catch (error) {
+        console.error("Error checking received invite banner status:", error);
+      }
+    };
+
+    checkReceivedInviteBannerStatus();
+  }, [
+    actualThreadId,
+    currentUserId,
+    loadingContext,
+    isAccountabilityPartner,
+    mentor,
+    hasReceivedInvite,
+  ]);
 
   const handleBannerDismiss = async () => {
     try {
@@ -221,7 +294,25 @@ export default function MessageThreadScreen() {
     }
   };
 
+  const handleReceivedInviteBannerDismiss = async () => {
+    try {
+      const storageKey = `${RECEIVED_INVITE_BANNER_STORAGE_KEY}${actualThreadId}`;
+      await AsyncStorage.setItem(storageKey, "true");
+      setReceivedInviteBannerDismissed(true);
+      setShowReceivedInviteBanner(false);
+    } catch (error) {
+      console.error("Error dismissing received invite banner:", error);
+    }
+  };
+
   const handleBannerLearnMore = () => {
+    // Trigger the modal programmatically
+    if (inviteModalOpenRef.current) {
+      inviteModalOpenRef.current();
+    }
+  };
+
+  const handleReceivedInviteLearnMore = () => {
     // Trigger the modal programmatically
     if (inviteModalOpenRef.current) {
       inviteModalOpenRef.current();
@@ -232,6 +323,7 @@ export default function MessageThreadScreen() {
   useEffect(() => {
     if (!bannerDismissed) return; // Only pulse if banner was dismissed
     if (!pulseFnRef.current) return; // No pulse function yet
+    if (hasReceivedInvite) return; // Don't pulse if there's a received invite
 
     const currentCount = messages.length;
 
@@ -244,7 +336,7 @@ export default function MessageThreadScreen() {
         hasPulsedAtCountRef.current.add(currentCount);
       }
     }
-  }, [messages.length, bannerDismissed]);
+  }, [messages.length, bannerDismissed, hasReceivedInvite]);
 
   // 1. Resolve context IDs (from params or Firestore)
   useEffect(() => {
@@ -649,8 +741,21 @@ export default function MessageThreadScreen() {
           colorScheme={effectiveTheme}
         />
 
-        {/* Banner positioned below ContextSection */}
-        {showBanner && !bannerDismissed && (
+        {/* Received Invite Banner - has priority over promotional banner */}
+        {showReceivedInviteBanner && !receivedInviteBannerDismissed && (
+          <View style={[styles.bannerContainer, { top: bannerTopPosition }]}>
+            <AccountabilityReceivedInviteBanner
+              threadName={displayThreadName}
+              onLearnMore={handleReceivedInviteLearnMore}
+              onDismiss={handleReceivedInviteBannerDismiss}
+              colors={colors}
+              colorScheme={effectiveTheme}
+            />
+          </View>
+        )}
+
+        {/* Promotional Banner - only shown if no received invite banner */}
+        {!showReceivedInviteBanner && showBanner && !bannerDismissed && (
           <View style={[styles.bannerContainer, { top: bannerTopPosition }]}>
             <AccountabilityInviteBanner
               threadName={displayThreadName}

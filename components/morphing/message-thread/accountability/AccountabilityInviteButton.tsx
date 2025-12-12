@@ -1,7 +1,7 @@
-// components/messages/chat/AccountabilityInviteButton.tsx
+// components/morphing/message-thread/accountability/AccountabilityInviteButton.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import React, { useImperativeHandle } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -17,7 +17,7 @@ interface AccountabilityInviteButtonProps {
   onPressIn?: () => void;
   onPressOut?: () => void;
   pulseRef?: React.RefObject<{ pulse: () => void } | null>;
-  variant?: "invite" | "partner"; // New prop
+  variant?: "invite" | "partner" | "pending-sent" | "pending-received";
 }
 
 export const AccountabilityInviteButton = React.forwardRef<
@@ -40,18 +40,55 @@ export const AccountabilityInviteButton = React.forwardRef<
     const scale = useSharedValue(1);
     const glowOpacity = useSharedValue(0);
 
-    // Determine icon and colors based on variant
-    const iconName =
-      variant === "partner" ? "person.2.fill" : "person.badge.plus";
-    const iconSize = variant === "partner" ? 24 : 20;
-    const iconColor =
-      variant === "partner" ? colors.tint : colors.textSecondary;
-    const showGlow = variant === "invite"; // Only show glow for invite variant
+    // Determine icon, colors, and behavior based on variant
+    const getIconConfig = () => {
+      switch (variant) {
+        case "partner":
+          return {
+            name: "person.2.fill" as const,
+            size: 24,
+            color: colors.tint,
+            backgroundColor: colors.iconCircleSecondaryBackground,
+            showGlow: false,
+            showBadge: false,
+          };
+        case "pending-sent":
+          return {
+            name: "clock.fill" as const,
+            size: 20,
+            color: colors.white,
+            backgroundColor: "#FF9500", // Orange
+            showGlow: false,
+            showBadge: false,
+          };
+        case "pending-received":
+          return {
+            name: "bell.badge.fill" as const,
+            size: 20,
+            color: colors.white,
+            backgroundColor: "#34C759", // Green
+            showGlow: false,
+            showBadge: true, // Show notification badge
+          };
+        case "invite":
+        default:
+          return {
+            name: "person.badge.plus" as const,
+            size: 20,
+            color: colors.textSecondary,
+            backgroundColor: colors.iconCircleSecondaryBackground,
+            showGlow: true,
+            showBadge: false,
+          };
+      }
+    };
+
+    const iconConfig = getIconConfig();
 
     // Expose pulse function via pulseRef (only for invite variant)
     useImperativeHandle(pulseRef, () => ({
       pulse: () => {
-        if (variant !== "invite") return; // Don't pulse partner button
+        if (variant !== "invite") return; // Don't pulse other variants
 
         // Two pulses: scale + glow
         scale.value = withSequence(
@@ -89,7 +126,7 @@ export const AccountabilityInviteButton = React.forwardRef<
       >
         <Animated.View style={[styles.container, animatedButtonStyle]}>
           {/* Glow ring - only for invite variant */}
-          {showGlow && (
+          {iconConfig.showGlow && (
             <Animated.View
               style={[
                 styles.glowRing,
@@ -107,14 +144,33 @@ export const AccountabilityInviteButton = React.forwardRef<
             style={[
               styles.iconContainer,
               {
-                backgroundColor: colors.iconCircleSecondaryBackground,
-                borderColor: colors.border,
+                backgroundColor: iconConfig.backgroundColor,
+                borderColor:
+                  variant === "partner" ? colors.border : "transparent",
+                borderWidth: variant === "partner" ? 1 : 0,
               },
               style,
             ]}
           >
-            <IconSymbol name={iconName} size={iconSize} color={iconColor} />
+            <IconSymbol
+              name={iconConfig.name}
+              size={iconConfig.size}
+              color={iconConfig.color}
+            />
           </Animated.View>
+
+          {/* Notification badge - only for pending-received */}
+          {iconConfig.showBadge && (
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: "#FF3B30", // Red notification badge
+                  borderColor: colors.background,
+                },
+              ]}
+            />
+          )}
         </Animated.View>
       </TouchableOpacity>
     );
@@ -143,8 +199,16 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  badge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
   },
 });
