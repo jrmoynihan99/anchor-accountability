@@ -1,6 +1,7 @@
 // components/messages/MessageInput.tsx
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
 import {
@@ -50,6 +51,35 @@ export const MessageInput = forwardRef<
     const insets = useSafeAreaInsets();
     const pulseRef = React.useRef<{ pulse: () => void }>(null);
 
+    // Get invite data from context
+    const { sentInvites, receivedInvites, getPendingInviteWith } =
+      useAccountability();
+
+    // Determine invite state for THIS thread
+    const pendingInvite = getPendingInviteWith(otherUserId);
+    // I RECEIVED an invite if I'm the mentor (mentorUid = me, they want me as their mentor)
+    const isReceivedInvite = sentInvites.some(
+      (inv) => inv.menteeUid === otherUserId
+    );
+    // I SENT an invite if I'm the mentee (menteeUid = me, I want them as my mentor)
+    const isSentInvite = receivedInvites.some(
+      (inv) => inv.mentorUid === otherUserId
+    );
+
+    // Determine button variant based on relationship and invite state
+    const getButtonVariant = ():
+      | "invite"
+      | "partner"
+      | "pending-sent"
+      | "pending-received" => {
+      if (relationshipType) return "partner";
+      if (isSentInvite) return "pending-sent";
+      if (isReceivedInvite) return "pending-received";
+      return "invite";
+    };
+
+    const buttonVariant = getButtonVariant();
+
     // ------------------------------------------------------------
     // Shared inner content (used for iOS BlurView + Android solid View)
     // ------------------------------------------------------------
@@ -67,7 +97,7 @@ export const MessageInput = forwardRef<
         <View style={styles.row}>
           {/* ------------------------------------------------ */}
           {/* ACCOUNTABILITY BUTTON WITH MODAL          */}
-          {/* Different icon and modal for existing partners */}
+          {/* Different icon and modal based on state */}
           {/* ------------------------------------------------ */}
           <ButtonModalTransitionBridge
             buttonBorderRadius={23}
@@ -94,12 +124,16 @@ export const MessageInput = forwardRef<
                 }
               }, [open]);
 
-              // Expose the pulse function to parent component (only for non-partners)
+              // Expose the pulse function to parent component (only for invite state)
               React.useEffect(() => {
-                if (!relationshipType && onPulseReady && pulseRef.current) {
+                if (
+                  buttonVariant === "invite" &&
+                  onPulseReady &&
+                  pulseRef.current
+                ) {
                   onPulseReady(() => pulseRef.current?.pulse());
                 }
-              }, [pulseRef.current]);
+              }, [pulseRef.current, buttonVariant]);
 
               // One-time measurement to enable proper morph animation
               React.useEffect(() => {
@@ -112,23 +146,23 @@ export const MessageInput = forwardRef<
                 return () => clearTimeout(timer);
               }, []);
 
-              // Render different button based on relationship status
+              // Render button based on current state
               const renderButton = () => {
                 return (
                   <AccountabilityInviteButton
-                    variant={relationshipType ? "partner" : "invite"}
+                    variant={buttonVariant}
                     colors={colors}
                     onPress={open}
                     buttonRef={buttonRef}
                     style={buttonAnimatedStyle}
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
-                    pulseRef={relationshipType ? undefined : pulseRef}
+                    pulseRef={buttonVariant === "invite" ? pulseRef : undefined}
                   />
                 );
               };
 
-              // Render different modal based on relationship type
+              // Render different modal based on relationship type or invite state
               const renderModal = () => {
                 // Define custom button content for partner button
                 const partnerButtonContent = relationshipType ? (
@@ -168,6 +202,7 @@ export const MessageInput = forwardRef<
                     />
                   );
                 } else {
+                  // Show invite modal with current state
                   return (
                     <AccountabilityInviteModal
                       isVisible={isModalVisible}
@@ -176,6 +211,14 @@ export const MessageInput = forwardRef<
                       close={close}
                       otherUserId={otherUserId}
                       threadName={threadName}
+                      inviteState={
+                        isSentInvite
+                          ? "sent"
+                          : isReceivedInvite
+                          ? "received"
+                          : "none"
+                      }
+                      pendingInvite={pendingInvite}
                     />
                   );
                 }

@@ -5,12 +5,27 @@ import React, { createContext, ReactNode, useContext } from "react";
 
 // Define the context type based on what the hook returns
 interface AccountabilityContextType {
+  // Active relationships
   mentor: any | null;
   mentees: any[];
+
+  // Pending invites
+  sentInvites: any[];
+  receivedInvites: any[];
+
+  // State
   loading: boolean;
   error: string | null;
   currentUserMentorCount: number;
   currentUserMenteeCount: number;
+
+  // Functions
+  sendInvite: (menteeUid: string) => Promise<string>;
+  acceptInvite: (inviteId: string) => Promise<void>;
+  declineInvite: (inviteId: string) => Promise<void>;
+  cancelInvite: (inviteId: string) => Promise<void>;
+  hasPendingInviteWith: (otherUserId: string) => boolean;
+  getPendingInviteWith: (otherUserId: string) => any | null;
 }
 
 // Create context with undefined default (will error if used without provider)
@@ -44,12 +59,35 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
         currentUserMenteeCount,
       }
     : {
+        // Active relationships
         mentor: null,
         mentees: [],
+
+        // Pending invites
+        sentInvites: [],
+        receivedInvites: [],
+
+        // State
         loading: true, // Keep loading until auth is ready
         error: null,
         currentUserMentorCount: 0,
         currentUserMenteeCount: 0,
+
+        // Functions (dummy functions that throw)
+        sendInvite: async () => {
+          throw new Error("Not ready");
+        },
+        acceptInvite: async () => {
+          throw new Error("Not ready");
+        },
+        declineInvite: async () => {
+          throw new Error("Not ready");
+        },
+        cancelInvite: async () => {
+          throw new Error("Not ready");
+        },
+        hasPendingInviteWith: () => false,
+        getPendingInviteWith: () => null,
       };
 
   return (

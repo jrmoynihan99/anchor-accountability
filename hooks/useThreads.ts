@@ -1,4 +1,5 @@
 // hooks/useThreads.ts
+import { useAccountability } from "@/context/AccountabilityContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -32,6 +33,7 @@ export interface ThreadWithMessages extends ThreadData {
   otherUserName: string;
   otherUserId: string;
   unreadCount: number;
+  hasPendingInvite?: boolean; // NEW: flag for pending invite
 }
 
 export function useThreads() {
@@ -40,6 +42,9 @@ export function useThreads() {
   const [threads, setThreads] = useState<ThreadWithMessages[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get accountability invites from context
+  const { receivedInvites, loading: invitesLoading } = useAccountability();
 
   // 2-way block state
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers(); // who I blocked
@@ -52,6 +57,12 @@ export function useThreads() {
   const shouldHide = (otherUid: string) =>
     blockedUserIds.has(otherUid) || blockedByUserIds.has(otherUid);
 
+  // Helper: check if there's a pending invite with this user
+  // receivedInvites = where I am the MENTOR (they want me to mentor them)
+  const hasPendingInviteWith = (otherUid: string): boolean => {
+    return receivedInvites.some((inv) => inv.menteeUid === otherUid);
+  };
+
   useEffect(() => {
     if (!uid) {
       setThreads([]);
@@ -59,8 +70,8 @@ export function useThreads() {
       return;
     }
 
-    // Wait for both block lists
-    if (blockedLoading || blockedByLoading) return;
+    // Wait for both block lists and invites to load
+    if (blockedLoading || blockedByLoading || invitesLoading) return;
 
     // Clean up any existing listeners
     unsubscribesRef.current.forEach((unsub) => unsub());
@@ -86,8 +97,25 @@ export function useThreads() {
       // 2-way block filter
       const filtered = unique.filter((t) => !shouldHide(t.otherUserId));
 
+      // Add pending invite check and adjust unread count
+      const withInviteCheck = filtered.map((thread) => {
+        const hasPendingInvite = hasPendingInviteWith(thread.otherUserId);
+        const baseUnreadCount = thread.unreadCount;
+
+        // Add +1 to unread count if there's a pending invite
+        const adjustedUnreadCount = hasPendingInvite
+          ? baseUnreadCount + 1
+          : baseUnreadCount;
+
+        return {
+          ...thread,
+          hasPendingInvite,
+          unreadCount: adjustedUnreadCount,
+        };
+      });
+
       // Sort by latest activity, using lastMessage.timestamp first, fallback to lastActivity
-      filtered.sort((a, b) => {
+      withInviteCheck.sort((a, b) => {
         const aMsg = a.lastMessage?.timestamp?.toMillis
           ? a.lastMessage.timestamp.toMillis()
           : 0;
@@ -102,7 +130,7 @@ export function useThreads() {
         return bAct - aAct;
       });
 
-      setThreads(filtered);
+      setThreads(withInviteCheck);
     };
 
     // Listen to threads where I'm userA
@@ -177,11 +205,19 @@ export function useThreads() {
       unsubscribesRef.current.forEach((unsub) => unsub());
       unsubscribesRef.current = [];
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
+  }, [
+    uid,
+    blockedLoading,
+    blockedByLoading,
+    invitesLoading,
+    blockedUserIds,
+    blockedByUserIds,
+    receivedInvites, // Re-run when invites change
+  ]);
 
   return {
     threads,
-    loading: loading || blockedLoading || blockedByLoading,
+    loading: loading || blockedLoading || blockedByLoading || invitesLoading,
     error,
   };
 }

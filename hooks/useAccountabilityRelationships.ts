@@ -3,12 +3,16 @@
 import { auth, db } from "@/lib/firebase";
 import { AccountabilityRelationship } from "@/types/AccountabilityRelationship";
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   query,
+  serverTimestamp,
   Unsubscribe,
+  updateDoc,
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
@@ -24,16 +28,29 @@ interface AccountabilityWithId extends AccountabilityRelationship {
   mentorTimezone?: string;
 }
 
+// For pending invites, we don't need check-in status
+interface PendingInvite extends AccountabilityRelationship {
+  id: string;
+}
+
 export function useAccountabilityRelationships() {
   const uid = auth.currentUser?.uid ?? null;
 
+  // Active relationships
   const [mentor, setMentor] = useState<AccountabilityWithId | null>(null);
   const [mentees, setMentees] = useState<AccountabilityWithId[]>([]);
+
+  // Pending invites
+  const [sentInvites, setSentInvites] = useState<PendingInvite[]>([]);
+  const [receivedInvites, setReceivedInvites] = useState<PendingInvite[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const mentorUnsubRef = useRef<Unsubscribe | null>(null);
   const menteesUnsubRef = useRef<Unsubscribe | null>(null);
+  const sentInvitesUnsubRef = useRef<Unsubscribe | null>(null);
+  const receivedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
@@ -54,6 +71,8 @@ export function useAccountabilityRelationships() {
     if (!uid) {
       setMentor(null);
       setMentees([]);
+      setSentInvites([]);
+      setReceivedInvites([]);
       setLoading(false);
       return;
     }
@@ -61,7 +80,7 @@ export function useAccountabilityRelationships() {
     setLoading(true);
 
     // ===============================
-    // 🔵 LISTEN FOR MY MENTOR (I am the mentee)
+    // 🔵 LISTEN FOR MY MENTOR (I am the mentee) - ACTIVE ONLY
     // ===============================
     const mentorQuery = query(
       collection(db, "accountabilityRelationships"),
@@ -99,7 +118,7 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // 🟢 LISTEN FOR MY MENTEES (I am the mentor)
+    // 🟢 LISTEN FOR MY MENTEES (I am the mentor) - ACTIVE ONLY
     // ===============================
     const menteesQuery = query(
       collection(db, "accountabilityRelationships"),
@@ -144,18 +163,364 @@ export function useAccountabilityRelationships() {
       }
     );
 
+    // ===============================
+    // 📤 LISTEN FOR SENT INVITES (I am the mentor) - PENDING ONLY
+    // ===============================
+    const sentInvitesQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("mentorUid", "==", uid),
+      where("status", "==", "pending")
+    );
+
+    sentInvitesUnsubRef.current = onSnapshot(
+      sentInvitesQuery,
+      (snapshot) => {
+        const invites = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PendingInvite[];
+        setSentInvites(invites);
+      },
+      (err) => {
+        console.error("sent invites listener error:", err);
+      }
+    );
+
+    // ===============================
+    // 📥 LISTEN FOR RECEIVED INVITES (I am the mentee) - PENDING ONLY
+    // ===============================
+    const receivedInvitesQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("menteeUid", "==", uid),
+      where("status", "==", "pending")
+    );
+
+    receivedInvitesUnsubRef.current = onSnapshot(
+      receivedInvitesQuery,
+      (snapshot) => {
+        const invites = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as PendingInvite[];
+        setReceivedInvites(invites);
+      },
+      (err) => {
+        console.error("received invites listener error:", err);
+      }
+    );
+
     setLoading(false);
 
     return () => {
       mentorUnsubRef.current?.();
       menteesUnsubRef.current?.();
+      sentInvitesUnsubRef.current?.();
+      receivedInvitesUnsubRef.current?.();
     };
   }, [uid]);
 
+  // ===============================
+  // 📨 INVITE FUNCTIONS
+  // ===============================
+
+  // Send an invite to become someone's mentor
+  const sendInvite = async (menteeUid: string): Promise<string> => {
+    if (!uid) throw new Error("Not authenticated");
+
+    try {
+      // Create the invite
+      const docRef = await addDoc(
+        collection(db, "accountabilityRelationships"),
+        {
+          mentorUid: menteeUid, // THEY will be MY mentor
+          menteeUid: uid, // I am the mentee
+          status: "pending",
+          streak: 0,
+          lastCheckIn: null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
+
+      // Find the thread between these two users and increment unread count
+      const threadsAsA = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", uid),
+          where("userB", "==", menteeUid)
+        )
+      );
+
+      const threadsAsB = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", menteeUid),
+          where("userB", "==", uid)
+        )
+      );
+
+      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
+
+      if (allThreads.length > 0) {
+        const threadDoc = allThreads[0];
+        const threadData = threadDoc.data();
+        const threadRef = doc(db, "threads", threadDoc.id);
+
+        // Increment unread count for the person receiving the invite (menteeUid)
+        if (threadData.userA === menteeUid) {
+          await updateDoc(threadRef, {
+            userA_unreadCount: (threadData.userA_unreadCount || 0) + 1,
+          });
+        } else if (threadData.userB === menteeUid) {
+          await updateDoc(threadRef, {
+            userB_unreadCount: (threadData.userB_unreadCount || 0) + 1,
+          });
+        }
+      }
+
+      return docRef.id;
+    } catch (err) {
+      console.error("Error sending invite:", err);
+      throw new Error("Failed to send invite");
+    }
+  };
+
+  // Accept an invite (just update status to active)
+  const acceptInvite = async (inviteId: string): Promise<void> => {
+    if (!uid) throw new Error("Not authenticated");
+
+    try {
+      // Get the invite to find out who sent it
+      const inviteDoc = await getDoc(
+        doc(db, "accountabilityRelationships", inviteId)
+      );
+      if (!inviteDoc.exists()) return;
+
+      const inviteData = inviteDoc.data();
+      const menteeUid = inviteData.menteeUid;
+      const mentorUid = inviteData.mentorUid;
+
+      // Update invite status to active
+      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
+        status: "active",
+        updatedAt: serverTimestamp(),
+      });
+
+      // Decrement the thread's unread count (removing the +1 from the invite)
+      const threadsAsA = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", menteeUid),
+          where("userB", "==", mentorUid)
+        )
+      );
+
+      const threadsAsB = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", mentorUid),
+          where("userB", "==", menteeUid)
+        )
+      );
+
+      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
+
+      if (allThreads.length > 0) {
+        const threadDoc = allThreads[0];
+        const threadData = threadDoc.data();
+        const threadRef = doc(db, "threads", threadDoc.id);
+
+        // Decrement unread count for the person who accepted (mentorUid = uid)
+        if (threadData.userA === mentorUid) {
+          await updateDoc(threadRef, {
+            userA_unreadCount: Math.max(
+              0,
+              (threadData.userA_unreadCount || 0) - 1
+            ),
+          });
+        } else if (threadData.userB === mentorUid) {
+          await updateDoc(threadRef, {
+            userB_unreadCount: Math.max(
+              0,
+              (threadData.userB_unreadCount || 0) - 1
+            ),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error accepting invite:", err);
+      throw new Error("Failed to accept invite");
+    }
+  };
+
+  // Decline an invite (update status to declined)
+  const declineInvite = async (inviteId: string): Promise<void> => {
+    try {
+      // Get the invite to find out who sent it
+      const inviteDoc = await getDoc(
+        doc(db, "accountabilityRelationships", inviteId)
+      );
+      if (!inviteDoc.exists()) return;
+
+      const inviteData = inviteDoc.data();
+      const menteeUid = inviteData.menteeUid;
+      const mentorUid = inviteData.mentorUid;
+
+      // Update invite status to declined
+      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
+        status: "declined",
+        updatedAt: serverTimestamp(),
+      });
+
+      // Decrement the thread's unread count
+      const threadsAsA = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", menteeUid),
+          where("userB", "==", mentorUid)
+        )
+      );
+
+      const threadsAsB = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", mentorUid),
+          where("userB", "==", menteeUid)
+        )
+      );
+
+      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
+
+      if (allThreads.length > 0) {
+        const threadDoc = allThreads[0];
+        const threadData = threadDoc.data();
+        const threadRef = doc(db, "threads", threadDoc.id);
+
+        // Decrement unread count for the person who declined (mentorUid)
+        if (threadData.userA === mentorUid) {
+          await updateDoc(threadRef, {
+            userA_unreadCount: Math.max(
+              0,
+              (threadData.userA_unreadCount || 0) - 1
+            ),
+          });
+        } else if (threadData.userB === mentorUid) {
+          await updateDoc(threadRef, {
+            userB_unreadCount: Math.max(
+              0,
+              (threadData.userB_unreadCount || 0) - 1
+            ),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error declining invite:", err);
+      throw new Error("Failed to decline invite");
+    }
+  };
+
+  // Cancel an invite (update status to cancelled)
+  const cancelInvite = async (inviteId: string): Promise<void> => {
+    try {
+      // Get the invite to find out who it was sent to
+      const inviteDoc = await getDoc(
+        doc(db, "accountabilityRelationships", inviteId)
+      );
+      if (!inviteDoc.exists()) return;
+
+      const inviteData = inviteDoc.data();
+      const menteeUid = inviteData.menteeUid;
+      const mentorUid = inviteData.mentorUid;
+
+      // Update invite status
+      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
+        status: "cancelled",
+        updatedAt: serverTimestamp(),
+      });
+
+      // Decrement the thread's unread count for the person who received the invite
+      const threadsAsA = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", menteeUid),
+          where("userB", "==", mentorUid)
+        )
+      );
+
+      const threadsAsB = await getDocs(
+        query(
+          collection(db, "threads"),
+          where("userA", "==", mentorUid),
+          where("userB", "==", menteeUid)
+        )
+      );
+
+      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
+
+      if (allThreads.length > 0) {
+        const threadDoc = allThreads[0];
+        const threadData = threadDoc.data();
+        const threadRef = doc(db, "threads", threadDoc.id);
+
+        // Decrement unread count for the person who received the invite (mentorUid)
+        if (threadData.userA === mentorUid) {
+          await updateDoc(threadRef, {
+            userA_unreadCount: Math.max(
+              0,
+              (threadData.userA_unreadCount || 0) - 1
+            ),
+          });
+        } else if (threadData.userB === mentorUid) {
+          await updateDoc(threadRef, {
+            userB_unreadCount: Math.max(
+              0,
+              (threadData.userB_unreadCount || 0) - 1
+            ),
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error cancelling invite:", err);
+      throw new Error("Failed to cancel invite");
+    }
+  };
+
+  // Check if there's a pending invite for a specific user
+  const hasPendingInviteWith = (otherUserId: string): boolean => {
+    return (
+      sentInvites.some((inv) => inv.menteeUid === otherUserId) ||
+      receivedInvites.some((inv) => inv.mentorUid === otherUserId)
+    );
+  };
+
+  // Get pending invite with a specific user (if exists)
+  const getPendingInviteWith = (otherUserId: string): PendingInvite | null => {
+    return (
+      sentInvites.find((inv) => inv.menteeUid === otherUserId) ||
+      receivedInvites.find((inv) => inv.mentorUid === otherUserId) ||
+      null
+    );
+  };
+
   return {
+    // Active relationships
     mentor,
     mentees,
+
+    // Pending invites
+    sentInvites,
+    receivedInvites,
+
+    // State
     loading,
     error,
+
+    // Functions
+    sendInvite,
+    acceptInvite,
+    declineInvite,
+    cancelInvite,
+    hasPendingInviteWith,
+    getPendingInviteWith,
   };
 }
