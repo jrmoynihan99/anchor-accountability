@@ -57,12 +57,12 @@ export const MessageInput = forwardRef<
 
     // Determine invite state for THIS thread
     const pendingInvite = getPendingInviteWith(otherUserId);
-    // I RECEIVED an invite if I'm the mentor (mentorUid = me, they want me as their mentor)
-    const isReceivedInvite = sentInvites.some(
+    // I RECEIVED an invite if there's a receivedInvite where the other user is the mentee
+    const isReceivedInvite = receivedInvites.some(
       (inv) => inv.menteeUid === otherUserId
     );
-    // I SENT an invite if I'm the mentee (menteeUid = me, I want them as my mentor)
-    const isSentInvite = receivedInvites.some(
+    // I SENT an invite if there's a sentInvite where the other user is the mentor
+    const isSentInvite = sentInvites.some(
       (inv) => inv.mentorUid === otherUserId
     );
 

@@ -164,11 +164,11 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // 📤 LISTEN FOR SENT INVITES (I am the mentor) - PENDING ONLY
+    // 📤 LISTEN FOR SENT INVITES (I am the mentee sending invites) - PENDING ONLY
     // ===============================
     const sentInvitesQuery = query(
       collection(db, "accountabilityRelationships"),
-      where("mentorUid", "==", uid),
+      where("menteeUid", "==", uid),
       where("status", "==", "pending")
     );
 
@@ -187,11 +187,11 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // 📥 LISTEN FOR RECEIVED INVITES (I am the mentee) - PENDING ONLY
+    // 📥 LISTEN FOR RECEIVED INVITES (I am being asked to be the MENTOR) - PENDING ONLY
     // ===============================
     const receivedInvitesQuery = query(
       collection(db, "accountabilityRelationships"),
-      where("menteeUid", "==", uid),
+      where("mentorUid", "==", uid),
       where("status", "==", "pending")
     );
 
@@ -488,16 +488,16 @@ export function useAccountabilityRelationships() {
   // Check if there's a pending invite for a specific user
   const hasPendingInviteWith = (otherUserId: string): boolean => {
     return (
-      sentInvites.some((inv) => inv.menteeUid === otherUserId) ||
-      receivedInvites.some((inv) => inv.mentorUid === otherUserId)
+      sentInvites.some((inv) => inv.mentorUid === otherUserId) || // ✅ FIXED: I sent to them (they're the mentor)
+      receivedInvites.some((inv) => inv.menteeUid === otherUserId) // ✅ FIXED: They sent to me (they're the mentee)
     );
   };
 
   // Get pending invite with a specific user (if exists)
   const getPendingInviteWith = (otherUserId: string): PendingInvite | null => {
     return (
-      sentInvites.find((inv) => inv.menteeUid === otherUserId) ||
-      receivedInvites.find((inv) => inv.mentorUid === otherUserId) ||
+      sentInvites.find((inv) => inv.mentorUid === otherUserId) || // ✅ FIXED: I sent to them (they're the mentor)
+      receivedInvites.find((inv) => inv.menteeUid === otherUserId) || // ✅ FIXED: They sent to me (they're the mentee)
       null
     );
   };

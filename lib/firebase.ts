@@ -8,14 +8,11 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
   getFirestore,
-  query,
   serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
-  where,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -164,34 +161,14 @@ export async function markMessagesAsRead(threadId: string): Promise<void> {
   if (threadDoc.exists()) {
     const threadData = threadDoc.data() as ThreadData;
 
-    // Determine the other user's ID
-    const otherUserId =
-      threadData.userA === currentUserId ? threadData.userB : threadData.userA;
-
-    // Check if there's a pending invite from this user
-    // If otherUser is the MENTEE and I'm the MENTOR, they invited me
-    const invitesQuery = query(
-      collection(db, "accountabilityRelationships"),
-      where("menteeUid", "==", otherUserId),
-      where("mentorUid", "==", currentUserId),
-      where("status", "==", "pending")
-    );
-
-    const invitesSnapshot = await getDocs(invitesQuery);
-    const hasPendingInvite = !invitesSnapshot.empty;
-
-    // If there's a pending invite, set unread to 1 (not 0)
-    // Otherwise, set to 0 as normal
-    const newUnreadCount = hasPendingInvite ? 1 : 0;
-
     // Reset unread count for current user
     if (threadData.userA === currentUserId) {
       await updateDoc(threadRef, {
-        userA_unreadCount: newUnreadCount,
+        userA_unreadCount: 0,
       });
     } else {
       await updateDoc(threadRef, {
-        userB_unreadCount: newUnreadCount,
+        userB_unreadCount: 0,
       });
     }
   }

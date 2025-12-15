@@ -6,10 +6,12 @@ import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SectionHeader } from "./MessageThreadsHeader";
+import { ReceivedInviteItem } from "./ReceivedInviteItem";
+import { SentInviteItem } from "./SentInviteItem"; // ✅ Import new component
 import { ThreadItem } from "./ThreadItem";
 
 interface MessageThreadsSectionProps {
-  scrollY: any; // SharedValue<number>
+  scrollY: any;
   onScroll: (event: any) => void;
 }
 
@@ -20,10 +22,9 @@ export function MessageThreadsSection({
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
-  // Load accountability relationships from context
-  const { mentor, mentees } = useAccountability();
+  // ✅ Add sentInvites to destructuring
+  const { mentor, mentees, receivedInvites, sentInvites } = useAccountability();
 
-  // Timer to refresh relative timestamps
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 30000);
@@ -81,7 +82,7 @@ export function MessageThreadsSection({
   }
 
   // -----------------------------
-  // BUILD PINNED SECTIONS
+  // BUILD SECTIONS
   // -----------------------------
   let mentorThread: any = null;
   const menteeThreads: any[] = [];
@@ -90,6 +91,7 @@ export function MessageThreadsSection({
   const menteeIds = new Set(mentees.map((m) => m.menteeUid));
   const mentorId = mentor?.mentorUid ?? null;
 
+  // Don't filter out pending invite threads anymore - let them stay in regular threads
   threads.forEach((t) => {
     if (mentorId && t.otherUserId === mentorId) {
       mentorThread = t;
@@ -103,6 +105,81 @@ export function MessageThreadsSection({
   return (
     <View style={styles.section}>
       <SectionHeader scrollY={scrollY} threadsCount={threads.length} />
+
+      {/* -----------------------
+          🟡 RECEIVED INVITES SECTION
+      ------------------------ */}
+      {receivedInvites.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 8,
+              marginLeft: 4,
+            }}
+          >
+            PENDING INVITES
+          </ThemedText>
+
+          {receivedInvites.map((invite) => {
+            const thread = threads.find(
+              (t) => t.otherUserId === invite.menteeUid
+            );
+
+            if (!thread) return null;
+
+            return (
+              <ReceivedInviteItem
+                key={invite.id}
+                userName={thread.otherUserName}
+                userId={thread.otherUserId}
+                threadId={thread.id}
+                inviteId={invite.id}
+                colors={colors}
+              />
+            );
+          })}
+        </View>
+      )}
+
+      {/* -----------------------
+          🟠 SENT INVITES SECTION
+      ------------------------ */}
+      {sentInvites.length > 0 && (
+        <View style={{ marginBottom: 24 }}>
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 8,
+              marginLeft: 4,
+            }}
+          >
+            INVITES SENT
+          </ThemedText>
+
+          {sentInvites.map((invite) => {
+            // Find the thread for this sent invite
+            const thread = threads.find(
+              (t) => t.otherUserId === invite.mentorUid
+            );
+
+            if (!thread) return null;
+
+            return (
+              <SentInviteItem
+                key={invite.id}
+                userName={thread.otherUserName}
+                userId={thread.otherUserId}
+                threadId={thread.id}
+                inviteId={invite.id}
+                colors={colors}
+              />
+            );
+          })}
+        </View>
+      )}
 
       {/* -----------------------
           🔵 MENTOR SECTION
@@ -153,7 +230,6 @@ export function MessageThreadsSection({
           </ThemedText>
 
           {menteeThreads.map((t) => {
-            // Find the mentee relationship for this thread
             const menteeRelationship = mentees.find(
               (m) => m.menteeUid === t.otherUserId
             );
@@ -227,10 +303,6 @@ export function MessageThreadsSection({
     </View>
   );
 }
-
-// -----------------------------
-// STYLES
-// -----------------------------
 
 const styles = StyleSheet.create({
   section: {
