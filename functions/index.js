@@ -2297,3 +2297,107 @@ exports.testMissedCheckInNotification = onRequest(async (req, res) => {
     return res.status(500).send("Error: " + err.toString());
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCOUNTABILITY INVITE CLEANUP
+// When an accountability invite is accepted (status changes to "active"),
+// automatically delete all other pending invites from the same mentee.
+// This ensures a user can only have one active mentor at a time.
+// ─────────────────────────────────────────────────────────────────────────────
+
+exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
+  "accountabilityRelationships/{inviteId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // Only trigger when status changes from pending to active
+    if (before.status !== "pending" || after.status !== "active") {
+      return;
+    }
+
+    const menteeUid = after.menteeUid;
+    const acceptedInviteId = event.params.inviteId;
+
+    console.log(
+      `🧹 Cleaning up pending invites for mentee ${menteeUid} after accepting invite ${acceptedInviteId}`
+    );
+
+    try {
+      const db = admin.firestore();
+
+      // Find all other pending invites from this mentee
+      const snapshot = await db
+        .collection("accountabilityRelationships")
+        .where("menteeUid", "==", menteeUid)
+        .where("status", "==", "pending")
+        .get();
+
+      if (snapshot.empty) {
+        console.log("No other pending invites to clean up.");
+        return;
+      }
+
+      const batch = db.batch();
+      let deletedCount = 0;
+
+      for (const doc of snapshot.docs) {
+        // Skip the invite that was just accepted
+        if (doc.id === acceptedInviteId) {
+          continue;
+        }
+
+        const inviteData = doc.data();
+        const otherMentorUid = inviteData.mentorUid;
+
+        console.log(
+          `Deleting pending invite ${doc.id} to mentor ${otherMentorUid}`
+        );
+
+        // Delete the invite document
+        batch.delete(doc.ref);
+        deletedCount++;
+
+        // Decrement unread count in the thread with this mentor
+        const threadsSnapshot = await db
+          .collection("threads")
+          .where("userA", "in", [menteeUid, otherMentorUid])
+          .where("userB", "in", [menteeUid, otherMentorUid])
+          .get();
+
+        for (const threadDoc of threadsSnapshot.docs) {
+          const threadData = threadDoc.data();
+
+          // Find which user is which and decrement their unread count
+          if (threadData.userA === otherMentorUid) {
+            batch.update(threadDoc.ref, {
+              userA_unreadCount: Math.max(
+                0,
+                (threadData.userA_unreadCount || 0) - 1
+              ),
+            });
+          } else if (threadData.userB === otherMentorUid) {
+            batch.update(threadDoc.ref, {
+              userB_unreadCount: Math.max(
+                0,
+                (threadData.userB_unreadCount || 0) - 1
+              ),
+            });
+          }
+        }
+      }
+
+      if (deletedCount > 0) {
+        await batch.commit();
+        console.log(
+          `✅ Successfully deleted ${deletedCount} pending invite(s) for mentee ${menteeUid}`
+        );
+      } else {
+        console.log("No invites to delete (only the accepted one existed).");
+      }
+    } catch (error) {
+      console.error("❌ Error cleaning up pending invites:", error);
+      throw error;
+    }
+  }
+);
