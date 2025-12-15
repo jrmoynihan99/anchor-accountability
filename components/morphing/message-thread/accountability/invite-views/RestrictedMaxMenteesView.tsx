@@ -37,15 +37,17 @@ export function RestrictedMaxMenteesView({
             color={colors.textSecondary}
           />
         </View>
+
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Partner Unavailable
+          Not Available Right Now
         </ThemedText>
+
         <ThemedText
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          {threadName || "This user"} already has 3 mentees and cannot accept
-          more accountability partnerships at this time.
+          {threadName || "This user"} is currently supporting the maximum number
+          of people they can walk alongside.
         </ThemedText>
       </View>
 
@@ -65,16 +67,28 @@ export function RestrictedMaxMenteesView({
             type="subtitleSemibold"
             style={[styles.infoTitle, { color: colors.text }]}
           >
-            Why this limit?
+            Why this happens
           </ThemedText>
         </View>
+
         <ThemedText
           type="body"
           style={[styles.infoText, { color: colors.textSecondary }]}
         >
-          To ensure quality support, accountability partners can support up to 3
-          people at once. This helps them provide meaningful encouragement and
-          attention to each person they're helping.
+          Accountability works best when support is intentional and consistent.
+          To make sure no one is stretched too thin, each person can actively
+          support{" "}
+          <ThemedText type="bodyMedium" style={{ color: colors.text }}>
+            up to three people
+          </ThemedText>{" "}
+          at a time.
+        </ThemedText>
+
+        <ThemedText
+          type="body"
+          style={[styles.infoText, { color: colors.textSecondary }]}
+        >
+          This helps them show up well for everyone they’re helping.
         </ThemedText>
       </View>
 
@@ -93,7 +107,7 @@ export function RestrictedMaxMenteesView({
           type="subtitleSemibold"
           style={{ color: colors.textSecondary }}
         >
-          Close
+          Got it
         </ThemedText>
       </TouchableOpacity>
     </ScrollView>
@@ -148,6 +162,7 @@ const styles = StyleSheet.create({
   infoText: {
     lineHeight: 20,
     opacity: 0.9,
+    marginBottom: 12,
   },
   secondaryButton: {
     flexDirection: "row",

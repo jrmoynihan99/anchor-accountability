@@ -92,41 +92,12 @@ export function InviteSentView({
         </ThemedText>
       </View>
 
-      {/* Info Card */}
-      <View
-        style={[
-          styles.infoCard,
-          {
-            backgroundColor: colors.background,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <View style={styles.infoHeader}>
-          <IconSymbol name="info.circle.fill" size={20} color={colors.tint} />
-          <ThemedText
-            type="subtitleSemibold"
-            style={[styles.infoTitle, { color: colors.text }]}
-          >
-            What happens next?
-          </ThemedText>
-        </View>
-        <ThemedText
-          type="body"
-          style={[styles.infoText, { color: colors.textSecondary }]}
-        >
-          {threadName} will be notified of your request. Once they accept,
-          you'll be able to see their check-in status and they'll be able to
-          support your recovery journey.
-        </ThemedText>
-      </View>
-
       {/* Cancel Button */}
       <TouchableOpacity
         style={[
           styles.primaryButton,
           {
-            backgroundColor: "#FF3B30",
+            backgroundColor: colors.error,
             opacity: isLoading ? 0.6 : 1,
           },
         ]}

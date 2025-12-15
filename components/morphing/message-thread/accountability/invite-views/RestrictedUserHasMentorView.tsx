@@ -37,15 +37,17 @@ export function RestrictedUserHasMentorView({
             color={colors.textSecondary}
           />
         </View>
+
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Already Have a Partner
+          You’re Already Supported
         </ThemedText>
+
         <ThemedText
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          You already have an accountability partner. You can only have one
-          partner at a time.
+          You already have someone supporting you through daily check-ins and
+          accountability.
         </ThemedText>
       </View>
 
@@ -65,16 +67,39 @@ export function RestrictedUserHasMentorView({
             type="subtitleSemibold"
             style={[styles.infoTitle, { color: colors.text }]}
           >
-            Why only one partner?
+            How Anchor Accountability Works
           </ThemedText>
         </View>
+
         <ThemedText
           type="body"
           style={[styles.infoText, { color: colors.textSecondary }]}
         >
-          Having one dedicated accountability partner helps create a deeper,
-          more meaningful support relationship. They can focus on your journey
-          and provide consistent encouragement.
+          Anchor is designed so that each person has{" "}
+          <ThemedText type="bodyMedium" style={{ color: colors.text }}>
+            one primary source of accountability
+          </ThemedText>{" "}
+          — someone who sees their daily check-ins and walks closely with them
+          through recovery.
+        </ThemedText>
+
+        <ThemedText
+          type="body"
+          style={[styles.infoText, { color: colors.textSecondary }]}
+        >
+          This helps keep the relationship focused, consistent, and meaningful.
+        </ThemedText>
+
+        <ThemedText
+          type="body"
+          style={[styles.infoText, { color: colors.textSecondary }]}
+        >
+          That said, you’re still free to support others. You can choose to walk
+          alongside{" "}
+          <ThemedText type="bodyMedium" style={{ color: colors.text }}>
+            up to three people
+          </ThemedText>{" "}
+          who invite you for accountability.
         </ThemedText>
       </View>
 
@@ -93,7 +118,7 @@ export function RestrictedUserHasMentorView({
           type="subtitleSemibold"
           style={{ color: colors.textSecondary }}
         >
-          Close
+          Got it
         </ThemedText>
       </TouchableOpacity>
     </ScrollView>
@@ -148,6 +173,7 @@ const styles = StyleSheet.create({
   infoText: {
     lineHeight: 20,
     opacity: 0.9,
+    marginBottom: 12,
   },
   secondaryButton: {
     flexDirection: "row",
