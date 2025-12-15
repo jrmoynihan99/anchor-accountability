@@ -1,21 +1,26 @@
 // components/morphing/message-thread/accountability/AccountabilityInviteModal.tsx
-import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/hooks/ThemeContext";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SharedValue } from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  Easing,
+  interpolate,
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
+import { DefaultInviteView } from "./invite-views/DefaultInviteView";
+import { GuidelinesView } from "./invite-views/GuidelinesView";
+import { InviteSentView } from "./invite-views/InviteSentView";
+import { MentorGuidelinesView } from "./invite-views/MentorGuidelinesView";
+import { ReceivedInviteView } from "./invite-views/ReceivedInviteView";
+import { RestrictedMaxMenteesView } from "./invite-views/RestrictedMaxMenteesView";
+import { RestrictedUserHasMentorView } from "./invite-views/RestrictedUserHasMentorView";
 
 interface AccountabilityInviteModalProps {
   isVisible: boolean;
@@ -28,6 +33,15 @@ interface AccountabilityInviteModalProps {
   pendingInvite?: any;
 }
 
+type ViewType =
+  | "default"
+  | "guidelines"
+  | "mentorGuidelines"
+  | "userHasMentor"
+  | "maxMentees"
+  | "sent"
+  | "received";
+
 export function AccountabilityInviteModal({
   isVisible,
   progress,
@@ -39,7 +53,6 @@ export function AccountabilityInviteModal({
   pendingInvite,
 }: AccountabilityInviteModalProps) {
   const { colors, effectiveTheme } = useTheme();
-  const [isLoading, setIsLoading] = useState(false);
   const currentUserId = auth.currentUser?.uid;
 
   // Get accountability functions and state from Context
@@ -47,146 +60,253 @@ export function AccountabilityInviteModal({
     useAccountability();
   const userHasMentor = !!mentor;
 
-  // Check if other user has 3 mentees already
-  const [otherUserMenteeCount, setOtherUserMenteeCount] = useState<
-    number | null
-  >(null);
-  const [loadingMenteeCount, setLoadingMenteeCount] = useState(true);
-  const otherUserHasMaxMentees =
-    otherUserMenteeCount !== null && otherUserMenteeCount >= 3;
+  // Track if user has read guidelines (separate for mentee and mentor flows)
+  const [hasReadGuidelines, setHasReadGuidelines] = useState(false);
+  const [hasReadMentorGuidelines, setHasReadMentorGuidelines] = useState(false);
 
-  // Load OTHER user's mentee count from their user document
+  // Determine initial view based on props
+  const getInitialView = (): ViewType => {
+    if (inviteState === "sent") return "sent";
+    if (inviteState === "received") return "received";
+    if (userHasMentor) return "userHasMentor";
+    // maxMentees check will be done in DefaultInviteView
+    return "default";
+  };
+
+  const [currentView, setCurrentView] = useState<ViewType>(getInitialView());
+  const screenTransition = useSharedValue(0);
+
+  // Reset when modal closes
   useEffect(() => {
-    const fetchMenteeCount = async () => {
-      if (!otherUserId || !isVisible) return;
+    if (!isVisible) {
+      const timer = setTimeout(() => {
+        setCurrentView(getInitialView());
+        setHasReadGuidelines(false);
+        setHasReadMentorGuidelines(false);
+        screenTransition.value = 0;
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible]);
 
-      setLoadingMenteeCount(true);
-      try {
-        const userDoc = await getDoc(doc(db, "users", otherUserId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setOtherUserMenteeCount(userData.menteeCount ?? 0);
-        } else {
-          setOtherUserMenteeCount(0);
-        }
-      } catch (error) {
-        console.error("Error fetching mentee count:", error);
-        setOtherUserMenteeCount(0);
-      } finally {
-        setLoadingMenteeCount(false);
+  // Update view when inviteState changes
+  useEffect(() => {
+    if (isVisible) {
+      const newView = getInitialView();
+      if (newView !== currentView) {
+        transitionToView(newView);
       }
-    };
+    }
+  }, [inviteState, userHasMentor, isVisible]);
 
-    fetchMenteeCount();
-  }, [otherUserId, isVisible]);
+  const transitionToView = (view: ViewType) => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView(view);
+      screenTransition.value = 0;
+    }, 300);
+  };
 
-  // Handle sending invite
+  // Mentee guidelines navigation (for sending invites)
+  const handleNavigateToGuidelines = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("guidelines");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  const handleBackFromGuidelines = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("default");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  const handleConfirmGuidelines = () => {
+    setHasReadGuidelines(true);
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("default");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  // Mentor guidelines navigation (for accepting invites)
+  const handleNavigateToMentorGuidelines = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("mentorGuidelines");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  const handleBackFromMentorGuidelines = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("received");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  const handleConfirmMentorGuidelines = () => {
+    setHasReadMentorGuidelines(true);
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setTimeout(() => {
+      setCurrentView("received");
+      screenTransition.value = 0;
+    }, 300);
+  };
+
+  // Handlers that will be passed to child components
   const handleSendInvite = async () => {
     if (!currentUserId) return;
-
-    setIsLoading(true);
-    try {
-      await sendInvite(otherUserId);
-      Alert.alert(
-        "Invite Sent",
-        `Your accountability invite has been sent to ${threadName}.`
-      );
-      close();
-    } catch (error) {
-      console.error("Error sending invite:", error);
-      Alert.alert("Error", "Failed to send invite. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    await sendInvite(otherUserId);
+    transitionToView("sent");
   };
 
-  // Handle canceling invite
   const handleCancelInvite = async () => {
     if (!pendingInvite) return;
-
-    Alert.alert(
-      "Cancel Invite",
-      "Are you sure you want to cancel this invite?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await cancelInvite(pendingInvite.id);
-              Alert.alert(
-                "Invite Cancelled",
-                "Your invite has been cancelled."
-              );
-              close();
-            } catch (error) {
-              console.error("Error cancelling invite:", error);
-              Alert.alert(
-                "Error",
-                "Failed to cancel invite. Please try again."
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    await cancelInvite(pendingInvite.id);
+    transitionToView("default");
   };
 
-  // Handle accepting invite
   const handleAcceptInvite = async () => {
     if (!pendingInvite) return;
-
-    setIsLoading(true);
-    try {
-      await acceptInvite(pendingInvite.id);
-      Alert.alert(
-        "Invite Accepted!",
-        `You are now accountability partners with ${threadName}.`
-      );
-      close();
-    } catch (error) {
-      console.error("Error accepting invite:", error);
-      Alert.alert("Error", "Failed to accept invite. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    await acceptInvite(pendingInvite.id);
+    close();
   };
 
-  // Handle declining invite
   const handleDeclineInvite = async () => {
     if (!pendingInvite) return;
+    await declineInvite(pendingInvite.id);
+    close();
+  };
 
-    Alert.alert(
-      "Decline Invite",
-      "Are you sure you want to decline this accountability invite?",
-      [
-        { text: "No", style: "cancel" },
-        {
-          text: "Yes",
-          style: "destructive",
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await declineInvite(pendingInvite.id);
-              Alert.alert("Invite Declined", "You declined the invite.");
-              close();
-            } catch (error) {
-              console.error("Error declining invite:", error);
-              Alert.alert(
-                "Error",
-                "Failed to decline invite. Please try again."
-              );
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+  // Animation styles
+  const currentScreenStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateX: interpolate(
+          screenTransition.value,
+          [0, 1],
+          [0, -100],
+          "clamp"
+        ),
+      },
+    ],
+    opacity: interpolate(
+      screenTransition.value,
+      [0, 0.8, 1],
+      [1, 0.3, 0],
+      "clamp"
+    ),
+  }));
+
+  const nextScreenStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        translateX: interpolate(
+          screenTransition.value,
+          [0, 1],
+          [300, 0],
+          "clamp"
+        ),
+      },
+    ],
+    opacity: interpolate(
+      screenTransition.value,
+      [0, 0.2, 1],
+      [0, 1, 1],
+      "clamp"
+    ),
+  }));
+
+  // Render the appropriate view
+  const renderView = (view: ViewType) => {
+    const commonProps = {
+      colors,
+      otherUserId,
+      threadName,
+      onClose: close,
+    };
+
+    switch (view) {
+      case "default":
+        return (
+          <DefaultInviteView
+            {...commonProps}
+            onSendInvite={handleSendInvite}
+            onTransitionToRestricted={(type) => {
+              if (type === "hasMentor") transitionToView("userHasMentor");
+              if (type === "maxMentees") transitionToView("maxMentees");
+            }}
+            onNavigateToGuidelines={handleNavigateToGuidelines}
+            hasReadGuidelines={hasReadGuidelines}
+          />
+        );
+      case "guidelines":
+        return (
+          <GuidelinesView
+            {...commonProps}
+            onBackPress={handleBackFromGuidelines}
+            onConfirm={handleConfirmGuidelines}
+          />
+        );
+      case "mentorGuidelines":
+        return (
+          <MentorGuidelinesView
+            {...commonProps}
+            onBackPress={handleBackFromMentorGuidelines}
+            onConfirm={handleConfirmMentorGuidelines}
+          />
+        );
+      case "userHasMentor":
+        return <RestrictedUserHasMentorView {...commonProps} />;
+      case "maxMentees":
+        return <RestrictedMaxMenteesView {...commonProps} />;
+      case "sent":
+        return (
+          <InviteSentView
+            {...commonProps}
+            onCancelInvite={handleCancelInvite}
+          />
+        );
+      case "received":
+        return (
+          <ReceivedInviteView
+            {...commonProps}
+            onAcceptInvite={handleAcceptInvite}
+            onDeclineInvite={handleDeclineInvite}
+            onNavigateToGuidelines={handleNavigateToMentorGuidelines}
+            hasReadGuidelines={hasReadMentorGuidelines}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   // Button content (the invite icon in its collapsed state)
@@ -200,359 +320,31 @@ export function AccountabilityInviteModal({
     </View>
   );
 
-  // Render content based on invite state
-  const renderModalContent = () => {
-    // STATE: Invite sent (waiting for response)
-    if (inviteState === "sent") {
-      return (
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.headerSection}>
-            <View
-              style={[
-                styles.iconCircle,
-                { backgroundColor: `${colors.warning || "#FF9500"}20` },
-              ]}
-            >
-              <IconSymbol
-                name="clock.fill"
-                size={32}
-                color={colors.warning || "#FF9500"}
-              />
-            </View>
-            <ThemedText
-              type="title"
-              style={[styles.title, { color: colors.text }]}
-            >
-              Invite Pending
-            </ThemedText>
-            <ThemedText
-              type="body"
-              style={[styles.subtitle, { color: colors.textSecondary }]}
-            >
-              You've invited {threadName} to be your accountability partner.
-              They'll receive a notification to accept or decline your invite.
-            </ThemedText>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              {
-                backgroundColor: "#FF3B30",
-                opacity: isLoading ? 0.6 : 1,
-              },
-            ]}
-            onPress={handleCancelInvite}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <ThemedText
-                type="subtitleSemibold"
-                style={{ color: colors.white }}
-              >
-                Cancel Invite
-              </ThemedText>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.secondaryButton, { borderColor: colors.border }]}
-            onPress={() => close()}
-          >
-            <ThemedText
-              type="subtitleSemibold"
-              style={{ color: colors.textSecondary }}
-            >
-              Close
-            </ThemedText>
-          </TouchableOpacity>
-        </ScrollView>
-      );
-    }
-
-    // STATE: Invite received (can accept or decline)
-    if (inviteState === "received") {
-      return (
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.headerSection}>
-            <View
-              style={[
-                styles.iconCircle,
-                { backgroundColor: `${colors.success || "#34C759"}20` },
-              ]}
-            >
-              <IconSymbol
-                name="bell.badge.fill"
-                size={32}
-                color={colors.success || "#34C759"}
-              />
-            </View>
-            <ThemedText
-              type="title"
-              style={[styles.title, { color: colors.text }]}
-            >
-              Accountability Invite
-            </ThemedText>
-            <ThemedText
-              type="body"
-              style={[styles.subtitle, { color: colors.textSecondary }]}
-            >
-              {threadName} wants to be your accountability mentor. They'll help
-              support your recovery journey and check in with you regularly.
-            </ThemedText>
-          </View>
-
-          {/* Info Card */}
-          <View
-            style={[
-              styles.infoCard,
-              {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <View style={styles.infoHeader}>
-              <IconSymbol
-                name="info.circle.fill"
-                size={20}
-                color={colors.tint}
-              />
-              <ThemedText
-                type="subtitleSemibold"
-                style={[styles.infoTitle, { color: colors.text }]}
-              >
-                What happens when you accept?
-              </ThemedText>
-            </View>
-            <ThemedText
-              type="body"
-              style={[styles.infoText, { color: colors.textSecondary }]}
-            >
-              They'll be able to see your daily check-ins and recovery streak.
-              You can message each other and they'll receive notifications when
-              you might need support.
-            </ThemedText>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              {
-                backgroundColor: colors.success || "#34C759",
-                opacity: isLoading ? 0.6 : 1,
-              },
-            ]}
-            onPress={handleAcceptInvite}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <ThemedText
-                type="subtitleSemibold"
-                style={{ color: colors.white }}
-              >
-                Accept Invite
-              </ThemedText>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.secondaryButton, { borderColor: "#FF3B30" }]}
-            onPress={handleDeclineInvite}
-            disabled={isLoading}
-          >
-            <ThemedText type="subtitleSemibold" style={{ color: "#FF3B30" }}>
-              Decline
-            </ThemedText>
-          </TouchableOpacity>
-        </ScrollView>
-      );
-    }
-
-    // STATE: No invite (can send one)
-    return (
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+  const modalContent = (
+    <View style={styles.screenContainer}>
+      <Animated.View
+        style={[
+          styles.screenWrapper,
+          styles.screenBackground,
+          currentScreenStyle,
+        ]}
       >
-        {/* Header Section */}
-        <View style={styles.headerSection}>
-          <View
-            style={[styles.iconCircle, { backgroundColor: `${colors.tint}20` }]}
-          >
-            <IconSymbol name="person.2.fill" size={32} color={colors.tint} />
-          </View>
-          <ThemedText
-            type="title"
-            style={[styles.title, { color: colors.text }]}
-          >
-            {userHasMentor
-              ? "Already Have a Partner"
-              : otherUserHasMaxMentees
-              ? "Partner Unavailable"
-              : "Accountability Partner"}
-          </ThemedText>
-          <ThemedText
-            type="body"
-            style={[styles.subtitle, { color: colors.textSecondary }]}
-          >
-            {userHasMentor
-              ? "You already have an accountability partner. You can only have one partner at a time."
-              : otherUserHasMaxMentees
-              ? `${
-                  threadName || "This user"
-                } already has 3 mentees and cannot accept more accountability partnerships.`
-              : `Invite ${
-                  threadName || "this user"
-                } to be your accountability partner`}
-          </ThemedText>
-        </View>
+        {renderView(currentView)}
+      </Animated.View>
 
-        {/* What is this Section */}
-        {!userHasMentor && !otherUserHasMaxMentees && (
-          <View
-            style={[
-              styles.infoCard,
-              {
-                backgroundColor: colors.background,
-                borderColor: colors.border,
-              },
-            ]}
-          >
-            <View style={styles.infoHeader}>
-              <IconSymbol
-                name="info.circle.fill"
-                size={20}
-                color={colors.tint}
-              />
-              <ThemedText
-                type="subtitleSemibold"
-                style={[styles.infoTitle, { color: colors.text }]}
-              >
-                What is an Accountability Partner?
-              </ThemedText>
-            </View>
-            <ThemedText
-              type="body"
-              style={[styles.infoText, { color: colors.textSecondary }]}
-            >
-              An accountability partner helps support you in your recovery
-              journey. They can see your daily check-ins, encourage you, and be
-              there when you need support.
-            </ThemedText>
-          </View>
-        )}
-
-        {/* Features Section */}
-        {!userHasMentor && !otherUserHasMaxMentees && (
-          <View style={styles.featuresSection}>
-            <FeatureItem
-              icon="checkmark.circle.fill"
-              title="Daily Check-Ins"
-              description="Share your daily status and progress"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="bell.fill"
-              title="Support Notifications"
-              description="Get reminded when they need encouragement"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="message.fill"
-              title="Direct Communication"
-              description="Stay connected through private messaging"
-              colors={colors}
-            />
-            <FeatureItem
-              icon="chart.bar.fill"
-              title="Track Progress"
-              description="See their recovery streak and milestones"
-              colors={colors}
-            />
-          </View>
-        )}
-
-        {/* Action Button */}
-        <TouchableOpacity
+      {screenTransition.value > 0 && (
+        <Animated.View
           style={[
-            styles.primaryButton,
-            {
-              backgroundColor:
-                userHasMentor || otherUserHasMaxMentees
-                  ? colors.textSecondary
-                  : colors.tint,
-              opacity:
-                isLoading ||
-                userHasMentor ||
-                otherUserHasMaxMentees ||
-                loadingMenteeCount
-                  ? 0.6
-                  : 1,
-            },
+            styles.screenWrapper,
+            styles.screenBackground,
+            nextScreenStyle,
           ]}
-          onPress={handleSendInvite}
-          disabled={
-            isLoading ||
-            userHasMentor ||
-            otherUserHasMaxMentees ||
-            loadingMenteeCount
-          }
-          activeOpacity={0.8}
         >
-          {isLoading || loadingMenteeCount ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <>
-              <IconSymbol
-                name={
-                  userHasMentor || otherUserHasMaxMentees
-                    ? "xmark.circle.fill"
-                    : "paperplane.fill"
-                }
-                size={18}
-                color={colors.white}
-              />
-              <ThemedText
-                type="subtitleSemibold"
-                style={{ color: colors.white }}
-              >
-                {userHasMentor || otherUserHasMaxMentees
-                  ? "Cannot Send Invite"
-                  : "Send Invite"}
-              </ThemedText>
-            </>
-          )}
-        </TouchableOpacity>
-
-        {/* Note */}
-        {!userHasMentor && !otherUserHasMaxMentees && (
-          <ThemedText
-            type="caption"
-            style={[styles.note, { color: colors.textSecondary }]}
-          >
-            They will receive a notification and can choose to accept or decline
-            your invitation.
-          </ThemedText>
-        )}
-      </ScrollView>
-    );
-  };
+          {renderView(currentView)}
+        </Animated.View>
+      )}
+    </View>
+  );
 
   return (
     <BaseModal
@@ -568,48 +360,8 @@ export function AccountabilityInviteModal({
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.2]}
     >
-      {renderModalContent()}
+      {modalContent}
     </BaseModal>
-  );
-}
-
-// Feature Item Component
-function FeatureItem({
-  icon,
-  title,
-  description,
-  colors,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-  colors: any;
-}) {
-  return (
-    <View style={styles.featureItem}>
-      <View
-        style={[
-          styles.featureIconCircle,
-          { backgroundColor: `${colors.tint}15` },
-        ]}
-      >
-        <IconSymbol name={icon} size={20} color={colors.tint} />
-      </View>
-      <View style={styles.featureText}>
-        <ThemedText
-          type="bodyMedium"
-          style={[styles.featureTitle, { color: colors.text }]}
-        >
-          {title}
-        </ThemedText>
-        <ThemedText
-          type="caption"
-          style={[styles.featureDescription, { color: colors.textSecondary }]}
-        >
-          {description}
-        </ThemedText>
-      </View>
-    </View>
   );
 }
 
@@ -621,102 +373,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
   },
-  scrollContainer: {
+  screenContainer: {
     flex: 1,
+    position: "relative",
   },
-  scrollContent: {
-    paddingTop: 32,
-    paddingBottom: 32,
-    paddingHorizontal: 4,
+  screenWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  headerSection: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  title: {
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    textAlign: "center",
-    opacity: 0.9,
-    paddingHorizontal: 20,
-  },
-  infoCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  infoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  infoTitle: {
-    flex: 1,
-  },
-  infoText: {
-    lineHeight: 20,
-    opacity: 0.9,
-  },
-  featuresSection: {
-    marginBottom: 24,
-  },
-  featureItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  featureIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  featureText: {
-    flex: 1,
-    paddingTop: 2,
-  },
-  featureTitle: {
-    marginBottom: 2,
-  },
-  featureDescription: {
-    lineHeight: 16,
-    opacity: 0.8,
-  },
-  primaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 12,
-  },
-  secondaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  note: {
-    textAlign: "center",
-    opacity: 0.7,
-    lineHeight: 18,
-    paddingHorizontal: 20,
+  screenBackground: {
+    backgroundColor: "transparent",
+    overflow: "hidden",
   },
 });
