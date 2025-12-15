@@ -56,8 +56,14 @@ export function AccountabilityInviteModal({
   const currentUserId = auth.currentUser?.uid;
 
   // Get accountability functions and state from Context
-  const { mentor, sendInvite, acceptInvite, declineInvite, cancelInvite } =
-    useAccountability();
+  const {
+    mentor,
+    mentees,
+    sendInvite,
+    acceptInvite,
+    declineInvite,
+    cancelInvite,
+  } = useAccountability();
   const userHasMentor = !!mentor;
 
   // Track if user has read guidelines (separate for mentee and mentor flows)
@@ -67,9 +73,16 @@ export function AccountabilityInviteModal({
   // Determine initial view based on props
   const getInitialView = (): ViewType => {
     if (inviteState === "sent") return "sent";
-    if (inviteState === "received") return "received";
+    if (inviteState === "received") {
+      // Check if the person receiving the invite (otherUserId is the MENTEE in this case)
+      // Wait, let me think about this...
+      // When inviteState is "received", currentUserId is being asked to be the MENTOR
+      // So we need to check if currentUserId (the mentor) already has 3 mentees
+      const currentUserMenteeCount = mentees.length;
+      if (currentUserMenteeCount >= 3) return "maxMentees";
+      return "received";
+    }
     if (userHasMentor) return "userHasMentor";
-    // maxMentees check will be done in DefaultInviteView
     return "default";
   };
 
@@ -97,7 +110,7 @@ export function AccountabilityInviteModal({
         transitionToView(newView);
       }
     }
-  }, [inviteState, userHasMentor, isVisible]);
+  }, [inviteState, userHasMentor, mentees.length, isVisible]);
 
   const transitionToView = (view: ViewType) => {
     screenTransition.value = withTiming(1, {
