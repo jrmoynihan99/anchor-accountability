@@ -1,4 +1,8 @@
+import { CommunityCard } from "@/components/home/CommunityCard";
+import { MentorModal } from "@/components/morphing/accountability/MentorModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
+import { MentorCardCompact } from "@/components/morphing/home/accountability/MentorCardCompact";
+import { MentorCardCompactContent } from "@/components/morphing/home/accountability/MentorCardCompactContent";
 import { GuidedPrayer } from "@/components/morphing/home/guided-prayer/GuidedPrayer";
 import { GuidedPrayerModal } from "@/components/morphing/home/guided-prayer/GuidedPrayerModal";
 import { ReachOutButton } from "@/components/morphing/home/reach-out-main-button/ReachOutButton";
@@ -10,9 +14,13 @@ import {
   VerseCarousel,
   VerseCarouselRef,
 } from "@/components/morphing/home/verse/VerseCarousel";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useStreakData } from "@/hooks/useStreakData";
+import { useThreads } from "@/hooks/useThreads";
+import { auth } from "@/lib/firebase";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
@@ -23,6 +31,10 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const { streakData, updateStreakStatus } = useStreakData();
+  const { mentor, loading } = useAccountability();
+  const { threads } = useThreads();
+  const currentUid = auth.currentUser?.uid;
+  const hasMentor = !loading && mentor !== null;
 
   const guidedPrayerOpenRef = useRef<(() => void) | null>(null);
   const reachOutCloseRef = useRef<((velocity?: number) => void) | null>(null);
@@ -60,6 +72,29 @@ export default function HomeScreen() {
       const today = new Date().toISOString().split("T")[0];
       await updateStreakStatus(today, status);
     }
+  };
+
+  const handleMessageMentor = (mentorUid: string) => {
+    if (!currentUid) return;
+
+    // find the thread where this mentor is the other user
+    const thread = threads.find(
+      (t) =>
+        (t.userA === currentUid && t.userB === mentorUid) ||
+        (t.userB === currentUid && t.userA === mentorUid)
+    );
+
+    if (!thread) {
+      console.log("No thread found with that mentor!");
+      return;
+    }
+
+    router.push({
+      pathname: "/message-thread",
+      params: {
+        threadId: thread.id,
+      },
+    });
   };
 
   return (
@@ -154,6 +189,83 @@ export default function HomeScreen() {
           )}
         </ButtonModalTransitionBridge>
 
+        {/* ---- Mentor Card (Compact) ---- */}
+        {hasMentor && (
+          <ButtonModalTransitionBridge
+            buttonBorderRadius={20}
+            modalBorderRadius={28}
+            modalWidthPercent={0.95}
+            modalHeightPercent={0.85}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              // ✅ One-time measurement to enable proper morph animation
+              React.useEffect(() => {
+                const timer = setTimeout(() => {
+                  handlePressIn();
+                  setTimeout(() => {
+                    handlePressOut();
+                  }, 10);
+                }, 100);
+                return () => clearTimeout(timer);
+              }, []);
+
+              const handleCheckIn = () => {
+                open();
+              };
+
+              return (
+                <>
+                  <MentorCardCompact
+                    mentorUid={mentor.mentorUid}
+                    streak={mentor.streak}
+                    checkInStatus={mentor.checkInStatus}
+                    mentorTimezone={mentor.mentorTimezone}
+                    onCheckIn={handleCheckIn}
+                    onMessage={() => handleMessageMentor(mentor.mentorUid)}
+                    buttonRef={buttonRef}
+                    style={buttonAnimatedStyle}
+                    onPress={open}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                  />
+                  <MentorModal
+                    mentorUid={mentor.mentorUid}
+                    streak={mentor.streak}
+                    checkInStatus={mentor.checkInStatus}
+                    mentorTimezone={mentor.mentorTimezone}
+                    relationshipId={mentor.id}
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                    buttonContent={
+                      <View style={styles.buttonContent}>
+                        <MentorCardCompactContent
+                          mentorUid={mentor.mentorUid}
+                          streak={mentor.streak}
+                          checkInStatus={mentor.checkInStatus}
+                          mentorTimezone={mentor.mentorTimezone}
+                          showExpandIcon={true}
+                        />
+                      </View>
+                    }
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+        )}
+
         {/* ---- Guided Prayer ---- */}
         <ButtonModalTransitionBridge>
           {({
@@ -191,6 +303,9 @@ export default function HomeScreen() {
             );
           }}
         </ButtonModalTransitionBridge>
+
+        {/* ---- Community Card ---- */}
+        <CommunityCard />
       </ScrollView>
     </View>
   );
@@ -205,6 +320,9 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+  },
+  buttonContent: {
+    padding: 0,
   },
   blurHeader: {
     position: "absolute",

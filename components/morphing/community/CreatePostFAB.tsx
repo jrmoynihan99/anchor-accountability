@@ -57,7 +57,7 @@ export function CreatePostFAB({
       style={[
         styles.fabContainer,
         {
-          bottom: insets.bottom + 100,
+          bottom: insets.bottom,
         },
       ]}
     >
