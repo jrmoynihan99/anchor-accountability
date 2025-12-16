@@ -2,6 +2,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   deleteUser,
+  EmailAuthProvider,
+  linkWithCredential,
   onAuthStateChanged,
   signInAnonymously,
 } from "firebase/auth";
@@ -120,5 +122,49 @@ export async function deleteAccount() {
     }
 
     throw error;
+  }
+}
+
+export async function convertAnonymousToEmail(
+  email: string,
+  password: string
+): Promise<void> {
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) {
+    throw new Error("No user is currently signed in");
+  }
+
+  if (!currentUser.isAnonymous) {
+    throw new Error("Current user is not anonymous");
+  }
+
+  try {
+    // Create email/password credential
+    const credential = EmailAuthProvider.credential(email, password);
+
+    // Link the credential to the anonymous account
+    // This converts the anonymous account to a permanent one
+    await linkWithCredential(currentUser, credential);
+
+    console.log("Successfully converted anonymous account to email account");
+
+    // That's it! Firebase handles everything.
+    // The UID stays the same, all Firestore data stays intact.
+  } catch (error: any) {
+    console.error("Error converting account:", error);
+
+    // Handle specific errors
+    if (error.code === "auth/email-already-in-use") {
+      throw new Error("This email is already in use by another account");
+    } else if (error.code === "auth/weak-password") {
+      throw new Error("Password should be at least 6 characters");
+    } else if (error.code === "auth/invalid-email") {
+      throw new Error("Invalid email address");
+    } else if (error.code === "auth/credential-already-in-use") {
+      throw new Error("This email is already linked to another account");
+    }
+
+    throw new Error(error.message || "Failed to convert account");
   }
 }

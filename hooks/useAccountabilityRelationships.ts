@@ -5,6 +5,7 @@ import { AccountabilityRelationship } from "@/types/AccountabilityRelationship";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -20,6 +21,8 @@ import {
   calculateCheckInStatus,
   CheckInStatus,
 } from "../components/morphing/accountability/accountabilityUtils";
+import { useBlockedByUsers } from "./useBlockedByUsers";
+import { useBlockedUsers } from "./useBlockedUsers";
 
 interface AccountabilityWithId extends AccountabilityRelationship {
   id: string;
@@ -47,6 +50,10 @@ export function useAccountabilityRelationships() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ✅ NEW: Get blocked users
+  const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
+  const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers();
+
   const mentorUnsubRef = useRef<Unsubscribe | null>(null);
   const menteesUnsubRef = useRef<Unsubscribe | null>(null);
   const sentInvitesUnsubRef = useRef<Unsubscribe | null>(null);
@@ -54,6 +61,12 @@ export function useAccountabilityRelationships() {
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
+
+  // ✅ NEW: Helper to check if user should be hidden
+  const shouldHide = (otherUserId: string) => {
+    if (!uid) return true;
+    return blockedUserIds.has(otherUserId) || blockedByUserIds.has(otherUserId);
+  };
 
   // Fetch user timezone from Firestore (with caching)
   const getTimezoneForUser = async (
@@ -77,6 +90,9 @@ export function useAccountabilityRelationships() {
       return;
     }
 
+    // ✅ NEW: Wait for block lists to load
+    if (blockedLoading || blockedByLoading) return;
+
     setLoading(true);
 
     // ===============================
@@ -94,6 +110,12 @@ export function useAccountabilityRelationships() {
         if (!snapshot.empty) {
           const docSnap = snapshot.docs[0];
           const data = docSnap.data() as AccountabilityRelationship;
+
+          // ✅ NEW: Filter out if blocked
+          if (shouldHide(data.mentorUid)) {
+            setMentor(null);
+            return;
+          }
 
           // Fetch MY timezone
           const myTimezone = await getTimezoneForUser(uid);
@@ -133,6 +155,9 @@ export function useAccountabilityRelationships() {
 
         for (const docSnap of snapshot.docs) {
           const data = docSnap.data() as AccountabilityRelationship;
+
+          // ✅ NEW: Filter out if blocked
+          if (shouldHide(data.menteeUid)) continue;
 
           // Fetch each mentee's timezone
           const menteeTimezone = await getTimezoneForUser(data.menteeUid);
@@ -175,10 +200,14 @@ export function useAccountabilityRelationships() {
     sentInvitesUnsubRef.current = onSnapshot(
       sentInvitesQuery,
       (snapshot) => {
-        const invites = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as PendingInvite[];
+        const invites = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter(
+            (invite: any) => !shouldHide(invite.mentorUid)
+          ) as PendingInvite[]; // ✅ NEW: Filter blocked
         setSentInvites(invites);
       },
       (err) => {
@@ -198,10 +227,14 @@ export function useAccountabilityRelationships() {
     receivedInvitesUnsubRef.current = onSnapshot(
       receivedInvitesQuery,
       (snapshot) => {
-        const invites = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as PendingInvite[];
+        const invites = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter(
+            (invite: any) => !shouldHide(invite.menteeUid)
+          ) as PendingInvite[]; // ✅ NEW: Filter blocked
         setReceivedInvites(invites);
       },
       (err) => {
@@ -217,7 +250,7 @@ export function useAccountabilityRelationships() {
       sentInvitesUnsubRef.current?.();
       receivedInvitesUnsubRef.current?.();
     };
-  }, [uid]);
+  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]); // ✅ NEW: Add dependencies
 
   // ===============================
   // 📨 INVITE FUNCTIONS
@@ -350,6 +383,16 @@ export function useAccountabilityRelationships() {
     } catch (err) {
       console.error("Error accepting invite:", err);
       throw new Error("Failed to accept invite");
+    }
+  };
+
+  // End a relationship (delete it)
+  const endRelationship = async (relationshipId: string): Promise<void> => {
+    try {
+      await deleteDoc(doc(db, "accountabilityRelationships", relationshipId));
+    } catch (err) {
+      console.error("Error ending relationship:", err);
+      throw new Error("Failed to end relationship");
     }
   };
 
@@ -488,16 +531,16 @@ export function useAccountabilityRelationships() {
   // Check if there's a pending invite for a specific user
   const hasPendingInviteWith = (otherUserId: string): boolean => {
     return (
-      sentInvites.some((inv) => inv.mentorUid === otherUserId) || // ✅ FIXED: I sent to them (they're the mentor)
-      receivedInvites.some((inv) => inv.menteeUid === otherUserId) // ✅ FIXED: They sent to me (they're the mentee)
+      sentInvites.some((inv) => inv.mentorUid === otherUserId) ||
+      receivedInvites.some((inv) => inv.menteeUid === otherUserId)
     );
   };
 
   // Get pending invite with a specific user (if exists)
   const getPendingInviteWith = (otherUserId: string): PendingInvite | null => {
     return (
-      sentInvites.find((inv) => inv.mentorUid === otherUserId) || // ✅ FIXED: I sent to them (they're the mentor)
-      receivedInvites.find((inv) => inv.menteeUid === otherUserId) || // ✅ FIXED: They sent to me (they're the mentee)
+      sentInvites.find((inv) => inv.mentorUid === otherUserId) ||
+      receivedInvites.find((inv) => inv.menteeUid === otherUserId) ||
       null
     );
   };
@@ -512,13 +555,14 @@ export function useAccountabilityRelationships() {
     receivedInvites,
 
     // State
-    loading,
+    loading: loading || blockedLoading || blockedByLoading, // ✅ NEW: Include block loading
     error,
 
     // Functions
     sendInvite,
     acceptInvite,
     declineInvite,
+    endRelationship,
     cancelInvite,
     hasPendingInviteWith,
     getPendingInviteWith,

@@ -2,9 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTimezoneComparison } from "@/hooks/useTimezoneComparison";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -35,10 +33,6 @@ export function DefaultInviteView({
   hasReadGuidelines,
 }: DefaultInviteViewProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [otherUserMenteeCount, setOtherUserMenteeCount] = useState<
-    number | null
-  >(null);
-  const [loadingMenteeCount, setLoadingMenteeCount] = useState(true);
 
   // Use timezone comparison hook
   const {
@@ -46,41 +40,6 @@ export function DefaultInviteView({
     timeDifference,
     otherUserLocalTime,
   } = useTimezoneComparison(otherUserId);
-
-  const otherUserHasMaxMentees =
-    otherUserMenteeCount !== null && otherUserMenteeCount >= 3;
-
-  // Load OTHER user's mentee count from their user document
-  useEffect(() => {
-    const fetchMenteeCount = async () => {
-      if (!otherUserId) return;
-
-      setLoadingMenteeCount(true);
-      try {
-        const userDoc = await getDoc(doc(db, "users", otherUserId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          setOtherUserMenteeCount(userData.menteeCount ?? 0);
-        } else {
-          setOtherUserMenteeCount(0);
-        }
-      } catch (error) {
-        console.error("Error fetching mentee count:", error);
-        setOtherUserMenteeCount(0);
-      } finally {
-        setLoadingMenteeCount(false);
-      }
-    };
-
-    fetchMenteeCount();
-  }, [otherUserId]);
-
-  // Check if we should transition to restricted view
-  useEffect(() => {
-    if (!loadingMenteeCount && otherUserHasMaxMentees) {
-      onTransitionToRestricted("maxMentees");
-    }
-  }, [loadingMenteeCount, otherUserHasMaxMentees]);
 
   const handleSendInvite = async () => {
     setIsLoading(true);
@@ -330,15 +289,14 @@ export function DefaultInviteView({
           styles.primaryButton,
           {
             backgroundColor: hasReadGuidelines ? colors.tint : colors.border,
-            opacity:
-              isLoading || loadingMenteeCount || !hasReadGuidelines ? 0.6 : 1,
+            opacity: isLoading || !hasReadGuidelines ? 0.6 : 1,
           },
         ]}
         onPress={handleSendInvite}
-        disabled={isLoading || loadingMenteeCount || !hasReadGuidelines}
+        disabled={isLoading || !hasReadGuidelines}
         activeOpacity={0.8}
       >
-        {isLoading || loadingMenteeCount ? (
+        {isLoading ? (
           <ActivityIndicator color={colors.white} />
         ) : (
           <>

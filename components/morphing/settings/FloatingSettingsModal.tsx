@@ -1,6 +1,7 @@
 // components/morphing/settings/FloatingSettingsModal.tsx
 import { useTheme } from "@/hooks/ThemeContext";
 import { useLegalContent } from "@/hooks/useLegalContent";
+import { isAnonymousUser } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
@@ -18,6 +19,8 @@ import { AboutSection } from "./AboutSection";
 import { AppearanceSection } from "./AppearanceSection";
 import { BlockListSection } from "./BlockListSection";
 import { BlockListView } from "./BlockListView";
+import { ConvertAccountButton } from "./ConvertAccountButton";
+import { ConvertAccountView } from "./ConvertAccountView";
 import { DeleteAccountButton } from "./DeleteAccountButton";
 import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
@@ -33,7 +36,7 @@ interface FloatingSettingsModalProps {
   initialScreen?: "settings" | "guidelines";
 }
 
-type ScreenType = "settings" | "textContent" | "blockList";
+type ScreenType = "settings" | "textContent" | "blockList" | "convertAccount";
 
 interface TextContentData {
   title: string;
@@ -54,6 +57,9 @@ export function FloatingSettingsModal({
     useState<TextContentData | null>(null);
   const screenTransition = useSharedValue(0);
   const [shouldLoadNotifications, setShouldLoadNotifications] = useState(false);
+
+  // Check if user is anonymous
+  const isAnonymous = isAnonymousUser();
 
   // Delay loading notifications until modal is fully open
   useEffect(() => {
@@ -113,6 +119,14 @@ export function FloatingSettingsModal({
       easing: Easing.out(Easing.quad),
     });
     setCurrentScreen("blockList");
+  };
+
+  const transitionToConvertAccount = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen("convertAccount");
   };
 
   const handleBackToSettings = () => {
@@ -270,7 +284,18 @@ Thank you for helping us keep this a safe and welcoming space!`,
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
-            <SignOutButton />
+
+            {/* Only show Sign Out for email users */}
+            {!isAnonymous && <SignOutButton />}
+
+            {/* Show Convert Account for anonymous users */}
+            {isAnonymous && (
+              <ConvertAccountButton
+                onNavigateToConvertAccount={transitionToConvertAccount}
+              />
+            )}
+
+            {/* Always show Delete Account */}
             <DeleteAccountButton />
           </View>
         </ScrollView>
@@ -290,6 +315,14 @@ Thank you for helping us keep this a safe and welcoming space!`,
       {currentScreen === "blockList" && (
         <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
           <BlockListView onBackPress={handleBackToSettings} colors={colors} />
+        </Animated.View>
+      )}
+      {currentScreen === "convertAccount" && (
+        <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
+          <ConvertAccountView
+            onBackPress={handleBackToSettings}
+            colors={colors}
+          />
         </Animated.View>
       )}
     </View>

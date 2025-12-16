@@ -1,6 +1,7 @@
 // components/morphing/settings/DeleteAccountButton.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { deleteAccount, isAnonymousUser } from "@/lib/auth";
 import * as Haptics from "expo-haptics";
@@ -14,50 +15,51 @@ interface DeleteAccountButtonProps {
 
 export function DeleteAccountButton({ onPress }: DeleteAccountButtonProps) {
   const { colors } = useTheme();
+  const { mentor, mentees } = useAccountability();
+
+  // Calculate total accountability partnerships
+  const partnershipCount = (mentor ? 1 : 0) + mentees.length;
+  const hasPartnerships = partnershipCount > 0;
 
   const handleDeleteAccount = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const isAnonymous = isAnonymousUser();
+    const accountType = isAnonymous ? "guest account" : "account";
 
-    if (isAnonymous) {
-      // Show warning for anonymous users
-      Alert.alert(
-        "Delete Account",
-        "This will permanently delete your guest account and all associated data. This action cannot be undone.\n\nAre you sure you want to continue?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete Account",
-            style: "destructive",
-            onPress: performDeleteAccount,
-          },
-        ]
-      );
-    } else {
-      // Show more detailed warning for email users
-      Alert.alert(
-        "Delete Account",
-        "This will permanently delete your account, including:\n\n• Your email and login credentials\n• All your data and activity\n• Your message history\n\nThis action cannot be undone and you will not be able to recover your account.\n\nAre you absolutely sure?",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete Account",
-            style: "destructive",
-            onPress: confirmDeleteAccount,
-          },
-        ]
-      );
+    // Build the warning message
+    let message = `This will permanently delete your ${accountType} and all associated data, including:\n\n• All your messages and activity\n• Your recovery progress and check-ins`;
+
+    // Add accountability partnerships if they exist
+    if (hasPartnerships) {
+      message += `\n• ${partnershipCount} active accountability partnership${
+        partnershipCount > 1 ? "s" : ""
+      }`;
     }
+
+    // Add suggestion to message partners if they have any
+    if (hasPartnerships) {
+      message += `\n\nConsider messaging your accountability partner${
+        partnershipCount > 1 ? "s" : ""
+      } before deleting.`;
+    }
+
+    message += `\n\nAre you absolutely sure?`;
+
+    Alert.alert("Delete Account", message, [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Delete Account",
+        style: "destructive",
+        onPress: confirmDeleteAccount,
+      },
+    ]);
   };
 
-  // Second confirmation for email users
+  // Second confirmation
   const confirmDeleteAccount = () => {
     Alert.alert(
       "Final Confirmation",

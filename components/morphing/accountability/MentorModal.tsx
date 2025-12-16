@@ -10,6 +10,7 @@ import { BaseModal } from "../BaseModal";
 import { AccountabilityModalHeader } from "./AccountabilityModalHeader";
 import { CheckInStatus } from "./accountabilityUtils";
 import { CheckInSection } from "./CheckInSection";
+import { EndRelationship } from "./EndRelationship";
 import { MentorCardContent } from "./MentorCardContent";
 import { RecentCheckInsSection } from "./RecentCheckInsSection";
 
@@ -160,6 +161,13 @@ export function MentorModal({
               onSelectFilled={handleSelectFilled}
             />
           )}
+          <EndRelationship
+            relationshipId={relationshipId}
+            role="mentee" // You are the MENTEE in this relationship (they are your mentor)
+            colors={colors}
+            onMessage={handleMessage}
+            onComplete={() => close()}
+          />
         </ScrollView>
       </View>
     </View>
