@@ -22,6 +22,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAccountability } from "@/context/AccountabilityContext";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
@@ -32,6 +33,10 @@ export default function TabLayout() {
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
   const { threads } = useThreads();
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
+  const { receivedInvites, loading: accountabilityLoading } =
+    useAccountability();
+  const hasPendingAccountabilityInvites =
+    !accountabilityLoading && receivedInvites.length > 0;
 
   // Notification permission management
   const {
@@ -179,6 +184,7 @@ export default function TabLayout() {
         onTabPress={handleTabPress}
         showPleasNotification={hasUnreadEncouragements}
         showMessagesNotification={hasUnreadMessages}
+        showAccountabilityNotification={hasPendingAccountabilityInvites}
       />
 
       {/* Floating main CTA (with morph/transition modal) */}

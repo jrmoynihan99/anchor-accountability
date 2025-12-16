@@ -22,6 +22,7 @@ interface FloatingPillNavigationProps {
   onTabPress: (tab: string) => void;
   showPleasNotification?: boolean;
   showMessagesNotification?: boolean;
+  showAccountabilityNotification?: boolean;
 }
 
 interface TabLayout {
@@ -75,6 +76,7 @@ export function FloatingPillNavigation({
   onTabPress,
   showPleasNotification,
   showMessagesNotification,
+  showAccountabilityNotification,
 }: FloatingPillNavigationProps) {
   const insets = useSafeAreaInsets();
   const bottomOffset =
@@ -194,7 +196,9 @@ export function FloatingPillNavigation({
               const isLast = idx === RIGHT_ICONS.length - 1;
               // Notification on messages
               const showNotif =
-                tab.key === "messages" && showMessagesNotification;
+                (tab.key === "messages" && showMessagesNotification) ||
+                (tab.key === "accountability" &&
+                  showAccountabilityNotification);
               return (
                 <Pressable
                   key={tab.key}
