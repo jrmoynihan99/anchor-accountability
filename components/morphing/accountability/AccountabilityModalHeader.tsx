@@ -1,3 +1,4 @@
+import { BlockUserIcon } from "@/components/BlockUserIcon";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
@@ -62,6 +63,7 @@ export function AccountabilityModalHeader({
                 {anonymousUsername}
               </ThemedText>
               <UserStreakDisplay userId={uid} size="small" />
+              <BlockUserIcon userIdToBlock={uid} />
             </View>
             {localTime && (
               <ThemedText

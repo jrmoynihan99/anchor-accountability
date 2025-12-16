@@ -23,6 +23,7 @@ interface AccountabilityContextType {
   sendInvite: (menteeUid: string) => Promise<string>;
   acceptInvite: (inviteId: string) => Promise<void>;
   declineInvite: (inviteId: string) => Promise<void>;
+  endRelationship: (relationshipId: string) => Promise<void>;
   cancelInvite: (inviteId: string) => Promise<void>;
   hasPendingInviteWith: (otherUserId: string) => boolean;
   getPendingInviteWith: (otherUserId: string) => any | null;
@@ -81,6 +82,9 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
           throw new Error("Not ready");
         },
         declineInvite: async () => {
+          throw new Error("Not ready");
+        },
+        endRelationship: async () => {
           throw new Error("Not ready");
         },
         cancelInvite: async () => {

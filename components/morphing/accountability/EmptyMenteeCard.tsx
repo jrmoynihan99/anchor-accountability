@@ -10,7 +10,7 @@ export function EmptyMenteeCard({ position }: EmptyMenteeCardProps) {
   const { colors } = useTheme();
 
   const getMessage = () => {
-    return "You can be up to 3 people's accountability partner. Users can invite you via private chat.";
+    return "You can be up to 3 people's accountability partner. Users who invite you via private chat will appear above";
   };
 
   return (

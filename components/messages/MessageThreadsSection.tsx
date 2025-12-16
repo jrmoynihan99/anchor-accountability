@@ -6,8 +6,8 @@ import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SectionHeader } from "./MessageThreadsHeader";
-import { ReceivedInviteItem } from "./ReceivedInviteItem";
-import { SentInviteItem } from "./SentInviteItem"; // ✅ Import new component
+import { ReceivedInviteItem } from "../ReceivedInviteItem";
+import { SentInviteItem } from "../SentInviteItem"; // ✅ Import new component
 import { ThreadItem } from "./ThreadItem";
 
 interface MessageThreadsSectionProps {
@@ -156,7 +156,7 @@ export function MessageThreadsSection({
               marginLeft: 4,
             }}
           >
-            INVITES SENT
+            ACCOUNTABILITY INVITES SENT
           </ThemedText>
 
           {sentInvites.map((invite) => {

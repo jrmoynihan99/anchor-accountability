@@ -2,6 +2,7 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useOtherUserAccountability } from "@/hooks/useOtherUserAccountability";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
 import {
@@ -54,6 +55,10 @@ export const MessageInput = forwardRef<
     // Get invite data from context
     const { sentInvites, receivedInvites, getPendingInviteWith } =
       useAccountability();
+
+    // ✅ NEW: Fetch other user's accountability data at the parent level
+    const { menteeCount: otherUserMenteeCount, loading: loadingOtherUserData } =
+      useOtherUserAccountability(otherUserId || null);
 
     // Determine invite state for THIS thread
     const pendingInvite = getPendingInviteWith(otherUserId);
@@ -219,6 +224,8 @@ export const MessageInput = forwardRef<
                           : "none"
                       }
                       pendingInvite={pendingInvite}
+                      otherUserMenteeCount={otherUserMenteeCount}
+                      loadingOtherUserData={loadingOtherUserData}
                     />
                   );
                 }

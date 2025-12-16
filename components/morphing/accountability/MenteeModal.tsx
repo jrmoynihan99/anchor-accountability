@@ -8,6 +8,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../BaseModal";
 import { AccountabilityModalHeader } from "./AccountabilityModalHeader";
+import { EndRelationship } from "./EndRelationship";
 import { LatestCheckInSection } from "./LatestCheckInSection";
 import { MenteeCardContent } from "./MenteeCardContent";
 import { RecentCheckInsSection } from "./RecentCheckInsSection";
@@ -136,6 +137,13 @@ export function MenteeModal({
               timezone={userTimezone}
             />
           )}
+          <EndRelationship
+            relationshipId={relationshipId}
+            role="mentor" // You are the MENTEE in this relationship (they are your mentor)
+            colors={colors}
+            onMessage={handleMessage}
+            onComplete={() => close()}
+          />
         </ScrollView>
       </View>
     </View>

@@ -23,7 +23,7 @@ export function EmptyMentorCard() {
           },
         ]}
       >
-        Invite somebody to be your accountability partner via private chat
+        Invite users to be your accountability partner via private chat
       </ThemedText>
     </View>
   );

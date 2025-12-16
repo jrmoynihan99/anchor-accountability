@@ -31,6 +31,8 @@ interface AccountabilityInviteModalProps {
   threadName: string;
   inviteState: "none" | "sent" | "received";
   pendingInvite?: any;
+  otherUserMenteeCount: number; // ✅ NEW: Passed from parent
+  loadingOtherUserData: boolean; // ✅ NEW: Passed from parent
 }
 
 type ViewType =
@@ -51,6 +53,8 @@ export function AccountabilityInviteModal({
   threadName,
   inviteState,
   pendingInvite,
+  otherUserMenteeCount, // ✅ NEW
+  loadingOtherUserData, // ✅ NEW
 }: AccountabilityInviteModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const currentUserId = auth.currentUser?.uid;
@@ -72,17 +76,20 @@ export function AccountabilityInviteModal({
 
   // Determine initial view based on props
   const getInitialView = (): ViewType => {
+    // Don't determine view until we have other user's data
+    if (loadingOtherUserData) return "default";
+
     if (inviteState === "sent") return "sent";
     if (inviteState === "received") {
-      // Check if the person receiving the invite (otherUserId is the MENTEE in this case)
-      // Wait, let me think about this...
-      // When inviteState is "received", currentUserId is being asked to be the MENTOR
-      // So we need to check if currentUserId (the mentor) already has 3 mentees
-      const currentUserMenteeCount = mentees.length;
-      if (currentUserMenteeCount >= 3) return "maxMentees";
       return "received";
     }
+
+    // ✅ Check if OTHER USER has max mentees (can't invite them as my mentor)
+    if (otherUserMenteeCount >= 3) return "maxMentees";
+
+    // Check if current user has a mentor
     if (userHasMentor) return "userHasMentor";
+
     return "default";
   };
 
@@ -102,15 +109,22 @@ export function AccountabilityInviteModal({
     }
   }, [isVisible]);
 
-  // Update view when inviteState changes
+  // Update view when inviteState or data changes
   useEffect(() => {
-    if (isVisible) {
+    if (isVisible && !loadingOtherUserData) {
       const newView = getInitialView();
       if (newView !== currentView) {
         transitionToView(newView);
       }
     }
-  }, [inviteState, userHasMentor, mentees.length, isVisible]);
+  }, [
+    inviteState,
+    userHasMentor,
+    mentees.length,
+    otherUserMenteeCount,
+    loadingOtherUserData,
+    isVisible,
+  ]);
 
   const transitionToView = (view: ViewType) => {
     screenTransition.value = withTiming(1, {
