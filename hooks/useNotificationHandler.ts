@@ -107,6 +107,22 @@ export function useNotificationHandler(
         return;
       }
 
+      // 🆕 Handle accountability invite notifications
+      if (data.type === "accountability_invite") {
+        // Navigate to the thread with the invite modal open
+        router.push({
+          pathname: "/message-thread",
+          params: {
+            threadId: data.threadId,
+            threadName: data.otherUserName || "User",
+            otherUserId: data.otherUserId,
+            isNewThread: "false",
+            openInviteModal: "true", // Opens the invite modal
+          },
+        });
+        return;
+      }
+
       // 🆕 Handle accountability notifications
       if (data.type === "accountability_reminder") {
         // Mentee needs to check in - open MentorModal

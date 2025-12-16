@@ -203,7 +203,10 @@ exports.createContentNow = onRequest(async (request, response) => {
 });
 
 exports.generateDailyContentScheduled = onSchedule(
-  "0 2 * * *",
+  {
+    schedule: "0 2 * * *",
+    timeZone: "UTC",
+  },
   async (context) => {
     logger.info("Starting scheduled daily content generation...");
 
@@ -1186,63 +1189,69 @@ async function getFilteringPrompt(type = "plea") {
   return fallbacks[type] || fallbacks.plea;
 }
 
-exports.generateStreakDocsScheduled = onSchedule("0 2 * * *", async (event) => {
-  logger.info("Starting scheduled streak doc creation for all users...");
-  const db = admin.firestore();
-  const usersSnap = await db.collection("users").get();
+exports.generateStreakDocsScheduled = onSchedule(
+  {
+    schedule: "0 2 * * *",
+    timeZone: "UTC",
+  },
+  async (event) => {
+    logger.info("Starting scheduled streak doc creation for all users...");
+    const db = admin.firestore();
+    const usersSnap = await db.collection("users").get();
 
-  // Helper to format YYYY-MM-DD in UTC
-  const getUtcDateString = (offset = 0) => {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() + offset);
-    const year = d.getUTCFullYear();
-    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-    const day = String(d.getUTCDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+    // Helper to format YYYY-MM-DD in UTC
+    const getUtcDateString = (offset = 0) => {
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() + offset);
+      const year = d.getUTCFullYear();
+      const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
 
-  const today = getUtcDateString(0);
-  const twoDaysAhead = getUtcDateString(2);
+    const today = getUtcDateString(0);
+    const twoDaysAhead = getUtcDateString(2);
 
-  for (const userDoc of usersSnap.docs) {
-    const uid = userDoc.id;
-    const streakRef = db.collection("users").doc(uid).collection("streak");
+    for (const userDoc of usersSnap.docs) {
+      const uid = userDoc.id;
+      const streakRef = db.collection("users").doc(uid).collection("streak");
 
-    // Find latest streak doc (if any)
-    const streakSnap = await streakRef.orderBy("date", "desc").limit(1).get();
-    let lastDate = null;
-    if (!streakSnap.empty) {
-      lastDate = streakSnap.docs[0].id;
-    } else {
-      // If never streaked before, backfill the last 2 days
-      lastDate = getUtcDateString(-2);
-    }
-
-    // Backfill from day after last doc up to twoDaysAhead
-    let fillStart = new Date(lastDate);
-    fillStart.setUTCDate(fillStart.getUTCDate() + 1);
-    let curr = new Date(fillStart);
-    const end = new Date(twoDaysAhead);
-
-    while (curr <= end) {
-      const yyyy = curr.getUTCFullYear();
-      const mm = String(curr.getUTCMonth() + 1).padStart(2, "0");
-      const dd = String(curr.getUTCDate()).padStart(2, "0");
-      const dateStr = `${yyyy}-${mm}-${dd}`;
-      const docRef = streakRef.doc(dateStr);
-
-      // Only create if missing
-      const existing = await docRef.get();
-      if (!existing.exists) {
-        await docRef.set({ status: "pending" }, { merge: true });
-        logger.info(`Created streak doc for ${uid}: ${dateStr}`);
+      // Find latest streak doc (if any)
+      const streakSnap = await streakRef.orderBy("date", "desc").limit(1).get();
+      let lastDate = null;
+      if (!streakSnap.empty) {
+        lastDate = streakSnap.docs[0].id;
+      } else {
+        // If never streaked before, backfill the last 2 days
+        lastDate = getUtcDateString(-2);
       }
-      curr.setUTCDate(curr.getUTCDate() + 1);
-    }
-  }
 
-  logger.info("✅ Finished scheduled streak doc creation for all users.");
-});
+      // Backfill from day after last doc up to twoDaysAhead
+      let fillStart = new Date(lastDate);
+      fillStart.setUTCDate(fillStart.getUTCDate() + 1);
+      let curr = new Date(fillStart);
+      const end = new Date(twoDaysAhead);
+
+      while (curr <= end) {
+        const yyyy = curr.getUTCFullYear();
+        const mm = String(curr.getUTCMonth() + 1).padStart(2, "0");
+        const dd = String(curr.getUTCDate()).padStart(2, "0");
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const docRef = streakRef.doc(dateStr);
+
+        // Only create if missing
+        const existing = await docRef.get();
+        if (!existing.exists) {
+          await docRef.set({ status: "pending" }, { merge: true });
+          logger.info(`Created streak doc for ${uid}: ${dateStr}`);
+        }
+        curr.setUTCDate(curr.getUTCDate() + 1);
+      }
+    }
+
+    logger.info("✅ Finished scheduled streak doc creation for all users.");
+  }
+);
 
 async function getTotalUnreadForUser(uid) {
   // --- Messages ---
@@ -2398,6 +2407,141 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
     } catch (error) {
       console.error("❌ Error cleaning up pending invites:", error);
       throw error;
+    }
+  }
+);
+
+exports.sendAccountabilityInviteNotification = onDocumentCreated(
+  "accountabilityRelationships/{inviteId}",
+  async (event) => {
+    const snap = event.data;
+    if (!snap) return;
+
+    const invite = snap.data();
+    const inviteId = snap.id;
+
+    // Only notify for pending invites (new invites)
+    if (invite.status !== "pending") {
+      console.log(`Invite ${inviteId} is not pending, skipping notification.`);
+      return;
+    }
+
+    const menteeUid = invite.menteeUid; // Person who sent the invite
+    const mentorUid = invite.mentorUid; // Person receiving the invite (to be notified)
+
+    console.log(
+      `📨 Processing accountability invite from ${menteeUid} to ${mentorUid}`
+    );
+
+    try {
+      // Check if users have blocked each other
+      const blocked = await eitherBlocked(menteeUid, mentorUid);
+      if (blocked) {
+        console.log(
+          `[accountability-invite] Skipping due to block between ${menteeUid} and ${mentorUid}`
+        );
+        return;
+      }
+
+      // Fetch the mentor's data
+      const mentorDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(mentorUid)
+        .get();
+
+      if (!mentorDoc.exists) {
+        console.log(`Mentor user ${mentorUid} not found.`);
+        return;
+      }
+
+      const mentorData = mentorDoc.data();
+
+      // Check notification preferences
+      if (!mentorData.notificationPreferences?.accountability) {
+        console.log(
+          `Mentor ${mentorUid} has accountability notifications OFF.`
+        );
+        return;
+      }
+
+      // Check for valid push token
+      if (
+        !mentorData.expoPushToken ||
+        !mentorData.expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        console.log(`Mentor ${mentorUid} has no valid push token.`);
+        return;
+      }
+
+      // Get mentee's display name
+      const menteeDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(menteeUid)
+        .get();
+
+      const menteeName = menteeDoc.exists
+        ? menteeDoc.data()?.displayName || `user-${menteeUid.substring(0, 5)}`
+        : `user-${menteeUid.substring(0, 5)}`;
+
+      // Find the thread between these users
+      const threadsAsA = await admin
+        .firestore()
+        .collection("threads")
+        .where("userA", "==", menteeUid)
+        .where("userB", "==", mentorUid)
+        .get();
+
+      const threadsAsB = await admin
+        .firestore()
+        .collection("threads")
+        .where("userA", "==", mentorUid)
+        .where("userB", "==", menteeUid)
+        .get();
+
+      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
+
+      if (allThreads.length === 0) {
+        console.log(
+          `No thread found between ${menteeUid} and ${mentorUid}, cannot send notification.`
+        );
+        return;
+      }
+
+      const threadId = allThreads[0].id;
+
+      // Calculate total unread count for badge
+      const totalUnread = await getTotalUnreadForUser(mentorUid);
+
+      // Send notification
+      const notification = {
+        to: mentorData.expoPushToken,
+        sound: "default",
+        title: "New Accountability Request",
+        body: `${menteeName} wants you to be their accountability partner`,
+        badge: totalUnread,
+        data: {
+          type: "accountability_invite",
+          inviteId: inviteId,
+          threadId: threadId,
+          otherUserId: menteeUid,
+          otherUserName: menteeName,
+        },
+      };
+
+      await axios.post("https://exp.host/--/api/v2/push/send", [notification], {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      console.log(
+        `✅ Sent accountability invite notification to ${mentorUid} for invite ${inviteId}`
+      );
+    } catch (error) {
+      console.error(
+        `❌ Error sending accountability invite notification:`,
+        error
+      );
     }
   }
 );
