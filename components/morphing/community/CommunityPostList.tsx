@@ -15,12 +15,10 @@ import {
 import Animated, {
   FadeInDown,
   LinearTransition,
-  SharedValue,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CommunityPostCard } from "../morphing/community/CommunityPostCard";
-import { ViewPostModal } from "../morphing/community/ViewPostModal";
-import { COMMUNITY_HEADER_CONSTANTS, SectionHeader } from "./CommunityHeader";
+import { CommunityPostCard } from "./CommunityPostCard";
+import { ViewPostModal } from "./ViewPostModal";
 import { CommunityPost } from "./types";
 
 // --- Animation wrapper for post entry ---
@@ -43,14 +41,10 @@ function AnimatedPostItem({
 }
 
 interface CommunityPostListProps {
-  scrollY: SharedValue<number>;
-  onScroll: (event: any) => void;
+  onScroll?: (event: any) => void;
 }
 
-export function CommunityPostList({
-  scrollY,
-  onScroll,
-}: CommunityPostListProps) {
+export function CommunityPostList({ onScroll }: CommunityPostListProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { posts, loading, loadingMore, error, loadMore, refresh } =
@@ -233,13 +227,12 @@ export function CommunityPostList({
       data={posts}
       renderItem={renderPost}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={() => <SectionHeader scrollY={scrollY} />}
       ListEmptyComponent={renderEmpty}
       ListFooterComponent={renderFooter}
       contentContainerStyle={[
         styles.contentContainer,
         {
-          paddingTop: insets.top + 20,
+          paddingTop: insets.top + 80, // Account for fixed header
           paddingBottom: insets.bottom + 120,
           paddingHorizontal: 24,
         },
@@ -255,9 +248,7 @@ export function CommunityPostList({
           refreshing={loading && posts.length > 0}
           onRefresh={refresh}
           tintColor={colors.textSecondary}
-          progressViewOffset={
-            insets.top + COMMUNITY_HEADER_CONSTANTS.STICKY_HEADER_HEIGHT
-          }
+          progressViewOffset={insets.top + 80} // Match header height
         />
       }
       onEndReached={loadMore}
