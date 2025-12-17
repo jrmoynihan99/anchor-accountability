@@ -5,9 +5,10 @@ import { useTheme } from "@/hooks/ThemeContext";
 import { useThreads } from "@/hooks/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { SectionHeader } from "./MessageThreadsHeader";
+import { DeclinedInviteItem } from "../DeclinedInviteItem"; // ✅ NEW
 import { ReceivedInviteItem } from "../ReceivedInviteItem";
-import { SentInviteItem } from "../SentInviteItem"; // ✅ Import new component
+import { SentInviteItem } from "../SentInviteItem";
+import { SectionHeader } from "./MessageThreadsHeader";
 import { ThreadItem } from "./ThreadItem";
 
 interface MessageThreadsSectionProps {
@@ -22,8 +23,9 @@ export function MessageThreadsSection({
   const { colors } = useTheme();
   const { threads, loading, error } = useThreads();
 
-  // ✅ Add sentInvites to destructuring
-  const { mentor, mentees, receivedInvites, sentInvites } = useAccountability();
+  // ✅ Add declinedInvites to destructuring
+  const { mentor, mentees, receivedInvites, sentInvites, declinedInvites } =
+    useAccountability();
 
   const [now, setNow] = useState<Date>(() => new Date());
   useEffect(() => {
@@ -110,7 +112,7 @@ export function MessageThreadsSection({
           🟡 RECEIVED INVITES SECTION
       ------------------------ */}
       {receivedInvites.length > 0 && (
-        <View style={{ marginBottom: 24 }}>
+        <View style={{ marginBottom: 18 }}>
           <ThemedText
             type="captionMedium"
             style={{
@@ -144,10 +146,10 @@ export function MessageThreadsSection({
       )}
 
       {/* -----------------------
-          🟠 SENT INVITES SECTION
+          🟠 SENT INVITES SECTION (includes declined)
       ------------------------ */}
-      {sentInvites.length > 0 && (
-        <View style={{ marginBottom: 24 }}>
+      {(sentInvites.length > 0 || declinedInvites.length > 0) && (
+        <View style={{ marginBottom: 18 }}>
           <ThemedText
             type="captionMedium"
             style={{
@@ -159,8 +161,28 @@ export function MessageThreadsSection({
             ACCOUNTABILITY INVITES SENT
           </ThemedText>
 
+          {/* ✅ Show declined invites first */}
+          {declinedInvites.map((invite) => {
+            const thread = threads.find(
+              (t) => t.otherUserId === invite.mentorUid
+            );
+
+            if (!thread) return null;
+
+            return (
+              <DeclinedInviteItem
+                key={invite.id}
+                userName={thread.otherUserName}
+                userId={thread.otherUserId}
+                threadId={thread.id}
+                inviteId={invite.id}
+                colors={colors}
+              />
+            );
+          })}
+
+          {/* Show sent invites after declined */}
           {sentInvites.map((invite) => {
-            // Find the thread for this sent invite
             const thread = threads.find(
               (t) => t.otherUserId === invite.mentorUid
             );

@@ -5,7 +5,6 @@ import { AccountabilityRelationship } from "@/types/AccountabilityRelationship";
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -36,6 +35,11 @@ interface PendingInvite extends AccountabilityRelationship {
   id: string;
 }
 
+// For declined invites, same structure as pending
+interface DeclinedInvite extends AccountabilityRelationship {
+  id: string;
+}
+
 export function useAccountabilityRelationships() {
   const uid = auth.currentUser?.uid ?? null;
 
@@ -47,10 +51,13 @@ export function useAccountabilityRelationships() {
   const [sentInvites, setSentInvites] = useState<PendingInvite[]>([]);
   const [receivedInvites, setReceivedInvites] = useState<PendingInvite[]>([]);
 
+  // ✅ NEW: Declined invites (sent by me that were declined)
+  const [declinedInvites, setDeclinedInvites] = useState<DeclinedInvite[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ NEW: Get blocked users
+  // Get blocked users
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
   const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers();
 
@@ -58,11 +65,12 @@ export function useAccountabilityRelationships() {
   const menteesUnsubRef = useRef<Unsubscribe | null>(null);
   const sentInvitesUnsubRef = useRef<Unsubscribe | null>(null);
   const receivedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
+  const declinedInvitesUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
 
-  // ✅ NEW: Helper to check if user should be hidden
+  // Helper to check if user should be hidden
   const shouldHide = (otherUserId: string) => {
     if (!uid) return true;
     return blockedUserIds.has(otherUserId) || blockedByUserIds.has(otherUserId);
@@ -86,11 +94,12 @@ export function useAccountabilityRelationships() {
       setMentees([]);
       setSentInvites([]);
       setReceivedInvites([]);
+      setDeclinedInvites([]); // ✅ NEW
       setLoading(false);
       return;
     }
 
-    // ✅ NEW: Wait for block lists to load
+    // Wait for block lists to load
     if (blockedLoading || blockedByLoading) return;
 
     setLoading(true);
@@ -111,7 +120,7 @@ export function useAccountabilityRelationships() {
           const docSnap = snapshot.docs[0];
           const data = docSnap.data() as AccountabilityRelationship;
 
-          // ✅ NEW: Filter out if blocked
+          // Filter out if blocked
           if (shouldHide(data.mentorUid)) {
             setMentor(null);
             return;
@@ -156,7 +165,7 @@ export function useAccountabilityRelationships() {
         for (const docSnap of snapshot.docs) {
           const data = docSnap.data() as AccountabilityRelationship;
 
-          // ✅ NEW: Filter out if blocked
+          // Filter out if blocked
           if (shouldHide(data.menteeUid)) continue;
 
           // Fetch each mentee's timezone
@@ -207,7 +216,7 @@ export function useAccountabilityRelationships() {
           }))
           .filter(
             (invite: any) => !shouldHide(invite.mentorUid)
-          ) as PendingInvite[]; // ✅ NEW: Filter blocked
+          ) as PendingInvite[];
         setSentInvites(invites);
       },
       (err) => {
@@ -234,11 +243,40 @@ export function useAccountabilityRelationships() {
           }))
           .filter(
             (invite: any) => !shouldHide(invite.menteeUid)
-          ) as PendingInvite[]; // ✅ NEW: Filter blocked
+          ) as PendingInvite[];
         setReceivedInvites(invites);
       },
       (err) => {
         console.error("received invites listener error:", err);
+      }
+    );
+
+    // ===============================
+    // ❌ NEW: LISTEN FOR DECLINED INVITES (I sent, they declined)
+    // ===============================
+    const declinedInvitesQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("menteeUid", "==", uid),
+      where("status", "==", "declined")
+    );
+
+    declinedInvitesUnsubRef.current = onSnapshot(
+      declinedInvitesQuery,
+      (snapshot) => {
+        const invites = snapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter(
+            (invite: any) =>
+              !shouldHide(invite.mentorUid) && // Filter blocked users
+              invite.isAcknowledged !== true // ✅ Only show unacknowledged declined invites
+          ) as DeclinedInvite[];
+        setDeclinedInvites(invites);
+      },
+      (err) => {
+        console.error("declined invites listener error:", err);
       }
     );
 
@@ -249,8 +287,9 @@ export function useAccountabilityRelationships() {
       menteesUnsubRef.current?.();
       sentInvitesUnsubRef.current?.();
       receivedInvitesUnsubRef.current?.();
+      declinedInvitesUnsubRef.current?.(); // ✅ NEW
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]); // ✅ NEW: Add dependencies
+  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
   // ===============================
   // 📨 INVITE FUNCTIONS
@@ -388,12 +427,24 @@ export function useAccountabilityRelationships() {
 
   // End a relationship (delete it)
   const endRelationship = async (relationshipId: string): Promise<void> => {
-    try {
-      await deleteDoc(doc(db, "accountabilityRelationships", relationshipId));
-    } catch (err) {
-      console.error("Error ending relationship:", err);
-      throw new Error("Failed to end relationship");
+    const uid = auth.currentUser?.uid;
+
+    if (!uid) {
+      throw new Error("User not authenticated");
     }
+
+    const relationshipRef = doc(
+      db,
+      "accountabilityRelationships",
+      relationshipId
+    );
+
+    await updateDoc(relationshipRef, {
+      status: "ended",
+      endedByUid: uid,
+      endedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
   };
 
   // Decline an invite (update status to declined)
@@ -528,6 +579,20 @@ export function useAccountabilityRelationships() {
     }
   };
 
+  // ✅ NEW: Acknowledge a declined invite (mark it as seen)
+  const acknowledgeDeclinedInvite = async (inviteId: string): Promise<void> => {
+    try {
+      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
+        isAcknowledged: true,
+        acknowledgedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error("Error acknowledging declined invite:", err);
+      throw new Error("Failed to acknowledge declined invite");
+    }
+  };
+
   // Check if there's a pending invite for a specific user
   const hasPendingInviteWith = (otherUserId: string): boolean => {
     return (
@@ -545,6 +610,13 @@ export function useAccountabilityRelationships() {
     );
   };
 
+  // ✅ NEW: Get declined invite with a specific user (if exists)
+  const getDeclinedInviteWith = (
+    otherUserId: string
+  ): DeclinedInvite | null => {
+    return declinedInvites.find((inv) => inv.mentorUid === otherUserId) || null;
+  };
+
   return {
     // Active relationships
     mentor,
@@ -554,8 +626,11 @@ export function useAccountabilityRelationships() {
     sentInvites,
     receivedInvites,
 
+    // Declined invites (unacknowledged only)
+    declinedInvites,
+
     // State
-    loading: loading || blockedLoading || blockedByLoading, // ✅ NEW: Include block loading
+    loading: loading || blockedLoading || blockedByLoading,
     error,
 
     // Functions
@@ -564,7 +639,9 @@ export function useAccountabilityRelationships() {
     declineInvite,
     endRelationship,
     cancelInvite,
+    acknowledgeDeclinedInvite, // ✅ NEW
     hasPendingInviteWith,
     getPendingInviteWith,
+    getDeclinedInviteWith,
   };
 }

@@ -14,6 +14,7 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
+import { DeclinedInviteItem } from "../DeclinedInviteItem"; // ✅ NEW
 import { SentInviteItem } from "../SentInviteItem";
 
 interface InviteWithData {
@@ -29,10 +30,16 @@ export function SupportingYouSection({
   scrollY: SharedValue<number>;
 }) {
   const { colors } = useTheme();
-  const { sentInvites } = useAccountability();
+  const { sentInvites, declinedInvites } = useAccountability(); // ✅ Add declinedInvites
   const { threads } = useThreads();
-  const [invitesWithData, setInvitesWithData] = useState<InviteWithData[]>([]);
+  const [sentInvitesWithData, setSentInvitesWithData] = useState<
+    InviteWithData[]
+  >([]);
+  const [declinedInvitesWithData, setDeclinedInvitesWithData] = useState<
+    InviteWithData[]
+  >([]); // ✅ NEW
 
+  // ✅ Fetch sent invites data
   useEffect(() => {
     const fetchInviteData = async () => {
       const inviteDataPromises = sentInvites.map(async (invite) => {
@@ -65,7 +72,7 @@ export function SupportingYouSection({
       });
 
       const results = await Promise.all(inviteDataPromises);
-      setInvitesWithData(
+      setSentInvitesWithData(
         results.filter((item): item is InviteWithData => item !== null)
       );
     };
@@ -73,9 +80,54 @@ export function SupportingYouSection({
     if (sentInvites.length > 0) {
       fetchInviteData();
     } else {
-      setInvitesWithData([]);
+      setSentInvitesWithData([]);
     }
   }, [sentInvites, threads]);
+
+  // ✅ NEW: Fetch declined invites data
+  useEffect(() => {
+    const fetchDeclinedInviteData = async () => {
+      const inviteDataPromises = declinedInvites.map(async (invite) => {
+        // The person who declined our invite (they would have been our mentor)
+        const otherUserId = invite.mentorUid;
+
+        // Find the thread with this user
+        const thread = threads.find((t) => t.otherUserId === otherUserId);
+
+        if (!thread) return null;
+
+        // Fetch the user's display name
+        try {
+          const userDoc = await getDoc(doc(db, "users", otherUserId));
+          const userName = userDoc.exists()
+            ? userDoc.data()?.displayName ||
+              `user-${otherUserId.substring(0, 5)}`
+            : `user-${otherUserId.substring(0, 5)}`;
+
+          return {
+            inviteId: invite.id,
+            userName,
+            userId: otherUserId,
+            threadId: thread.id,
+          };
+        } catch (error) {
+          console.error("Error fetching declined invite user data:", error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(inviteDataPromises);
+      setDeclinedInvitesWithData(
+        results.filter((item): item is InviteWithData => item !== null)
+      );
+    };
+
+    if (declinedInvites.length > 0) {
+      fetchDeclinedInviteData();
+    } else {
+      setDeclinedInvitesWithData([]);
+    }
+  }, [declinedInvites, threads]);
 
   const animatedStyle = useAnimatedStyle(() => {
     const opacity = interpolate(
@@ -120,10 +172,35 @@ export function SupportingYouSection({
         </View>
       </Animated.View>
 
-      {/* Show sent invites if they exist */}
-      {invitesWithData.length > 0 && (
+      {/* Show sent invites (including declined) if they exist */}
+      {(sentInvitesWithData.length > 0 ||
+        declinedInvitesWithData.length > 0) && (
         <View>
-          {invitesWithData.map((inviteData) => (
+          <ThemedText
+            type="captionMedium"
+            style={{
+              color: colors.textSecondary,
+              marginBottom: 8,
+              marginLeft: 4,
+            }}
+          >
+            ACCOUNTABILITY INVITES SENT
+          </ThemedText>
+
+          {/* ✅ Show declined invites first */}
+          {declinedInvitesWithData.map((inviteData) => (
+            <DeclinedInviteItem
+              key={inviteData.inviteId}
+              inviteId={inviteData.inviteId}
+              userName={inviteData.userName}
+              userId={inviteData.userId}
+              threadId={inviteData.threadId}
+              colors={colors}
+            />
+          ))}
+
+          {/* Show sent invites after declined */}
+          {sentInvitesWithData.map((inviteData) => (
             <SentInviteItem
               key={inviteData.inviteId}
               inviteId={inviteData.inviteId}
@@ -144,7 +221,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
+    marginBottom: 24,
     paddingHorizontal: 4,
   },
   headerLeft: {

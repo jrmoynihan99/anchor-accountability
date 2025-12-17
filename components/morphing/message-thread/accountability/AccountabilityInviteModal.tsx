@@ -16,6 +16,7 @@ import Animated, {
 import { BaseModal } from "../../BaseModal";
 import { DefaultInviteView } from "./invite-views/DefaultInviteView";
 import { GuidelinesView } from "./invite-views/GuidelinesView";
+import { InviteDeclinedView } from "./invite-views/InviteDeclinedView";
 import { InviteSentView } from "./invite-views/InviteSentView";
 import { MentorGuidelinesView } from "./invite-views/MentorGuidelinesView";
 import { ReceivedInviteView } from "./invite-views/ReceivedInviteView";
@@ -31,8 +32,8 @@ interface AccountabilityInviteModalProps {
   threadName: string;
   inviteState: "none" | "sent" | "received";
   pendingInvite?: any;
-  otherUserMenteeCount: number; // ✅ NEW: Passed from parent
-  loadingOtherUserData: boolean; // ✅ NEW: Passed from parent
+  otherUserMenteeCount: number;
+  loadingOtherUserData: boolean;
 }
 
 type ViewType =
@@ -42,7 +43,8 @@ type ViewType =
   | "userHasMentor"
   | "maxMentees"
   | "sent"
-  | "received";
+  | "received"
+  | "declined";
 
 export function AccountabilityInviteModal({
   isVisible,
@@ -53,8 +55,8 @@ export function AccountabilityInviteModal({
   threadName,
   inviteState,
   pendingInvite,
-  otherUserMenteeCount, // ✅ NEW
-  loadingOtherUserData, // ✅ NEW
+  otherUserMenteeCount,
+  loadingOtherUserData,
 }: AccountabilityInviteModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const currentUserId = auth.currentUser?.uid;
@@ -67,6 +69,8 @@ export function AccountabilityInviteModal({
     acceptInvite,
     declineInvite,
     cancelInvite,
+    getDeclinedInviteWith,
+    acknowledgeDeclinedInvite, // ✅ NEW
   } = useAccountability();
   const userHasMentor = !!mentor;
 
@@ -74,17 +78,36 @@ export function AccountabilityInviteModal({
   const [hasReadGuidelines, setHasReadGuidelines] = useState(false);
   const [hasReadMentorGuidelines, setHasReadMentorGuidelines] = useState(false);
 
+  // ✅ SIMPLIFIED: Just track if there's a declined invite (no AsyncStorage needed)
+  const [declinedInvite, setDeclinedInvite] = useState<any | null>(null);
+
+  // Check for declined invite - if it exists, show it (will be deleted on acknowledgment)
+  useEffect(() => {
+    if (!currentUserId || !otherUserId) {
+      setDeclinedInvite(null);
+      return;
+    }
+
+    const declined = getDeclinedInviteWith(otherUserId);
+    setDeclinedInvite(declined);
+  }, [currentUserId, otherUserId, getDeclinedInviteWith]);
+
   // Determine initial view based on props
   const getInitialView = (): ViewType => {
     // Don't determine view until we have other user's data
     if (loadingOtherUserData) return "default";
+
+    // ✅ SIMPLIFIED: Check if declined invite exists (no acknowledgment check needed)
+    if (declinedInvite) {
+      return "declined";
+    }
 
     if (inviteState === "sent") return "sent";
     if (inviteState === "received") {
       return "received";
     }
 
-    // ✅ Check if OTHER USER has max mentees (can't invite them as my mentor)
+    // Check if OTHER USER has max mentees (can't invite them as my mentor)
     if (otherUserMenteeCount >= 3) return "maxMentees";
 
     // Check if current user has a mentor
@@ -124,6 +147,7 @@ export function AccountabilityInviteModal({
     otherUserMenteeCount,
     loadingOtherUserData,
     isVisible,
+    declinedInvite,
   ]);
 
   const transitionToView = (view: ViewType) => {
@@ -205,6 +229,21 @@ export function AccountabilityInviteModal({
       setCurrentView("received");
       screenTransition.value = 0;
     }, 300);
+  };
+
+  // ✅ SIMPLIFIED: Mark declined invite as acknowledged in Firestore
+  const handleAcknowledgeDecline = async () => {
+    if (!declinedInvite) return;
+
+    try {
+      // Mark the declined invite as acknowledged
+      await acknowledgeDeclinedInvite(declinedInvite.id);
+
+      // The listener will automatically filter it out (isAcknowledged: true)
+      // Modal will transition to default view automatically via the useEffect
+    } catch (error) {
+      console.error("Error acknowledging declined invite:", error);
+    }
   };
 
   // Handlers that will be passed to child components
@@ -329,6 +368,13 @@ export function AccountabilityInviteModal({
             onDeclineInvite={handleDeclineInvite}
             onNavigateToGuidelines={handleNavigateToMentorGuidelines}
             hasReadGuidelines={hasReadMentorGuidelines}
+          />
+        );
+      case "declined": // ✅ NEW
+        return (
+          <InviteDeclinedView
+            {...commonProps}
+            onAcknowledge={handleAcknowledgeDecline}
           />
         );
       default:

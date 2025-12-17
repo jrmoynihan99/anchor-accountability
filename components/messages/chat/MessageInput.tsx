@@ -53,12 +53,20 @@ export const MessageInput = forwardRef<
     const pulseRef = React.useRef<{ pulse: () => void }>(null);
 
     // Get invite data from context
-    const { sentInvites, receivedInvites, getPendingInviteWith } =
-      useAccountability();
+    const {
+      sentInvites,
+      receivedInvites,
+      getPendingInviteWith,
+      getDeclinedInviteWith, // ✅ NEW
+    } = useAccountability();
 
     // ✅ NEW: Fetch other user's accountability data at the parent level
     const { menteeCount: otherUserMenteeCount, loading: loadingOtherUserData } =
       useOtherUserAccountability(otherUserId || null);
+
+    // ✅ NEW: Track if declined invite has been acknowledged
+    const [hasAcknowledgedDecline, setHasAcknowledgedDecline] =
+      React.useState(false);
 
     // Determine invite state for THIS thread
     const pendingInvite = getPendingInviteWith(otherUserId);
@@ -71,12 +79,21 @@ export const MessageInput = forwardRef<
       (inv) => inv.mentorUid === otherUserId
     );
 
+    // ✅ SIMPLIFIED: Check for declined invite (no AsyncStorage tracking needed)
+    const declinedInvite = getDeclinedInviteWith(otherUserId);
+
     // Determine button variant based on relationship and invite state
     const getButtonVariant = ():
       | "invite"
       | "partner"
       | "pending-sent"
-      | "pending-received" => {
+      | "pending-received"
+      | "declined" => {
+      // ✅ SIMPLIFIED: Check if declined invite exists (will be deleted on acknowledgment)
+      if (declinedInvite) {
+        return "declined";
+      }
+
       if (relationshipType) return "partner";
       if (isSentInvite) return "pending-sent";
       if (isReceivedInvite) return "pending-received";
