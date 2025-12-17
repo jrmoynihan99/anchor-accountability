@@ -121,7 +121,7 @@ export function MessageThreadsSection({
               marginLeft: 4,
             }}
           >
-            PENDING INVITES
+            INCOMING ACCOUNTABLITY INVITES
           </ThemedText>
 
           {receivedInvites.map((invite) => {
