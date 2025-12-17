@@ -1,19 +1,22 @@
 // app/(tabs)/_layout.tsx
 import { FloatingPillNavigation } from "@/components/FloatingPillNavigation";
 import { HapticTab } from "@/components/HapticTab";
-import { NotificationPermissionModal } from "@/components/NotificationPermissionModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { FloatingMainCTAButton } from "@/components/morphing/home/reach-out-main-button/FloatingMainCTAButton";
 import { ReachOutModal } from "@/components/morphing/home/reach-out-main-button/ReachOutModal";
 import { FloatingSettingsButton } from "@/components/morphing/settings/FloatingSettingsButton";
 import { FloatingSettingsModal } from "@/components/morphing/settings/FloatingSettingsModal";
+import { NotificationPermissionModal } from "@/components/NotificationPermissionModal";
+import { RelationshipBanner } from "@/components/RelationshipBanner"; // ✅ UPDATED
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
+import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useThreads } from "@/hooks/useThreads";
+import { auth } from "@/lib/firebase";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,19 +25,25 @@ import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAccountability } from "@/context/AccountabilityContext";
+
+type BannerType = "accepted" | "ended-mentor" | "ended-mentee";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
+  const currentUid = auth.currentUser?.uid;
   const { myReachOuts } = useMyReachOuts();
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
   const { threads } = useThreads();
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
-  const { receivedInvites, loading: accountabilityLoading } =
-    useAccountability();
+  const {
+    receivedInvites,
+    loading: accountabilityLoading,
+    mentor,
+    mentees,
+  } = useAccountability();
   const hasPendingAccountabilityInvites =
     !accountabilityLoading && receivedInvites.length > 0;
 
@@ -44,7 +53,7 @@ export default function TabLayout() {
     permissionStatus,
     handlePermissionResult,
     closeModal,
-    androidDenialCount, // ADD THIS
+    androidDenialCount,
   } = useNotificationPermission();
 
   // Settings modal state management
@@ -61,10 +70,62 @@ export default function TabLayout() {
       setSettingsInitialScreen("guidelines");
       setTimeout(() => {
         if (settingsModalOpenRef.current) settingsModalOpenRef.current();
-        setModalIntent(null); // clear after use
+        setModalIntent(null);
       }, 300);
     }
   }, [modalIntent, setModalIntent]);
+
+  // ✅ UPDATED: Banner for relationship events (accepted, ended-mentor, ended-mentee)
+  const prevMentorRef = useRef(mentor);
+  const prevMenteesRef = useRef(mentees);
+  const [showBanner, setShowBanner] = useState(false);
+  const [bannerType, setBannerType] = useState<BannerType>("accepted");
+  const [personName, setPersonName] = useState<string>("");
+
+  // Single useEffect to detect all relationship changes
+  useEffect(() => {
+    if (accountabilityLoading || !currentUid) return;
+
+    // Check for new mentor (accepted invite)
+    if (!prevMentorRef.current && mentor) {
+      const name = `user-${mentor.mentorUid.substring(0, 5)}`;
+      setPersonName(name);
+      setBannerType("accepted");
+      setShowBanner(true);
+    }
+    // Check for ended mentor relationship
+    else if (prevMentorRef.current && !mentor) {
+      const name = `user-${prevMentorRef.current.mentorUid.substring(0, 5)}`;
+      setPersonName(name);
+      setBannerType("ended-mentor");
+      setShowBanner(true);
+    }
+
+    // Check for ended mentee relationship
+    const prevMenteeIds = new Set(
+      prevMenteesRef.current.map((m) => m.menteeUid)
+    );
+    const currentMenteeIds = new Set(mentees.map((m) => m.menteeUid));
+    const endedMenteeIds = Array.from(prevMenteeIds).filter(
+      (id) => !currentMenteeIds.has(id)
+    );
+
+    if (endedMenteeIds.length > 0) {
+      const endedMenteeId = endedMenteeIds[0];
+      const name = `user-${endedMenteeId.substring(0, 5)}`;
+      setPersonName(name);
+      setBannerType("ended-mentee");
+      setShowBanner(true);
+    }
+
+    // Update refs
+    prevMentorRef.current = mentor;
+    prevMenteesRef.current = mentees;
+  }, [mentor, mentees, accountabilityLoading, currentUid]);
+
+  const handleDismissBanner = () => {
+    setShowBanner(false);
+  };
 
   // Get the current active tab
   const lastSegment = segments[segments.length - 1];
@@ -80,8 +141,6 @@ export default function TabLayout() {
       router.push("/(tabs)/pleas");
     } else if (tab === "messages") {
       router.push("/(tabs)/messages");
-    } else if (tab === "community") {
-      router.push("/(tabs)/community");
     } else if (tab === "accountability") {
       router.push("/(tabs)/accountability");
     }
@@ -128,6 +187,15 @@ export default function TabLayout() {
           </BlurView>
         </MaskedView>
       </View>
+
+      {/* ✅ UPDATED: Relationship Banner (handles accepted and ended cases) */}
+      {showBanner && (
+        <RelationshipBanner
+          type={bannerType}
+          personName={personName}
+          onDismiss={handleDismissBanner}
+        />
+      )}
 
       {/* Main Tabs */}
       <Tabs
@@ -227,9 +295,7 @@ export default function TabLayout() {
       </ButtonModalTransitionBridge>
 
       {/* Floating settings (with morph/transition modal) */}
-      <ButtonModalTransitionBridge
-        buttonBorderRadius={20} // matches the settings button border radius
-      >
+      <ButtonModalTransitionBridge buttonBorderRadius={20}>
         {({
           open,
           close,
@@ -241,12 +307,9 @@ export default function TabLayout() {
           handlePressIn,
           handlePressOut,
         }) => {
-          // Store the open function for programmatic access
           settingsModalOpenRef.current = open;
 
-          // One-time measurement for settings button to enable proper morph animation
           React.useEffect(() => {
-            // Trigger the same measurement that handlePressIn does
             const timer = setTimeout(() => {
               handlePressIn();
               setTimeout(() => {
@@ -256,7 +319,6 @@ export default function TabLayout() {
             return () => clearTimeout(timer);
           }, []);
 
-          // Reset initial screen when modal closes
           React.useEffect(() => {
             if (!isModalVisible) {
               setSettingsInitialScreen("settings");
@@ -269,7 +331,7 @@ export default function TabLayout() {
                 ref={buttonRef}
                 style={buttonAnimatedStyle}
                 onPress={() => {
-                  setSettingsInitialScreen("settings"); // Reset to settings when manually opened
+                  setSettingsInitialScreen("settings");
                   open();
                 }}
                 onPressIn={handlePressIn}

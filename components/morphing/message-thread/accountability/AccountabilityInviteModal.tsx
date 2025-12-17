@@ -231,16 +231,13 @@ export function AccountabilityInviteModal({
     }, 300);
   };
 
-  // ✅ SIMPLIFIED: Mark declined invite as acknowledged in Firestore
+  // ✅ Mark declined invite as acknowledged in Firestore
   const handleAcknowledgeDecline = async () => {
     if (!declinedInvite) return;
 
     try {
-      // Mark the declined invite as acknowledged
       await acknowledgeDeclinedInvite(declinedInvite.id);
-
-      // The listener will automatically filter it out (isAcknowledged: true)
-      // Modal will transition to default view automatically via the useEffect
+      // Listener will automatically filter it out (isAcknowledged: true)
     } catch (error) {
       console.error("Error acknowledging declined invite:", error);
     }
@@ -269,6 +266,15 @@ export function AccountabilityInviteModal({
     if (!pendingInvite) return;
     await declineInvite(pendingInvite.id);
     close();
+  };
+
+  // ✅ Wrapper for close that acknowledges declined invite if needed
+  const handleClose = (velocity?: number) => {
+    // If we're currently showing the declined view, acknowledge before closing
+    if (currentView === "declined" && declinedInvite) {
+      handleAcknowledgeDecline();
+    }
+    close(velocity);
   };
 
   // Animation styles
@@ -316,7 +322,7 @@ export function AccountabilityInviteModal({
       colors,
       otherUserId,
       threadName,
-      onClose: close,
+      onClose: handleClose, // ✅ Use wrapper that acknowledges
     };
 
     switch (view) {
@@ -370,13 +376,8 @@ export function AccountabilityInviteModal({
             hasReadGuidelines={hasReadMentorGuidelines}
           />
         );
-      case "declined": // ✅ NEW
-        return (
-          <InviteDeclinedView
-            {...commonProps}
-            onAcknowledge={handleAcknowledgeDecline}
-          />
-        );
+      case "declined":
+        return <InviteDeclinedView {...commonProps} />;
       default:
         return null;
     }
@@ -424,7 +425,7 @@ export function AccountabilityInviteModal({
       isVisible={isVisible}
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
-      close={close}
+      close={handleClose} // ✅ Use wrapper that acknowledges
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.iconCircleSecondaryBackground}

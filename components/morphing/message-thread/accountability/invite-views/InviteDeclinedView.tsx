@@ -8,7 +8,6 @@ interface InviteDeclinedViewProps {
   colors: any;
   otherUserId: string;
   threadName: string;
-  onAcknowledge: () => void;
   onClose: () => void;
 }
 
@@ -16,7 +15,6 @@ export function InviteDeclinedView({
   colors,
   otherUserId,
   threadName,
-  onAcknowledge,
   onClose,
 }: InviteDeclinedViewProps) {
   return (
@@ -80,7 +78,7 @@ export function InviteDeclinedView({
         </ThemedText>
       </View>
 
-      {/* Acknowledge Button */}
+      {/* Got It Button */}
       <TouchableOpacity
         style={[
           styles.primaryButton,
@@ -88,24 +86,11 @@ export function InviteDeclinedView({
             backgroundColor: colors.tint,
           },
         ]}
-        onPress={onAcknowledge}
+        onPress={onClose}
         activeOpacity={0.8}
       >
         <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
           Got It
-        </ThemedText>
-      </TouchableOpacity>
-
-      {/* Close Button */}
-      <TouchableOpacity
-        style={[styles.secondaryButton, { borderColor: colors.border }]}
-        onPress={onClose}
-      >
-        <ThemedText
-          type="subtitleSemibold"
-          style={{ color: colors.textSecondary }}
-        >
-          Close
         </ThemedText>
       </TouchableOpacity>
     </ScrollView>
@@ -169,13 +154,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
     marginBottom: 12,
-  },
-  secondaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
   },
 });
