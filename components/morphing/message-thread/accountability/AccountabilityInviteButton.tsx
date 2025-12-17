@@ -17,7 +17,12 @@ interface AccountabilityInviteButtonProps {
   onPressIn?: () => void;
   onPressOut?: () => void;
   pulseRef?: React.RefObject<{ pulse: () => void } | null>;
-  variant?: "invite" | "partner" | "pending-sent" | "pending-received";
+  variant?:
+    | "invite"
+    | "partner"
+    | "pending-sent"
+    | "pending-received"
+    | "declined"; // ✅ NEW
 }
 
 export const AccountabilityInviteButton = React.forwardRef<
@@ -69,6 +74,15 @@ export const AccountabilityInviteButton = React.forwardRef<
             backgroundColor: "#34C759", // Green
             showGlow: false,
             showBadge: true, // Show notification badge
+          };
+        case "declined": // ✅ NEW
+          return {
+            name: "xmark.circle.fill" as const,
+            size: 20,
+            color: colors.white,
+            backgroundColor: colors.textSecondary || "#8E8E93", // Gray
+            showGlow: false,
+            showBadge: true, // Show badge to indicate needs acknowledgment
           };
         case "invite":
         default:
@@ -159,7 +173,7 @@ export const AccountabilityInviteButton = React.forwardRef<
             />
           </Animated.View>
 
-          {/* Notification badge - only for pending-received */}
+          {/* Notification badge - for pending-received and declined */}
           {iconConfig.showBadge && (
             <View
               style={[

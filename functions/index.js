@@ -2320,7 +2320,7 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
     const before = event.data.before.data();
     const after = event.data.after.data();
 
-    // Only trigger when status changes from pending to active
+    // Only trigger when status changes from pending → active
     if (before.status !== "pending" || after.status !== "active") {
       return;
     }
@@ -2329,13 +2329,12 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
     const acceptedInviteId = event.params.inviteId;
 
     console.log(
-      `🧹 Cleaning up pending invites for mentee ${menteeUid} after accepting invite ${acceptedInviteId}`
+      `🧹 Canceling other pending invites for mentee ${menteeUid} after accepting invite ${acceptedInviteId}`
     );
 
     try {
       const db = admin.firestore();
 
-      // Find all other pending invites from this mentee
       const snapshot = await db
         .collection("accountabilityRelationships")
         .where("menteeUid", "==", menteeUid)
@@ -2343,12 +2342,12 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
         .get();
 
       if (snapshot.empty) {
-        console.log("No other pending invites to clean up.");
+        console.log("No other pending invites to cancel.");
         return;
       }
 
       const batch = db.batch();
-      let deletedCount = 0;
+      let canceledCount = 0;
 
       for (const doc of snapshot.docs) {
         // Skip the invite that was just accepted
@@ -2360,14 +2359,20 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
         const otherMentorUid = inviteData.mentorUid;
 
         console.log(
-          `Deleting pending invite ${doc.id} to mentor ${otherMentorUid}`
+          `Canceling pending invite ${doc.id} to mentor ${otherMentorUid}`
         );
 
-        // Delete the invite document
-        batch.delete(doc.ref);
-        deletedCount++;
+        // Mark invite as canceled
+        batch.update(doc.ref, {
+          status: "canceled",
+          endedByUid: menteeUid,
+          endedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
 
-        // Decrement unread count in the thread with this mentor
+        canceledCount++;
+
+        // 🔕 Optional: decrement unread count if you previously incremented it
         const threadsSnapshot = await db
           .collection("threads")
           .where("userA", "in", [menteeUid, otherMentorUid])
@@ -2377,7 +2382,6 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
         for (const threadDoc of threadsSnapshot.docs) {
           const threadData = threadDoc.data();
 
-          // Find which user is which and decrement their unread count
           if (threadData.userA === otherMentorUid) {
             batch.update(threadDoc.ref, {
               userA_unreadCount: Math.max(
@@ -2396,16 +2400,16 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
         }
       }
 
-      if (deletedCount > 0) {
+      if (canceledCount > 0) {
         await batch.commit();
         console.log(
-          `✅ Successfully deleted ${deletedCount} pending invite(s) for mentee ${menteeUid}`
+          `✅ Successfully canceled ${canceledCount} pending invite(s) for mentee ${menteeUid}`
         );
       } else {
-        console.log("No invites to delete (only the accepted one existed).");
+        console.log("No invites to cancel (only the accepted one existed).");
       }
     } catch (error) {
-      console.error("❌ Error cleaning up pending invites:", error);
+      console.error("❌ Error canceling pending invites:", error);
       throw error;
     }
   }

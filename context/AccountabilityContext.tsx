@@ -13,6 +13,9 @@ interface AccountabilityContextType {
   sentInvites: any[];
   receivedInvites: any[];
 
+  // ✅ NEW: Declined invites
+  declinedInvites: any[];
+
   // State
   loading: boolean;
   error: string | null;
@@ -25,8 +28,10 @@ interface AccountabilityContextType {
   declineInvite: (inviteId: string) => Promise<void>;
   endRelationship: (relationshipId: string) => Promise<void>;
   cancelInvite: (inviteId: string) => Promise<void>;
+  acknowledgeDeclinedInvite: (inviteId: string) => Promise<void>; // ✅ NEW
   hasPendingInviteWith: (otherUserId: string) => boolean;
   getPendingInviteWith: (otherUserId: string) => any | null;
+  getDeclinedInviteWith: (otherUserId: string) => any | null;
 }
 
 // Create context with undefined default (will error if used without provider)
@@ -68,6 +73,9 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
         sentInvites: [],
         receivedInvites: [],
 
+        // ✅ NEW: Declined invites
+        declinedInvites: [],
+
         // State
         loading: true, // Keep loading until auth is ready
         error: null,
@@ -90,8 +98,13 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
         cancelInvite: async () => {
           throw new Error("Not ready");
         },
+        acknowledgeDeclinedInvite: async () => {
+          // ✅ NEW
+          throw new Error("Not ready");
+        },
         hasPendingInviteWith: () => false,
         getPendingInviteWith: () => null,
+        getDeclinedInviteWith: () => null,
       };
 
   return (
