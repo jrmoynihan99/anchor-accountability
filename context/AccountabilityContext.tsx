@@ -17,8 +17,17 @@ interface AccountabilityContextType {
   declinedInvites: any[];
 
   // ✅ NEW: Recently ended relationships (for banner detection)
-  recentlyEndedMentor: { mentorUid: string; endedByUid: string } | null;
-  recentlyEndedMentees: Array<{ menteeUid: string; endedByUid: string }>;
+  recentlyEndedMentor: {
+    relationshipId: string;
+    mentorUid: string;
+    endedByUid: string;
+  } | null;
+
+  recentlyEndedMentees: Array<{
+    relationshipId: string;
+    menteeUid: string;
+    endedByUid: string;
+  }>;
 
   // State
   loading: boolean;
