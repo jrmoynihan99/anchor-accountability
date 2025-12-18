@@ -12,7 +12,6 @@ interface MenteeCardContentProps {
   checkInStatus: CheckInStatus;
   menteeTimezone?: string;
   showExpandIcon?: boolean;
-  onRemind?: () => void;
   onMessage?: () => void;
 }
 

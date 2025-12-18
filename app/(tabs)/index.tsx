@@ -85,7 +85,6 @@ export default function HomeScreen() {
     );
 
     if (!thread) {
-      console.log("No thread found with that mentor!");
       return;
     }
 

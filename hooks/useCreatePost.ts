@@ -1,5 +1,5 @@
 // hooks/useCreatePost.ts
-import { PostCategory } from "@/components/community/types";
+import { PostCategory } from "@/components/morphing/community/types";
 import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useState } from "react";

@@ -27,11 +27,6 @@ export function YoureSupportingList({
     [key: string]: { open: () => void };
   }>({});
 
-  const handleRemind = (menteeUid: string) => {
-    // TODO: Send reminder notification
-    console.log("Send reminder to", menteeUid);
-  };
-
   const handleMessage = (menteeUid: string) => {
     if (!currentUid) return;
 
@@ -43,7 +38,6 @@ export function YoureSupportingList({
     );
 
     if (!thread) {
-      console.log("No thread found with that mentee!");
       return;
     }
 
@@ -120,7 +114,6 @@ export function YoureSupportingList({
                   checkInStreak={45}
                   checkInStatus={mentee.checkInStatus}
                   menteeTimezone={mentee.menteeTimezone}
-                  onRemind={() => handleRemind(mentee.menteeUid)}
                   onMessage={() => handleMessage(mentee.menteeUid)}
                   buttonRef={buttonRef}
                   style={buttonAnimatedStyle}

@@ -29,11 +29,11 @@ import {
 
 // Notifications
 import { updateUserTimezone } from "@/lib/firebase";
-import * as NavigationBar from "expo-navigation-bar"; // <-- Add this import at the top
+import * as NavigationBar from "expo-navigation-bar";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 
-// --- Notification handler logic remains unchanged ---
+// --- Notification handler logic ---
 let getCurrentThreadId: (() => string | null) | null = null;
 let getCurrentPleaId: (() => string | null) | null = null;
 
@@ -61,6 +61,20 @@ Notifications.setNotificationHandler({
           shouldSetBadge: false,
         };
       }
+    }
+    // ✅ NEW: Suppress accountability accepted/ended/declined/invite notifications (custom banner shows instead)
+    if (
+      data?.type === "accountability_accepted" ||
+      data?.type === "accountability_ended" ||
+      data?.type === "accountability_declined" ||
+      data?.type === "accountability_invite"
+    ) {
+      return {
+        shouldShowBanner: false,
+        shouldShowList: false,
+        shouldPlaySound: false,
+        shouldSetBadge: true, // Still update badge
+      };
     }
     return {
       shouldShowBanner: true,

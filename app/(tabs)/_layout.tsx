@@ -13,6 +13,7 @@ import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/hooks/ThemeContext";
+import { useAccountabilityBanners } from "@/hooks/useAccountabilityBanners";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { useNotificationPermission } from "@/hooks/useNotificationPermission";
 import { useThreads } from "@/hooks/useThreads";
@@ -26,8 +27,6 @@ import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type BannerType = "accepted" | "ended-mentor" | "ended-mentee";
-
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -40,12 +39,21 @@ export default function TabLayout() {
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
   const {
     receivedInvites,
-    loading: accountabilityLoading,
+    declinedInvites,
     mentor,
     mentees,
+    loading: accountabilityLoading,
   } = useAccountability();
   const hasPendingAccountabilityInvites =
-    !accountabilityLoading && receivedInvites.length > 0;
+    !accountabilityLoading &&
+    (receivedInvites.length > 0 ||
+      declinedInvites.length > 0 ||
+      (mentor && mentor.checkInStatus.isOverdue) ||
+      mentees.some((m) => m.checkInStatus.isOverdue));
+
+  // Banner detection for accountability events
+  const { showBanner, bannerType, personName, threadId, dismissBanner } =
+    useAccountabilityBanners();
 
   // Notification permission management
   const {
@@ -74,58 +82,6 @@ export default function TabLayout() {
       }, 300);
     }
   }, [modalIntent, setModalIntent]);
-
-  // ✅ UPDATED: Banner for relationship events (accepted, ended-mentor, ended-mentee)
-  const prevMentorRef = useRef(mentor);
-  const prevMenteesRef = useRef(mentees);
-  const [showBanner, setShowBanner] = useState(false);
-  const [bannerType, setBannerType] = useState<BannerType>("accepted");
-  const [personName, setPersonName] = useState<string>("");
-
-  // Single useEffect to detect all relationship changes
-  useEffect(() => {
-    if (accountabilityLoading || !currentUid) return;
-
-    // Check for new mentor (accepted invite)
-    if (!prevMentorRef.current && mentor) {
-      const name = `user-${mentor.mentorUid.substring(0, 5)}`;
-      setPersonName(name);
-      setBannerType("accepted");
-      setShowBanner(true);
-    }
-    // Check for ended mentor relationship
-    else if (prevMentorRef.current && !mentor) {
-      const name = `user-${prevMentorRef.current.mentorUid.substring(0, 5)}`;
-      setPersonName(name);
-      setBannerType("ended-mentor");
-      setShowBanner(true);
-    }
-
-    // Check for ended mentee relationship
-    const prevMenteeIds = new Set(
-      prevMenteesRef.current.map((m) => m.menteeUid)
-    );
-    const currentMenteeIds = new Set(mentees.map((m) => m.menteeUid));
-    const endedMenteeIds = Array.from(prevMenteeIds).filter(
-      (id) => !currentMenteeIds.has(id)
-    );
-
-    if (endedMenteeIds.length > 0) {
-      const endedMenteeId = endedMenteeIds[0];
-      const name = `user-${endedMenteeId.substring(0, 5)}`;
-      setPersonName(name);
-      setBannerType("ended-mentee");
-      setShowBanner(true);
-    }
-
-    // Update refs
-    prevMentorRef.current = mentor;
-    prevMenteesRef.current = mentees;
-  }, [mentor, mentees, accountabilityLoading, currentUid]);
-
-  const handleDismissBanner = () => {
-    setShowBanner(false);
-  };
 
   // Get the current active tab
   const lastSegment = segments[segments.length - 1];
@@ -188,12 +144,13 @@ export default function TabLayout() {
         </MaskedView>
       </View>
 
-      {/* ✅ UPDATED: Relationship Banner (handles accepted and ended cases) */}
+      {/* Banner for accountability events */}
       {showBanner && (
         <RelationshipBanner
           type={bannerType}
           personName={personName}
-          onDismiss={handleDismissBanner}
+          onDismiss={dismissBanner}
+          threadId={threadId}
         />
       )}
 

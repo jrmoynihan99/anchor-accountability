@@ -42,16 +42,11 @@ export function NotificationsSection({
     if (!shouldLoad) return;
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      console.log("=== APP STATE CHANGE ===");
-      console.log("Previous state:", appState.current);
-      console.log("Next state:", nextAppState);
-
       if (
         (appState.current === "inactive" ||
           appState.current === "background") &&
         nextAppState === "active"
       ) {
-        console.log("App became active, reloading...");
         await reload();
       }
       appState.current = nextAppState;

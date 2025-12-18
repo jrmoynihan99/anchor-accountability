@@ -91,7 +91,7 @@ export function calculateCheckInStatus(
       text: "Last check-in yesterday",
       icon: "exclamationmark.triangle.fill",
       colorKey: "textSecondary", // stays yellow
-      isOverdue: true,
+      isOverdue: false,
       overdueText: "",
       hasCheckedInToday: false,
     };

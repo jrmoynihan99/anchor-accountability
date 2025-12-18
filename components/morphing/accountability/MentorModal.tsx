@@ -63,7 +63,6 @@ export function MentorModal({
     close();
 
     if (!thread) {
-      console.log("No thread found for this mentee/mentor");
       return;
     }
 
@@ -85,7 +84,6 @@ export function MentorModal({
       // Use selectedDate if retroactive, otherwise use today
       const dateToSubmit = selectedDate || getTodayDateString();
       await submitCheckIn(dateToSubmit, status, note, uid);
-      console.log("Check-in submitted successfully for:", dateToSubmit);
 
       // Reset selected date back to today mode
       setSelectedDate(null);
@@ -100,13 +98,11 @@ export function MentorModal({
   const handleFillMissing = (date: string) => {
     // User clicked a missing day - set it as selected date
     setSelectedDate(date);
-    console.log("Fill missing day:", date);
   };
 
   const handleSelectFilled = () => {
     // User clicked a filled day - reset to today mode
     setSelectedDate(null);
-    console.log("Selected filled day - reset to today");
   };
 
   const defaultButtonContent = (

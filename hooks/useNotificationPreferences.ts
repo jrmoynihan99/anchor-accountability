@@ -81,27 +81,18 @@ export function useNotificationPreferences(enabled: boolean = true) {
   }, [enabled, state.systemPermissionGranted]);
 
   const loadNotificationState = async () => {
-    console.log("🔄🔄🔄 LOAD NOTIFICATION STATE CALLED 🔄🔄🔄");
-    console.log("Enabled:", enabled);
-    if (!enabled) {
-      console.log("❌ Hook disabled, returning early");
-      return;
-    }
+    if (!enabled) return;
+
     try {
-      console.log("✅ Starting to load notification state...");
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
-      // Just check permissions, don't request (to avoid triggering dialogs)
       const { status } = await Notifications.getPermissionsAsync();
-      console.log("📱 Permission status:", status);
 
       const systemPermissionGranted = status === "granted";
       const systemPermissionDenied = status === "denied";
 
-      // ANDROID: Clear denial count if permissions are now granted
       if (Platform.OS === "android" && systemPermissionGranted) {
         await AsyncStorage.removeItem(ANDROID_DENIAL_COUNT_KEY);
-        console.log("✅ Cleared Android denial count (permissions granted)");
         setAndroidDenialCount(0);
       }
 
@@ -127,9 +118,6 @@ export function useNotificationPreferences(enabled: boolean = true) {
 
       if (systemPermissionGranted && !hasExpoPushToken) {
         try {
-          console.log(
-            "Auto-setting up push token for new user with granted permissions"
-          );
           await savePushTokenToFirestore();
 
           const updatedUserDoc = await getDoc(userRef);
@@ -160,17 +148,12 @@ export function useNotificationPreferences(enabled: boolean = true) {
 
   const enableNotifications = async (): Promise<boolean> => {
     if (!enabled) return false;
+
     try {
       const { status: currentStatus } =
         await Notifications.getPermissionsAsync();
 
-      console.log("=== ENABLE NOTIFICATIONS ===");
-      console.log("Platform:", Platform.OS);
-      console.log("Status before attempting to enable:", currentStatus);
-
-      // iOS-specific: If denied, must go to settings (can't re-prompt)
       if (currentStatus === "denied" && Platform.OS === "ios") {
-        console.log("iOS with denied status - showing Alert to go to Settings");
         Alert.alert(
           "Notifications Disabled",
           "You previously declined notifications. To enable them:\n\n1. Open Phone Settings\n2. Find this app\n3. Tap Notifications\n4. Turn on Allow Notifications",
@@ -182,38 +165,28 @@ export function useNotificationPreferences(enabled: boolean = true) {
             },
           ]
         );
-        console.log("=== END ENABLE (iOS denied) ===");
         return false;
       }
 
-      // Android-specific: Check if user has been locked out (2+ denials)
       if (Platform.OS === "android" && currentStatus === "denied") {
         const denialCountStr = await AsyncStorage.getItem(
           ANDROID_DENIAL_COUNT_KEY
         );
         const denialCount = denialCountStr ? parseInt(denialCountStr, 10) : 0;
-        console.log("Android denial count:", denialCount);
 
         if (denialCount >= 2) {
-          console.log(
-            "Android locked out (2+ denials) - opening Settings directly"
-          );
           Linking.openSettings();
-          console.log("=== END ENABLE (Android locked out) ===");
           return false;
         }
       }
 
-      console.log("Status allows attempt, calling savePushTokenToFirestore...");
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       await savePushTokenToFirestore();
       await loadNotificationState();
 
       const { status: newStatus } = await Notifications.getPermissionsAsync();
-      console.log("Status after attempting to enable:", newStatus);
 
-      // Android-specific: Track denials
       if (Platform.OS === "android") {
         if (newStatus === "denied") {
           const denialCountStr = await AsyncStorage.getItem(
@@ -225,18 +198,12 @@ export function useNotificationPreferences(enabled: boolean = true) {
             ANDROID_DENIAL_COUNT_KEY,
             newCount.toString()
           );
-          console.log("Incremented Android denial count to:", newCount);
           setAndroidDenialCount(newCount);
         } else if (newStatus === "granted") {
           await AsyncStorage.removeItem(ANDROID_DENIAL_COUNT_KEY);
-          console.log("Cleared Android denial count (granted)");
           setAndroidDenialCount(0);
         }
       }
-
-      console.log("systemPermissionGranted:", state.systemPermissionGranted);
-      console.log("hasExpoPushToken:", state.hasExpoPushToken);
-      console.log("=== END ENABLE ===");
 
       return state.systemPermissionGranted && state.hasExpoPushToken;
     } catch (error) {
@@ -255,6 +222,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
     value: boolean
   ): Promise<void> => {
     if (!enabled) return;
+
     const previousValue = state.preferences[preferenceKey];
 
     setState((prev) => ({

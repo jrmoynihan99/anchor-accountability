@@ -7,7 +7,6 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
   onSnapshot,
   query,
   serverTimestamp,
@@ -54,6 +53,15 @@ export function useAccountabilityRelationships() {
   // ✅ NEW: Declined invites (sent by me that were declined)
   const [declinedInvites, setDeclinedInvites] = useState<DeclinedInvite[]>([]);
 
+  // ✅ NEW: Recently ended relationships (for banner detection)
+  const [recentlyEndedMentor, setRecentlyEndedMentor] = useState<{
+    mentorUid: string;
+    endedByUid: string;
+  } | null>(null);
+  const [recentlyEndedMentees, setRecentlyEndedMentees] = useState<
+    Array<{ menteeUid: string; endedByUid: string }>
+  >([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,6 +74,8 @@ export function useAccountabilityRelationships() {
   const sentInvitesUnsubRef = useRef<Unsubscribe | null>(null);
   const receivedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
   const declinedInvitesUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
+  const endedMentorUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
+  const endedMenteesUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
@@ -280,6 +290,78 @@ export function useAccountabilityRelationships() {
       }
     );
 
+    // ===============================
+    // 💔 NEW: LISTEN FOR ENDED MENTOR RELATIONSHIP (just to check endedByUid)
+    // ===============================
+    const endedMentorQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("menteeUid", "==", uid),
+      where("status", "==", "ended")
+    );
+
+    endedMentorUnsubRef.current = onSnapshot(
+      endedMentorQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const docSnap = snapshot.docs[0];
+          const data = docSnap.data();
+
+          // Only set if OTHER person ended it
+          if (data.endedByUid && data.endedByUid !== uid) {
+            setRecentlyEndedMentor({
+              mentorUid: data.mentorUid,
+              endedByUid: data.endedByUid,
+            });
+          } else {
+            // I ended it, don't show banner
+            setRecentlyEndedMentor(null);
+          }
+        } else {
+          // No ended relationship
+          setRecentlyEndedMentor(null);
+        }
+      },
+      (err) => {
+        console.error("ended mentor listener error:", err);
+      }
+    );
+
+    // ===============================
+    // 💔 NEW: LISTEN FOR ENDED MENTEE RELATIONSHIPS (just to check endedByUid)
+    // ===============================
+    const endedMenteesQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("mentorUid", "==", uid),
+      where("status", "==", "ended")
+    );
+
+    endedMenteesUnsubRef.current = onSnapshot(
+      endedMenteesQuery,
+      (snapshot) => {
+        const ended = snapshot.docs
+          .map((doc) => {
+            const data = doc.data();
+            // Only include if OTHER person ended it
+            if (data.endedByUid && data.endedByUid !== uid) {
+              return {
+                menteeUid: data.menteeUid,
+                endedByUid: data.endedByUid,
+              };
+            }
+            return null;
+          })
+          .filter(
+            (item): item is { menteeUid: string; endedByUid: string } =>
+              item !== null
+          );
+
+        setRecentlyEndedMentees(ended);
+      },
+      (err) => {
+        console.error("ended mentees listener error:", err);
+      }
+    );
+
     setLoading(false);
 
     return () => {
@@ -288,6 +370,8 @@ export function useAccountabilityRelationships() {
       sentInvitesUnsubRef.current?.();
       receivedInvitesUnsubRef.current?.();
       declinedInvitesUnsubRef.current?.(); // ✅ NEW
+      endedMentorUnsubRef.current?.(); // ✅ NEW
+      endedMenteesUnsubRef.current?.(); // ✅ NEW
     };
   }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
@@ -314,42 +398,6 @@ export function useAccountabilityRelationships() {
         }
       );
 
-      // Find the thread between these two users and increment unread count
-      const threadsAsA = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", uid),
-          where("userB", "==", menteeUid)
-        )
-      );
-
-      const threadsAsB = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", menteeUid),
-          where("userB", "==", uid)
-        )
-      );
-
-      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
-
-      if (allThreads.length > 0) {
-        const threadDoc = allThreads[0];
-        const threadData = threadDoc.data();
-        const threadRef = doc(db, "threads", threadDoc.id);
-
-        // Increment unread count for the person receiving the invite (menteeUid)
-        if (threadData.userA === menteeUid) {
-          await updateDoc(threadRef, {
-            userA_unreadCount: (threadData.userA_unreadCount || 0) + 1,
-          });
-        } else if (threadData.userB === menteeUid) {
-          await updateDoc(threadRef, {
-            userB_unreadCount: (threadData.userB_unreadCount || 0) + 1,
-          });
-        }
-      }
-
       return docRef.id;
     } catch (err) {
       console.error("Error sending invite:", err);
@@ -362,63 +410,11 @@ export function useAccountabilityRelationships() {
     if (!uid) throw new Error("Not authenticated");
 
     try {
-      // Get the invite to find out who sent it
-      const inviteDoc = await getDoc(
-        doc(db, "accountabilityRelationships", inviteId)
-      );
-      if (!inviteDoc.exists()) return;
-
-      const inviteData = inviteDoc.data();
-      const menteeUid = inviteData.menteeUid;
-      const mentorUid = inviteData.mentorUid;
-
       // Update invite status to active
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "active",
         updatedAt: serverTimestamp(),
       });
-
-      // Decrement the thread's unread count (removing the +1 from the invite)
-      const threadsAsA = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", menteeUid),
-          where("userB", "==", mentorUid)
-        )
-      );
-
-      const threadsAsB = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", mentorUid),
-          where("userB", "==", menteeUid)
-        )
-      );
-
-      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
-
-      if (allThreads.length > 0) {
-        const threadDoc = allThreads[0];
-        const threadData = threadDoc.data();
-        const threadRef = doc(db, "threads", threadDoc.id);
-
-        // Decrement unread count for the person who accepted (mentorUid = uid)
-        if (threadData.userA === mentorUid) {
-          await updateDoc(threadRef, {
-            userA_unreadCount: Math.max(
-              0,
-              (threadData.userA_unreadCount || 0) - 1
-            ),
-          });
-        } else if (threadData.userB === mentorUid) {
-          await updateDoc(threadRef, {
-            userB_unreadCount: Math.max(
-              0,
-              (threadData.userB_unreadCount || 0) - 1
-            ),
-          });
-        }
-      }
     } catch (err) {
       console.error("Error accepting invite:", err);
       throw new Error("Failed to accept invite");
@@ -450,63 +446,11 @@ export function useAccountabilityRelationships() {
   // Decline an invite (update status to declined)
   const declineInvite = async (inviteId: string): Promise<void> => {
     try {
-      // Get the invite to find out who sent it
-      const inviteDoc = await getDoc(
-        doc(db, "accountabilityRelationships", inviteId)
-      );
-      if (!inviteDoc.exists()) return;
-
-      const inviteData = inviteDoc.data();
-      const menteeUid = inviteData.menteeUid;
-      const mentorUid = inviteData.mentorUid;
-
       // Update invite status to declined
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "declined",
         updatedAt: serverTimestamp(),
       });
-
-      // Decrement the thread's unread count
-      const threadsAsA = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", menteeUid),
-          where("userB", "==", mentorUid)
-        )
-      );
-
-      const threadsAsB = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", mentorUid),
-          where("userB", "==", menteeUid)
-        )
-      );
-
-      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
-
-      if (allThreads.length > 0) {
-        const threadDoc = allThreads[0];
-        const threadData = threadDoc.data();
-        const threadRef = doc(db, "threads", threadDoc.id);
-
-        // Decrement unread count for the person who declined (mentorUid)
-        if (threadData.userA === mentorUid) {
-          await updateDoc(threadRef, {
-            userA_unreadCount: Math.max(
-              0,
-              (threadData.userA_unreadCount || 0) - 1
-            ),
-          });
-        } else if (threadData.userB === mentorUid) {
-          await updateDoc(threadRef, {
-            userB_unreadCount: Math.max(
-              0,
-              (threadData.userB_unreadCount || 0) - 1
-            ),
-          });
-        }
-      }
     } catch (err) {
       console.error("Error declining invite:", err);
       throw new Error("Failed to decline invite");
@@ -516,63 +460,11 @@ export function useAccountabilityRelationships() {
   // Cancel an invite (update status to cancelled)
   const cancelInvite = async (inviteId: string): Promise<void> => {
     try {
-      // Get the invite to find out who it was sent to
-      const inviteDoc = await getDoc(
-        doc(db, "accountabilityRelationships", inviteId)
-      );
-      if (!inviteDoc.exists()) return;
-
-      const inviteData = inviteDoc.data();
-      const menteeUid = inviteData.menteeUid;
-      const mentorUid = inviteData.mentorUid;
-
       // Update invite status
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "cancelled",
         updatedAt: serverTimestamp(),
       });
-
-      // Decrement the thread's unread count for the person who received the invite
-      const threadsAsA = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", menteeUid),
-          where("userB", "==", mentorUid)
-        )
-      );
-
-      const threadsAsB = await getDocs(
-        query(
-          collection(db, "threads"),
-          where("userA", "==", mentorUid),
-          where("userB", "==", menteeUid)
-        )
-      );
-
-      const allThreads = [...threadsAsA.docs, ...threadsAsB.docs];
-
-      if (allThreads.length > 0) {
-        const threadDoc = allThreads[0];
-        const threadData = threadDoc.data();
-        const threadRef = doc(db, "threads", threadDoc.id);
-
-        // Decrement unread count for the person who received the invite (mentorUid)
-        if (threadData.userA === mentorUid) {
-          await updateDoc(threadRef, {
-            userA_unreadCount: Math.max(
-              0,
-              (threadData.userA_unreadCount || 0) - 1
-            ),
-          });
-        } else if (threadData.userB === mentorUid) {
-          await updateDoc(threadRef, {
-            userB_unreadCount: Math.max(
-              0,
-              (threadData.userB_unreadCount || 0) - 1
-            ),
-          });
-        }
-      }
     } catch (err) {
       console.error("Error cancelling invite:", err);
       throw new Error("Failed to cancel invite");
@@ -628,6 +520,10 @@ export function useAccountabilityRelationships() {
 
     // Declined invites (unacknowledged only)
     declinedInvites,
+
+    // ✅ NEW: Recently ended relationships (for banner detection)
+    recentlyEndedMentor,
+    recentlyEndedMentees,
 
     // State
     loading: loading || blockedLoading || blockedByLoading,

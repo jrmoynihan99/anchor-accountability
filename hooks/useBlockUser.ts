@@ -73,7 +73,6 @@ export function useBlockUser() {
         createdAt: serverTimestamp(),
       });
 
-      console.log(`✅ Successfully blocked user: ${userIdToBlock}`);
       return true;
     } catch (err: any) {
       console.error("Error blocking user:", err);

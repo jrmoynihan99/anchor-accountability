@@ -59,7 +59,6 @@ export default function AccountabilityScreen() {
     );
 
     if (!thread) {
-      console.log("No thread found with that mentor!");
       return;
     }
 
