@@ -13,18 +13,25 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type BannerType = "accepted" | "ended-mentor" | "ended-mentee";
+type BannerType =
+  | "accepted"
+  | "ended-mentor"
+  | "ended-mentee"
+  | "declined"
+  | "received";
 
 interface RelationshipBannerProps {
   type: BannerType;
   personName: string;
   onDismiss: () => void;
+  threadId?: string; // ✅ For declined "View" button navigation
 }
 
 export function RelationshipBanner({
   type,
   personName,
   onDismiss,
+  threadId,
 }: RelationshipBannerProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -38,7 +45,7 @@ export function RelationshipBanner({
       iconBackgroundColor: `${colors.white}20`,
       title: "Accountability Partner! 🎉",
       titleColor: colors.white,
-      subtitle: `${personName} accepted your accountability invite!`,
+      subtitle: `${personName} accepted your invite`,
       subtitleColor: colors.white,
       backgroundColor: colors.tint,
       borderColor: undefined,
@@ -52,7 +59,7 @@ export function RelationshipBanner({
       iconBackgroundColor: colors.iconCircleSecondaryBackground,
       title: "Partnership Ended",
       titleColor: colors.text,
-      subtitle: `${personName} ended your partnership. Consider messaging them if this was unexpected.`,
+      subtitle: `${personName} ended the partnership`,
       subtitleColor: colors.textSecondary,
       backgroundColor: colors.cardBackground,
       borderColor: colors.border,
@@ -66,13 +73,41 @@ export function RelationshipBanner({
       iconBackgroundColor: colors.iconCircleSecondaryBackground,
       title: "Partnership Ended",
       titleColor: colors.text,
-      subtitle: `${personName} ended your partnership. Consider messaging them if this was unexpected.`,
+      subtitle: `${personName} ended the partnership`,
       subtitleColor: colors.textSecondary,
       backgroundColor: colors.cardBackground,
       borderColor: colors.border,
       showViewButton: false,
       viewButtonBackground: undefined,
       viewButtonTextColor: undefined,
+    },
+    declined: {
+      icon: "xmark.circle.fill" as const,
+      iconColor: colors.textSecondary,
+      iconBackgroundColor: colors.iconCircleSecondaryBackground,
+      title: "Invite Declined",
+      titleColor: colors.text,
+      subtitle: `${personName} declined your invite`,
+      subtitleColor: colors.textSecondary,
+      backgroundColor: colors.cardBackground,
+      borderColor: colors.error, // ✅ Red border like DeclinedInviteItem
+      showViewButton: true,
+      viewButtonBackground: colors.cardBackground,
+      viewButtonTextColor: colors.textSecondary,
+    },
+    received: {
+      icon: "person.badge.plus" as const,
+      iconColor: colors.white,
+      iconBackgroundColor: `${colors.white}20`,
+      title: "Accountability Invite! 🤝",
+      titleColor: colors.white,
+      subtitle: `${personName} wants you as their partner`,
+      subtitleColor: colors.white,
+      backgroundColor: colors.tint,
+      borderColor: undefined,
+      showViewButton: true,
+      viewButtonBackground: colors.white,
+      viewButtonTextColor: colors.tint,
     },
   };
 
@@ -112,7 +147,19 @@ export function RelationshipBanner({
     handleDismiss();
     // Small delay to let animation start before navigation
     setTimeout(() => {
-      router.push("/(tabs)/accountability");
+      if (type === "declined" && threadId) {
+        // Navigate to thread with modal open
+        router.push({
+          pathname: "/message-thread",
+          params: {
+            threadId,
+            openInviteModal: "true",
+          },
+        });
+      } else {
+        // Navigate to accountability tab for accepted/ended/received
+        router.push("/(tabs)/accountability");
+      }
     }, 100);
   };
 

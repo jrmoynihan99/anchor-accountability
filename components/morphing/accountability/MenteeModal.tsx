@@ -69,7 +69,6 @@ export function MenteeModal({
     close();
 
     if (!thread) {
-      console.log("No thread found for this mentee");
       return;
     }
 
@@ -81,11 +80,6 @@ export function MenteeModal({
         },
       });
     }, 300);
-  };
-
-  const handleReminder = () => {
-    console.log("Send reminder to mentee");
-    // TODO: Implement push notification
   };
 
   const defaultButtonContent = (

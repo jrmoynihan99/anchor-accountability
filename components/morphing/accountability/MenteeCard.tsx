@@ -10,7 +10,6 @@ interface MenteeCardProps {
   checkInStreak: number;
   checkInStatus: CheckInStatus;
   menteeTimezone?: string;
-  onRemind?: () => void;
   onMessage?: () => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
@@ -26,7 +25,6 @@ export function MenteeCard({
   checkInStreak,
   checkInStatus,
   menteeTimezone,
-  onRemind,
   onMessage,
   buttonRef,
   style,
@@ -55,7 +53,6 @@ export function MenteeCard({
             checkInStatus={checkInStatus}
             menteeTimezone={menteeTimezone}
             showExpandIcon={true}
-            onRemind={onRemind}
             onMessage={onMessage}
           />
         </TouchableOpacity>
@@ -74,7 +71,6 @@ export function MenteeCard({
         checkInStreak={checkInStreak}
         checkInStatus={checkInStatus}
         showExpandIcon={true}
-        onRemind={onRemind}
         onMessage={onMessage}
       />
     </View>

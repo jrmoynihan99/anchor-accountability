@@ -2549,3 +2549,263 @@ exports.sendAccountabilityInviteNotification = onDocumentCreated(
     }
   }
 );
+
+// Add these to your Cloud Functions index.js
+
+// --- ACCOUNTABILITY DECLINED NOTIFICATION ---
+exports.sendAccountabilityDeclinedNotification = onDocumentUpdated(
+  "accountabilityRelationships/{relationshipId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // Only trigger when status changes to "declined"
+    if (before.status !== "declined" && after.status === "declined") {
+      const menteeUid = after.menteeUid; // Person who sent the invite
+      const mentorUid = after.mentorUid; // Person who declined
+
+      // Skip if blocked
+      if (await eitherBlocked(menteeUid, mentorUid)) {
+        console.log(
+          `[accountability:declined] Skipping due to block between ${menteeUid} and ${mentorUid}`
+        );
+        return;
+      }
+
+      // Get mentee's user data
+      const menteeDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(menteeUid)
+        .get();
+      if (!menteeDoc.exists) return;
+
+      const menteeData = menteeDoc.data();
+      const wantsAccountability =
+        menteeData.notificationPreferences?.accountability ?? true;
+      const expoPushToken = menteeData.expoPushToken;
+
+      if (
+        !wantsAccountability ||
+        !expoPushToken ||
+        !expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        return;
+      }
+
+      // Find the thread between these users
+      const threadsSnapshot = await admin
+        .firestore()
+        .collection("threads")
+        .where("userA", "in", [menteeUid, mentorUid])
+        .get();
+
+      let threadId = null;
+      for (const doc of threadsSnapshot.docs) {
+        const thread = doc.data();
+        if (
+          (thread.userA === menteeUid && thread.userB === mentorUid) ||
+          (thread.userA === mentorUid && thread.userB === menteeUid)
+        ) {
+          threadId = doc.id;
+          break;
+        }
+      }
+
+      if (!threadId) {
+        console.log(
+          `[accountability:declined] No thread found between ${menteeUid} and ${mentorUid}`
+        );
+        return;
+      }
+
+      try {
+        const totalUnread = await getTotalUnreadForUser(menteeUid);
+        const mentorName = `user-${mentorUid.substring(0, 5)}`;
+
+        await axios.post(
+          "https://exp.host/--/api/v2/push/send",
+          [
+            {
+              to: expoPushToken,
+              sound: "default",
+              title: "Invite Declined",
+              body: `${mentorName} declined your accountability invite`,
+              badge: totalUnread,
+              data: {
+                type: "accountability_declined",
+                threadId,
+                otherUserId: mentorUid,
+              },
+            },
+          ],
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log(
+          `✅ Sent accountability declined notification to ${menteeUid}`
+        );
+      } catch (err) {
+        console.error(
+          `❌ Failed to send accountability declined notification to ${menteeUid}:`,
+          err
+        );
+      }
+    }
+  }
+);
+
+// --- ACCOUNTABILITY ACCEPTED NOTIFICATION ---
+exports.sendAccountabilityAcceptedNotification = onDocumentUpdated(
+  "accountabilityRelationships/{relationshipId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // Only trigger when status changes from pending to active
+    if (before.status === "pending" && after.status === "active") {
+      const menteeUid = after.menteeUid; // Person who sent the invite
+      const mentorUid = after.mentorUid; // Person who accepted
+
+      // Skip if blocked
+      if (await eitherBlocked(menteeUid, mentorUid)) {
+        console.log(
+          `[accountability:accepted] Skipping due to block between ${menteeUid} and ${mentorUid}`
+        );
+        return;
+      }
+
+      // Get mentee's user data
+      const menteeDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(menteeUid)
+        .get();
+      if (!menteeDoc.exists) return;
+
+      const menteeData = menteeDoc.data();
+      const wantsAccountability =
+        menteeData.notificationPreferences?.accountability ?? true;
+      const expoPushToken = menteeData.expoPushToken;
+
+      if (
+        !wantsAccountability ||
+        !expoPushToken ||
+        !expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        return;
+      }
+
+      try {
+        const totalUnread = await getTotalUnreadForUser(menteeUid);
+        const mentorName = `user-${mentorUid.substring(0, 5)}`;
+
+        await axios.post(
+          "https://exp.host/--/api/v2/push/send",
+          [
+            {
+              to: expoPushToken,
+              sound: "default",
+              title: "Accountability Partner! 🎉",
+              body: `${mentorName} accepted your invite`,
+              badge: totalUnread,
+              data: {
+                type: "accountability_accepted",
+              },
+            },
+          ],
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log(
+          `✅ Sent accountability accepted notification to ${menteeUid}`
+        );
+      } catch (err) {
+        console.error(
+          `❌ Failed to send accountability accepted notification to ${menteeUid}:`,
+          err
+        );
+      }
+    }
+  }
+);
+
+// --- ACCOUNTABILITY ENDED NOTIFICATION ---
+exports.sendAccountabilityEndedNotification = onDocumentUpdated(
+  "accountabilityRelationships/{relationshipId}",
+  async (event) => {
+    const before = event.data.before.data();
+    const after = event.data.after.data();
+
+    // Only trigger when status changes from active to ended
+    if (before.status === "active" && after.status === "ended") {
+      const menteeUid = after.menteeUid;
+      const mentorUid = after.mentorUid;
+      const endedByUid = after.endedByUid; // Who ended it
+
+      // Skip if blocked
+      if (await eitherBlocked(menteeUid, mentorUid)) {
+        console.log(
+          `[accountability:ended] Skipping due to block between ${menteeUid} and ${mentorUid}`
+        );
+        return;
+      }
+
+      // Notify the OTHER person (not the one who ended it)
+      const recipientUid = endedByUid === menteeUid ? mentorUid : menteeUid;
+      const enderUid = endedByUid;
+
+      // Get recipient's user data
+      const recipientDoc = await admin
+        .firestore()
+        .collection("users")
+        .doc(recipientUid)
+        .get();
+      if (!recipientDoc.exists) return;
+
+      const recipientData = recipientDoc.data();
+      const wantsAccountability =
+        recipientData.notificationPreferences?.accountability ?? true;
+      const expoPushToken = recipientData.expoPushToken;
+
+      if (
+        !wantsAccountability ||
+        !expoPushToken ||
+        !expoPushToken.startsWith("ExponentPushToken")
+      ) {
+        return;
+      }
+
+      try {
+        const totalUnread = await getTotalUnreadForUser(recipientUid);
+        const enderName = `user-${enderUid.substring(0, 5)}`;
+
+        await axios.post(
+          "https://exp.host/--/api/v2/push/send",
+          [
+            {
+              to: expoPushToken,
+              sound: "default",
+              title: "Partnership Ended",
+              body: `${enderName} ended the accountability partnership`,
+              badge: totalUnread,
+              data: {
+                type: "accountability_ended",
+              },
+            },
+          ],
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        console.log(
+          `✅ Sent accountability ended notification to ${recipientUid}`
+        );
+      } catch (err) {
+        console.error(
+          `❌ Failed to send accountability ended notification to ${recipientUid}:`,
+          err
+        );
+      }
+    }
+  }
+);

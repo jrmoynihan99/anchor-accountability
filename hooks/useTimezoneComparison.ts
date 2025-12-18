@@ -76,10 +76,6 @@ export function useTimezoneComparison(
         const otherUserData = otherUserSnap.data();
         const otherTz = otherUserData.timezone || null;
         setOtherUserTimezone(otherTz);
-
-        console.log(
-          `✅ Fetched timezones - Current: ${currentTz}, Other: ${otherTz}`
-        );
       } catch (err: any) {
         console.error("Error fetching timezones:", err);
         setError(err.message || "Failed to fetch timezones.");

@@ -1,5 +1,5 @@
 // hooks/useCommunityPosts.ts
-import { CommunityPost } from "@/components/community/types";
+import { CommunityPost } from "@/components/morphing/community/types";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,

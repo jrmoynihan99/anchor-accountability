@@ -16,6 +16,10 @@ interface AccountabilityContextType {
   // ✅ NEW: Declined invites
   declinedInvites: any[];
 
+  // ✅ NEW: Recently ended relationships (for banner detection)
+  recentlyEndedMentor: { mentorUid: string; endedByUid: string } | null;
+  recentlyEndedMentees: Array<{ menteeUid: string; endedByUid: string }>;
+
   // State
   loading: boolean;
   error: string | null;
@@ -28,7 +32,7 @@ interface AccountabilityContextType {
   declineInvite: (inviteId: string) => Promise<void>;
   endRelationship: (relationshipId: string) => Promise<void>;
   cancelInvite: (inviteId: string) => Promise<void>;
-  acknowledgeDeclinedInvite: (inviteId: string) => Promise<void>; // ✅ NEW
+  acknowledgeDeclinedInvite: (inviteId: string) => Promise<void>;
   hasPendingInviteWith: (otherUserId: string) => boolean;
   getPendingInviteWith: (otherUserId: string) => any | null;
   getDeclinedInviteWith: (otherUserId: string) => any | null;
@@ -73,8 +77,12 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
         sentInvites: [],
         receivedInvites: [],
 
-        // ✅ NEW: Declined invites
+        // Declined invites
         declinedInvites: [],
+
+        // ✅ NEW: Recently ended relationships
+        recentlyEndedMentor: null,
+        recentlyEndedMentees: [],
 
         // State
         loading: true, // Keep loading until auth is ready
@@ -99,7 +107,6 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
           throw new Error("Not ready");
         },
         acknowledgeDeclinedInvite: async () => {
-          // ✅ NEW
           throw new Error("Not ready");
         },
         hasPendingInviteWith: () => false,

@@ -47,6 +47,17 @@ export function useNotificationHandler(
           return;
         }
 
+        // ✅ NEW: If this is an accountability accepted/ended/declined/invite notification,
+        // don't show system banner (we show custom RelationshipBanner instead)
+        if (
+          data?.type === "accountability_accepted" ||
+          data?.type === "accountability_ended" ||
+          data?.type === "accountability_declined" ||
+          data?.type === "accountability_invite"
+        ) {
+          return;
+        }
+
         // For all other cases, the default behavior will show the banner
         // (this is controlled by the notification handler we set up in _layout.tsx)
       });
@@ -107,7 +118,7 @@ export function useNotificationHandler(
         return;
       }
 
-      // 🆕 Handle accountability invite notifications
+      // Handle accountability invite notifications
       if (data.type === "accountability_invite") {
         // Navigate to the thread with the invite modal open
         router.push({
@@ -123,7 +134,32 @@ export function useNotificationHandler(
         return;
       }
 
-      // 🆕 Handle accountability notifications
+      // ✅ NEW: Handle accountability declined notification
+      if (data.type === "accountability_declined") {
+        // Navigate to the thread with the invite modal open (shows declined state)
+        router.push({
+          pathname: "/message-thread",
+          params: {
+            threadId: data.threadId,
+            otherUserId: data.otherUserId,
+            isNewThread: "false",
+            openInviteModal: "true",
+          },
+        });
+        return;
+      }
+
+      // ✅ NEW: Handle accountability accepted/ended notifications
+      if (
+        data.type === "accountability_accepted" ||
+        data.type === "accountability_ended"
+      ) {
+        // Navigate to accountability tab (banner will show automatically)
+        router.push("/(tabs)/accountability");
+        return;
+      }
+
+      // Handle accountability reminder notifications
       if (data.type === "accountability_reminder") {
         // Mentee needs to check in - open MentorModal
         router.push({
