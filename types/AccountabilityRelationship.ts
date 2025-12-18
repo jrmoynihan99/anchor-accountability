@@ -1,11 +1,32 @@
 import { Timestamp } from "firebase/firestore";
 
+export type AccountabilityRelationshipStatus =
+  | "pending"
+  | "active"
+  | "declined"
+  | "cancelled"
+  | "ended";
+
 export interface AccountabilityRelationship {
   mentorUid: string;
   menteeUid: string;
-  status: "pending" | "active";
+
+  // ✅ You already use these statuses in code + Firestore
+  status: AccountabilityRelationshipStatus;
+
   streak: number;
-  lastCheckIn: string | null; // ISO date string (YYYY-MM-DD) or null
+
+  // ISO date string (YYYY-MM-DD) or null
+  lastCheckIn: string | null;
+
   createdAt: Timestamp;
   updatedAt: Timestamp;
+
+  // ✅ Optional fields that exist depending on lifecycle
+  endedByUid?: string;
+  endedAt?: Timestamp;
+
+  // ✅ Declined invite acknowledgment fields
+  isAcknowledged?: boolean;
+  acknowledgedAt?: Timestamp;
 }

@@ -23,7 +23,7 @@ import { useBlockedByUsers } from "./useBlockedByUsers";
 import { useBlockedUsers } from "./useBlockedUsers";
 
 interface AccountabilityWithId extends AccountabilityRelationship {
-  id: string;
+  id: string; // Firestore doc id
   checkInStatus: CheckInStatus;
   menteeTimezone?: string;
   mentorTimezone?: string;
@@ -31,12 +31,25 @@ interface AccountabilityWithId extends AccountabilityRelationship {
 
 // For pending invites, we don't need check-in status
 interface PendingInvite extends AccountabilityRelationship {
-  id: string;
+  id: string; // Firestore doc id
 }
 
 // For declined invites, same structure as pending
 interface DeclinedInvite extends AccountabilityRelationship {
-  id: string;
+  id: string; // Firestore doc id
+}
+
+// ✅ Ended relationship shapes used for banners (now include relationshipId)
+export interface RecentlyEndedMentorBanner {
+  relationshipId: string;
+  mentorUid: string;
+  endedByUid: string;
+}
+
+export interface RecentlyEndedMenteeBanner {
+  relationshipId: string;
+  menteeUid: string;
+  endedByUid: string;
 }
 
 export function useAccountabilityRelationships() {
@@ -50,16 +63,15 @@ export function useAccountabilityRelationships() {
   const [sentInvites, setSentInvites] = useState<PendingInvite[]>([]);
   const [receivedInvites, setReceivedInvites] = useState<PendingInvite[]>([]);
 
-  // ✅ NEW: Declined invites (sent by me that were declined)
+  // Declined invites (sent by me that were declined)
   const [declinedInvites, setDeclinedInvites] = useState<DeclinedInvite[]>([]);
 
-  // ✅ NEW: Recently ended relationships (for banner detection)
-  const [recentlyEndedMentor, setRecentlyEndedMentor] = useState<{
-    mentorUid: string;
-    endedByUid: string;
-  } | null>(null);
+  // Recently ended relationships (for banner detection)
+  const [recentlyEndedMentor, setRecentlyEndedMentor] =
+    useState<RecentlyEndedMentorBanner | null>(null);
+
   const [recentlyEndedMentees, setRecentlyEndedMentees] = useState<
-    Array<{ menteeUid: string; endedByUid: string }>
+    RecentlyEndedMenteeBanner[]
   >([]);
 
   const [loading, setLoading] = useState(true);
@@ -73,9 +85,9 @@ export function useAccountabilityRelationships() {
   const menteesUnsubRef = useRef<Unsubscribe | null>(null);
   const sentInvitesUnsubRef = useRef<Unsubscribe | null>(null);
   const receivedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
-  const declinedInvitesUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
-  const endedMentorUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
-  const endedMenteesUnsubRef = useRef<Unsubscribe | null>(null); // ✅ NEW
+  const declinedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
+  const endedMentorUnsubRef = useRef<Unsubscribe | null>(null);
+  const endedMenteesUnsubRef = useRef<Unsubscribe | null>(null);
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
@@ -104,7 +116,9 @@ export function useAccountabilityRelationships() {
       setMentees([]);
       setSentInvites([]);
       setReceivedInvites([]);
-      setDeclinedInvites([]); // ✅ NEW
+      setDeclinedInvites([]);
+      setRecentlyEndedMentor(null);
+      setRecentlyEndedMentees([]);
       setLoading(false);
       return;
     }
@@ -220,13 +234,14 @@ export function useAccountabilityRelationships() {
       sentInvitesQuery,
       (snapshot) => {
         const invites = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as AccountabilityRelationship),
           }))
           .filter(
             (invite: any) => !shouldHide(invite.mentorUid)
           ) as PendingInvite[];
+
         setSentInvites(invites);
       },
       (err) => {
@@ -247,13 +262,14 @@ export function useAccountabilityRelationships() {
       receivedInvitesQuery,
       (snapshot) => {
         const invites = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as AccountabilityRelationship),
           }))
           .filter(
             (invite: any) => !shouldHide(invite.menteeUid)
           ) as PendingInvite[];
+
         setReceivedInvites(invites);
       },
       (err) => {
@@ -262,7 +278,7 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // ❌ NEW: LISTEN FOR DECLINED INVITES (I sent, they declined)
+    // ❌ LISTEN FOR DECLINED INVITES (I sent, they declined)
     // ===============================
     const declinedInvitesQuery = query(
       collection(db, "accountabilityRelationships"),
@@ -274,15 +290,15 @@ export function useAccountabilityRelationships() {
       declinedInvitesQuery,
       (snapshot) => {
         const invites = snapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
+          .map((docSnap) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as AccountabilityRelationship),
           }))
           .filter(
             (invite: any) =>
-              !shouldHide(invite.mentorUid) && // Filter blocked users
-              invite.isAcknowledged !== true // ✅ Only show unacknowledged declined invites
+              !shouldHide(invite.mentorUid) && invite.isAcknowledged !== true
           ) as DeclinedInvite[];
+
         setDeclinedInvites(invites);
       },
       (err) => {
@@ -291,7 +307,7 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // 💔 NEW: LISTEN FOR ENDED MENTOR RELATIONSHIP (just to check endedByUid)
+    // 💔 LISTEN FOR ENDED MENTOR RELATIONSHIP (I am the mentee)
     // ===============================
     const endedMentorQuery = query(
       collection(db, "accountabilityRelationships"),
@@ -304,20 +320,19 @@ export function useAccountabilityRelationships() {
       (snapshot) => {
         if (!snapshot.empty) {
           const docSnap = snapshot.docs[0];
-          const data = docSnap.data();
+          const data = docSnap.data() as AccountabilityRelationship;
 
           // Only set if OTHER person ended it
           if (data.endedByUid && data.endedByUid !== uid) {
             setRecentlyEndedMentor({
+              relationshipId: docSnap.id,
               mentorUid: data.mentorUid,
               endedByUid: data.endedByUid,
             });
           } else {
-            // I ended it, don't show banner
             setRecentlyEndedMentor(null);
           }
         } else {
-          // No ended relationship
           setRecentlyEndedMentor(null);
         }
       },
@@ -327,7 +342,7 @@ export function useAccountabilityRelationships() {
     );
 
     // ===============================
-    // 💔 NEW: LISTEN FOR ENDED MENTEE RELATIONSHIPS (just to check endedByUid)
+    // 💔 LISTEN FOR ENDED MENTEE RELATIONSHIPS (I am the mentor)
     // ===============================
     const endedMenteesQuery = query(
       collection(db, "accountabilityRelationships"),
@@ -339,21 +354,20 @@ export function useAccountabilityRelationships() {
       endedMenteesQuery,
       (snapshot) => {
         const ended = snapshot.docs
-          .map((doc) => {
-            const data = doc.data();
+          .map((docSnap) => {
+            const data = docSnap.data() as AccountabilityRelationship;
+
             // Only include if OTHER person ended it
             if (data.endedByUid && data.endedByUid !== uid) {
               return {
+                relationshipId: docSnap.id,
                 menteeUid: data.menteeUid,
                 endedByUid: data.endedByUid,
-              };
+              } satisfies RecentlyEndedMenteeBanner;
             }
             return null;
           })
-          .filter(
-            (item): item is { menteeUid: string; endedByUid: string } =>
-              item !== null
-          );
+          .filter((item): item is RecentlyEndedMenteeBanner => item !== null);
 
         setRecentlyEndedMentees(ended);
       },
@@ -369,9 +383,9 @@ export function useAccountabilityRelationships() {
       menteesUnsubRef.current?.();
       sentInvitesUnsubRef.current?.();
       receivedInvitesUnsubRef.current?.();
-      declinedInvitesUnsubRef.current?.(); // ✅ NEW
-      endedMentorUnsubRef.current?.(); // ✅ NEW
-      endedMenteesUnsubRef.current?.(); // ✅ NEW
+      declinedInvitesUnsubRef.current?.();
+      endedMentorUnsubRef.current?.();
+      endedMenteesUnsubRef.current?.();
     };
   }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
@@ -384,7 +398,6 @@ export function useAccountabilityRelationships() {
     if (!uid) throw new Error("Not authenticated");
 
     try {
-      // Create the invite
       const docRef = await addDoc(
         collection(db, "accountabilityRelationships"),
         {
@@ -410,7 +423,6 @@ export function useAccountabilityRelationships() {
     if (!uid) throw new Error("Not authenticated");
 
     try {
-      // Update invite status to active
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "active",
         updatedAt: serverTimestamp(),
@@ -421,13 +433,10 @@ export function useAccountabilityRelationships() {
     }
   };
 
-  // End a relationship (delete it)
+  // End a relationship (mark ended)
   const endRelationship = async (relationshipId: string): Promise<void> => {
-    const uid = auth.currentUser?.uid;
-
-    if (!uid) {
-      throw new Error("User not authenticated");
-    }
+    const current = auth.currentUser?.uid;
+    if (!current) throw new Error("User not authenticated");
 
     const relationshipRef = doc(
       db,
@@ -437,16 +446,15 @@ export function useAccountabilityRelationships() {
 
     await updateDoc(relationshipRef, {
       status: "ended",
-      endedByUid: uid,
+      endedByUid: current,
       endedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   };
 
-  // Decline an invite (update status to declined)
+  // Decline an invite
   const declineInvite = async (inviteId: string): Promise<void> => {
     try {
-      // Update invite status to declined
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "declined",
         updatedAt: serverTimestamp(),
@@ -457,10 +465,9 @@ export function useAccountabilityRelationships() {
     }
   };
 
-  // Cancel an invite (update status to cancelled)
+  // Cancel an invite
   const cancelInvite = async (inviteId: string): Promise<void> => {
     try {
-      // Update invite status
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
         status: "cancelled",
         updatedAt: serverTimestamp(),
@@ -471,7 +478,7 @@ export function useAccountabilityRelationships() {
     }
   };
 
-  // ✅ NEW: Acknowledge a declined invite (mark it as seen)
+  // Acknowledge a declined invite (mark it as seen)
   const acknowledgeDeclinedInvite = async (inviteId: string): Promise<void> => {
     try {
       await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
@@ -502,7 +509,7 @@ export function useAccountabilityRelationships() {
     );
   };
 
-  // ✅ NEW: Get declined invite with a specific user (if exists)
+  // Get declined invite with a specific user (if exists)
   const getDeclinedInviteWith = (
     otherUserId: string
   ): DeclinedInvite | null => {
@@ -521,7 +528,7 @@ export function useAccountabilityRelationships() {
     // Declined invites (unacknowledged only)
     declinedInvites,
 
-    // ✅ NEW: Recently ended relationships (for banner detection)
+    // Recently ended relationships (for banner detection)
     recentlyEndedMentor,
     recentlyEndedMentees,
 
@@ -535,7 +542,7 @@ export function useAccountabilityRelationships() {
     declineInvite,
     endRelationship,
     cancelInvite,
-    acknowledgeDeclinedInvite, // ✅ NEW
+    acknowledgeDeclinedInvite,
     hasPendingInviteWith,
     getPendingInviteWith,
     getDeclinedInviteWith,

@@ -1,6 +1,7 @@
 // hooks/useAccountabilityBanners.ts
 import { useAccountability } from "@/context/AccountabilityContext";
 import { auth, db } from "@/lib/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 
@@ -11,12 +12,14 @@ type BannerType =
   | "declined"
   | "received";
 
-interface BannerState {
-  showBanner: boolean;
-  bannerType: BannerType;
+interface BannerEvent {
+  key: string;
+  type: BannerType;
   personName: string;
   threadId?: string;
 }
+
+const ACK_STORAGE_PREFIX = "accountability_banner_ack_v1";
 
 export function useAccountabilityBanners() {
   const currentUid = auth.currentUser?.uid;
@@ -27,24 +30,24 @@ export function useAccountabilityBanners() {
     recentlyEndedMentees,
     declinedInvites,
     receivedInvites,
-    loading: accountabilityLoading,
+    loading,
   } = useAccountability();
 
-  const [bannerState, setBannerState] = useState<BannerState>({
-    showBanner: false,
-    bannerType: "accepted",
-    personName: "",
-    threadId: undefined,
-  });
+  const [queue, setQueue] = useState<BannerEvent[]>([]);
+  const [activeEvent, setActiveEvent] = useState<BannerEvent | null>(null);
 
-  // Refs to track previous values
-  const prevMentorRef = useRef(mentor);
-  const prevEndedMentorRef = useRef(recentlyEndedMentor);
-  const prevEndedMenteesRef = useRef(recentlyEndedMentees);
-  const prevDeclinedInvitesRef = useRef(declinedInvites);
-  const prevReceivedInvitesRef = useRef(receivedInvites);
+  // Track previous relationship doc IDs to detect transitions
+  const prevMentorDocId = useRef<string | null>(null);
+  const prevDeclinedIds = useRef<Set<string>>(new Set());
+  const prevReceivedIds = useRef<Set<string>>(new Set());
+  const prevEndedMentorId = useRef<string | null>(null);
+  const prevEndedMenteeIds = useRef<Set<string>>(new Set());
 
-  // Helper to find threadId for a given user
+  const ackKey = currentUid
+    ? `${ACK_STORAGE_PREFIX}_${currentUid}`
+    : `${ACK_STORAGE_PREFIX}_anonymous`;
+
+  // Helper: find threadId for declined invite
   const findThreadId = async (
     otherUserId: string
   ): Promise<string | undefined> => {
@@ -58,10 +61,7 @@ export function useAccountabilityBanners() {
           where("userB", "==", otherUserId)
         )
       );
-
-      if (!threadsAsA.empty) {
-        return threadsAsA.docs[0].id;
-      }
+      if (!threadsAsA.empty) return threadsAsA.docs[0].id;
 
       const threadsAsB = await getDocs(
         query(
@@ -70,127 +70,163 @@ export function useAccountabilityBanners() {
           where("userB", "==", currentUid)
         )
       );
-
-      if (!threadsAsB.empty) {
-        return threadsAsB.docs[0].id;
-      }
-
-      return undefined;
-    } catch (error) {
-      console.error("Error finding thread:", error);
-      return undefined;
+      if (!threadsAsB.empty) return threadsAsB.docs[0].id;
+    } catch (err) {
+      console.error("Error finding thread:", err);
     }
+
+    return undefined;
   };
 
-  // Single useEffect to detect all banner conditions
+  // Derive banner events from lifecycle transitions
   useEffect(() => {
-    if (accountabilityLoading || !currentUid) return;
+    if (loading || !currentUid || activeEvent) return;
 
-    // 1. Check for accepted invite (mentor appears)
-    if (!prevMentorRef.current && mentor) {
-      const name = `user-${mentor.mentorUid.substring(0, 5)}`;
-      setBannerState({
-        showBanner: true,
-        bannerType: "accepted",
-        personName: name,
-        threadId: undefined,
-      });
-      prevMentorRef.current = mentor;
-      return;
-    }
+    const run = async () => {
+      const stored = await AsyncStorage.getItem(ackKey);
+      const acknowledged = new Set<string>(JSON.parse(stored || "[]"));
 
-    // 2. Check for ended mentor (recentlyEndedMentor appears)
-    if (!prevEndedMentorRef.current && recentlyEndedMentor) {
-      const name = `user-${recentlyEndedMentor.mentorUid.substring(0, 5)}`;
-      setBannerState({
-        showBanner: true,
-        bannerType: "ended-mentor",
-        personName: name,
-        threadId: undefined,
-      });
-      prevEndedMentorRef.current = recentlyEndedMentor;
-      return;
-    }
+      const events: BannerEvent[] = [];
 
-    // 3. Check for ended mentee (recentlyEndedMentees appears)
-    if (
-      prevEndedMenteesRef.current.length === 0 &&
-      recentlyEndedMentees.length > 0
-    ) {
-      const ended = recentlyEndedMentees[0];
-      const name = `user-${ended.menteeUid.substring(0, 5)}`;
-      setBannerState({
-        showBanner: true,
-        bannerType: "ended-mentee",
-        personName: name,
-        threadId: undefined,
-      });
-      prevEndedMenteesRef.current = recentlyEndedMentees;
-      return;
-    }
+      // 1. Accepted (mentor doc appears or changes)
+      if (mentor && mentor.relationshipId !== prevMentorDocId.current) {
+        const key = `${mentor.relationshipId}:accepted`;
+        if (!acknowledged.has(key)) {
+          events.push({
+            key,
+            type: "accepted",
+            personName: `user-${mentor.mentorUid.slice(0, 5)}`,
+          });
+        }
+        prevMentorDocId.current = mentor.relationshipId;
+      }
 
-    // 4. Check for declined invite (declinedInvites appears)
-    if (
-      prevDeclinedInvitesRef.current.length === 0 &&
-      declinedInvites.length > 0
-    ) {
-      const declined = declinedInvites[0];
-      const name = `user-${declined.mentorUid.substring(0, 5)}`;
-      // Need to find threadId for this user
-      findThreadId(declined.mentorUid).then((threadId) => {
-        setBannerState({
-          showBanner: true,
-          bannerType: "declined",
-          personName: name,
-          threadId,
-        });
-      });
-      prevDeclinedInvitesRef.current = declinedInvites;
-      return;
-    }
+      // 2. Ended mentor
+      if (
+        recentlyEndedMentor &&
+        recentlyEndedMentor.relationshipId !== prevEndedMentorId.current
+      ) {
+        const key = `${recentlyEndedMentor.relationshipId}:ended-mentor`;
+        if (!acknowledged.has(key)) {
+          events.push({
+            key,
+            type: "ended-mentor",
+            personName: `user-${recentlyEndedMentor.mentorUid.slice(0, 5)}`,
+          });
+        }
+        prevEndedMentorId.current = recentlyEndedMentor.relationshipId;
+      }
 
-    // 5. Check for received invite (receivedInvites appears)
-    if (
-      prevReceivedInvitesRef.current.length === 0 &&
-      receivedInvites.length > 0
-    ) {
-      const received = receivedInvites[0];
-      const name = `user-${received.menteeUid.substring(0, 5)}`;
-      setBannerState({
-        showBanner: true,
-        bannerType: "received",
-        personName: name,
-        threadId: undefined,
-      });
-      prevReceivedInvitesRef.current = receivedInvites;
-      return;
-    }
+      // 3. Ended mentees
+      for (const ended of recentlyEndedMentees) {
+        if (!prevEndedMenteeIds.current.has(ended.relationshipId)) {
+          const key = `${ended.relationshipId}:ended-mentee`;
+          if (!acknowledged.has(key)) {
+            events.push({
+              key,
+              type: "ended-mentee",
+              personName: `user-${ended.menteeUid.slice(0, 5)}`,
+            });
+          }
+          prevEndedMenteeIds.current.add(ended.relationshipId);
+        }
+      }
 
-    // Update all refs
-    prevMentorRef.current = mentor;
-    prevEndedMentorRef.current = recentlyEndedMentor;
-    prevEndedMenteesRef.current = recentlyEndedMentees;
-    prevDeclinedInvitesRef.current = declinedInvites;
-    prevReceivedInvitesRef.current = receivedInvites;
+      // 4. Declined invites
+      for (const declined of declinedInvites) {
+        if (!prevDeclinedIds.current.has(declined.relationshipId)) {
+          const key = `${declined.relationshipId}:declined`;
+          if (!acknowledged.has(key)) {
+            const threadId = await findThreadId(declined.mentorUid);
+            events.push({
+              key,
+              type: "declined",
+              personName: `user-${declined.mentorUid.slice(0, 5)}`,
+              threadId,
+            });
+          }
+          prevDeclinedIds.current.add(declined.relationshipId);
+        }
+      }
+
+      // 5. Received invites
+      for (const received of receivedInvites) {
+        if (!prevReceivedIds.current.has(received.relationshipId)) {
+          const key = `${received.relationshipId}:received`;
+          if (!acknowledged.has(key)) {
+            events.push({
+              key,
+              type: "received",
+              personName: `user-${received.menteeUid.slice(0, 5)}`,
+            });
+          }
+          prevReceivedIds.current.add(received.relationshipId);
+        }
+      }
+
+      if (events.length > 0) {
+        setQueue(events);
+        setActiveEvent(events[0]);
+      }
+    };
+
+    run();
   }, [
     mentor,
     recentlyEndedMentor,
     recentlyEndedMentees,
     declinedInvites,
     receivedInvites,
-    accountabilityLoading,
+    loading,
     currentUid,
+    activeEvent,
   ]);
 
+  // Acknowledge immediately when shown
+  useEffect(() => {
+    if (!activeEvent) return;
+
+    const acknowledge = async () => {
+      const stored = await AsyncStorage.getItem(ackKey);
+      const acknowledged = new Set<string>(JSON.parse(stored || "[]"));
+
+      if (acknowledged.has(activeEvent.key)) return;
+
+      acknowledged.add(activeEvent.key);
+
+      await AsyncStorage.setItem(
+        ackKey,
+        JSON.stringify(Array.from(acknowledged))
+      );
+    };
+
+    acknowledge();
+  }, [activeEvent, ackKey]);
+
   const dismissBanner = () => {
-    setBannerState((prev) => ({ ...prev, showBanner: false }));
+    setQueue((prev) => prev.slice(1));
+    setActiveEvent(null);
   };
 
+  // Advance queue
+  useEffect(() => {
+    if (!activeEvent && queue.length > 0) {
+      setActiveEvent(queue[0]);
+    }
+  }, [activeEvent, queue]);
+
+  if (!activeEvent) {
+    return {
+      showBanner: false as const,
+      dismissBanner,
+    };
+  }
+
   return {
-    showBanner: bannerState.showBanner,
-    bannerType: bannerState.bannerType,
-    personName: bannerState.personName,
-    threadId: bannerState.threadId,
+    showBanner: true as const,
+    bannerType: activeEvent.type,
+    personName: activeEvent.personName,
+    threadId: activeEvent.threadId,
     dismissBanner,
   };
 }
