@@ -1,4 +1,7 @@
 // components/messages/SupportingYouSection.tsx
+import { PartnershipInfoButton } from "@/components/morphing/accountability/partnership-info/PartnershipInfoButton";
+import { PartnershipInfoModal } from "@/components/morphing/accountability/partnership-info/PartnershipInfoModal";
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
@@ -14,7 +17,7 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
 } from "react-native-reanimated";
-import { DeclinedInviteItem } from "../DeclinedInviteItem"; // ✅ NEW
+import { DeclinedInviteItem } from "../DeclinedInviteItem";
 import { SentInviteItem } from "../SentInviteItem";
 
 interface InviteWithData {
@@ -30,16 +33,16 @@ export function SupportingYouSection({
   scrollY: SharedValue<number>;
 }) {
   const { colors } = useTheme();
-  const { sentInvites, declinedInvites } = useAccountability(); // ✅ Add declinedInvites
+  const { sentInvites, declinedInvites } = useAccountability();
   const { threads } = useThreads();
   const [sentInvitesWithData, setSentInvitesWithData] = useState<
     InviteWithData[]
   >([]);
   const [declinedInvitesWithData, setDeclinedInvitesWithData] = useState<
     InviteWithData[]
-  >([]); // ✅ NEW
+  >([]);
 
-  // ✅ Fetch sent invites data
+  // Fetch sent invites data
   useEffect(() => {
     const fetchInviteData = async () => {
       const inviteDataPromises = sentInvites.map(async (invite) => {
@@ -84,7 +87,7 @@ export function SupportingYouSection({
     }
   }, [sentInvites, threads]);
 
-  // ✅ NEW: Fetch declined invites data
+  // Fetch declined invites data
   useEffect(() => {
     const fetchDeclinedInviteData = async () => {
       const inviteDataPromises = declinedInvites.map(async (invite) => {
@@ -156,17 +159,57 @@ export function SupportingYouSection({
             />
           </View>
           <View style={styles.headerText}>
-            <ThemedText
-              type="title"
-              style={[styles.headerTitle, { color: colors.text }]}
-            >
-              Supporting You
-            </ThemedText>
+            <View style={styles.titleRow}>
+              <ThemedText
+                type="title"
+                style={[styles.headerTitle, { color: colors.text }]}
+              >
+                Your Anchor Partner
+              </ThemedText>
+              {/* Info button modal */}
+              <ButtonModalTransitionBridge
+                buttonBorderRadius={12}
+                modalBorderRadius={28}
+                modalWidthPercent={0.9}
+                modalHeightPercent={0.7}
+                buttonFadeThreshold={0.01}
+              >
+                {({
+                  open,
+                  close,
+                  isModalVisible,
+                  progress,
+                  buttonAnimatedStyle,
+                  modalAnimatedStyle,
+                  buttonRef,
+                  handlePressIn,
+                  handlePressOut,
+                }) => (
+                  <>
+                    <PartnershipInfoButton
+                      colors={colors}
+                      onPress={open}
+                      buttonRef={buttonRef}
+                      style={buttonAnimatedStyle}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                    />
+
+                    <PartnershipInfoModal
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                    />
+                  </>
+                )}
+              </ButtonModalTransitionBridge>
+            </View>
             <ThemedText
               type="caption"
               style={[styles.headerSubtitle, { color: colors.textSecondary }]}
             >
-              Your accountability partner lead
+              Someone supporting you through recovery
             </ThemedText>
           </View>
         </View>
@@ -187,7 +230,7 @@ export function SupportingYouSection({
             ACCOUNTABILITY INVITES SENT
           </ThemedText>
 
-          {/* ✅ Show declined invites first */}
+          {/* Show declined invites first */}
           {declinedInvitesWithData.map((inviteData) => (
             <DeclinedInviteItem
               key={inviteData.inviteId}
@@ -239,6 +282,10 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerTitle: {
     lineHeight: 22,

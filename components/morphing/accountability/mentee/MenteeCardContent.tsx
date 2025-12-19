@@ -3,29 +3,27 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/context/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { CheckInStatus, getLocalTimeForTimezone } from "./accountabilityUtils";
+import { CheckInStatus, getLocalTimeForTimezone } from "../accountabilityUtils";
 
-interface MentorCardContentProps {
-  mentorUid: string;
-  streak: number;
+interface MenteeCardContentProps {
+  menteeUid: string;
+  recoveryStreak: number;
+  checkInStreak: number;
   checkInStatus: CheckInStatus;
-  mentorTimezone?: string;
+  menteeTimezone?: string;
   showExpandIcon?: boolean;
-  onCheckIn?: () => void;
-  onSOS?: () => void;
   onMessage?: () => void;
 }
 
-export function MentorCardContent({
-  mentorUid,
+export function MenteeCardContent({
+  menteeUid,
   checkInStatus,
-  mentorTimezone,
+  menteeTimezone,
   showExpandIcon = true,
-  onCheckIn,
   onMessage,
-}: MentorCardContentProps) {
+}: MenteeCardContentProps) {
   const { colors } = useTheme();
-  const localTime = getLocalTimeForTimezone(mentorTimezone);
+  const localTime = getLocalTimeForTimezone(menteeTimezone);
 
   const ExpandIcon = () => {
     if (!showExpandIcon) return null;
@@ -40,18 +38,16 @@ export function MentorCardContent({
   };
 
   // Generate anonymous username
-  const anonymousUsername = `user-${mentorUid.slice(0, 5)}`;
+  const anonymousUsername = `user-${menteeUid.slice(0, 5)}`;
 
   // Get the actual color from the theme
   const statusColor = colors[checkInStatus.colorKey];
-
-  const handleCheckIn = () => onCheckIn?.();
 
   return (
     <View style={{ position: "relative" }}>
       <ExpandIcon />
 
-      {/* ----- HEADER ----- */}
+      {/* Header - matching PleaCardContent */}
       <View style={styles.cardHeader}>
         <View style={styles.userInfo}>
           <View
@@ -67,7 +63,6 @@ export function MentorCardContent({
               {anonymousUsername[5]?.toUpperCase() || "U"}
             </ThemedText>
           </View>
-
           <View style={styles.userDetails}>
             <View style={styles.usernameRow}>
               <ThemedText
@@ -76,7 +71,7 @@ export function MentorCardContent({
               >
                 {anonymousUsername}
               </ThemedText>
-              <UserStreakDisplay userId={mentorUid} size="small" />
+              <UserStreakDisplay userId={menteeUid} size="small" />
             </View>
             {localTime && (
               <ThemedText
@@ -114,81 +109,36 @@ export function MentorCardContent({
         </View>
       </View>
 
-      {/* ----- ACTION BUTTONS ----- */}
-      <View style={styles.buttonRow}>
-        {/* CHECK IN BUTTON (active or disabled) */}
-        {checkInStatus.hasCheckedInToday ? (
-          <View
-            style={[
-              styles.actionButton,
-              {
-                backgroundColor: colors.bannerBackground,
-                borderColor: colors.bannerBorder,
-                borderWidth: 1,
-              },
-            ]}
-          >
-            <IconSymbol
-              name="checkmark.circle"
-              color={colors.textSecondary}
-              size={18}
-              style={{ marginRight: 6, opacity: 0.7 }}
-            />
-            <ThemedText
-              type="button"
-              style={{
-                color: colors.textSecondary,
-                opacity: 0.8,
-              }}
-            >
-              Checked In
-            </ThemedText>
-          </View>
-        ) : (
+      {/* Quick Actions */}
+      {onMessage && (
+        <View style={styles.buttonRow}>
           <TouchableOpacity
             style={[
               styles.actionButton,
-              { backgroundColor: colors.buttonBackground },
+              {
+                backgroundColor: `${colors.buttonBackground}30`,
+                borderWidth: 1,
+                borderColor: colors.buttonBackground,
+              },
             ]}
-            onPress={handleCheckIn}
+            onPress={onMessage}
             activeOpacity={0.85}
           >
             <IconSymbol
-              name="checkmark.circle.fill"
-              color={colors.white}
+              name="message.fill"
+              color={colors.buttonBackground}
               size={18}
               style={{ marginRight: 6 }}
             />
-            <ThemedText type="button" style={{ color: colors.white }}>
-              Check In
+            <ThemedText
+              type="button"
+              style={{ color: colors.buttonBackground }}
+            >
+              Message
             </ThemedText>
           </TouchableOpacity>
-        )}
-
-        {/* MESSAGE BUTTON */}
-        <TouchableOpacity
-          style={[
-            styles.actionButton,
-            {
-              backgroundColor: `${colors.buttonBackground}30`,
-              borderWidth: 1,
-              borderColor: colors.buttonBackground,
-            },
-          ]}
-          onPress={onMessage}
-          activeOpacity={0.85}
-        >
-          <IconSymbol
-            name="message.fill"
-            color={colors.buttonBackground}
-            size={18}
-            style={{ marginRight: 6 }}
-          />
-          <ThemedText type="button" style={{ color: colors.buttonBackground }}>
-            Message
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -244,7 +194,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   hintText: {
-    opacity: 0.85,
+    opacity: 1,
   },
   buttonRow: {
     flexDirection: "row",

@@ -63,7 +63,7 @@ export function GuidelinesView({
           >
             Before sending your invite to {threadName}, please read these
             guidelines carefully. They'll help both of you have a successful
-            partnership.
+            Anchor Partnership.
           </ThemedText>
         </View>
 
@@ -93,10 +93,11 @@ export function GuidelinesView({
             type="body"
             style={[styles.bodyText, { color: colors.textSecondary }]}
           >
-            This is a peer accountability partnership. Both of you are real
-            people, both navigating your own challenges. You’re asking{" "}
-            {threadName} to walk with you and be a steady presence as you build
-            honesty and consistency in your recovery.
+            This is a peer accountability partnership where {threadName} serves
+            as your Anchor Partner. Both of you are real people, both navigating
+            your own challenges. You're asking {threadName} to be a steady,
+            grounding presence as you build honesty and consistency in your
+            recovery.
           </ThemedText>
         </View>
 
@@ -205,11 +206,6 @@ export function GuidelinesView({
           </View>
           <View style={styles.bulletList}>
             <BulletPoint
-              text="Your recovery is ultimately your responsibility"
-              colors={colors}
-              bold
-            />
-            <BulletPoint
               text="Either party can end the partnership anytime, no hard feelings"
               colors={colors}
             />
@@ -248,8 +244,7 @@ export function GuidelinesView({
           >
             This partnership requires daily engagement from both parties. If
             you're not ready for that level of commitment right now, that's
-            completely okay - anonymous support is still available to you
-            anytime.
+            completely okay.
           </ThemedText>
         </View>
 

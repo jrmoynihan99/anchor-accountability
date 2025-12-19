@@ -2,8 +2,16 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/context/ThemeContext";
 import { StyleSheet, View } from "react-native";
 
-export function EmptyMentorCard() {
+interface EmptyMenteeCardProps {
+  position: number; // 1, 2, or 3
+}
+
+export function EmptyMenteeCard({ position }: EmptyMenteeCardProps) {
   const { colors } = useTheme();
+
+  const getMessage = () => {
+    return "You can be up to 3 people's Anchor Partner. Users can invite you via private chat";
+  };
 
   return (
     <View
@@ -23,7 +31,7 @@ export function EmptyMentorCard() {
           },
         ]}
       >
-        Invite users to be your accountability partner via private chat
+        {getMessage()}
       </ThemedText>
     </View>
   );
@@ -33,8 +41,8 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     borderRadius: 20,
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: 8,
     borderWidth: 2,
     borderStyle: "dashed",
     minHeight: 120,

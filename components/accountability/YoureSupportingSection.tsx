@@ -1,4 +1,7 @@
 // components/messages/YoureSupportingSection.tsx
+import { PartnershipInfoButton } from "@/components/morphing/accountability/partnership-info/PartnershipInfoButton";
+import { PartnershipInfoModal } from "@/components/morphing/accountability/partnership-info/PartnershipInfoModal";
+import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
@@ -85,17 +88,57 @@ export function YoureSupportingSection() {
             />
           </View>
           <View style={styles.headerText}>
-            <ThemedText
-              type="title"
-              style={[styles.headerTitle, { color: colors.text }]}
-            >
-              You're Supporting
-            </ThemedText>
+            <View style={styles.titleRow}>
+              <ThemedText
+                type="title"
+                style={[styles.headerTitle, { color: colors.text }]}
+              >
+                People You're Supporting
+              </ThemedText>
+              {/* Info button modal */}
+              <ButtonModalTransitionBridge
+                buttonBorderRadius={12}
+                modalBorderRadius={28}
+                modalWidthPercent={0.9}
+                modalHeightPercent={0.7}
+                buttonFadeThreshold={0.01}
+              >
+                {({
+                  open,
+                  close,
+                  isModalVisible,
+                  progress,
+                  buttonAnimatedStyle,
+                  modalAnimatedStyle,
+                  buttonRef,
+                  handlePressIn,
+                  handlePressOut,
+                }) => (
+                  <>
+                    <PartnershipInfoButton
+                      colors={colors}
+                      onPress={open}
+                      buttonRef={buttonRef}
+                      style={buttonAnimatedStyle}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                    />
+
+                    <PartnershipInfoModal
+                      isVisible={isModalVisible}
+                      progress={progress}
+                      modalAnimatedStyle={modalAnimatedStyle}
+                      close={close}
+                    />
+                  </>
+                )}
+              </ButtonModalTransitionBridge>
+            </View>
             <ThemedText
               type="caption"
               style={[styles.headerSubtitle, { color: colors.textSecondary }]}
             >
-              People who have you as their accountability partner lead
+              People you're supporting through recovery
             </ThemedText>
           </View>
         </View>
@@ -144,6 +187,10 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   headerTitle: {
     lineHeight: 22,

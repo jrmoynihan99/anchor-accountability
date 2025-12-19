@@ -63,7 +63,7 @@ export function CheckInSection({
               ? `Add a check-in for ${displayDate}`
               : checkInStatus.hasCheckedInToday
               ? "You've checked in today"
-              : "How are you doing today?"}
+              : "How were things today?"}
           </ThemedText>
         </View>
       </View>

@@ -13,8 +13,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MenteeModal } from "../../morphing/accountability/MenteeModal";
-import { MentorModal } from "../../morphing/accountability/MentorModal";
+import { MenteeModal } from "../../morphing/accountability/mentee/MenteeModal";
+import { MentorModal } from "../../morphing/accountability/mentor/MentorModal";
 import { AccountabilityInviteButton } from "../../morphing/message-thread/accountability/AccountabilityInviteButton";
 import { AccountabilityInviteModal } from "../../morphing/message-thread/accountability/AccountabilityInviteModal";
 import { MessageInputProps } from "./types";

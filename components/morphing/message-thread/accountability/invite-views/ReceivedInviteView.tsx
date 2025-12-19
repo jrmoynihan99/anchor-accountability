@@ -84,13 +84,13 @@ export function ReceivedInviteView({
           />
         </View>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Accountability Invite
+          Anchor Partner Invite
         </ThemedText>
         <ThemedText
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          {threadName} has asked you to be their accountability partner
+          {threadName} has asked you to be their Anchor Partner
         </ThemedText>
       </View>
 
@@ -134,7 +134,7 @@ export function ReceivedInviteView({
           type="captionMedium"
           style={[styles.sectionTitle, { color: colors.textSecondary }]}
         >
-          Your Responsibilities as Their Partner:
+          Your Responsibilities as Their Anchor Partner:
         </ThemedText>
         <FeatureItem
           icon="checkmark.circle.fill"

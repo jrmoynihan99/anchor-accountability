@@ -66,7 +66,7 @@ export function DefaultInviteView({
           <IconSymbol name="person.2.fill" size={32} color={colors.tint} />
         </View>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Request Accountability Partner
+          Request Anchor Partner
         </ThemedText>
         <ThemedText
           type="body"

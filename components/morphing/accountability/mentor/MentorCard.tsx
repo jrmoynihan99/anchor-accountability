@@ -1,15 +1,16 @@
 import { useTheme } from "@/context/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { CheckInStatus } from "./accountabilityUtils";
-import { MenteeCardContent } from "./MenteeCardContent";
+import { CheckInStatus } from "../accountabilityUtils";
+import { MentorCardContent } from "./MentorCardContent";
 
-interface MenteeCardProps {
-  menteeUid: string;
-  recoveryStreak: number;
-  checkInStreak: number;
+interface MentorCardProps {
+  mentorUid: string;
+  streak: number;
   checkInStatus: CheckInStatus;
-  menteeTimezone?: string;
+  mentorTimezone?: string; // ADD THIS
+  onCheckIn?: () => void;
+  onSOS?: () => void;
   onMessage?: () => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
@@ -19,19 +20,20 @@ interface MenteeCardProps {
   onPressOut?: () => void;
 }
 
-export function MenteeCard({
-  menteeUid,
-  recoveryStreak,
-  checkInStreak,
+export function MentorCard({
+  mentorUid,
+  streak,
   checkInStatus,
-  menteeTimezone,
+  mentorTimezone, // ADD THIS
+  onCheckIn,
+  onSOS,
   onMessage,
   buttonRef,
   style,
   onPress,
   onPressIn,
   onPressOut,
-}: MenteeCardProps) {
+}: MentorCardProps) {
   const { colors } = useTheme();
 
   // If we have modal bridge props, make it touchable
@@ -46,14 +48,15 @@ export function MenteeCard({
           onPressOut={onPressOut}
           activeOpacity={1}
         >
-          <MenteeCardContent
-            menteeUid={menteeUid}
-            recoveryStreak={recoveryStreak}
-            checkInStreak={checkInStreak}
+          <MentorCardContent
+            mentorUid={mentorUid}
+            streak={streak}
             checkInStatus={checkInStatus}
-            menteeTimezone={menteeTimezone}
-            showExpandIcon={true}
+            mentorTimezone={mentorTimezone} // PASS IT DOWN
+            onCheckIn={onCheckIn}
+            onSOS={onSOS}
             onMessage={onMessage}
+            showExpandIcon={true}
           />
         </TouchableOpacity>
       </Animated.View>
@@ -65,13 +68,15 @@ export function MenteeCard({
     <View
       style={[styles.container, { backgroundColor: colors.cardBackground }]}
     >
-      <MenteeCardContent
-        menteeUid={menteeUid}
-        recoveryStreak={recoveryStreak}
-        checkInStreak={checkInStreak}
+      <MentorCardContent
+        mentorUid={mentorUid}
+        streak={streak}
         checkInStatus={checkInStatus}
-        showExpandIcon={true}
+        mentorTimezone={mentorTimezone} // PASS IT DOWN
+        onCheckIn={onCheckIn}
+        onSOS={onSOS}
         onMessage={onMessage}
+        showExpandIcon={true}
       />
     </View>
   );
@@ -82,7 +87,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 20,
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },

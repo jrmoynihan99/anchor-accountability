@@ -6,13 +6,13 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
-import { BaseModal } from "../BaseModal";
-import { AccountabilityModalHeader } from "./AccountabilityModalHeader";
-import { CheckInStatus } from "./accountabilityUtils";
-import { CheckInSection } from "./CheckInSection";
-import { EndRelationship } from "./EndRelationship";
+import { BaseModal } from "../../BaseModal";
+import { AccountabilityModalHeader } from "../AccountabilityModalHeader";
+import { CheckInStatus } from "../accountabilityUtils";
+import { CheckInSection } from "../CheckInSection";
+import { EndRelationship } from "../EndRelationship";
+import { RecentCheckInsSection } from "../RecentCheckInsSection";
 import { MentorCardContent } from "./MentorCardContent";
-import { RecentCheckInsSection } from "./RecentCheckInsSection";
 
 interface MentorModalProps {
   mentorUid: string;
