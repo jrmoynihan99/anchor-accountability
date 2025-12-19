@@ -42,7 +42,7 @@ export function MentorGuidelinesView({
             type="title"
             style={[styles.title, { color: colors.text }]}
           >
-            Partnership Guidelines
+            Anchor Partnership Guidelines
           </ThemedText>
         </View>
 
@@ -61,9 +61,9 @@ export function MentorGuidelinesView({
             type="body"
             style={[styles.introText, { color: colors.text }]}
           >
-            {threadName} has asked you to be their accountability partner.
-            Before accepting, please read these guidelines carefully so you
-            understand what you're committing to.
+            {threadName} has asked you to be their Anchor Partner. Before
+            accepting, please read these guidelines carefully so you understand
+            what you're committing to.
           </ThemedText>
         </View>
 
@@ -93,10 +93,9 @@ export function MentorGuidelinesView({
             type="body"
             style={[styles.bodyText, { color: colors.textSecondary }]}
           >
-            This is a peer accountability partnership. You're agreeing to walk
-            alongside {threadName} as they work toward freedom from pornography.
-            You'll be a steady, supportive presence—not a therapist or savior,
-            but a trusted companion on their journey.
+            This is a peer accountability partnership where you serve as{" "}
+            {threadName}'s Anchor Partner. You're agreeing to be a steady,
+            grounding presence as they work toward freedom from pornography
           </ThemedText>
         </View>
 
@@ -119,7 +118,7 @@ export function MentorGuidelinesView({
               type="subtitleSemibold"
               style={[styles.sectionTitle, { color: colors.text }]}
             >
-              Your Role as Their Partner
+              Your Role as Their Anchor Partner
             </ThemedText>
           </View>
           <View style={styles.bulletList}>
@@ -266,7 +265,7 @@ export function MentorGuidelinesView({
             Supporting someone in recovery requires consistent daily engagement
             and emotional availability. This is a meaningful commitment. If
             you're not in a place to take this on right now, that's completely
-            okay—declining doesn't mean you don't care.
+            okay!
           </ThemedText>
         </View>
 
@@ -299,8 +298,8 @@ export function MentorGuidelinesView({
             type="body"
             style={[styles.checkboxText, { color: colors.text }]}
           >
-            I understand this commitment and I'm ready to support {threadName}{" "}
-            with empathy, consistency, and without judgment.
+            I understand this commitment and I'm ready to be {threadName}'s{" "}
+            Anchor Partner with empathy, consistency, and without judgment.
           </ThemedText>
         </TouchableOpacity>
 

@@ -6,12 +6,12 @@ import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
-import { BaseModal } from "../BaseModal";
-import { AccountabilityModalHeader } from "./AccountabilityModalHeader";
-import { EndRelationship } from "./EndRelationship";
-import { LatestCheckInSection } from "./LatestCheckInSection";
+import { BaseModal } from "../../BaseModal";
+import { AccountabilityModalHeader } from "../AccountabilityModalHeader";
+import { EndRelationship } from "../EndRelationship";
+import { LatestCheckInSection } from "../LatestCheckInSection";
+import { RecentCheckInsSection } from "../RecentCheckInsSection";
 import { MenteeCardContent } from "./MenteeCardContent";
-import { RecentCheckInsSection } from "./RecentCheckInsSection";
 
 interface MenteeModalProps {
   menteeUid: string;

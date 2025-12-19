@@ -5,9 +5,9 @@ import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import { View } from "react-native";
-import { EmptyMenteeCard } from "../morphing/accountability/EmptyMenteeCard";
-import { MenteeCard } from "../morphing/accountability/MenteeCard";
-import { MenteeModal } from "../morphing/accountability/MenteeModal";
+import { EmptyMenteeCard } from "../morphing/accountability/mentee/EmptyMenteeCard";
+import { MenteeCard } from "../morphing/accountability/mentee/MenteeCard";
+import { MenteeModal } from "../morphing/accountability/mentee/MenteeModal";
 
 const MAX_MENTEES = 3;
 

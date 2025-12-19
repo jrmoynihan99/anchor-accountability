@@ -30,7 +30,7 @@ export function MessageThreadHeader({
   const getRelationshipSubtitle = () => {
     if (!relationshipType) return null;
     return relationshipType === "mentor"
-      ? "Your Accountability Partner"
+      ? "Your Anchor Partner"
       : "You Support Them";
   };
 

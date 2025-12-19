@@ -1,5 +1,5 @@
 import { CommunityCard } from "@/components/home/CommunityCard";
-import { MentorModal } from "@/components/morphing/accountability/MentorModal";
+import { MentorModal } from "@/components/morphing/accountability/mentor/MentorModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { MentorCardCompact } from "@/components/morphing/home/accountability/MentorCardCompact";
 import { MentorCardCompactContent } from "@/components/morphing/home/accountability/MentorCardCompactContent";
