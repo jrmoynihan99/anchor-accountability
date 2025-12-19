@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { getTodayDateString, useCheckIns } from "@/hooks/useCheckIns";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";

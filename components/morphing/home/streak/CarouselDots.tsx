@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 

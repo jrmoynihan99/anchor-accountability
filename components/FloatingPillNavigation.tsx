@@ -1,5 +1,5 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";

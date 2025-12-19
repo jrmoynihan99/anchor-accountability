@@ -1,5 +1,5 @@
 // components/messages/MyReachOutCard.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";

@@ -1,6 +1,6 @@
 // CreatePostPendingScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";

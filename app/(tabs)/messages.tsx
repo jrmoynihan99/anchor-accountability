@@ -1,7 +1,7 @@
 // app/(tabs)/messages.tsx
 import { MessageThreadsHeader } from "@/components/messages/MessageThreadsHeader";
 import { MessageThreadsSection } from "@/components/messages/MessageThreadsSection";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useThreads } from "@/hooks/useThreads";
 import { StatusBar } from "expo-status-bar";
 import React from "react";

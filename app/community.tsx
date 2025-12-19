@@ -5,7 +5,7 @@ import { CreatePostFAB } from "@/components/morphing/community/CreatePostFAB";
 import { CreatePostModal } from "@/components/morphing/community/CreatePostModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";

@@ -1,5 +1,5 @@
 // components/IntroHeader.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { ThemedText } from "../ThemedText";

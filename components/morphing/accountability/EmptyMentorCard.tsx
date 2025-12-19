@@ -1,5 +1,5 @@
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { StyleSheet, View } from "react-native";
 
 export function EmptyMentorCard() {

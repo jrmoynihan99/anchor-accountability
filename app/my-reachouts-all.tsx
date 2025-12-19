@@ -7,7 +7,7 @@ import {
 import { MyReachOutModal } from "@/components/morphing/pleas/my-reach-outs/MyReachOutModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useMyReachOuts } from "@/hooks/useMyReachOuts";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";

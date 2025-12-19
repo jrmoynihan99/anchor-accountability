@@ -1,5 +1,5 @@
 import { Typography } from "@/constants/Typography";
-import { useTheme } from "@/hooks/ThemeContext"; // update this path if needed
+import { useTheme } from "@/context/ThemeContext"; // update this path if needed
 import { StyleSheet, Text, type TextProps } from "react-native";
 
 export type ThemedTextProps = TextProps & {

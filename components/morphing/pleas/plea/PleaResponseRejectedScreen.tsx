@@ -1,12 +1,12 @@
 // components/messages/PleaResponseRejectedScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { useModalIntent } from "@/context/ModalIntentContext";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { router, useSegments } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { useSegments, router } from "expo-router";
 
 interface PleaResponseRejectedScreenProps {
   onClose: () => void;

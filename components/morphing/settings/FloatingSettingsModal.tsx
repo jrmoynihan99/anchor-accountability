@@ -1,5 +1,5 @@
 // components/morphing/settings/FloatingSettingsModal.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useLegalContent } from "@/hooks/useLegalContent";
 import { isAnonymousUser } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";

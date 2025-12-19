@@ -1,5 +1,5 @@
 // components/messages/PleaResponseModal.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import {

@@ -2,7 +2,7 @@
 
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 

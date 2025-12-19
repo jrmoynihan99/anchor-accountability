@@ -1,7 +1,7 @@
 // components/morphing/home/create-post-main-button/CreatePostModal.tsx
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useCreatePost } from "@/hooks/useCreatePost";
 import { usePostRateLimit } from "@/hooks/usePostRateLimit"; // ADD THIS LINE
 import { auth, db } from "@/lib/firebase";

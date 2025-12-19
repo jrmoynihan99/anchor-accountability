@@ -1,6 +1,6 @@
 // components/morphing/home/reach-out-main-button/ReachOutRateLimitedScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useState } from "react";

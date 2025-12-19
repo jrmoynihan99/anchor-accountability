@@ -1,6 +1,6 @@
 // components/ui/MessageInput.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 

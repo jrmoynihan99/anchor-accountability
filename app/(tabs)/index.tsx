@@ -16,7 +16,7 @@ import {
 } from "@/components/morphing/home/verse/VerseCarousel";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useStreakData } from "@/hooks/useStreakData";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";

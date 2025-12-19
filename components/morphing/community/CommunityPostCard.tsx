@@ -1,5 +1,5 @@
 // components/community/CommunityPostCard.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth } from "@/lib/firebase";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";

@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useCommunityPosts } from "@/hooks/useCommunityPosts";
 import { usePostActions } from "@/hooks/usePostActions";
 import React, { useEffect, useState } from "react";

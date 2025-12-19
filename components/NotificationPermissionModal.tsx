@@ -1,7 +1,7 @@
 // components/modals/NotificationPermissionModal.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
 import * as Haptics from "expo-haptics";
 import React, { useRef, useState } from "react";

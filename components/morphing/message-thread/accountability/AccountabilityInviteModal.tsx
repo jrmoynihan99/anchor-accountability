@@ -1,7 +1,7 @@
 // components/morphing/message-thread/accountability/AccountabilityInviteModal.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth } from "@/lib/firebase";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";

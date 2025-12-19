@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { CheckInStatus } from "../../accountability/accountabilityUtils";

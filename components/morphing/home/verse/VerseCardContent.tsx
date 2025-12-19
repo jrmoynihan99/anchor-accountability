@@ -1,9 +1,9 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
-import { CarouselDots } from "../../../CarouselDots";
+import { CarouselDots } from "../streak/CarouselDots";
 
 interface VerseCardContentProps {
   verse: string | null;

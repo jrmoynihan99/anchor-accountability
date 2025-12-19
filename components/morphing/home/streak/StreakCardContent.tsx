@@ -4,7 +4,7 @@ import { PartialAnimatedText } from "@/components/text-animation/PartialAnimated
 import { TransitioningText } from "@/components/text-animation/TransitioningText";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from "expo-haptics";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
