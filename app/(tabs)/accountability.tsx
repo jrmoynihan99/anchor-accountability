@@ -7,7 +7,7 @@ import { MentorCard } from "@/components/morphing/accountability/MentorCard";
 import { MentorModal } from "@/components/morphing/accountability/MentorModal";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { useAccountability } from "@/context/AccountabilityContext";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
 import { router, useLocalSearchParams } from "expo-router";

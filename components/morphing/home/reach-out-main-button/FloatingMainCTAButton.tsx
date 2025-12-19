@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import React, { forwardRef } from "react";
 import { Dimensions, Platform, Pressable, StyleSheet } from "react-native";

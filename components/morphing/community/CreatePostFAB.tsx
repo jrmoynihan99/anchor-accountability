@@ -1,6 +1,6 @@
 // components/community/CreatePostFAB.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated, {

@@ -1,7 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useStreakVisibility } from "@/hooks/useStreakVisibility";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";

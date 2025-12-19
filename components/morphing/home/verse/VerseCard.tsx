@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useVerseData } from "@/hooks/useVerseData";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";

@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { ThemeProvider, useTheme } from "@/hooks/ThemeContext";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import {
   Spectral_400Regular,
   Spectral_700Bold,

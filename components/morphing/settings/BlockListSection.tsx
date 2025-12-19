@@ -1,7 +1,7 @@
 // components/morphing/settings/BlockListSection.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";

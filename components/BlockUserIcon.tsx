@@ -1,6 +1,6 @@
 // components/BlockUserIcon.tsx
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useBlockUser } from "@/hooks/useBlockUser";
 import * as Haptics from "expo-haptics";
 import React from "react";

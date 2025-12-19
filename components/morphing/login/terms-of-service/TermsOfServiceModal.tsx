@@ -1,5 +1,5 @@
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useLegalContent } from "@/hooks/useLegalContent";
 import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";

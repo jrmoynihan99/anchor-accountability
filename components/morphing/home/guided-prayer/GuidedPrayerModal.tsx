@@ -1,6 +1,6 @@
 // GuidedPrayerModal.tsx - Updated to fetch dynamic reflection content
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { doc, getDoc } from "firebase/firestore";

@@ -1,6 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";

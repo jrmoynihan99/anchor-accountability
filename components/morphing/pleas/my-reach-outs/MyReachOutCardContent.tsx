@@ -1,7 +1,7 @@
 // components/messages/MyReachOutCardContent.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { MyReachOutData } from "./MyReachOutCard";

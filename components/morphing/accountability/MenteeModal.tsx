@@ -1,4 +1,4 @@
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
 import { useCheckIns } from "@/hooks/useCheckIns";
 import { useThreads } from "@/hooks/useThreads";

@@ -1,7 +1,7 @@
 // app/(tabs)/pleas.tsx
 import { MyReachOutsSection } from "@/components/morphing/pleas/my-reach-outs/MyReachOutsSection";
 import { PendingPleasSection } from "@/components/morphing/pleas/plea/PendingPleasSection";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";

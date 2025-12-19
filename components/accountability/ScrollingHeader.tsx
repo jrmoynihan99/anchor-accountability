@@ -1,7 +1,7 @@
 // components/accountability/AccountabilityHeader.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";

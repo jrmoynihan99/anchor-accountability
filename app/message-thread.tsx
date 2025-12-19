@@ -9,8 +9,8 @@ import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useTheme } from "@/context/ThemeContext";
 import { useThread } from "@/context/ThreadContext";
-import { useTheme } from "@/hooks/ThemeContext";
 import { useThreadMessages } from "@/hooks/useThreadMessages";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import {

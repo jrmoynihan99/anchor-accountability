@@ -4,7 +4,7 @@ import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { usePleaUrgencySettings } from "@/hooks/usePleaUrgencySettings";
 import React from "react";
 import {

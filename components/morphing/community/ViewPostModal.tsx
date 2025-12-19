@@ -1,14 +1,14 @@
 // components/community/ViewPostModal.tsx
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { ThemedText } from "@/components/ThemedText";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { usePostComments } from "@/hooks/usePostComments";
 import { auth } from "@/lib/firebase";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { CommunityPost } from "../../community/types";
 import { CommentInput, CommentInputRef } from "../community/CommentInput";
 import { CommunityPostCardContent } from "../community/CommunityPostCardContent";
-import { CommunityPost } from "../../community/types";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostDetailView } from "./PostDetailView";
 

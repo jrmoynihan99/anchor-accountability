@@ -4,7 +4,7 @@ import { PleaCard } from "@/components/morphing/pleas/plea/PleaCard";
 import { PleaResponseModal } from "@/components/morphing/pleas/plea/PleaResponseModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import { usePendingPleas } from "@/hooks/usePendingPleas";
 import { BlurView } from "expo-blur";
 import { router, useLocalSearchParams } from "expo-router";

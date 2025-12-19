@@ -1,5 +1,5 @@
 // components/ui/ThemedToggle.tsx
-import { useTheme } from "@/hooks/ThemeContext";
+import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { Switch, SwitchProps } from "react-native";
 
