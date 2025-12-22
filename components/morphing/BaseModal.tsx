@@ -242,8 +242,12 @@ export function BaseModal({
           {buttonContent}
         </Animated.View>
 
-        {/* Modal Content - WITHOUT GestureDetector */}
-        <Animated.View style={[styles.modalContent, modalContentStyle]}>
+        {/* Modal Content - WITH RASTERIZATION */}
+        <Animated.View
+          style={[styles.modalContent, modalContentStyle]}
+          shouldRasterizeIOS={true}
+          renderToHardwareTextureAndroid={true}
+        >
           <TouchableOpacity
             style={[
               styles.closeButton,
