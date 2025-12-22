@@ -132,7 +132,7 @@ export function PendingPleasSection() {
                   buttonBorderRadius={16}
                   modalBorderRadius={28}
                   modalWidthPercent={0.95}
-                  modalHeightPercent={0.68}
+                  modalHeightPercent={0.72}
                 >
                   {({
                     open,
