@@ -121,7 +121,7 @@ export function MessageThreadsSection({
               marginLeft: 4,
             }}
           >
-            INCOMING ACCOUNTABLITY INVITES
+            INCOMING ANCHOR PARTNER INVITES
           </ThemedText>
 
           {receivedInvites.map((invite) => {
@@ -158,7 +158,7 @@ export function MessageThreadsSection({
               marginLeft: 4,
             }}
           >
-            ACCOUNTABILITY INVITES SENT
+            ANCHOR PARTNER INVITES SENT
           </ThemedText>
 
           {/* ✅ Show declined invites first */}

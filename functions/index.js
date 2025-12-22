@@ -1781,7 +1781,6 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
     const mentorUid = relationship.mentorUid;
     const menteeUid = relationship.menteeUid;
 
-    // ❗ FIXED: Must use admin.firestore()
     const menteeUserDoc = await admin
       .firestore()
       .collection("users")
@@ -1839,17 +1838,14 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
       return;
     }
 
-    // Build notification
-    const getStatusLabel = (status) => {
-      switch (status) {
-        case "great":
-          return "is doing great";
-        case "struggling":
-          return "is struggling today";
-        case "support":
-          return "needs support";
-        default:
-          return "checked in";
+    // Build notification based on temptation level
+    const getNotificationText = (temptationLevel) => {
+      if (temptationLevel <= 2) {
+        return "stayed clean and strong today!";
+      } else if (temptationLevel <= 4) {
+        return "stayed clean but struggled today";
+      } else {
+        return "checked in - reach out to them";
       }
     };
 
@@ -1861,12 +1857,14 @@ exports.notifyMentorOnCheckIn = onDocumentWritten(
         {
           to: mentorData.expoPushToken,
           sound: "default",
-          title: "One of your partners checked in!",
-          body: `${anonymousUsername} ${getStatusLabel(checkIn.status)}`,
+          title: "Your partner checked in!",
+          body: `${anonymousUsername} ${getNotificationText(
+            checkIn.temptationLevel
+          )}`,
           data: {
             type: "mentee_checked_in",
             relationshipId,
-            status: checkIn.status,
+            temptationLevel: checkIn.temptationLevel,
           },
         },
       ],
@@ -2310,7 +2308,7 @@ exports.testMissedCheckInNotification = onRequest(async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // ACCOUNTABILITY INVITE CLEANUP
 // When an accountability invite is accepted (status changes to "active"),
-// automatically delete all other pending invites from the same mentee.
+// automatically cancel all other pending invites from the same mentee.
 // This ensures a user can only have one active mentor at a time.
 // ─────────────────────────────────────────────────────────────────────────────
 
