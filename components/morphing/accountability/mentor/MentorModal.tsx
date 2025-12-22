@@ -1,5 +1,9 @@
 import { useTheme } from "@/context/ThemeContext";
-import { getTodayDateString, useCheckIns } from "@/hooks/useCheckIns";
+import {
+  getTodayDateString,
+  TriggerType,
+  useCheckIns,
+} from "@/hooks/useCheckIns";
 import { useThreads } from "@/hooks/useThreads";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
@@ -31,7 +35,7 @@ export function MentorModal({
   mentorUid,
   streak,
   checkInStatus,
-  mentorTimezone, // ADD THIS
+  mentorTimezone,
   relationshipId,
   isVisible,
   progress,
@@ -48,7 +52,6 @@ export function MentorModal({
   const { threads } = useThreads();
 
   // Bidirectional hook - READ and WRITE
-  // NEW SIGNATURE: (relationshipId, menteeUid, daysCount)
   const { timeline, loading, submitCheckIn } = useCheckIns(
     relationshipId,
     uid,
@@ -77,13 +80,17 @@ export function MentorModal({
     }, 300);
   };
 
-  const handleSubmitCheckIn = async (status: any, note: string) => {
+  const handleSubmitCheckIn = async (
+    temptationLevel: number,
+    triggers: TriggerType[] | undefined,
+    note: string
+  ) => {
     if (!uid) return;
 
     try {
       // Use selectedDate if retroactive, otherwise use today
       const dateToSubmit = selectedDate || getTodayDateString();
-      await submitCheckIn(dateToSubmit, status, note, uid);
+      await submitCheckIn(dateToSubmit, temptationLevel, triggers, note, uid);
 
       // Reset selected date back to today mode
       setSelectedDate(null);
@@ -127,11 +134,13 @@ export function MentorModal({
           contentContainerStyle={{ paddingTop: 42, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
+          removeClippedSubviews={true}
         >
           {/* Header Tile */}
           <AccountabilityModalHeader
             uid={mentorUid}
-            timezone={mentorTimezone} // PASS IT DOWN (note: prop name is menteeTimezone in the component)
+            timezone={mentorTimezone}
+            role="mentor" // NEW: This user is YOUR MENTOR
             actionButtons={[
               {
                 icon: "message.fill",

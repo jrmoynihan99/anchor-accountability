@@ -2,24 +2,21 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import {
-  formatDate,
-  getStatusColor,
-  getStatusIcon,
-  getStatusLabel,
-} from "../accountabilityUtils";
+import { formatDate } from "../accountabilityUtils";
 
 interface CheckInRecord {
   date: string;
-  status: "great" | "struggling" | "support";
+  temptationLevel: number;
+  triggers?: TriggerType[];
   note?: string;
 }
 
 interface MissingCheckIn {
   date: string;
-  status: null;
+  temptationLevel: null;
   isMissing: true;
 }
 
@@ -30,6 +27,34 @@ interface CheckInDropdownProps {
   onClose: () => void;
   showFillHint?: boolean; // Show "Use section above" hint (MentorModal only)
   userTimezone?: string; // Timezone of the user whose check-ins are being displayed
+}
+
+const TRIGGER_LABELS: Record<TriggerType, string> = {
+  social_media: "Social Media",
+  loneliness: "Loneliness",
+  stress: "Stress",
+  boredom: "Boredom",
+  alcohol: "Alcohol",
+  attraction: "Attraction",
+  other: "Other",
+};
+
+function getTemptationColor(level: number, colors: any): string {
+  if (level <= 2) return colors.success || "#34C759";
+  if (level <= 4) return colors.warning || "#FF9500";
+  return colors.error || "#FF3B30";
+}
+
+function getTemptationLabel(level: number): string {
+  if (level <= 2) return "Clean & Strong";
+  if (level <= 4) return "Clean but Struggled";
+  return "Relapsed";
+}
+
+function getTemptationIcon(level: number): string {
+  if (level <= 2) return "checkmark.circle.fill";
+  if (level <= 4) return "exclamationmark.circle.fill";
+  return "xmark.circle.fill";
 }
 
 export function CheckInDropdown({
@@ -64,18 +89,20 @@ export function CheckInDropdown({
             name={
               missing
                 ? "exclamationmark.circle"
-                : getStatusIcon(selectedCheckIn.status)
+                : getTemptationIcon(selectedCheckIn.temptationLevel)
             }
             size={20}
             color={
               missing
                 ? colors.textSecondary
-                : getStatusColor(selectedCheckIn.status, colors)
+                : getTemptationColor(selectedCheckIn.temptationLevel, colors)
             }
             style={{ marginRight: 8 }}
           />
           <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-            {missing ? "No Check-In" : getStatusLabel(selectedCheckIn.status)}
+            {missing
+              ? "No Check-In"
+              : getTemptationLabel(selectedCheckIn.temptationLevel)}
           </ThemedText>
         </View>
         <TouchableOpacity onPress={onClose}>
@@ -111,20 +138,86 @@ export function CheckInDropdown({
           </ThemedText>
         </View>
       ) : (
-        /* Check-In Note (if exists) */
-        selectedCheckIn.note && (
-          <View style={styles.note}>
+        <>
+          {/* Temptation Level - Visual Dots */}
+          <View style={styles.levelContainer}>
             <ThemedText
               type="caption"
-              style={{ color: colors.textSecondary, marginBottom: 4 }}
+              style={{
+                color: colors.textSecondary,
+                marginBottom: 6,
+              }}
             >
-              Note:
+              Temptation Level
             </ThemedText>
-            <ThemedText type="body" style={{ color: colors.text }}>
-              {selectedCheckIn.note}
-            </ThemedText>
+            <View style={styles.dotsRow}>
+              {[1, 2, 3, 4, 5].map((dotIndex) => (
+                <View
+                  key={dotIndex}
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor:
+                        dotIndex <= selectedCheckIn.temptationLevel
+                          ? getTemptationColor(
+                              selectedCheckIn.temptationLevel,
+                              colors
+                            )
+                          : `${colors.textSecondary}30`,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
           </View>
-        )
+
+          {/* Triggers (if they exist) */}
+          {selectedCheckIn.triggers && selectedCheckIn.triggers.length > 0 && (
+            <View style={styles.triggersSection}>
+              <ThemedText
+                type="caption"
+                style={{
+                  color: colors.textSecondary,
+                  marginBottom: 6,
+                }}
+              >
+                Triggers:
+              </ThemedText>
+              <View style={styles.triggersRow}>
+                {selectedCheckIn.triggers.map((trigger, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.triggerChip,
+                      {
+                        backgroundColor: `${colors.textSecondary}20`,
+                      },
+                    ]}
+                  >
+                    <ThemedText type="caption" style={{ color: colors.text }}>
+                      {TRIGGER_LABELS[trigger]}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Check-In Note (if exists) */}
+          {selectedCheckIn.note && (
+            <View style={styles.note}>
+              <ThemedText
+                type="caption"
+                style={{ color: colors.textSecondary, marginBottom: 4 }}
+              >
+                Note:
+              </ThemedText>
+              <ThemedText type="body" style={{ color: colors.text }}>
+                {selectedCheckIn.note}
+              </ThemedText>
+            </View>
+          )}
+        </>
       )}
     </View>
   );
@@ -141,6 +234,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  levelContainer: {
+    marginTop: 8,
+  },
+  dotsRow: {
+    flexDirection: "row",
+    gap: 6,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  triggersSection: {
+    marginTop: 12,
+  },
+  triggersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  triggerChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   note: {
     marginTop: 12,

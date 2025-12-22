@@ -1,18 +1,15 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React, { useMemo } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import {
-  formatCheckInTime,
-  getStatusColor,
-  getStatusIcon,
-  getStatusLabel,
-} from "./accountabilityUtils";
+import { formatCheckInTime } from "./accountabilityUtils";
 
 interface CheckInRecord {
   date: string;
-  status: "great" | "struggling" | "support";
+  temptationLevel: number;
+  triggers?: TriggerType[];
   note?: string;
 }
 
@@ -20,6 +17,34 @@ interface LatestCheckInSectionProps {
   latestCheckIn?: CheckInRecord;
   onMessage: () => void;
   userTimezone?: string | null;
+}
+
+const TRIGGER_LABELS: Record<TriggerType, string> = {
+  social_media: "Social Media",
+  loneliness: "Loneliness",
+  stress: "Stress",
+  boredom: "Boredom",
+  alcohol: "Alcohol",
+  attraction: "Attraction",
+  other: "Other",
+};
+
+function getTemptationColor(level: number, colors: any): string {
+  if (level <= 2) return colors.success || "#34C759";
+  if (level <= 4) return colors.warning || "#FF9500";
+  return colors.error || "#FF3B30";
+}
+
+function getTemptationLabel(level: number): string {
+  if (level <= 2) return "Clean & Strong";
+  if (level <= 4) return "Clean but Struggled";
+  return "Relapsed";
+}
+
+function getTemptationIcon(level: number): string {
+  if (level <= 2) return "checkmark.circle.fill";
+  if (level <= 4) return "exclamationmark.circle.fill";
+  return "xmark.circle.fill";
 }
 
 export function LatestCheckInSection({
@@ -130,9 +155,9 @@ export function LatestCheckInSection({
         <View style={styles.latestCheckInContainer}>
           <View style={styles.statusBadge}>
             <IconSymbol
-              name={getStatusIcon(latestCheckIn.status)}
+              name={getTemptationIcon(latestCheckIn.temptationLevel)}
               size={32}
-              color={getStatusColor(latestCheckIn.status, colors)}
+              color={getTemptationColor(latestCheckIn.temptationLevel, colors)}
             />
           </View>
           <ThemedText
@@ -143,8 +168,53 @@ export function LatestCheckInSection({
               marginTop: 12,
             }}
           >
-            {getStatusLabel(latestCheckIn.status)}
+            {getTemptationLabel(latestCheckIn.temptationLevel)}
           </ThemedText>
+          <ThemedText
+            type="body"
+            style={{
+              color: getTemptationColor(latestCheckIn.temptationLevel, colors),
+              textAlign: "center",
+              marginTop: 4,
+              fontWeight: "600",
+            }}
+          >
+            Level {latestCheckIn.temptationLevel}/5
+          </ThemedText>
+
+          {/* Show triggers if they exist */}
+          {latestCheckIn.triggers && latestCheckIn.triggers.length > 0 && (
+            <View style={styles.triggersContainer}>
+              <ThemedText
+                type="caption"
+                style={{
+                  color: colors.textSecondary,
+                  marginBottom: 6,
+                  textAlign: "center",
+                }}
+              >
+                Triggers:
+              </ThemedText>
+              <View style={styles.triggersRow}>
+                {latestCheckIn.triggers.map((trigger, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.triggerChip,
+                      {
+                        backgroundColor: `${colors.textSecondary}20`,
+                      },
+                    ]}
+                  >
+                    <ThemedText type="caption" style={{ color: colors.text }}>
+                      {TRIGGER_LABELS[trigger]}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
           {latestCheckIn.note && (
             <View
               style={[
@@ -286,6 +356,21 @@ const styles = StyleSheet.create({
   statusBadge: {
     alignItems: "center",
     justifyContent: "center",
+  },
+  triggersContainer: {
+    marginTop: 16,
+    width: "100%",
+  },
+  triggersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    justifyContent: "center",
+  },
+  triggerChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   noteContainer: {
     marginTop: 16,

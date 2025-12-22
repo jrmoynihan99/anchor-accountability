@@ -216,7 +216,7 @@ export function MessageThreadsSection({
               marginLeft: 4,
             }}
           >
-            YOUR ACCOUNTABILITY PARTNER
+            YOUR ANCHOR PARTNER
           </ThemedText>
 
           <ThreadItem

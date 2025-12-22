@@ -3,10 +3,10 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
-import { getStatusColor, getStatusIcon } from "../accountabilityUtils";
 import { generateCalendar, isDateInFuture } from "./calendarUtils";
 import { MonthNavigation } from "./MonthNavigation";
 
@@ -14,13 +14,14 @@ import { MonthNavigation } from "./MonthNavigation";
 
 interface CheckInRecord {
   date: string;
-  status: "great" | "struggling" | "support";
+  temptationLevel: number;
+  triggers?: TriggerType[];
   note?: string;
 }
 
 interface MissingCheckIn {
   date: string;
-  status: null;
+  temptationLevel: null;
   isMissing: true;
 }
 
@@ -47,6 +48,107 @@ type MonthCell =
       isMissingDay: boolean;
       isFuture: boolean;
     };
+
+// ----------------- Helper Functions -----------------
+
+function getTemptationColor(level: number, colors: any): string {
+  if (level <= 2) return colors.success || "#34C759";
+  if (level <= 4) return colors.warning || "#FF9500";
+  return colors.error || "#FF3B30";
+}
+
+function getTemptationIcon(level: number): string {
+  if (level <= 2) return "checkmark.circle.fill";
+  if (level <= 4) return "exclamationmark.circle.fill";
+  return "xmark.circle.fill";
+}
+
+// ----------------- Memoized Calendar Cell -----------------
+
+interface CalendarDayProps {
+  dateString: string;
+  dayNumber: number;
+  isSelected: boolean;
+  isMissingDay: boolean;
+  isFuture: boolean;
+  checkIn: TimelineItem | null;
+  onSelectDate: (dateString: string, isMissing: boolean) => void;
+  colors: any;
+}
+
+const CalendarDay = React.memo(function CalendarDay({
+  dateString,
+  dayNumber,
+  isSelected,
+  isMissingDay,
+  isFuture,
+  checkIn,
+  onSelectDate,
+  colors,
+}: CalendarDayProps) {
+  // Precompute visual state
+  let borderColor = "transparent";
+  let borderWidth = 0;
+  let backgroundColor = "transparent";
+  let textColor = colors.textSecondary;
+  let showIcon = false;
+  let iconName: string | undefined;
+  let iconColor: string | undefined;
+
+  if (isFuture) {
+    textColor = colors.textSecondary;
+  } else if (isMissingDay) {
+    textColor = colors.textSecondary;
+    if (isSelected) {
+      backgroundColor = `${colors.textSecondary}20`;
+      borderWidth = 2;
+      borderColor = colors.textSecondary;
+    }
+  } else if (checkIn) {
+    const statusColor = getTemptationColor(
+      (checkIn as CheckInRecord).temptationLevel,
+      colors
+    );
+
+    textColor = colors.text;
+    if (isSelected) {
+      backgroundColor = `${statusColor}30`;
+      borderWidth = 2;
+      borderColor = statusColor;
+    }
+
+    showIcon = true;
+    iconName = getTemptationIcon((checkIn as CheckInRecord).temptationLevel);
+    iconColor = statusColor;
+  }
+
+  return (
+    <Pressable
+      style={[
+        styles.calendarDay,
+        {
+          backgroundColor,
+          borderColor,
+          borderWidth,
+          opacity: isFuture ? 0.3 : 1,
+        },
+      ]}
+      onPress={() => {
+        if (!isFuture) {
+          onSelectDate(dateString, isMissingDay);
+        }
+      }}
+    >
+      <ThemedText type="caption" style={{ color: textColor, marginBottom: 2 }}>
+        {dayNumber}
+      </ThemedText>
+
+      {showIcon && iconName && iconColor && (
+        <IconSymbol name={iconName} size={14} color={iconColor} />
+      )}
+    </Pressable>
+  );
+});
 
 // ----------------- Component -----------------
 
@@ -128,76 +230,18 @@ function ExpandedCalendarComponent({
             return <View key={`empty-${i}`} style={styles.calendarDay} />;
           }
 
-          const { dateString, dayNumber, checkIn, isMissingDay, isFuture } =
-            cell;
-
-          const isSelected = selectedDate === dateString;
-
-          // Precompute visual state
-          let borderColor = "transparent";
-          let borderWidth = 0;
-          let backgroundColor = "transparent";
-          let textColor = colors.textSecondary;
-          let showIcon = false;
-          let iconName: string | undefined;
-          let iconColor: string | undefined;
-
-          if (isFuture) {
-            textColor = colors.textSecondary;
-          } else if (isMissingDay) {
-            textColor = colors.textSecondary;
-            if (isSelected) {
-              backgroundColor = `${colors.textSecondary}20`;
-              borderWidth = 2;
-              borderColor = colors.textSecondary;
-            }
-          } else if (checkIn) {
-            const statusColor = getStatusColor(
-              (checkIn as CheckInRecord).status,
-              colors
-            );
-
-            textColor = colors.text;
-            if (isSelected) {
-              backgroundColor = `${statusColor}30`;
-              borderWidth = 2;
-              borderColor = statusColor;
-            }
-
-            showIcon = true;
-            iconName = getStatusIcon((checkIn as CheckInRecord).status);
-            iconColor = statusColor;
-          }
-
           return (
-            <Pressable
-              key={dateString}
-              style={[
-                styles.calendarDay,
-                {
-                  backgroundColor,
-                  borderColor,
-                  borderWidth,
-                  opacity: isFuture ? 0.3 : 1,
-                },
-              ]}
-              onPress={() => {
-                if (!isFuture) {
-                  onSelectDate(dateString, isMissingDay);
-                }
-              }}
-            >
-              <ThemedText
-                type="caption"
-                style={{ color: textColor, marginBottom: 2 }}
-              >
-                {dayNumber}
-              </ThemedText>
-
-              {showIcon && iconName && iconColor && (
-                <IconSymbol name={iconName} size={14} color={iconColor} />
-              )}
-            </Pressable>
+            <CalendarDay
+              key={cell.dateString}
+              dateString={cell.dateString}
+              dayNumber={cell.dayNumber}
+              isSelected={selectedDate === cell.dateString}
+              isMissingDay={cell.isMissingDay}
+              isFuture={cell.isFuture}
+              checkIn={cell.checkIn}
+              onSelectDate={onSelectDate}
+              colors={colors}
+            />
           );
         })}
       </View>

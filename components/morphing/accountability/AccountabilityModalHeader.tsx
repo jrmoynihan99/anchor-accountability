@@ -17,103 +17,137 @@ interface AccountabilityModalHeaderProps {
   uid: string;
   timezone?: string;
   actionButtons?: ActionButton[];
+  role?: "mentor" | "mentee"; // NEW: determines relationship label
 }
 
-export function AccountabilityModalHeader({
-  uid,
-  timezone,
-  actionButtons = [],
-}: AccountabilityModalHeaderProps) {
-  const { colors } = useTheme();
-  const localTime = getLocalTimeForTimezone(timezone);
+export const AccountabilityModalHeader = React.memo(
+  function AccountabilityModalHeader({
+    uid,
+    timezone,
+    actionButtons = [],
+    role,
+  }: AccountabilityModalHeaderProps) {
+    const { colors } = useTheme();
+    const localTime = getLocalTimeForTimezone(timezone);
 
-  // Generate anonymous username
-  const anonymousUsername = `user-${uid.slice(0, 5)}`;
+    // Generate anonymous username
+    const anonymousUsername = `user-${uid.slice(0, 5)}`;
 
-  return (
-    <View
-      style={[
-        styles.tile,
-        {
-          backgroundColor: colors.modalCardBackground,
-          borderColor: colors.modalCardBorder,
-        },
-      ]}
-    >
-      {/* The inline header row */}
-      <View style={styles.headerRow}>
-        <View
-          style={[
-            styles.avatarCircle,
-            { backgroundColor: colors.iconCircleSecondaryBackground },
-          ]}
-        >
-          <ThemedText type="subtitleSemibold" style={{ color: colors.icon }}>
-            {anonymousUsername[5]?.toUpperCase()}
-          </ThemedText>
-        </View>
+    // Derive relationship label from role
+    const relationshipLabel =
+      role === "mentor"
+        ? "YOUR ANCHOR PARTNER"
+        : role === "mentee"
+        ? "YOU SUPPORT THEM"
+        : null;
 
-        <View style={styles.headerUserInfo}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.usernameRow}>
-              <ThemedText
-                type="subtitleSemibold"
-                style={{ color: colors.text, marginRight: 8 }}
-              >
-                {anonymousUsername}
-              </ThemedText>
-              <UserStreakDisplay userId={uid} size="small" />
-              <BlockUserIcon userIdToBlock={uid} />
+    return (
+      <View
+        style={[
+          styles.tile,
+          {
+            backgroundColor: colors.modalCardBackground,
+            borderColor: colors.modalCardBorder,
+          },
+        ]}
+      >
+        {/* Relationship Label Row */}
+        {relationshipLabel && (
+          <View
+            style={[
+              styles.relationshipLabelRow,
+              {
+                borderBottomColor: colors.modalCardBorder,
+              },
+            ]}
+          >
+            <ThemedText
+              type="captionMedium"
+              style={{
+                color: colors.textSecondary,
+                letterSpacing: 0.5,
+              }}
+            >
+              {relationshipLabel}
+            </ThemedText>
+          </View>
+        )}
+
+        {/* The inline header row */}
+        <View style={styles.headerRow}>
+          <View
+            style={[
+              styles.avatarCircle,
+              { backgroundColor: colors.iconCircleSecondaryBackground },
+            ]}
+          >
+            <ThemedText type="subtitleSemibold" style={{ color: colors.icon }}>
+              {anonymousUsername[5]?.toUpperCase()}
+            </ThemedText>
+          </View>
+
+          <View style={styles.headerUserInfo}>
+            <View style={{ flex: 1 }}>
+              <View style={styles.usernameRow}>
+                <ThemedText
+                  type="subtitleSemibold"
+                  style={{ color: colors.text, marginRight: 8 }}
+                >
+                  {anonymousUsername}
+                </ThemedText>
+                <UserStreakDisplay userId={uid} size="small" />
+                <BlockUserIcon userIdToBlock={uid} />
+              </View>
+              {localTime && (
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: colors.textSecondary,
+                    marginTop: 4,
+                  }}
+                >
+                  Local time: {localTime}
+                </ThemedText>
+              )}
             </View>
-            {localTime && (
-              <ThemedText
-                type="caption"
-                style={{
-                  color: colors.textSecondary,
-                  marginTop: 4,
-                }}
-              >
-                Local time: {localTime}
-              </ThemedText>
-            )}
           </View>
         </View>
-      </View>
 
-      {/* Quick Actions */}
-      {actionButtons.length > 0 && (
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
-          {actionButtons.map((button, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.quickButton,
-                {
-                  backgroundColor: `${colors.buttonBackground}30`,
-                  borderWidth: 1,
-                  borderColor: colors.buttonBackground,
-                },
-              ]}
-              onPress={button.onPress}
-            >
-              <IconSymbol
-                name={button.icon}
-                size={18}
-                color={colors.buttonBackground}
-              />
-              <ThemedText
-                type="button"
-                style={{ color: colors.buttonBackground }}
+        {/* Quick Actions */}
+        {actionButtons.length > 0 && (
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
+            {actionButtons.map((button, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.quickButton,
+                  {
+                    backgroundColor: `${colors.buttonBackground}30`,
+                    borderWidth: 1,
+                    borderColor: colors.buttonBackground,
+                  },
+                ]}
+                onPress={button.onPress}
               >
-                {button.label}
-              </ThemedText>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
+                <IconSymbol
+                  name={button.icon}
+                  size={18}
+                  color={colors.buttonBackground}
+                />
+                <ThemedText
+                  type="button"
+                  style={{ color: colors.buttonBackground }}
+                >
+                  {button.label}
+                </ThemedText>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </View>
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   tile: {
@@ -121,6 +155,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     marginBottom: 16,
+  },
+  relationshipLabelRow: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerRow: {
     flexDirection: "row",
