@@ -2,27 +2,54 @@
 import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useTimezoneComparison } from "@/hooks/useTimezoneComparison";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface GuidelinesViewProps {
   colors: any;
+  otherUserId: string;
   threadName: string;
   onBackPress: () => void;
-  onConfirm: () => void;
+  onSendInvite: () => Promise<void>;
+  onClose: () => void;
 }
 
 export function GuidelinesView({
   colors,
+  otherUserId,
   threadName,
   onBackPress,
-  onConfirm,
+  onSendInvite,
+  onClose,
 }: GuidelinesViewProps) {
   const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfirm = () => {
-    if (hasConfirmed) {
-      onConfirm();
+  // Use timezone comparison hook
+  const {
+    shouldShowWarning: shouldShowTimezoneWarning,
+    timeDifference,
+    otherUserLocalTime,
+  } = useTimezoneComparison(otherUserId);
+
+  const handleSendInvite = async () => {
+    if (!hasConfirmed) return;
+
+    setIsLoading(true);
+    try {
+      await onSendInvite();
+      // Modal will automatically transition to "sent" view
+    } catch (error) {
+      console.error("Error sending invite:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -125,11 +152,11 @@ export function GuidelinesView({
           </View>
           <View style={styles.bulletList}>
             <BulletPoint
-              text="Check in daily, even when it’s uncomfortable"
+              text="Check in daily, even when it's uncomfortable"
               colors={colors}
             />
             <BulletPoint
-              text="Be honest about where you’re at"
+              text="Be honest about where you're at"
               colors={colors}
             />
             <BulletPoint
@@ -277,28 +304,106 @@ export function GuidelinesView({
             type="body"
             style={[styles.checkboxText, { color: colors.text }]}
           >
-            I understand what this partnership involves and I’m ready to show up
+            I understand what this partnership involves and I'm ready to show up
             honestly and consistently.
           </ThemedText>
         </TouchableOpacity>
 
-        {/* Continue Button */}
+        {/* Timezone Warning Section (only show if checkbox is confirmed and significant difference) */}
+        {hasConfirmed && shouldShowTimezoneWarning && (
+          <View
+            style={[
+              styles.timezoneCard,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.timezoneHeader}>
+              <IconSymbol
+                name="clock.fill"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <ThemedText
+                type="bodyMedium"
+                style={[styles.timezoneTitle, { color: colors.text }]}
+              >
+                Keep Their Timezone in Mind
+              </ThemedText>
+            </View>
+            <ThemedText
+              type="body"
+              style={[styles.timezoneLabel, { color: colors.textSecondary }]}
+            >
+              {threadName}'s local time is:
+            </ThemedText>
+            <ThemedText
+              type="body"
+              style={[styles.timezoneValue, { color: colors.text }]}
+            >
+              {otherUserLocalTime} (
+              {timeDifference > 0
+                ? `${timeDifference} ${
+                    Math.abs(timeDifference) === 1 ? "hour" : "hours"
+                  } ahead`
+                : `${Math.abs(timeDifference)} ${
+                    Math.abs(timeDifference) === 1 ? "hour" : "hours"
+                  } behind`}
+              )
+            </ThemedText>
+            <ThemedText
+              type="caption"
+              style={[styles.timezoneNote, { color: colors.textSecondary }]}
+            >
+              They may not be available to respond immediately depending on
+              their schedule.
+            </ThemedText>
+          </View>
+        )}
+
+        {/* Send Invite Button */}
         <TouchableOpacity
           style={[
-            styles.continueButton,
+            styles.sendButton,
             {
               backgroundColor: hasConfirmed ? colors.tint : colors.border,
-              opacity: hasConfirmed ? 1 : 0.6,
+              opacity: isLoading || !hasConfirmed ? 0.6 : 1,
             },
           ]}
-          onPress={handleConfirm}
-          disabled={!hasConfirmed}
+          onPress={handleSendInvite}
+          disabled={!hasConfirmed || isLoading}
           activeOpacity={0.8}
         >
-          <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
-            Continue to Send Invite
-          </ThemedText>
+          {isLoading ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <>
+              <IconSymbol
+                name="paperplane.fill"
+                size={18}
+                color={colors.white}
+              />
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.white }}
+              >
+                Send Invite
+              </ThemedText>
+            </>
+          )}
         </TouchableOpacity>
+
+        {/* Note */}
+        {hasConfirmed && (
+          <ThemedText
+            type="caption"
+            style={[styles.note, { color: colors.textSecondary }]}
+          >
+            They'll receive a notification and can choose to accept or decline.
+          </ThemedText>
+        )}
       </ScrollView>
     </View>
   );
@@ -431,10 +536,47 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 22,
   },
-  continueButton: {
-    paddingVertical: 16,
+  timezoneCard: {
+    padding: 14,
     borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  timezoneHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  timezoneTitle: {
+    flex: 1,
+  },
+  timezoneLabel: {
+    lineHeight: 20,
+    opacity: 0.9,
+    marginBottom: 4,
+  },
+  timezoneValue: {
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  timezoneNote: {
+    lineHeight: 18,
+    opacity: 0.8,
+  },
+  sendButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
+  note: {
+    textAlign: "center",
+    opacity: 0.7,
+    lineHeight: 18,
+    paddingHorizontal: 20,
   },
 });

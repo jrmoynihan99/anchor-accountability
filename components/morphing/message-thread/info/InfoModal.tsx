@@ -189,7 +189,7 @@ export function ThreadInfoModal({
             These private chats are completely unmoderated and unfiltered, and
             have no content restrictions. Be aware that you may encounter
             trolls, abusive behavior, or people misusing the app. If someone is
-            harassing you or acting inappropriately, please report them
+            harassing you or acting inappropriately, please report/block them
             immediately.
           </ThemedText>
 

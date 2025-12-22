@@ -1,57 +1,26 @@
 // components/morphing/message-thread/accountability/invite-views/DefaultInviteView.tsx
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTimezoneComparison } from "@/hooks/useTimezoneComparison";
-import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React from "react";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 interface DefaultInviteViewProps {
   colors: any;
   otherUserId: string;
   threadName: string;
-  onSendInvite: () => Promise<void>;
   onClose: () => void;
   onTransitionToRestricted: (type: "hasMentor" | "maxMentees") => void;
   onNavigateToGuidelines: () => void;
-  hasReadGuidelines: boolean;
 }
 
 export function DefaultInviteView({
   colors,
   otherUserId,
   threadName,
-  onSendInvite,
   onClose,
   onTransitionToRestricted,
   onNavigateToGuidelines,
-  hasReadGuidelines,
 }: DefaultInviteViewProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Use timezone comparison hook
-  const {
-    shouldShowWarning: shouldShowTimezoneWarning,
-    timeDifference,
-    otherUserLocalTime,
-  } = useTimezoneComparison(otherUserId);
-
-  const handleSendInvite = async () => {
-    setIsLoading(true);
-    try {
-      await onSendInvite();
-    } catch (error) {
-      console.error("Error sending invite:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <ScrollView
       style={styles.scrollContainer}
@@ -133,190 +102,52 @@ export function DefaultInviteView({
       </View>
 
       {/* Guidelines Required Section */}
-      {!hasReadGuidelines && (
-        <View
-          style={[
-            styles.guidelinesRequired,
-            {
-              backgroundColor: `${colors.warning || "#FF9500"}10`,
-              borderColor: `${colors.warning || "#FF9500"}30`,
-            },
-          ]}
-        >
-          <View style={styles.guidelinesHeader}>
-            <IconSymbol
-              name="doc.text.fill"
-              size={20}
-              color={colors.warning || "#FF9500"}
-            />
-            <ThemedText
-              type="subtitleSemibold"
-              style={[styles.guidelinesTitle, { color: colors.text }]}
-            >
-              Before You Send the Invite
-            </ThemedText>
-          </View>
-          <ThemedText
-            type="body"
-            style={[styles.guidelinesText, { color: colors.textSecondary }]}
-          >
-            This partnership works best when both people understand the
-            commitment. Please take a moment to read the guidelines so you and{" "}
-            {threadName} are aligned on what this is — and what it isn't.
-          </ThemedText>
-          <TouchableOpacity
-            style={[
-              styles.guidelinesButton,
-              {
-                backgroundColor: colors.tint,
-              },
-            ]}
-            onPress={onNavigateToGuidelines}
-            activeOpacity={0.8}
-          >
-            <IconSymbol name="book.fill" size={18} color={colors.white} />
-            <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
-              Partnership Guidelines
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Guidelines Completed Section */}
-      {hasReadGuidelines && (
-        <View
-          style={[
-            styles.guidelinesCompleted,
-            {
-              backgroundColor: `${colors.success || "#34C759"}10`,
-              borderColor: `${colors.success || "#34C759"}30`,
-            },
-          ]}
-        >
-          <View style={styles.completedContent}>
-            <View
-              style={[
-                styles.completedIcon,
-                {
-                  backgroundColor: `${colors.success || "#34C759"}20`,
-                },
-              ]}
-            >
-              <IconSymbol
-                name="checkmark.circle.fill"
-                size={24}
-                color={colors.success || "#34C759"}
-              />
-            </View>
-            <View style={styles.completedText}>
-              <ThemedText
-                type="bodyMedium"
-                style={[styles.completedTitle, { color: colors.text }]}
-              >
-                Guidelines Confirmed
-              </ThemedText>
-              <ThemedText
-                type="caption"
-                style={[
-                  styles.completedSubtitle,
-                  { color: colors.textSecondary },
-                ]}
-              >
-                You're ready to send your invite
-              </ThemedText>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Timezone Warning Section (only show if significant difference and guidelines read) */}
-      {hasReadGuidelines && shouldShowTimezoneWarning && (
-        <View
-          style={[
-            styles.timezoneCard,
-            {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <View style={styles.timezoneHeader}>
-            <IconSymbol
-              name="clock.fill"
-              size={18}
-              color={colors.textSecondary}
-            />
-            <ThemedText
-              type="bodyMedium"
-              style={[styles.timezoneTitle, { color: colors.text }]}
-            >
-              Keep Their Timezone in Mind
-            </ThemedText>
-          </View>
-          <ThemedText
-            type="body"
-            style={[styles.timezoneLabel, { color: colors.textSecondary }]}
-          >
-            {threadName}'s local time is:
-          </ThemedText>
-          <ThemedText
-            type="body"
-            style={[styles.timezoneValue, { color: colors.text }]}
-          >
-            {otherUserLocalTime} (
-            {timeDifference > 0
-              ? `${timeDifference} ${
-                  Math.abs(timeDifference) === 1 ? "hour" : "hours"
-                } ahead`
-              : `${Math.abs(timeDifference)} ${
-                  Math.abs(timeDifference) === 1 ? "hour" : "hours"
-                } behind`}
-            )
-          </ThemedText>
-          <ThemedText
-            type="caption"
-            style={[styles.timezoneNote, { color: colors.textSecondary }]}
-          >
-            They may not be available to respond immediately depending on their
-            schedule.
-          </ThemedText>
-        </View>
-      )}
-
-      {/* Action Button */}
-      <TouchableOpacity
+      <View
         style={[
-          styles.primaryButton,
+          styles.guidelinesRequired,
           {
-            backgroundColor: hasReadGuidelines ? colors.tint : colors.border,
-            opacity: isLoading || !hasReadGuidelines ? 0.6 : 1,
+            backgroundColor: `${colors.warning || "#FF9500"}10`,
+            borderColor: `${colors.warning || "#FF9500"}30`,
           },
         ]}
-        onPress={handleSendInvite}
-        disabled={isLoading || !hasReadGuidelines}
-        activeOpacity={0.8}
       >
-        {isLoading ? (
-          <ActivityIndicator color={colors.white} />
-        ) : (
-          <>
-            <IconSymbol name="paperplane.fill" size={18} color={colors.white} />
-            <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
-              {hasReadGuidelines ? "Send Invite" : "Read Guidelines First"}
-            </ThemedText>
-          </>
-        )}
-      </TouchableOpacity>
-
-      {/* Note */}
-      {hasReadGuidelines && (
+        <View style={styles.guidelinesHeader}>
+          <IconSymbol
+            name="doc.text.fill"
+            size={20}
+            color={colors.warning || "#FF9500"}
+          />
+          <ThemedText
+            type="subtitleSemibold"
+            style={[styles.guidelinesTitle, { color: colors.text }]}
+          >
+            Before You Send the Invite
+          </ThemedText>
+        </View>
         <ThemedText
-          type="caption"
-          style={[styles.note, { color: colors.textSecondary }]}
+          type="body"
+          style={[styles.guidelinesText, { color: colors.textSecondary }]}
         >
-          They'll receive a notification and can choose to accept or decline.
+          This partnership works best when both people understand the
+          commitment. Please take a moment to read the guidelines so you and{" "}
+          {threadName} are aligned on what this is — and what it isn't.
         </ThemedText>
-      )}
+        <TouchableOpacity
+          style={[
+            styles.guidelinesButton,
+            {
+              backgroundColor: colors.tint,
+            },
+          ]}
+          onPress={onNavigateToGuidelines}
+          activeOpacity={0.8}
+        >
+          <IconSymbol name="book.fill" size={18} color={colors.white} />
+          <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
+            Read Guidelines
+          </ThemedText>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -469,75 +300,5 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     gap: 8,
-  },
-  guidelinesCompleted: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 2,
-    marginBottom: 24,
-  },
-  completedContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  completedIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  completedText: {
-    flex: 1,
-  },
-  completedTitle: {
-    marginBottom: 2,
-  },
-  completedSubtitle: {
-    opacity: 0.8,
-  },
-  timezoneCard: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 24,
-  },
-  timezoneHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
-  },
-  timezoneTitle: {
-    flex: 1,
-  },
-  timezoneLabel: {
-    lineHeight: 20,
-    opacity: 0.9,
-    marginBottom: 4,
-  },
-  timezoneValue: {
-    lineHeight: 24,
-    marginBottom: 8,
-  },
-  timezoneNote: {
-    lineHeight: 18,
-    opacity: 0.8,
-  },
-  primaryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    marginBottom: 12,
-  },
-  note: {
-    textAlign: "center",
-    opacity: 0.7,
-    lineHeight: 18,
-    paddingHorizontal: 20,
   },
 });
