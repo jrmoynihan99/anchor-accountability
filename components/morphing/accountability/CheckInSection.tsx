@@ -2,36 +2,104 @@ import { MessageInput } from "@/components/MessageInput";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { CheckInStatus, formatDate } from "./accountabilityUtils";
 
-type CheckInStatusType = "great" | "struggling" | "support" | null;
-
 interface CheckInSectionProps {
   checkInStatus: CheckInStatus;
-  onSubmit: (status: CheckInStatusType, note: string) => void;
+  onSubmit: (
+    temptationLevel: number,
+    triggers: TriggerType[] | undefined,
+    note: string
+  ) => void;
   selectedDate?: string | null; // YYYY-MM-DD format for retroactive fill
 }
 
-export function CheckInSection({
+const TRIGGER_OPTIONS: { id: TriggerType; label: string; icon: string }[] = [
+  { id: "social_media", label: "Social Media / Internet", icon: "globe" },
+  { id: "loneliness", label: "Loneliness / Isolation", icon: "person.fill" },
+  { id: "stress", label: "Stress / Anxiety", icon: "exclamationmark.triangle" },
+  { id: "boredom", label: "Boredom / Laziness", icon: "bed.double.fill" },
+  { id: "alcohol", label: "Alcohol / Substances", icon: "wineglass" },
+  { id: "attraction", label: "Seeing Attractive People", icon: "eye.fill" },
+  { id: "other", label: "Other", icon: "ellipsis.circle" },
+];
+
+export const CheckInSection = React.memo(function CheckInSection({
   checkInStatus,
   onSubmit,
   selectedDate = null,
 }: CheckInSectionProps) {
   const { colors } = useTheme();
-  const [selectedStatus, setSelectedStatus] = useState<CheckInStatusType>(null);
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const [selectedTriggers, setSelectedTriggers] = useState<TriggerType[]>([]);
   const [checkInNote, setCheckInNote] = useState("");
 
   // If we're filling retroactively, show different messaging
   const isRetroactive = selectedDate !== null;
   const displayDate = isRetroactive ? formatDate(selectedDate) : null;
 
+  const handleLevelSelect = (level: number) => {
+    setSelectedLevel(level);
+    // Reset triggers when changing level
+    if (level < 3) {
+      setSelectedTriggers([]);
+    }
+  };
+
+  const handleTriggerToggle = (trigger: TriggerType) => {
+    setSelectedTriggers((prev) =>
+      prev.includes(trigger)
+        ? prev.filter((t) => t !== trigger)
+        : [...prev, trigger]
+    );
+  };
+
   const handleSubmit = () => {
-    onSubmit(selectedStatus, checkInNote);
+    if (selectedLevel === null) return;
+
+    const triggers =
+      selectedLevel >= 3 && selectedTriggers.length > 0
+        ? selectedTriggers
+        : undefined;
+
+    onSubmit(selectedLevel, triggers, checkInNote);
+
     // Reset form
-    setSelectedStatus(null);
+    setSelectedLevel(null);
+    setSelectedTriggers([]);
     setCheckInNote("");
+  };
+
+  const getLevelColor = (level: number): string => {
+    if (level <= 2) return colors.success || "#34C759";
+    if (level <= 4) return colors.warning || "#FF9500";
+    return colors.error || "#FF3B30";
+  };
+
+  const getLevelZone = (level: number): string => {
+    if (level <= 2) return "Clean & Strong";
+    if (level <= 4) return "Clean but Struggled";
+    return "Relapsed";
+  };
+
+  const getCelebrationMessage = (level: number): string => {
+    switch (level) {
+      case 1:
+        return "Great day - keep building momentum!";
+      case 2:
+        return "You stayed strong today. Keep it up!";
+      case 3:
+        return "You faced temptation and WON. That takes real strength.";
+      case 4:
+        return "You fought hard today and won. That's what recovery looks like.";
+      case 5:
+        return "Recovery isn't linear. Tomorrow is a new day. Your mentor is here for you.";
+      default:
+        return "Check-in complete!";
+    }
   };
 
   return (
@@ -63,7 +131,7 @@ export function CheckInSection({
               ? `Add a check-in for ${displayDate}`
               : checkInStatus.hasCheckedInToday
               ? "You've checked in today"
-              : "How were things today?"}
+              : "How was your battle with temptation today?"}
           </ThemedText>
         </View>
       </View>
@@ -102,36 +170,158 @@ export function CheckInSection({
         </View>
       ) : (
         <>
-          {/* Status Options */}
+          {/* Temptation Level Grid */}
           <View style={{ marginTop: 16 }}>
-            {renderCheckOption(
-              "great",
-              "Doing Great!",
-              "checkmark.circle.fill",
-              selectedStatus,
-              setSelectedStatus,
-              colors
-            )}
-            {renderCheckOption(
-              "struggling",
-              "Struggling",
-              "exclamationmark.triangle.fill",
-              selectedStatus,
-              setSelectedStatus,
-              colors
-            )}
-            {renderCheckOption(
-              "support",
-              "Need Support",
-              "xmark.circle.fill",
-              selectedStatus,
-              setSelectedStatus,
-              colors
-            )}
+            <View style={styles.levelGrid}>
+              {/* Single Row: 1-5 */}
+              <View style={styles.levelRow}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[
+                      styles.levelButton,
+                      {
+                        backgroundColor:
+                          selectedLevel === level
+                            ? getLevelColor(level)
+                            : colors.cardBackground,
+                        borderColor:
+                          selectedLevel === level
+                            ? getLevelColor(level)
+                            : colors.border,
+                      },
+                    ]}
+                    onPress={() => handleLevelSelect(level)}
+                    activeOpacity={0.7}
+                  >
+                    <ThemedText
+                      type="subtitleSemibold"
+                      style={{
+                        color:
+                          selectedLevel === level ? colors.white : colors.text,
+                      }}
+                    >
+                      {level}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Legend */}
+            <View style={styles.legend}>
+              <LegendItem
+                color={colors.success || "#34C759"}
+                label="Clean & Strong (1-2)"
+                colors={colors}
+              />
+              <LegendItem
+                color={colors.warning || "#FF9500"}
+                label="Clean but Struggled (3-4)"
+                colors={colors}
+              />
+              <LegendItem
+                color={colors.error || "#FF3B30"}
+                label="Relapsed (5)"
+                colors={colors}
+              />
+            </View>
           </View>
 
-          {/* Optional Note Input */}
-          {selectedStatus && (
+          {/* Show selected level confirmation */}
+          {selectedLevel !== null && (
+            <View
+              style={[
+                styles.selectedLevelBanner,
+                {
+                  backgroundColor: `${getLevelColor(selectedLevel)}20`,
+                  borderColor: `${getLevelColor(selectedLevel)}40`,
+                },
+              ]}
+            >
+              <IconSymbol
+                name="checkmark.circle.fill"
+                size={20}
+                color={getLevelColor(selectedLevel)}
+              />
+              <View style={{ marginLeft: 8, flex: 1 }}>
+                <ThemedText
+                  type="bodyMedium"
+                  style={{
+                    color: colors.text,
+                  }}
+                >
+                  {getLevelZone(selectedLevel)}
+                </ThemedText>
+                <ThemedText
+                  type="caption"
+                  style={{
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
+                  {getCelebrationMessage(selectedLevel)}
+                </ThemedText>
+              </View>
+            </View>
+          )}
+
+          {/* Triggers Section (only if level >= 3) */}
+          {selectedLevel !== null && selectedLevel >= 3 && (
+            <View style={{ marginTop: 16 }}>
+              <ThemedText
+                type="subtitleSemibold"
+                style={{ color: colors.text, marginBottom: 12 }}
+              >
+                What triggered this? (Select all that apply)
+              </ThemedText>
+
+              <View style={styles.triggersGrid}>
+                {TRIGGER_OPTIONS.map((trigger) => (
+                  <TouchableOpacity
+                    key={trigger.id}
+                    style={[
+                      styles.triggerButton,
+                      {
+                        backgroundColor: selectedTriggers.includes(trigger.id)
+                          ? `${colors.buttonBackground}20`
+                          : colors.cardBackground,
+                        borderColor: selectedTriggers.includes(trigger.id)
+                          ? colors.buttonBackground
+                          : colors.border,
+                      },
+                    ]}
+                    onPress={() => handleTriggerToggle(trigger.id)}
+                    activeOpacity={0.7}
+                  >
+                    <IconSymbol
+                      name={trigger.icon}
+                      size={18}
+                      color={
+                        selectedTriggers.includes(trigger.id)
+                          ? colors.buttonBackground
+                          : colors.textSecondary
+                      }
+                    />
+                    <ThemedText
+                      type="caption"
+                      style={{
+                        color: selectedTriggers.includes(trigger.id)
+                          ? colors.text
+                          : colors.textSecondary,
+                        marginLeft: 8,
+                      }}
+                    >
+                      {trigger.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Optional Note Input (always show if level selected) */}
+          {selectedLevel !== null && (
             <View style={{ marginTop: 16 }}>
               <MessageInput
                 value={checkInNote}
@@ -144,7 +334,8 @@ export function CheckInSection({
             </View>
           )}
 
-          {selectedStatus && (
+          {/* Submit Button */}
+          {selectedLevel !== null && (
             <TouchableOpacity
               style={[
                 styles.submitButton,
@@ -153,7 +344,7 @@ export function CheckInSection({
               onPress={handleSubmit}
             >
               <ThemedText type="button" style={{ color: colors.white }}>
-                {isRetroactive ? "Add Check-In" : "Submit Check-In"}
+                Submit Check-In
               </ThemedText>
             </TouchableOpacity>
           )}
@@ -161,48 +352,36 @@ export function CheckInSection({
       )}
     </View>
   );
-}
+});
 
-/* ---------- Helper for Check-In Options ---------- */
+/* ---------- Helper Components ---------- */
 
-function renderCheckOption(
-  value: CheckInStatusType,
-  label: string,
-  icon: string,
-  selectedStatus: CheckInStatusType,
-  setSelectedStatus: (v: CheckInStatusType) => void,
-  colors: any
-) {
-  const isSelected = selectedStatus === value;
-
+function LegendItem({
+  color,
+  label,
+  colors,
+}: {
+  color: string;
+  label: string;
+  colors: any;
+}) {
   return (
-    <TouchableOpacity
-      style={[
-        styles.statusOption,
-        {
-          backgroundColor: isSelected
-            ? colors.buttonBackground
-            : colors.cardBackground,
-          borderColor: colors.border,
-        },
-      ]}
-      onPress={() => setSelectedStatus(value)}
-    >
-      <IconSymbol
-        name={icon}
-        size={22}
-        color={isSelected ? colors.white : colors.text}
-        style={{ marginRight: 12 }}
+    <View style={styles.legendItem}>
+      <View
+        style={[
+          styles.legendDot,
+          {
+            backgroundColor: color,
+          },
+        ]}
       />
       <ThemedText
-        type="bodyMedium"
-        style={{
-          color: isSelected ? colors.white : colors.text,
-        }}
+        type="caption"
+        style={{ color: colors.textSecondary, marginLeft: 6 }}
       >
         {label}
       </ThemedText>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -228,13 +407,51 @@ const styles = StyleSheet.create({
   sectionHeaderText: {
     flex: 1,
   },
-  statusOption: {
+  levelGrid: {
+    gap: 8,
+  },
+  levelRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  levelButton: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 12,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  legend: {
+    marginTop: 16,
+    gap: 8,
+  },
+  legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 14,
-    borderRadius: 12,
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  selectedLevelBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    marginBottom: 12,
+    marginTop: 16,
+  },
+  triggersGrid: {
+    gap: 8,
+  },
+  triggerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 2,
   },
   submitButton: {
     marginTop: 16,

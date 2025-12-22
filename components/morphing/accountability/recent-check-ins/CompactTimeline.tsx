@@ -2,19 +2,20 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { getStatusColor, getStatusIcon } from "../accountabilityUtils";
 
 interface CheckInRecord {
   date: string;
-  status: "great" | "struggling" | "support";
+  temptationLevel: number;
+  triggers?: TriggerType[];
   note?: string;
 }
 
 interface MissingCheckIn {
   date: string;
-  status: null;
+  temptationLevel: null;
   isMissing: true;
 }
 
@@ -25,6 +26,18 @@ interface CompactTimelineProps {
   selectedDate: string | null;
   onSelectItem: (item: TimelineItem) => void;
   userTimezone?: string | null;
+}
+
+function getTemptationColor(level: number, colors: any): string {
+  if (level <= 2) return colors.success || "#34C759";
+  if (level <= 4) return colors.warning || "#FF9500";
+  return colors.error || "#FF3B30";
+}
+
+function getTemptationIcon(level: number): string {
+  if (level <= 2) return "checkmark.circle.fill";
+  if (level <= 4) return "exclamationmark.circle.fill";
+  return "xmark.circle.fill";
 }
 
 export function CompactTimeline({
@@ -95,7 +108,7 @@ export function CompactTimeline({
                       ? `${colors.textSecondary}30`
                       : colors.cardBackground
                     : isSelected
-                    ? `${getStatusColor(item.status, colors)}30`
+                    ? `${getTemptationColor(item.temptationLevel, colors)}30`
                     : colors.cardBackground,
                   borderWidth: 2,
                   borderColor: missing
@@ -103,7 +116,7 @@ export function CompactTimeline({
                       ? colors.textSecondary
                       : colors.textSecondary
                     : isSelected
-                    ? getStatusColor(item.status, colors)
+                    ? getTemptationColor(item.temptationLevel, colors)
                     : "transparent",
                   borderStyle: missing ? "dashed" : "solid",
                   opacity: missing && !isSelected ? 0.5 : 1,
@@ -120,9 +133,9 @@ export function CompactTimeline({
                 />
               ) : (
                 <IconSymbol
-                  name={getStatusIcon(item.status)}
+                  name={getTemptationIcon(item.temptationLevel)}
                   size={18}
-                  color={getStatusColor(item.status, colors)}
+                  color={getTemptationColor(item.temptationLevel, colors)}
                 />
               )}
             </TouchableOpacity>

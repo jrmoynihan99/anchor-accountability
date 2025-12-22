@@ -106,9 +106,12 @@ export function MenteeModal({
           contentContainerStyle={{ paddingTop: 42, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
+          removeClippedSubviews={true}
         >
           <AccountabilityModalHeader
             uid={menteeUid}
+            timezone={userTimezone}
+            role="mentee" // NEW: This user is YOUR MENTEE (you support them)
             actionButtons={[
               {
                 icon: "message.fill",
@@ -116,7 +119,6 @@ export function MenteeModal({
                 onPress: handleMessage,
               },
             ]}
-            timezone={userTimezone}
           />
 
           <LatestCheckInSection
@@ -133,7 +135,7 @@ export function MenteeModal({
           )}
           <EndRelationship
             relationshipId={relationshipId}
-            role="mentor" // You are the MENTEE in this relationship (they are your mentor)
+            role="mentor" // You are the MENTOR in this relationship (you support them)
             colors={colors}
             onMessage={handleMessage}
             onComplete={() => close()}

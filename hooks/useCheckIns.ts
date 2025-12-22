@@ -15,11 +15,19 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-export type CheckInStatusType = "great" | "struggling" | "support";
+export type TriggerType =
+  | "social_media"
+  | "loneliness"
+  | "stress"
+  | "boredom"
+  | "alcohol"
+  | "attraction"
+  | "other";
 
 export interface CheckInRecord {
   date: string; // YYYY-MM-DD format
-  status: CheckInStatusType;
+  temptationLevel: number; // 1-10
+  triggers?: TriggerType[]; // Optional array of triggers
   note?: string;
   timestamp: Timestamp;
   createdBy: string;
@@ -27,7 +35,7 @@ export interface CheckInRecord {
 
 interface MissingCheckIn {
   date: string;
-  status: null;
+  temptationLevel: null;
   isMissing: true;
 }
 
@@ -41,7 +49,8 @@ interface UseCheckInsResult {
   userTimezone: string | undefined;
   submitCheckIn: (
     date: string,
-    status: CheckInStatusType,
+    temptationLevel: number,
+    triggers: TriggerType[] | undefined,
     note: string,
     userId: string
   ) => Promise<void>;
@@ -130,7 +139,8 @@ export function useCheckIns(
   // ========================================
   const submitCheckIn = async (
     date: string,
-    status: CheckInStatusType,
+    temptationLevel: number,
+    triggers: TriggerType[] | undefined,
     note: string,
     userId: string
   ) => {
@@ -146,13 +156,22 @@ export function useCheckIns(
       date
     );
 
-    const checkInData = {
+    const checkInData: any = {
       date,
-      status,
-      ...(note.trim() && { note: note.trim() }),
+      temptationLevel,
       timestamp: serverTimestamp(),
       createdBy: userId,
     };
+
+    // Only add triggers if they exist
+    if (triggers && triggers.length > 0) {
+      checkInData.triggers = triggers;
+    }
+
+    // Only add note if not empty
+    if (note.trim()) {
+      checkInData.note = note.trim();
+    }
 
     await setDoc(checkInRef, checkInData);
 
@@ -214,7 +233,7 @@ function generateCheckInTimeline(
     } else {
       timeline.push({
         date: dateString,
-        status: null,
+        temptationLevel: null,
         isMissing: true,
       });
     }

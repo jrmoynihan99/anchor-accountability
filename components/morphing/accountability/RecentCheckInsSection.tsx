@@ -2,6 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { TriggerType } from "@/hooks/useCheckIns";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -18,13 +19,14 @@ import { ExpandedCalendar } from "./recent-check-ins/ExpandedCalendar";
 
 interface CheckInRecord {
   date: string;
-  status: "great" | "struggling" | "support";
+  temptationLevel: number;
+  triggers?: TriggerType[];
   note?: string;
 }
 
 interface MissingCheckIn {
   date: string;
-  status: null;
+  temptationLevel: null;
   isMissing: true;
 }
 
@@ -37,7 +39,7 @@ interface RecentCheckInsSectionProps {
   onSelectFilled?: () => void; // Optional callback when filled day is selected
 }
 
-export function RecentCheckInsSection({
+export const RecentCheckInsSection = React.memo(function RecentCheckInsSection({
   checkIns,
   timezone,
   onFillMissing,
@@ -103,10 +105,10 @@ export function RecentCheckInsSection({
     isMissingDay: boolean
   ) => {
     const item: TimelineItem = isMissingDay
-      ? { date: dateString, status: null, isMissing: true }
+      ? { date: dateString, temptationLevel: null, isMissing: true }
       : checkIns.find((ci) => ci.date === dateString) || {
           date: dateString,
-          status: null,
+          temptationLevel: null,
           isMissing: true,
         };
 
@@ -220,19 +222,21 @@ export function RecentCheckInsSection({
         userTimezone={timezone}
       />
 
-      {/* Expanded Calendar View */}
-      <Animated.View style={animatedCalendarStyle}>
-        <ExpandedCalendar
-          currentMonth={currentMonth}
-          checkIns={checkIns}
-          selectedDate={selectedCheckIn?.date || null}
-          onSelectDate={handleCalendarDateSelect}
-          onPreviousMonth={goToPreviousMonth}
-          onNextMonth={goToNextMonth}
-          onLayout={onCalendarLayout}
-          userTimezone={timezone}
-        />
-      </Animated.View>
+      {/* Expanded Calendar View - Only mount when expanded */}
+      {isExpanded && (
+        <Animated.View style={animatedCalendarStyle}>
+          <ExpandedCalendar
+            currentMonth={currentMonth}
+            checkIns={checkIns}
+            selectedDate={selectedCheckIn?.date || null}
+            onSelectDate={handleCalendarDateSelect}
+            onPreviousMonth={goToPreviousMonth}
+            onNextMonth={goToNextMonth}
+            onLayout={onCalendarLayout}
+            userTimezone={timezone}
+          />
+        </Animated.View>
+      )}
 
       {/* Check-In Dropdown */}
       <CheckInDropdown
@@ -243,7 +247,7 @@ export function RecentCheckInsSection({
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   tile: {
