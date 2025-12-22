@@ -1,5 +1,4 @@
 // components/morphing/message-thread/accountability/AccountabilityInviteModal.tsx
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
 import { auth } from "@/lib/firebase";
@@ -14,6 +13,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
+import { AccountabilityInviteButton } from "./AccountabilityInviteButton";
 import { DefaultInviteView } from "./invite-views/DefaultInviteView";
 import { GuidelinesView } from "./invite-views/GuidelinesView";
 import { InviteDeclinedView } from "./invite-views/InviteDeclinedView";
@@ -34,6 +34,12 @@ interface AccountabilityInviteModalProps {
   pendingInvite?: any;
   otherUserMenteeCount: number;
   loadingOtherUserData: boolean;
+  buttonVariant?:
+    | "invite"
+    | "partner"
+    | "pending-sent"
+    | "pending-received"
+    | "declined"; // NEW
 }
 
 type ViewType =
@@ -57,6 +63,7 @@ export function AccountabilityInviteModal({
   pendingInvite,
   otherUserMenteeCount,
   loadingOtherUserData,
+  buttonVariant = "invite", // NEW
 }: AccountabilityInviteModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const currentUserId = auth.currentUser?.uid;
@@ -383,15 +390,9 @@ export function AccountabilityInviteModal({
     }
   };
 
-  // Button content (the invite icon in its collapsed state)
+  // ✅ Dynamic button content based on variant - NO WRAPPER
   const buttonContent = (
-    <View style={styles.buttonContent}>
-      <IconSymbol
-        name="person.badge.plus"
-        size={24}
-        color={colors.textSecondary}
-      />
-    </View>
+    <AccountabilityInviteButton variant={buttonVariant} colors={colors} />
   );
 
   const modalContent = (
@@ -430,7 +431,7 @@ export function AccountabilityInviteModal({
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.iconCircleSecondaryBackground}
       buttonContentPadding={0}
-      buttonBorderRadius={20}
+      buttonBorderRadius={23}
       buttonContent={buttonContent}
       buttonContentOpacityRange={[0, 0.2]}
     >
@@ -440,13 +441,6 @@ export function AccountabilityInviteModal({
 }
 
 const styles = StyleSheet.create({
-  buttonContent: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
   screenContainer: {
     flex: 1,
     position: "relative",
