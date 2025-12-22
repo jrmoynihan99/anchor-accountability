@@ -186,7 +186,7 @@ export const MessageInput = forwardRef<
 
               // Render different modal based on relationship type or invite state
               const renderModal = () => {
-                // Define custom button content for partner button
+                // Define custom button content for partner button - NO WRAPPER
                 const partnerButtonContent = relationshipType ? (
                   <AccountabilityInviteButton
                     variant="partner"
@@ -243,6 +243,7 @@ export const MessageInput = forwardRef<
                       pendingInvite={pendingInvite}
                       otherUserMenteeCount={otherUserMenteeCount}
                       loadingOtherUserData={loadingOtherUserData}
+                      buttonVariant={buttonVariant} // ✅ NEW - Pass current button state
                     />
                   );
                 }

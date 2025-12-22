@@ -82,6 +82,7 @@ export function MenteeModal({
     }, 300);
   };
 
+  // Determine button content
   const defaultButtonContent = (
     <View style={styles.buttonContent}>
       <MenteeCardContent
@@ -96,6 +97,8 @@ export function MenteeModal({
     </View>
   );
 
+  // If custom button content provided (e.g., partner button from MessageInput), use it directly
+  // Otherwise, wrap default card content in container
   const buttonContent = customButtonContent || defaultButtonContent;
 
   const modalContent = (
@@ -154,6 +157,7 @@ export function MenteeModal({
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonContent={buttonContent}
+      buttonContentPadding={customButtonContent ? 0 : 20} // No padding for custom button, padding for card
     >
       {modalContent}
     </BaseModal>
