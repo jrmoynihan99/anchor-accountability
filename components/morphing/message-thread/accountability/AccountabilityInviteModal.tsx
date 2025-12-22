@@ -5,12 +5,11 @@ import { auth } from "@/lib/firebase";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
-  Easing,
-  interpolate,
   SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
 } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { AccountabilityInviteButton } from "./AccountabilityInviteButton";
@@ -39,7 +38,7 @@ interface AccountabilityInviteModalProps {
     | "partner"
     | "pending-sent"
     | "pending-received"
-    | "declined"; // NEW
+    | "declined";
 }
 
 type ViewType =
@@ -52,6 +51,54 @@ type ViewType =
   | "received"
   | "declined";
 
+// Helper function to determine animation direction
+const getViewTransition = (
+  fromView: ViewType | null,
+  toView: ViewType,
+  isFirstTransition: boolean
+): {
+  entering: any;
+  exiting: any;
+} => {
+  // Define "back" transitions (views that should slide from left)
+  // Define "back" transitions - map stores [from, to] pairs that are considered "back"
+  const backTransitions = new Map<ViewType, ViewType>([
+    ["guidelines", "default"], // guidelines → default is back
+    ["mentorGuidelines", "received"], // mentorGuidelines → received is back
+    ["sent", "default"], // sent → default is back (cancel invite)
+  ]);
+
+  const isBackTransition =
+    fromView !== null && backTransitions.get(fromView) === toView;
+
+  // First transition: both views animate (fade out old, slide in new)
+  if (isFirstTransition) {
+    if (isBackTransition) {
+      return {
+        entering: SlideInLeft.springify().damping(50).stiffness(300),
+        exiting: SlideOutLeft.springify().damping(50).stiffness(300),
+      };
+    }
+    return {
+      entering: SlideInRight.springify().damping(50).stiffness(300),
+      exiting: SlideOutRight.springify().damping(50).stiffness(300),
+    };
+  }
+
+  if (isBackTransition) {
+    return {
+      entering: SlideInLeft.springify().damping(50).stiffness(300),
+      exiting: SlideOutLeft.springify().damping(50).stiffness(300),
+    };
+  }
+
+  // Default: forward transition (slide right to left)
+  return {
+    entering: SlideInRight.springify().damping(50).stiffness(300),
+    exiting: SlideOutRight.springify().damping(50).stiffness(300),
+  };
+};
+
 export function AccountabilityInviteModal({
   isVisible,
   progress,
@@ -63,7 +110,7 @@ export function AccountabilityInviteModal({
   pendingInvite,
   otherUserMenteeCount,
   loadingOtherUserData,
-  buttonVariant = "invite", // NEW
+  buttonVariant = "invite",
 }: AccountabilityInviteModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const currentUserId = auth.currentUser?.uid;
@@ -77,7 +124,7 @@ export function AccountabilityInviteModal({
     declineInvite,
     cancelInvite,
     getDeclinedInviteWith,
-    acknowledgeDeclinedInvite, // ✅ NEW
+    acknowledgeDeclinedInvite,
   } = useAccountability();
   const userHasMentor = !!mentor;
 
@@ -85,8 +132,14 @@ export function AccountabilityInviteModal({
   const [hasReadGuidelines, setHasReadGuidelines] = useState(false);
   const [hasReadMentorGuidelines, setHasReadMentorGuidelines] = useState(false);
 
-  // ✅ SIMPLIFIED: Just track if there's a declined invite (no AsyncStorage needed)
+  // Track declined invite
   const [declinedInvite, setDeclinedInvite] = useState<any | null>(null);
+
+  // Track previous view for animation direction
+  const [previousView, setPreviousView] = useState<ViewType | null>(null);
+
+  // Track transition count (0 = initial render, 1 = first transition, 2+ = subsequent)
+  const [transitionCount, setTransitionCount] = useState(0);
 
   // Check for declined invite - if it exists, show it (will be deleted on acknowledgment)
   useEffect(() => {
@@ -104,7 +157,7 @@ export function AccountabilityInviteModal({
     // Don't determine view until we have other user's data
     if (loadingOtherUserData) return "default";
 
-    // ✅ SIMPLIFIED: Check if declined invite exists (no acknowledgment check needed)
+    // Check if declined invite exists
     if (declinedInvite) {
       return "declined";
     }
@@ -124,18 +177,20 @@ export function AccountabilityInviteModal({
   };
 
   const [currentView, setCurrentView] = useState<ViewType>(getInitialView());
-  const screenTransition = useSharedValue(0);
 
-  // Reset when modal closes
+  // Reset when modal opens/closes
   useEffect(() => {
-    if (!isVisible) {
-      const timer = setTimeout(() => {
-        setCurrentView(getInitialView());
-        setHasReadGuidelines(false);
-        setHasReadMentorGuidelines(false);
-        screenTransition.value = 0;
-      }, 300);
-      return () => clearTimeout(timer);
+    if (isVisible) {
+      // When opening, reset to initial view without animation
+      setCurrentView(getInitialView());
+      setTransitionCount(0);
+      setPreviousView(null);
+    } else {
+      // When closing, reset everything immediately (no delay)
+      setHasReadGuidelines(false);
+      setHasReadMentorGuidelines(false);
+      setTransitionCount(0);
+      setPreviousView(null);
     }
   }, [isVisible]);
 
@@ -144,7 +199,9 @@ export function AccountabilityInviteModal({
     if (isVisible && !loadingOtherUserData) {
       const newView = getInitialView();
       if (newView !== currentView) {
-        transitionToView(newView);
+        setPreviousView(currentView);
+        setCurrentView(newView);
+        setTransitionCount((prev) => prev + 1);
       }
     }
   }, [
@@ -158,87 +215,28 @@ export function AccountabilityInviteModal({
   ]);
 
   const transitionToView = (view: ViewType) => {
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView(view);
-      screenTransition.value = 0;
-    }, 300);
+    setPreviousView(currentView);
+    setCurrentView(view);
+    setTransitionCount((prev) => prev + 1);
   };
 
-  // Mentee guidelines navigation (for sending invites)
-  const handleNavigateToGuidelines = () => {
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("guidelines");
-      screenTransition.value = 0;
-    }, 300);
-  };
-
-  const handleBackFromGuidelines = () => {
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("default");
-      screenTransition.value = 0;
-    }, 300);
-  };
-
+  // Navigation handlers - all just call transitionToView
+  const handleNavigateToGuidelines = () => transitionToView("guidelines");
+  const handleBackFromGuidelines = () => transitionToView("default");
   const handleConfirmGuidelines = () => {
     setHasReadGuidelines(true);
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("default");
-      screenTransition.value = 0;
-    }, 300);
+    transitionToView("default");
   };
 
-  // Mentor guidelines navigation (for accepting invites)
-  const handleNavigateToMentorGuidelines = () => {
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("mentorGuidelines");
-      screenTransition.value = 0;
-    }, 300);
-  };
-
-  const handleBackFromMentorGuidelines = () => {
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("received");
-      screenTransition.value = 0;
-    }, 300);
-  };
-
+  const handleNavigateToMentorGuidelines = () =>
+    transitionToView("mentorGuidelines");
+  const handleBackFromMentorGuidelines = () => transitionToView("received");
   const handleConfirmMentorGuidelines = () => {
     setHasReadMentorGuidelines(true);
-    screenTransition.value = withTiming(1, {
-      duration: 300,
-      easing: Easing.out(Easing.quad),
-    });
-    setTimeout(() => {
-      setCurrentView("received");
-      screenTransition.value = 0;
-    }, 300);
+    transitionToView("received");
   };
 
-  // ✅ Mark declined invite as acknowledged in Firestore
+  // Mark declined invite as acknowledged in Firestore
   const handleAcknowledgeDecline = async () => {
     if (!declinedInvite) return;
 
@@ -275,7 +273,7 @@ export function AccountabilityInviteModal({
     close();
   };
 
-  // ✅ Wrapper for close that acknowledges declined invite if needed
+  // Wrapper for close that acknowledges declined invite if needed
   const handleClose = (velocity?: number) => {
     // If we're currently showing the declined view, acknowledge before closing
     if (currentView === "declined" && declinedInvite) {
@@ -284,140 +282,117 @@ export function AccountabilityInviteModal({
     close(velocity);
   };
 
-  // Animation styles
-  const currentScreenStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: interpolate(
-          screenTransition.value,
-          [0, 1],
-          [0, -100],
-          "clamp"
-        ),
-      },
-    ],
-    opacity: interpolate(
-      screenTransition.value,
-      [0, 0.8, 1],
-      [1, 0.3, 0],
-      "clamp"
-    ),
-  }));
-
-  const nextScreenStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: interpolate(
-          screenTransition.value,
-          [0, 1],
-          [300, 0],
-          "clamp"
-        ),
-      },
-    ],
-    opacity: interpolate(
-      screenTransition.value,
-      [0, 0.2, 1],
-      [0, 1, 1],
-      "clamp"
-    ),
-  }));
-
-  // Render the appropriate view
+  // Render the appropriate view with animations
   const renderView = (view: ViewType) => {
     const commonProps = {
       colors,
       otherUserId,
       threadName,
-      onClose: handleClose, // ✅ Use wrapper that acknowledges
+      onClose: handleClose,
     };
 
-    switch (view) {
-      case "default":
-        return (
-          <DefaultInviteView
-            {...commonProps}
-            onSendInvite={handleSendInvite}
-            onTransitionToRestricted={(type) => {
-              if (type === "hasMentor") transitionToView("userHasMentor");
-              if (type === "maxMentees") transitionToView("maxMentees");
-            }}
-            onNavigateToGuidelines={handleNavigateToGuidelines}
-            hasReadGuidelines={hasReadGuidelines}
-          />
-        );
-      case "guidelines":
-        return (
-          <GuidelinesView
-            {...commonProps}
-            onBackPress={handleBackFromGuidelines}
-            onConfirm={handleConfirmGuidelines}
-          />
-        );
-      case "mentorGuidelines":
-        return (
-          <MentorGuidelinesView
-            {...commonProps}
-            onBackPress={handleBackFromMentorGuidelines}
-            onConfirm={handleConfirmMentorGuidelines}
-          />
-        );
-      case "userHasMentor":
-        return <RestrictedUserHasMentorView {...commonProps} />;
-      case "maxMentees":
-        return <RestrictedMaxMenteesView {...commonProps} />;
-      case "sent":
-        return (
-          <InviteSentView
-            {...commonProps}
-            onCancelInvite={handleCancelInvite}
-          />
-        );
-      case "received":
-        return (
-          <ReceivedInviteView
-            {...commonProps}
-            onAcceptInvite={handleAcceptInvite}
-            onDeclineInvite={handleDeclineInvite}
-            onNavigateToGuidelines={handleNavigateToMentorGuidelines}
-            hasReadGuidelines={hasReadMentorGuidelines}
-          />
-        );
-      case "declined":
-        return <InviteDeclinedView {...commonProps} />;
-      default:
-        return null;
-    }
+    // Always get the exit animation for the current view
+    // This ensures the view knows how to exit even if it was the initial view
+    const { entering, exiting } = (() => {
+      if (transitionCount === 0) {
+        // Initial render: no entering animation, but define exit animation for later
+        // Default view exits left (forward), guidelines exits right (back)
+        const exitsToRight =
+          view === "guidelines" || view === "mentorGuidelines";
+        return {
+          entering: undefined,
+          exiting: exitsToRight
+            ? SlideOutRight.springify().damping(50).stiffness(300)
+            : SlideOutLeft.springify().damping(50).stiffness(300),
+        };
+      }
+
+      // All transitions after initial render
+      return getViewTransition(previousView, view, transitionCount === 1);
+    })();
+
+    // Determine which view component to render
+    const ViewContent = () => {
+      switch (view) {
+        case "default":
+          return (
+            <DefaultInviteView
+              {...commonProps}
+              onSendInvite={handleSendInvite}
+              onTransitionToRestricted={(type) => {
+                if (type === "hasMentor") transitionToView("userHasMentor");
+                if (type === "maxMentees") transitionToView("maxMentees");
+              }}
+              onNavigateToGuidelines={handleNavigateToGuidelines}
+              hasReadGuidelines={hasReadGuidelines}
+            />
+          );
+        case "guidelines":
+          return (
+            <GuidelinesView
+              {...commonProps}
+              onBackPress={handleBackFromGuidelines}
+              onConfirm={handleConfirmGuidelines}
+            />
+          );
+        case "mentorGuidelines":
+          return (
+            <MentorGuidelinesView
+              {...commonProps}
+              onBackPress={handleBackFromMentorGuidelines}
+              onConfirm={handleConfirmMentorGuidelines}
+            />
+          );
+        case "userHasMentor":
+          return <RestrictedUserHasMentorView {...commonProps} />;
+        case "maxMentees":
+          return <RestrictedMaxMenteesView {...commonProps} />;
+        case "sent":
+          return (
+            <InviteSentView
+              {...commonProps}
+              onCancelInvite={handleCancelInvite}
+            />
+          );
+        case "received":
+          return (
+            <ReceivedInviteView
+              {...commonProps}
+              onAcceptInvite={handleAcceptInvite}
+              onDeclineInvite={handleDeclineInvite}
+              onNavigateToGuidelines={handleNavigateToMentorGuidelines}
+              hasReadGuidelines={hasReadMentorGuidelines}
+            />
+          );
+        case "declined":
+          return <InviteDeclinedView {...commonProps} />;
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <Animated.View
+        key={view}
+        entering={entering}
+        exiting={exiting}
+        style={StyleSheet.absoluteFill}
+      >
+        <ViewContent />
+      </Animated.View>
+    );
   };
 
-  // ✅ Dynamic button content based on variant - NO WRAPPER
+  // Dynamic button content based on variant
   const buttonContent = (
     <AccountabilityInviteButton variant={buttonVariant} colors={colors} />
   );
 
   const modalContent = (
     <View style={styles.screenContainer}>
-      <Animated.View
-        style={[
-          styles.screenWrapper,
-          styles.screenBackground,
-          currentScreenStyle,
-        ]}
-      >
+      <View style={[styles.screenWrapper, styles.screenBackground]}>
         {renderView(currentView)}
-      </Animated.View>
-
-      {screenTransition.value > 0 && (
-        <Animated.View
-          style={[
-            styles.screenWrapper,
-            styles.screenBackground,
-            nextScreenStyle,
-          ]}
-        >
-          {renderView(currentView)}
-        </Animated.View>
-      )}
+      </View>
     </View>
   );
 
@@ -426,7 +401,7 @@ export function AccountabilityInviteModal({
       isVisible={isVisible}
       progress={progress}
       modalAnimatedStyle={modalAnimatedStyle}
-      close={handleClose} // ✅ Use wrapper that acknowledges
+      close={handleClose}
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.iconCircleSecondaryBackground}

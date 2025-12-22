@@ -83,7 +83,7 @@ export function AccountabilityReceivedInviteBanner({
             type="bodyMedium"
             style={[styles.title, { color: colors.text }]}
           >
-            {threadName} invited you to be accountability partners
+            {threadName} invited you to be their Anchor Partner
           </ThemedText>
           <ThemedText
             type="caption"
