@@ -128,8 +128,7 @@ export function AccountabilityInviteModal({
   } = useAccountability();
   const userHasMentor = !!mentor;
 
-  // Track if user has read guidelines (separate for mentee and mentor flows)
-  const [hasReadGuidelines, setHasReadGuidelines] = useState(false);
+  // Track if user has read mentor guidelines (for received invites)
   const [hasReadMentorGuidelines, setHasReadMentorGuidelines] = useState(false);
 
   // Track declined invite
@@ -140,6 +139,15 @@ export function AccountabilityInviteModal({
 
   // Track transition count (0 = initial render, 1 = first transition, 2+ = subsequent)
   const [transitionCount, setTransitionCount] = useState(0);
+
+  // Track which direction guidelines will exit (null = not set, 'back' = to default, 'forward' = to sent)
+  const [guidelinesExitDirection, setGuidelinesExitDirection] = useState<
+    "back" | "forward" | null
+  >(null);
+
+  // Track which direction mentor guidelines will exit (null = not set, 'back' = to received, 'accept' = accept invite, 'decline' = decline invite)
+  const [mentorGuidelinesExitDirection, setMentorGuidelinesExitDirection] =
+    useState<"back" | "accept" | "decline" | null>(null);
 
   // Check for declined invite - if it exists, show it (will be deleted on acknowledgment)
   useEffect(() => {
@@ -185,12 +193,15 @@ export function AccountabilityInviteModal({
       setCurrentView(getInitialView());
       setTransitionCount(0);
       setPreviousView(null);
+      setGuidelinesExitDirection(null);
+      setMentorGuidelinesExitDirection(null);
     } else {
       // When closing, reset everything immediately (no delay)
-      setHasReadGuidelines(false);
       setHasReadMentorGuidelines(false);
       setTransitionCount(0);
       setPreviousView(null);
+      setGuidelinesExitDirection(null);
+      setMentorGuidelinesExitDirection(null);
     }
   }, [isVisible]);
 
@@ -218,19 +229,32 @@ export function AccountabilityInviteModal({
     setPreviousView(currentView);
     setCurrentView(view);
     setTransitionCount((prev) => prev + 1);
+
+    // Reset guidelines exit direction after transitioning away from guidelines
+    if (currentView === "guidelines") {
+      setTimeout(() => setGuidelinesExitDirection(null), 100);
+    }
+
+    // Reset mentor guidelines exit direction after transitioning away from mentorGuidelines
+    if (currentView === "mentorGuidelines") {
+      setTimeout(() => setMentorGuidelinesExitDirection(null), 100);
+    }
   };
 
-  // Navigation handlers - all just call transitionToView
+  // Navigation handlers
   const handleNavigateToGuidelines = () => transitionToView("guidelines");
-  const handleBackFromGuidelines = () => transitionToView("default");
-  const handleConfirmGuidelines = () => {
-    setHasReadGuidelines(true);
-    transitionToView("default");
+  const handleBackFromGuidelines = () => {
+    setGuidelinesExitDirection("back");
+    // Use setTimeout to ensure state updates before transition
+    setTimeout(() => transitionToView("default"), 0);
   };
 
   const handleNavigateToMentorGuidelines = () =>
     transitionToView("mentorGuidelines");
-  const handleBackFromMentorGuidelines = () => transitionToView("received");
+  const handleBackFromMentorGuidelines = () => {
+    setMentorGuidelinesExitDirection("back");
+    setTimeout(() => transitionToView("received"), 0);
+  };
   const handleConfirmMentorGuidelines = () => {
     setHasReadMentorGuidelines(true);
     transitionToView("received");
@@ -248,9 +272,10 @@ export function AccountabilityInviteModal({
     }
   };
 
-  // Handlers that will be passed to child components
+  // Send invite handler - will be called from GuidelinesView after confirmation
   const handleSendInvite = async () => {
     if (!currentUserId) return;
+    setGuidelinesExitDirection("forward");
     await sendInvite(otherUserId);
     transitionToView("sent");
   };
@@ -263,12 +288,14 @@ export function AccountabilityInviteModal({
 
   const handleAcceptInvite = async () => {
     if (!pendingInvite) return;
+    setMentorGuidelinesExitDirection("accept");
     await acceptInvite(pendingInvite.id);
     close();
   };
 
   const handleDeclineInvite = async () => {
     if (!pendingInvite) return;
+    setMentorGuidelinesExitDirection("decline");
     await declineInvite(pendingInvite.id);
     close();
   };
@@ -296,19 +323,43 @@ export function AccountabilityInviteModal({
     const { entering, exiting } = (() => {
       if (transitionCount === 0) {
         // Initial render: no entering animation, but define exit animation for later
-        // Default view exits left (forward), guidelines exits right (back)
-        const exitsToRight =
-          view === "guidelines" || view === "mentorGuidelines";
+        // Default to SlideOutLeft for forward transitions (most common)
         return {
           entering: undefined,
-          exiting: exitsToRight
-            ? SlideOutRight.springify().damping(50).stiffness(300)
-            : SlideOutLeft.springify().damping(50).stiffness(300),
+          exiting: SlideOutLeft.springify().damping(50).stiffness(300),
         };
       }
 
       // All transitions after initial render
-      return getViewTransition(previousView, view, transitionCount === 1);
+      const transition = getViewTransition(
+        previousView,
+        view,
+        transitionCount === 1
+      );
+
+      // Special case: if this is guidelines and we know which direction it will exit, override the exit animation
+      if (view === "guidelines" && guidelinesExitDirection) {
+        return {
+          entering: transition.entering,
+          exiting:
+            guidelinesExitDirection === "forward"
+              ? SlideOutLeft.springify().damping(50).stiffness(300)
+              : SlideOutRight.springify().damping(50).stiffness(300),
+        };
+      }
+
+      // Special case: if this is mentorGuidelines and we know which direction it will exit, override the exit animation
+      if (view === "mentorGuidelines" && mentorGuidelinesExitDirection) {
+        return {
+          entering: transition.entering,
+          exiting:
+            mentorGuidelinesExitDirection === "back"
+              ? SlideOutRight.springify().damping(50).stiffness(300)
+              : SlideOutLeft.springify().damping(50).stiffness(300), // accept or decline both close modal (slide left)
+        };
+      }
+
+      return transition;
     })();
 
     // Determine which view component to render
@@ -318,13 +369,11 @@ export function AccountabilityInviteModal({
           return (
             <DefaultInviteView
               {...commonProps}
-              onSendInvite={handleSendInvite}
               onTransitionToRestricted={(type) => {
                 if (type === "hasMentor") transitionToView("userHasMentor");
                 if (type === "maxMentees") transitionToView("maxMentees");
               }}
               onNavigateToGuidelines={handleNavigateToGuidelines}
-              hasReadGuidelines={hasReadGuidelines}
             />
           );
         case "guidelines":
@@ -332,7 +381,7 @@ export function AccountabilityInviteModal({
             <GuidelinesView
               {...commonProps}
               onBackPress={handleBackFromGuidelines}
-              onConfirm={handleConfirmGuidelines}
+              onSendInvite={handleSendInvite}
             />
           );
         case "mentorGuidelines":
@@ -340,7 +389,8 @@ export function AccountabilityInviteModal({
             <MentorGuidelinesView
               {...commonProps}
               onBackPress={handleBackFromMentorGuidelines}
-              onConfirm={handleConfirmMentorGuidelines}
+              onAcceptInvite={handleAcceptInvite}
+              onDeclineInvite={handleDeclineInvite}
             />
           );
         case "userHasMentor":

@@ -2,27 +2,68 @@
 import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useTimezoneComparison } from "@/hooks/useTimezoneComparison";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface MentorGuidelinesViewProps {
   colors: any;
+  otherUserId: string;
   threadName: string;
   onBackPress: () => void;
-  onConfirm: () => void;
+  onAcceptInvite: () => Promise<void>;
+  onDeclineInvite: () => Promise<void>;
+  onClose: () => void;
 }
 
 export function MentorGuidelinesView({
   colors,
+  otherUserId,
   threadName,
   onBackPress,
-  onConfirm,
+  onAcceptInvite,
+  onDeclineInvite,
+  onClose,
 }: MentorGuidelinesViewProps) {
   const [hasConfirmed, setHasConfirmed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfirm = () => {
-    if (hasConfirmed) {
-      onConfirm();
+  // Use timezone comparison hook
+  const {
+    shouldShowWarning: shouldShowTimezoneWarning,
+    timeDifference,
+    otherUserLocalTime,
+  } = useTimezoneComparison(otherUserId);
+
+  const handleAcceptInvite = async () => {
+    if (!hasConfirmed) return;
+
+    setIsLoading(true);
+    try {
+      await onAcceptInvite();
+      // Modal will close automatically
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeclineInvite = async () => {
+    setIsLoading(true);
+    try {
+      await onDeclineInvite();
+      // Modal will close automatically
+    } catch (error) {
+      console.error("Error declining invite:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -303,23 +344,100 @@ export function MentorGuidelinesView({
           </ThemedText>
         </TouchableOpacity>
 
-        {/* Continue Button */}
+        {/* Timezone Warning Section (only show if checkbox is confirmed and significant difference) */}
+        {hasConfirmed && shouldShowTimezoneWarning && (
+          <View
+            style={[
+              styles.timezoneCard,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <View style={styles.timezoneHeader}>
+              <IconSymbol
+                name="clock.fill"
+                size={18}
+                color={colors.textSecondary}
+              />
+              <ThemedText
+                type="bodyMedium"
+                style={[styles.timezoneTitle, { color: colors.text }]}
+              >
+                Keep Their Timezone in Mind
+              </ThemedText>
+            </View>
+            <ThemedText
+              type="body"
+              style={[styles.timezoneLabel, { color: colors.textSecondary }]}
+            >
+              {threadName}'s local time is:
+            </ThemedText>
+            <ThemedText
+              type="body"
+              style={[styles.timezoneValue, { color: colors.text }]}
+            >
+              {otherUserLocalTime} (
+              {timeDifference > 0
+                ? `${timeDifference} ${
+                    Math.abs(timeDifference) === 1 ? "hour" : "hours"
+                  } ahead`
+                : `${Math.abs(timeDifference)} ${
+                    Math.abs(timeDifference) === 1 ? "hour" : "hours"
+                  } behind`}
+              )
+            </ThemedText>
+            <ThemedText
+              type="caption"
+              style={[styles.timezoneNote, { color: colors.textSecondary }]}
+            >
+              You may receive check-ins or messages from them at different times
+              than you're typically available.
+            </ThemedText>
+          </View>
+        )}
+
+        {/* Accept Button */}
         <TouchableOpacity
           style={[
-            styles.continueButton,
+            styles.acceptButton,
             {
-              backgroundColor: hasConfirmed ? colors.tint : colors.border,
-              opacity: hasConfirmed ? 1 : 0.6,
+              backgroundColor: hasConfirmed
+                ? colors.success || "#34C759"
+                : colors.border,
+              opacity: isLoading || !hasConfirmed ? 0.6 : 1,
             },
           ]}
-          onPress={handleConfirm}
-          disabled={!hasConfirmed}
+          onPress={handleAcceptInvite}
+          disabled={!hasConfirmed || isLoading}
           activeOpacity={0.8}
         >
-          <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
-            Continue to Accept Invite
-          </ThemedText>
+          {isLoading ? (
+            <ActivityIndicator color={colors.white} />
+          ) : (
+            <ThemedText type="subtitleSemibold" style={{ color: colors.white }}>
+              Accept Invite
+            </ThemedText>
+          )}
         </TouchableOpacity>
+
+        {/* Decline Button */}
+        {hasConfirmed && (
+          <TouchableOpacity
+            style={[styles.declineButton, { borderColor: colors.border }]}
+            onPress={handleDeclineInvite}
+            disabled={isLoading}
+            activeOpacity={0.8}
+          >
+            <ThemedText
+              type="subtitleSemibold"
+              style={{ color: colors.textSecondary }}
+            >
+              Decline
+            </ThemedText>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -452,10 +570,50 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 22,
   },
-  continueButton: {
-    paddingVertical: 16,
+  timezoneCard: {
+    padding: 14,
     borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  timezoneHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  timezoneTitle: {
+    flex: 1,
+  },
+  timezoneLabel: {
+    lineHeight: 20,
+    opacity: 0.9,
+    marginBottom: 4,
+  },
+  timezoneValue: {
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  timezoneNote: {
+    lineHeight: 18,
+    opacity: 0.8,
+  },
+  acceptButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 12,
+  },
+  declineButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
   },
 });
