@@ -16,6 +16,7 @@ import { AccountabilityInviteButton } from "./AccountabilityInviteButton";
 import { DefaultInviteView } from "./invite-views/DefaultInviteView";
 import { GuidelinesView } from "./invite-views/GuidelinesView";
 import { InviteDeclinedView } from "./invite-views/InviteDeclinedView";
+import { InviteRespondedView } from "./invite-views/InviteRespondedView";
 import { InviteSentView } from "./invite-views/InviteSentView";
 import { MentorGuidelinesView } from "./invite-views/MentorGuidelinesView";
 import { ReceivedInviteView } from "./invite-views/ReceivedInviteView";
@@ -49,7 +50,8 @@ type ViewType =
   | "maxMentees"
   | "sent"
   | "received"
-  | "declined";
+  | "declined"
+  | "responded";
 
 // Helper function to determine animation direction
 const getViewTransition = (
@@ -75,27 +77,27 @@ const getViewTransition = (
   if (isFirstTransition) {
     if (isBackTransition) {
       return {
-        entering: SlideInLeft.springify().damping(50).stiffness(300),
-        exiting: SlideOutLeft.springify().damping(50).stiffness(300),
+        entering: SlideInLeft.springify().damping(70).stiffness(400),
+        exiting: SlideOutLeft.springify().damping(70).stiffness(400),
       };
     }
     return {
-      entering: SlideInRight.springify().damping(50).stiffness(300),
-      exiting: SlideOutRight.springify().damping(50).stiffness(300),
+      entering: SlideInRight.springify().damping(70).stiffness(400),
+      exiting: SlideOutRight.springify().damping(70).stiffness(400),
     };
   }
 
   if (isBackTransition) {
     return {
-      entering: SlideInLeft.springify().damping(50).stiffness(300),
-      exiting: SlideOutLeft.springify().damping(50).stiffness(300),
+      entering: SlideInLeft.springify().damping(70).stiffness(400),
+      exiting: SlideOutLeft.springify().damping(70).stiffness(400),
     };
   }
 
   // Default: forward transition (slide right to left)
   return {
-    entering: SlideInRight.springify().damping(50).stiffness(300),
-    exiting: SlideOutRight.springify().damping(50).stiffness(300),
+    entering: SlideInRight.springify().damping(70).stiffness(400),
+    exiting: SlideOutRight.springify().damping(70).stiffness(400),
   };
 };
 
@@ -128,6 +130,8 @@ export function AccountabilityInviteModal({
   } = useAccountability();
   const userHasMentor = !!mentor;
 
+  const [isHandlingResponse, setIsHandlingResponse] = useState(false);
+
   // Track if user has read mentor guidelines (for received invites)
   const [hasReadMentorGuidelines, setHasReadMentorGuidelines] = useState(false);
 
@@ -148,6 +152,11 @@ export function AccountabilityInviteModal({
   // Track which direction mentor guidelines will exit (null = not set, 'back' = to received, 'accept' = accept invite, 'decline' = decline invite)
   const [mentorGuidelinesExitDirection, setMentorGuidelinesExitDirection] =
     useState<"back" | "accept" | "decline" | null>(null);
+
+  // Track response type for responded view
+  const [responseType, setResponseType] = useState<
+    "accepted" | "declined" | null
+  >(null);
 
   // Check for declined invite - if it exists, show it (will be deleted on acknowledgment)
   useEffect(() => {
@@ -195,6 +204,7 @@ export function AccountabilityInviteModal({
       setPreviousView(null);
       setGuidelinesExitDirection(null);
       setMentorGuidelinesExitDirection(null);
+      setIsHandlingResponse(false); // ✅ Reset flag
     } else {
       // When closing, reset everything immediately (no delay)
       setHasReadMentorGuidelines(false);
@@ -202,12 +212,14 @@ export function AccountabilityInviteModal({
       setPreviousView(null);
       setGuidelinesExitDirection(null);
       setMentorGuidelinesExitDirection(null);
+      setIsHandlingResponse(false); // ✅ Reset flag
     }
   }, [isVisible]);
 
   // Update view when inviteState or data changes
   useEffect(() => {
-    if (isVisible && !loadingOtherUserData) {
+    if (isVisible && !loadingOtherUserData && !isHandlingResponse) {
+      // ✅ Add check
       const newView = getInitialView();
       if (newView !== currentView) {
         setPreviousView(currentView);
@@ -223,6 +235,7 @@ export function AccountabilityInviteModal({
     loadingOtherUserData,
     isVisible,
     declinedInvite,
+    isHandlingResponse, // ✅ Add to dependencies
   ]);
 
   const transitionToView = (view: ViewType) => {
@@ -286,18 +299,41 @@ export function AccountabilityInviteModal({
     transitionToView("default");
   };
 
+  // Update handleAcceptInvite in AccountabilityInviteModal.tsx
   const handleAcceptInvite = async () => {
     if (!pendingInvite) return;
+    setIsHandlingResponse(true);
     setMentorGuidelinesExitDirection("accept");
-    await acceptInvite(pendingInvite.id);
-    close();
+
+    // Show the confirmation view FIRST
+    setResponseType("accepted");
+    setTimeout(() => transitionToView("responded"), 0); // ✅ Add setTimeout
+
+    // Wait 5 seconds to show confirmation
+    setTimeout(() => {
+      close(); // ✅ Start close animation at 5000ms
+
+      // THEN write to Firestore 300ms later (during close animation)
+      setTimeout(async () => {
+        await acceptInvite(pendingInvite.id);
+        setIsHandlingResponse(false);
+      }, 300);
+    }, 5000);
   };
 
   const handleDeclineInvite = async () => {
     if (!pendingInvite) return;
+    setIsHandlingResponse(true); // ✅ Set flag
     setMentorGuidelinesExitDirection("decline");
     await declineInvite(pendingInvite.id);
-    close();
+
+    setResponseType("declined");
+    transitionToView("responded");
+
+    setTimeout(() => {
+      close();
+      setIsHandlingResponse(false); // ✅ Reset flag
+    }, 5000);
   };
 
   // Wrapper for close that acknowledges declined invite if needed
@@ -326,7 +362,7 @@ export function AccountabilityInviteModal({
         // Default to SlideOutLeft for forward transitions (most common)
         return {
           entering: undefined,
-          exiting: SlideOutLeft.springify().damping(50).stiffness(300),
+          exiting: SlideOutLeft.springify().damping(70).stiffness(400),
         };
       }
 
@@ -343,8 +379,8 @@ export function AccountabilityInviteModal({
           entering: transition.entering,
           exiting:
             guidelinesExitDirection === "forward"
-              ? SlideOutLeft.springify().damping(50).stiffness(300)
-              : SlideOutRight.springify().damping(50).stiffness(300),
+              ? SlideOutLeft.springify().damping(70).stiffness(400)
+              : SlideOutRight.springify().damping(70).stiffness(400),
         };
       }
 
@@ -354,8 +390,8 @@ export function AccountabilityInviteModal({
           entering: transition.entering,
           exiting:
             mentorGuidelinesExitDirection === "back"
-              ? SlideOutRight.springify().damping(50).stiffness(300)
-              : SlideOutLeft.springify().damping(50).stiffness(300), // accept or decline both close modal (slide left)
+              ? SlideOutRight.springify().damping(70).stiffness(400)
+              : SlideOutLeft.springify().damping(70).stiffness(400), // accept or decline both close modal (slide left)
         };
       }
 
@@ -416,6 +452,14 @@ export function AccountabilityInviteModal({
           );
         case "declined":
           return <InviteDeclinedView {...commonProps} />;
+        case "responded":
+          return (
+            <InviteRespondedView
+              colors={colors}
+              type={responseType || "declined"}
+              threadName={threadName}
+            />
+          );
         default:
           return null;
       }
