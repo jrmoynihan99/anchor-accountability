@@ -39,7 +39,7 @@ interface DeclinedInvite extends AccountabilityRelationship {
   id: string; // Firestore doc id
 }
 
-// ✅ Ended relationship shapes used for banners (now include relationshipId)
+// Ended relationship shapes used for banners (now include relationshipId)
 export interface RecentlyEndedMentorBanner {
   relationshipId: string;
   mentorUid: string;
@@ -50,6 +50,17 @@ export interface RecentlyEndedMenteeBanner {
   relationshipId: string;
   menteeUid: string;
   endedByUid: string;
+}
+
+// ✅ NEW: Deleted relationship shapes for banners
+export interface RecentlyDeletedMentorBanner {
+  relationshipId: string;
+  mentorUid: string;
+}
+
+export interface RecentlyDeletedMenteeBanner {
+  relationshipId: string;
+  menteeUid: string;
 }
 
 export function useAccountabilityRelationships() {
@@ -74,6 +85,14 @@ export function useAccountabilityRelationships() {
     RecentlyEndedMenteeBanner[]
   >([]);
 
+  // ✅ NEW: Recently deleted relationships (for banner detection)
+  const [recentlyDeletedMentor, setRecentlyDeletedMentor] =
+    useState<RecentlyDeletedMentorBanner | null>(null);
+
+  const [recentlyDeletedMentees, setRecentlyDeletedMentees] = useState<
+    RecentlyDeletedMenteeBanner[]
+  >([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -88,6 +107,8 @@ export function useAccountabilityRelationships() {
   const declinedInvitesUnsubRef = useRef<Unsubscribe | null>(null);
   const endedMentorUnsubRef = useRef<Unsubscribe | null>(null);
   const endedMenteesUnsubRef = useRef<Unsubscribe | null>(null);
+  const deletedMentorUnsubRef = useRef<Unsubscribe | null>(null);
+  const deletedMenteesUnsubRef = useRef<Unsubscribe | null>(null);
 
   // Cache to avoid refetching user docs repeatedly
   const timezoneCache = useRef<Record<string, string | undefined>>({}).current;
@@ -119,6 +140,8 @@ export function useAccountabilityRelationships() {
       setDeclinedInvites([]);
       setRecentlyEndedMentor(null);
       setRecentlyEndedMentees([]);
+      setRecentlyDeletedMentor(null);
+      setRecentlyDeletedMentees([]);
       setLoading(false);
       return;
     }
@@ -376,6 +399,63 @@ export function useAccountabilityRelationships() {
       }
     );
 
+    // ===============================
+    // 🗑️ LISTEN FOR DELETED MENTOR RELATIONSHIP (I am the mentee)
+    // ===============================
+    const deletedMentorQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("menteeUid", "==", uid),
+      where("status", "==", "deleted")
+    );
+
+    deletedMentorUnsubRef.current = onSnapshot(
+      deletedMentorQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const docSnap = snapshot.docs[0];
+          const data = docSnap.data() as AccountabilityRelationship;
+
+          setRecentlyDeletedMentor({
+            relationshipId: docSnap.id,
+            mentorUid: data.mentorUid,
+          });
+        } else {
+          setRecentlyDeletedMentor(null);
+        }
+      },
+      (err) => {
+        console.error("deleted mentor listener error:", err);
+      }
+    );
+
+    // ===============================
+    // 🗑️ LISTEN FOR DELETED MENTEE RELATIONSHIPS (I am the mentor)
+    // ===============================
+    const deletedMenteesQuery = query(
+      collection(db, "accountabilityRelationships"),
+      where("mentorUid", "==", uid),
+      where("status", "==", "deleted")
+    );
+
+    deletedMenteesUnsubRef.current = onSnapshot(
+      deletedMenteesQuery,
+      (snapshot) => {
+        const deleted = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as AccountabilityRelationship;
+
+          return {
+            relationshipId: docSnap.id,
+            menteeUid: data.menteeUid,
+          } satisfies RecentlyDeletedMenteeBanner;
+        });
+
+        setRecentlyDeletedMentees(deleted);
+      },
+      (err) => {
+        console.error("deleted mentees listener error:", err);
+      }
+    );
+
     setLoading(false);
 
     return () => {
@@ -386,6 +466,8 @@ export function useAccountabilityRelationships() {
       declinedInvitesUnsubRef.current?.();
       endedMentorUnsubRef.current?.();
       endedMenteesUnsubRef.current?.();
+      deletedMentorUnsubRef.current?.();
+      deletedMenteesUnsubRef.current?.();
     };
   }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
 
@@ -531,6 +613,10 @@ export function useAccountabilityRelationships() {
     // Recently ended relationships (for banner detection)
     recentlyEndedMentor,
     recentlyEndedMentees,
+
+    // ✅ NEW: Recently deleted relationships (for banner detection)
+    recentlyDeletedMentor,
+    recentlyDeletedMentees,
 
     // State
     loading: loading || blockedLoading || blockedByLoading,

@@ -18,7 +18,8 @@ type BannerType =
   | "ended-mentor"
   | "ended-mentee"
   | "declined"
-  | "received";
+  | "received"
+  | "deleted";
 
 interface RelationshipBannerProps {
   type: BannerType;
@@ -108,6 +109,20 @@ export function RelationshipBanner({
       showViewButton: true,
       viewButtonBackground: colors.white,
       viewButtonTextColor: colors.tint,
+    },
+    deleted: {
+      icon: "person.crop.circle.badge.xmark" as const,
+      iconColor: colors.textSecondary,
+      iconBackgroundColor: colors.iconCircleSecondaryBackground,
+      title: "Partner Deleted Account",
+      titleColor: colors.text,
+      subtitle: `${personName} deleted their account, ending partnership`,
+      subtitleColor: colors.textSecondary,
+      backgroundColor: colors.cardBackground,
+      borderColor: colors.border,
+      showViewButton: false,
+      viewButtonBackground: undefined,
+      viewButtonTextColor: undefined,
     },
   };
 
