@@ -2,7 +2,7 @@
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
 import { auth } from "@/lib/firebase";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   SharedValue,
@@ -158,6 +158,9 @@ export function AccountabilityInviteModal({
     "accepted" | "declined" | null
   >(null);
 
+  // ✅ ADD THIS: Track if we just opened to prevent initial transition animation
+  const justOpened = useRef(false);
+
   // Check for declined invite - if it exists, show it (will be deleted on acknowledgment)
   useEffect(() => {
     if (!currentUserId || !otherUserId) {
@@ -198,13 +201,19 @@ export function AccountabilityInviteModal({
   // Reset when modal opens/closes
   useEffect(() => {
     if (isVisible) {
+      justOpened.current = true; // ✅ ADD THIS
       // When opening, reset to initial view without animation
       setCurrentView(getInitialView());
       setTransitionCount(0);
       setPreviousView(null);
       setGuidelinesExitDirection(null);
       setMentorGuidelinesExitDirection(null);
-      setIsHandlingResponse(false); // ✅ Reset flag
+      setIsHandlingResponse(false);
+
+      // ✅ ADD THIS: Reset after a tick
+      setTimeout(() => {
+        justOpened.current = false;
+      }, 0);
     } else {
       // When closing, reset everything immediately (no delay)
       setHasReadMentorGuidelines(false);
@@ -212,14 +221,20 @@ export function AccountabilityInviteModal({
       setPreviousView(null);
       setGuidelinesExitDirection(null);
       setMentorGuidelinesExitDirection(null);
-      setIsHandlingResponse(false); // ✅ Reset flag
+      setIsHandlingResponse(false);
     }
   }, [isVisible]);
 
   // Update view when inviteState or data changes
+  // Update view when inviteState or data changes
   useEffect(() => {
-    if (isVisible && !loadingOtherUserData && !isHandlingResponse) {
-      // ✅ Add check
+    if (
+      isVisible &&
+      !loadingOtherUserData &&
+      !isHandlingResponse &&
+      !justOpened.current
+    ) {
+      // ✅ Add !justOpened.current
       const newView = getInitialView();
       if (newView !== currentView) {
         setPreviousView(currentView);
@@ -235,7 +250,7 @@ export function AccountabilityInviteModal({
     loadingOtherUserData,
     isVisible,
     declinedInvite,
-    isHandlingResponse, // ✅ Add to dependencies
+    isHandlingResponse,
   ]);
 
   const transitionToView = (view: ViewType) => {
