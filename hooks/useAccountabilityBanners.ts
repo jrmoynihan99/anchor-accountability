@@ -10,7 +10,8 @@ type BannerType =
   | "ended-mentor"
   | "ended-mentee"
   | "declined"
-  | "received";
+  | "received"
+  | "deleted";
 
 interface BannerEvent {
   key: string;
@@ -28,6 +29,8 @@ export function useAccountabilityBanners() {
     mentees,
     recentlyEndedMentor,
     recentlyEndedMentees,
+    recentlyDeletedMentor,
+    recentlyDeletedMentees,
     declinedInvites,
     receivedInvites,
     loading,
@@ -42,6 +45,8 @@ export function useAccountabilityBanners() {
   const prevReceivedIds = useRef<Set<string>>(new Set());
   const prevEndedMentorId = useRef<string | null>(null);
   const prevEndedMenteeIds = useRef<Set<string>>(new Set());
+  const prevDeletedMentorId = useRef<string | null>(null);
+  const prevDeletedMenteeIds = useRef<Set<string>>(new Set());
 
   const ackKey = currentUid
     ? `${ACK_STORAGE_PREFIX}_${currentUid}`
@@ -164,6 +169,37 @@ export function useAccountabilityBanners() {
         }
       }
 
+      // 6. ✅ NEW: Deleted mentor
+      if (
+        recentlyDeletedMentor &&
+        recentlyDeletedMentor.relationshipId !== prevDeletedMentorId.current
+      ) {
+        const key = `${recentlyDeletedMentor.relationshipId}:deleted`;
+        if (!acknowledged.has(key)) {
+          events.push({
+            key,
+            type: "deleted",
+            personName: `user-${recentlyDeletedMentor.mentorUid.slice(0, 5)}`,
+          });
+        }
+        prevDeletedMentorId.current = recentlyDeletedMentor.relationshipId;
+      }
+
+      // 7. ✅ NEW: Deleted mentees
+      for (const deleted of recentlyDeletedMentees) {
+        if (!prevDeletedMenteeIds.current.has(deleted.relationshipId)) {
+          const key = `${deleted.relationshipId}:deleted`;
+          if (!acknowledged.has(key)) {
+            events.push({
+              key,
+              type: "deleted",
+              personName: `user-${deleted.menteeUid.slice(0, 5)}`,
+            });
+          }
+          prevDeletedMenteeIds.current.add(deleted.relationshipId);
+        }
+      }
+
       if (events.length > 0) {
         setQueue(events);
         setActiveEvent(events[0]);
@@ -175,6 +211,8 @@ export function useAccountabilityBanners() {
     mentor,
     recentlyEndedMentor,
     recentlyEndedMentees,
+    recentlyDeletedMentor,
+    recentlyDeletedMentees,
     declinedInvites,
     receivedInvites,
     loading,

@@ -13,10 +13,10 @@ interface AccountabilityContextType {
   sentInvites: any[];
   receivedInvites: any[];
 
-  // ✅ NEW: Declined invites
+  // Declined invites
   declinedInvites: any[];
 
-  // ✅ NEW: Recently ended relationships (for banner detection)
+  // Recently ended relationships (for banner detection)
   recentlyEndedMentor: {
     relationshipId: string;
     mentorUid: string;
@@ -27,6 +27,17 @@ interface AccountabilityContextType {
     relationshipId: string;
     menteeUid: string;
     endedByUid: string;
+  }>;
+
+  // ✅ NEW: Recently deleted relationships (for banner detection)
+  recentlyDeletedMentor: {
+    relationshipId: string;
+    mentorUid: string;
+  } | null;
+
+  recentlyDeletedMentees: Array<{
+    relationshipId: string;
+    menteeUid: string;
   }>;
 
   // State
@@ -89,9 +100,13 @@ export function AccountabilityProvider({ children }: { children: ReactNode }) {
         // Declined invites
         declinedInvites: [],
 
-        // ✅ NEW: Recently ended relationships
+        // Recently ended relationships
         recentlyEndedMentor: null,
         recentlyEndedMentees: [],
+
+        // ✅ NEW: Recently deleted relationships
+        recentlyDeletedMentor: null,
+        recentlyDeletedMentees: [],
 
         // State
         loading: true, // Keep loading until auth is ready
