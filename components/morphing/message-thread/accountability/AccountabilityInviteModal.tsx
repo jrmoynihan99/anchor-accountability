@@ -484,8 +484,9 @@ export function AccountabilityInviteModal({
       <Animated.View
         key={view}
         entering={entering}
-        exiting={exiting}
+        exiting={isVisible ? exiting : undefined} // ✅ Only animate exit if modal is still open
         style={StyleSheet.absoluteFill}
+        pointerEvents={isVisible ? "auto" : "none"}
       >
         <ViewContent />
       </Animated.View>
@@ -498,8 +499,11 @@ export function AccountabilityInviteModal({
   );
 
   const modalContent = (
-    <View style={styles.screenContainer}>
-      <View style={[styles.screenWrapper, styles.screenBackground]}>
+    <View style={styles.screenContainer} pointerEvents="box-none">
+      <View
+        style={[styles.screenWrapper, styles.screenBackground]}
+        pointerEvents="box-none"
+      >
         {renderView(currentView)}
       </View>
     </View>

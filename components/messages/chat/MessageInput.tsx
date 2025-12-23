@@ -174,7 +174,9 @@ export const MessageInput = forwardRef<
                   <AccountabilityInviteButton
                     variant={buttonVariant}
                     colors={colors}
-                    onPress={open}
+                    onPress={() => {
+                      open();
+                    }}
                     buttonRef={buttonRef}
                     style={buttonAnimatedStyle}
                     onPressIn={handlePressIn}
@@ -230,7 +232,9 @@ export const MessageInput = forwardRef<
                       isVisible={isModalVisible}
                       progress={progress}
                       modalAnimatedStyle={modalAnimatedStyle}
-                      close={close}
+                      close={(velocity) => {
+                        close(velocity);
+                      }}
                       otherUserId={otherUserId}
                       threadName={threadName}
                       inviteState={
