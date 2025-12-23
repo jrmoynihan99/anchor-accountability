@@ -726,17 +726,19 @@ export default function MessageThreadScreen() {
           relationshipType={relationshipType}
         />
 
-        <ContextSection
-          plea={pleaMessage}
-          encouragement={encouragementMessage}
-          colors={colors}
-          currentUserId={currentUserId}
-          pleaOwnerUid={pleaOwnerUid}
-          encouragementOwnerUid={encouragementOwnerUid}
-          loading={loadingContext}
-          isNewThread={isNewThread}
-          colorScheme={effectiveTheme}
-        />
+        {!isAccountabilityPartner && (
+          <ContextSection
+            plea={pleaMessage}
+            encouragement={encouragementMessage}
+            colors={colors}
+            currentUserId={currentUserId}
+            pleaOwnerUid={pleaOwnerUid}
+            encouragementOwnerUid={encouragementOwnerUid}
+            loading={loadingContext}
+            isNewThread={isNewThread}
+            colorScheme={effectiveTheme}
+          />
+        )}
 
         {showReceivedInviteBanner && !receivedInviteBannerDismissed && (
           <View style={[styles.bannerContainer, { top: bannerTopPosition }]}>
