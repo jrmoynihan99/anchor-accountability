@@ -1,4 +1,4 @@
-// lib/auth.ts
+// lib/auth.ts - UPDATED
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   deleteUser,
@@ -7,8 +7,7 @@ import {
   onAuthStateChanged,
   signInAnonymously,
 } from "firebase/auth";
-import { deleteDoc, doc } from "firebase/firestore";
-import { auth, db, updateUserTimezone } from "./firebase";
+import { auth, updateUserTimezone } from "./firebase";
 
 const isDev = __DEV__;
 
@@ -86,30 +85,16 @@ export async function deleteAccount() {
       console.log("Starting account deletion for user:", user.uid);
     }
 
-    // Delete user document from Firestore users collection
-    try {
-      const userDocRef = doc(db, "users", user.uid);
-      await deleteDoc(userDocRef);
-
-      if (isDev) {
-        console.log("User document deleted from Firestore");
-      }
-    } catch (firestoreError) {
-      console.error(
-        "Error deleting user document from Firestore:",
-        firestoreError
-      );
-      // Continue with auth deletion even if Firestore deletion fails
-    }
-
     // Delete the user account from Firebase Auth
+    // This triggers the cloud function (onUserAccountDeleted) which handles all data deletion
     await deleteUser(user);
 
     // Clear onboarding flag
     await AsyncStorage.removeItem("hasCompletedOnboarding");
 
     if (isDev) {
-      console.log("Account deletion completed successfully");
+      console.log("Account deletion initiated successfully");
+      console.log("Cloud function will handle data cleanup in the background");
     }
   } catch (error: any) {
     console.error("Error during account deletion:", error);
