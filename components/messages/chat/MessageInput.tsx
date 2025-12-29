@@ -29,6 +29,7 @@ export const MessageInput = forwardRef<
     onPulseReady?: (pulseFn: () => void) => void;
     relationshipType?: "mentor" | "mentee";
     relationshipData?: any;
+    onHeightChange?: (height: number) => void;
   }
 >(
   (
@@ -46,6 +47,7 @@ export const MessageInput = forwardRef<
       onPulseReady,
       relationshipType,
       relationshipData,
+      onHeightChange,
     },
     ref
   ) => {
@@ -57,14 +59,14 @@ export const MessageInput = forwardRef<
       sentInvites,
       receivedInvites,
       getPendingInviteWith,
-      getDeclinedInviteWith, // ✅ NEW
+      getDeclinedInviteWith,
     } = useAccountability();
 
-    // ✅ NEW: Fetch other user's accountability data at the parent level
+    // Fetch other user's accountability data at the parent level
     const { menteeCount: otherUserMenteeCount, loading: loadingOtherUserData } =
       useOtherUserAccountability(otherUserId || null);
 
-    // ✅ NEW: Track if declined invite has been acknowledged
+    // Track if declined invite has been acknowledged
     const [hasAcknowledgedDecline, setHasAcknowledgedDecline] =
       React.useState(false);
 
@@ -79,7 +81,7 @@ export const MessageInput = forwardRef<
       (inv) => inv.mentorUid === otherUserId
     );
 
-    // ✅ SIMPLIFIED: Check for declined invite (no AsyncStorage tracking needed)
+    // Check for declined invite
     const declinedInvite = getDeclinedInviteWith(otherUserId);
 
     // Determine button variant based on relationship and invite state
@@ -89,7 +91,6 @@ export const MessageInput = forwardRef<
       | "pending-sent"
       | "pending-received"
       | "declined" => {
-      // ✅ SIMPLIFIED: Check if declined invite exists (will be deleted on acknowledgment)
       if (declinedInvite) {
         return "declined";
       }
@@ -101,6 +102,12 @@ export const MessageInput = forwardRef<
     };
 
     const buttonVariant = getButtonVariant();
+
+    // ✅ NEW: Handle layout changes to track input height
+    const handleLayout = (event: any) => {
+      const { height } = event.nativeEvent.layout;
+      onHeightChange?.(height + 8);
+    };
 
     // ------------------------------------------------------------
     // Shared inner content (used for iOS BlurView + Android solid View)
@@ -247,7 +254,7 @@ export const MessageInput = forwardRef<
                       pendingInvite={pendingInvite}
                       otherUserMenteeCount={otherUserMenteeCount}
                       loadingOtherUserData={loadingOtherUserData}
-                      buttonVariant={buttonVariant} // ✅ NEW - Pass current button state
+                      buttonVariant={buttonVariant}
                     />
                   );
                 }
@@ -273,6 +280,7 @@ export const MessageInput = forwardRef<
                 borderColor: colors.border,
               },
             ]}
+            onLayout={handleLayout}
           >
             <TextInput
               ref={ref}
@@ -316,6 +324,7 @@ export const MessageInput = forwardRef<
 
     return (
       <View style={styles.inputContainer}>
+        {/* ✅ ADDED onLayout */}
         {/* -------------------------------------------- */}
         {/* ANDROID fallback without blur                */}
         {/* -------------------------------------------- */}
