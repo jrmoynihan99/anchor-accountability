@@ -1,5 +1,5 @@
 // context/AccountabilityContext.tsx
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
+import { useAccountabilityRelationships } from "@/hooks/accountability/useAccountabilityRelationships";
 import { auth } from "@/lib/firebase";
 import React, { createContext, ReactNode, useContext } from "react";
 

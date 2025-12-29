@@ -52,10 +52,12 @@ export function MentorCard({
             mentorUid={mentorUid}
             streak={streak}
             checkInStatus={checkInStatus}
-            mentorTimezone={mentorTimezone} // PASS IT DOWN
+            mentorTimezone={mentorTimezone}
             onCheckIn={onCheckIn}
             onSOS={onSOS}
             onMessage={onMessage}
+            onPressIn={onPressIn} // Pass this through
+            onPressOut={onPressOut} // Pass this through
             showExpandIcon={true}
           />
         </TouchableOpacity>
@@ -72,10 +74,12 @@ export function MentorCard({
         mentorUid={mentorUid}
         streak={streak}
         checkInStatus={checkInStatus}
-        mentorTimezone={mentorTimezone} // PASS IT DOWN
+        mentorTimezone={mentorTimezone}
         onCheckIn={onCheckIn}
         onSOS={onSOS}
         onMessage={onMessage}
+        onPressIn={onPressIn} // Pass this through
+        onPressOut={onPressOut} // Pass this through
         showExpandIcon={true}
       />
     </View>

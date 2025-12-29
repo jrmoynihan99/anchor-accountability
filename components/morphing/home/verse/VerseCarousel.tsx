@@ -1,4 +1,4 @@
-import { useVerseData } from "@/hooks/useVerseData";
+import { useVerseData } from "@/hooks/verse/useVerseData";
 import React, {
   forwardRef,
   useImperativeHandle,

@@ -1,6 +1,6 @@
 // hooks/useTheme.ts
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/hooks/theme/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 

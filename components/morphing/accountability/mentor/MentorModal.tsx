@@ -3,8 +3,8 @@ import {
   getTodayDateString,
   TriggerType,
   useCheckIns,
-} from "@/hooks/useCheckIns";
-import { useThreads } from "@/hooks/useThreads";
+} from "@/hooks/accountability/useCheckIns";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
 import React, { useState } from "react";

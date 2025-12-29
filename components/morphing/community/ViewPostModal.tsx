@@ -2,7 +2,7 @@
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/context/ThemeContext";
-import { usePostComments } from "@/hooks/usePostComments";
+import { usePostComments } from "@/hooks/community/usePostComments";
 import { auth } from "@/lib/firebase";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";

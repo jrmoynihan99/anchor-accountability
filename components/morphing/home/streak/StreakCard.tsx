@@ -8,6 +8,7 @@ import { type StreakEntry } from "./streakUtils";
 interface StreakCardProps {
   streakData: StreakEntry[];
   onCheckIn: (status: "success" | "fail") => void;
+  onUndo: (date: string) => void;
   // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
@@ -20,6 +21,7 @@ interface StreakCardProps {
 export function StreakCard({
   streakData,
   onCheckIn,
+  onUndo,
   buttonRef,
   style,
   onPress,
@@ -43,6 +45,7 @@ export function StreakCard({
           <StreakCardContent
             streakData={streakData}
             onCheckIn={onCheckIn}
+            onUndo={onUndo}
             showButtons={true}
           />
         </TouchableOpacity>
@@ -58,6 +61,7 @@ export function StreakCard({
       <StreakCardContent
         streakData={streakData}
         onCheckIn={onCheckIn}
+        onUndo={onUndo}
         showButtons={true}
       />
     </View>

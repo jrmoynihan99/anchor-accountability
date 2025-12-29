@@ -1,6 +1,5 @@
 // components/messages/PleaCard.tsx
 import { useTheme } from "@/context/ThemeContext";
-import { usePleaUrgencySettings } from "@/hooks/usePleaUrgencySettings";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
@@ -13,11 +12,12 @@ export interface PleaData {
   createdAt: Date;
   encouragementCount: number;
   hasUserResponded?: boolean;
+  isUrgent: boolean; // NEW: calculated in hook
 }
 
 interface PleaCardProps {
   plea: PleaData;
-  now: Date; // <-- NEW
+  now: Date;
   index: number;
   onPress: () => void;
   buttonRef?: any;
@@ -37,21 +37,13 @@ export function PleaCard({
   onPressOut,
 }: PleaCardProps) {
   const { colors } = useTheme();
-  const { urgentHoursLimit, urgentEncouragementThreshold } =
-    usePleaUrgencySettings();
 
   const handlePress = () => {
     onPress();
   };
 
-  // Use the parent-passed "now" for urgency, not Date.now()
-  const hoursAgo =
-    (now.getTime() - plea.createdAt.getTime()) / (1000 * 60 * 60);
-
-  const isUrgent =
-    hoursAgo <= urgentHoursLimit &&
-    plea.encouragementCount < urgentEncouragementThreshold &&
-    !plea.hasUserResponded;
+  // Urgency is now calculated in the hook, just use it
+  const isUrgent = plea.isUrgent;
 
   return (
     <TouchableOpacity
@@ -74,15 +66,10 @@ export function PleaCard({
           style,
         ]}
       >
-        {/* Pass now to PleaCardContent */}
-        <PleaCardContent plea={plea} now={now} />
+        <PleaCardContent plea={plea} now={now} isUrgent={isUrgent} />
       </Animated.View>
     </TouchableOpacity>
   );
-}
-
-function getHoursAgo(date: Date, now: Date): number {
-  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 const styles = StyleSheet.create({

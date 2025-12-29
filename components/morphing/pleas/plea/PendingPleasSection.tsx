@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { usePendingPleas } from "@/hooks/usePendingPleas";
+import { usePendingPleas } from "@/hooks/plea/usePendingPleas";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";

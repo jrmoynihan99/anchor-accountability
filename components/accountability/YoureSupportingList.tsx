@@ -1,6 +1,6 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { useAccountability } from "@/context/AccountabilityContext";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";

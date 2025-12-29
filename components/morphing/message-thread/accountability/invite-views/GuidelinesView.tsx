@@ -2,7 +2,7 @@
 import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useTimezoneComparison } from "@/hooks/useTimezoneComparison";
+import { useTimezoneComparison } from "@/hooks/misc/useTimezoneComparison";
 import React, { useState } from "react";
 import {
   ActivityIndicator,

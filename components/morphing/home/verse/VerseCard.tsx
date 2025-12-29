@@ -1,5 +1,5 @@
 import { useTheme } from "@/context/ThemeContext";
-import { useVerseData } from "@/hooks/useVerseData";
+import { useVerseData } from "@/hooks/verse/useVerseData";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";

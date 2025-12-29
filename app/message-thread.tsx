@@ -11,8 +11,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThread } from "@/context/ThreadContext";
-import { useThreadMessages } from "@/hooks/useThreadMessages";
-import { useUnreadCount } from "@/hooks/useUnreadCount";
+import { useThreadMessages } from "@/hooks/messages/useThreadMessages";
+import { useUnreadCount } from "@/hooks/messages/useUnreadCount";
 import {
   auth,
   createThread,

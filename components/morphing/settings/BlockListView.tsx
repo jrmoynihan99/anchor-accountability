@@ -2,7 +2,7 @@
 import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import { useBlockedUsers } from "@/hooks/useBlockedUsers";
+import { useBlockedUsers } from "@/hooks/block/useBlockedUsers";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import {

@@ -11,8 +11,9 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
-import { useBlockedByUsers } from "./useBlockedByUsers";
-import { useBlockedUsers } from "./useBlockedUsers";
+import { useBlockedByUsers } from "../block/useBlockedByUsers";
+import { useBlockedUsers } from "../block/useBlockedUsers";
+import { usePleaUrgencySettings } from "./usePleaUrgencySettings";
 
 const MAX_RECENT_PLEAS = 20;
 
@@ -36,15 +37,38 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
   const { blockedUserIds, loading: blockedLoading } = useBlockedUsers();
   const { blockedByUserIds, loading: blockedByLoading } = useBlockedByUsers();
 
+  // urgency settings from Firebase
+  const { urgentHoursLimit, urgentEncouragementThreshold } =
+    usePleaUrgencySettings();
+
   const encouragementListenersRef = useRef<Record<string, Unsubscribe>>({});
   const currentPleasRef = useRef<
-    Map<string, Omit<PleaData, "encouragementCount" | "hasUserResponded">>
+    Map<
+      string,
+      Omit<PleaData, "encouragementCount" | "hasUserResponded" | "isUrgent">
+    >
   >(new Map());
 
   const shouldHide = (authorUid: string) => {
     if (!uid) return true;
     if (authorUid === uid) return true;
     return blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
+  };
+
+  // Helper to calculate if a plea is urgent
+  const calculateIsUrgent = (
+    createdAt: Date,
+    encouragementCount: number,
+    hasUserResponded: boolean
+  ): boolean => {
+    const now = new Date();
+    const hoursAgo = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+
+    return (
+      hoursAgo <= urgentHoursLimit &&
+      encouragementCount < urgentEncouragementThreshold &&
+      !hasUserResponded
+    );
   };
 
   // Function to load more pleas
@@ -82,14 +106,10 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
         }).length;
 
         // Check if we've reached the end
-        // We have more if the number of visible docs equals the current limit
-        // (meaning Firestore might have more to show)
         if (enablePagination) {
-          // If we got fewer total docs than requested, there's definitely no more
           if (snapshot.docs.length < currentLimit) {
             setHasMore(false);
           } else {
-            // If we got the full limit, there might be more
             setHasMore(true);
           }
         }
@@ -106,7 +126,7 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
         // rebuild base plea map
         const newMap = new Map<
           string,
-          Omit<PleaData, "encouragementCount" | "hasUserResponded">
+          Omit<PleaData, "encouragementCount" | "hasUserResponded" | "isUrgent">
         >();
 
         snapshot.docs.forEach((doc) => {
@@ -147,6 +167,13 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
               const base = currentPleasRef.current.get(pleaId);
               if (!base || shouldHide(base.uid)) return prev;
 
+              // Calculate urgency
+              const isUrgent = calculateIsUrgent(
+                base.createdAt,
+                encouragementCount,
+                hasUserResponded
+              );
+
               const others = prev.filter((p) => p.id !== pleaId);
 
               const merged = [
@@ -155,6 +182,7 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
                   ...base,
                   encouragementCount,
                   hasUserResponded,
+                  isUrgent,
                 },
               ];
 
@@ -179,10 +207,21 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
 
             const prevEntry = prev.find((p) => p.id === id);
 
+            const encouragementCount = prevEntry?.encouragementCount ?? 0;
+            const hasUserResponded = prevEntry?.hasUserResponded ?? false;
+
+            // Calculate urgency
+            const isUrgent = calculateIsUrgent(
+              base.createdAt,
+              encouragementCount,
+              hasUserResponded
+            );
+
             merged.push({
               ...base,
-              encouragementCount: prevEntry?.encouragementCount ?? 0,
-              hasUserResponded: prevEntry?.hasUserResponded ?? false,
+              encouragementCount,
+              hasUserResponded,
+              isUrgent,
             });
           });
 
@@ -216,7 +255,12 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
     currentLimit,
     enablePagination,
     pageSize,
+    urgentHoursLimit,
+    urgentEncouragementThreshold,
   ]);
+
+  // Calculate if there are any urgent pleas for notification dot
+  const hasUrgentPleas = pendingPleas.some((plea) => plea.isUrgent);
 
   return {
     pendingPleas,
@@ -224,5 +268,6 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
     error,
     loadMore: enablePagination ? loadMore : undefined,
     hasMore: enablePagination ? hasMore : undefined,
+    hasUrgentPleas, // NEW: for notification dot
   };
 }

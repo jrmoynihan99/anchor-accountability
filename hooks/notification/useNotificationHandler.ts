@@ -1,5 +1,5 @@
 // hooks/useNotificationHandler.ts
-import { globalModalManager } from "@/hooks/useGlobalModalManager";
+import { globalModalManager } from "@/hooks/misc/useGlobalModalManager";
 import * as Notifications from "expo-notifications";
 import { router, useSegments } from "expo-router";
 import { useEffect, useRef } from "react";

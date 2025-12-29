@@ -1,6 +1,6 @@
 // components/morphing/settings/FloatingSettingsModal.tsx - UPDATED v2
 import { useTheme } from "@/context/ThemeContext";
-import { useLegalContent } from "@/hooks/useLegalContent";
+import { useLegalContent } from "@/hooks/misc/useLegalContent";
 import { isAnonymousUser } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";

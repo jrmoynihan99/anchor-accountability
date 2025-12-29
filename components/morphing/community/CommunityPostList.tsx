@@ -3,8 +3,8 @@ import { ThemedText } from "@/components/ThemedText";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useCommunityPosts } from "@/hooks/useCommunityPosts";
-import { usePostActions } from "@/hooks/usePostActions";
+import { useCommunityPosts } from "@/hooks/community/useCommunityPosts";
+import { usePostActions } from "@/hooks/community/usePostActions";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,

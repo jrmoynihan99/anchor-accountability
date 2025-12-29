@@ -53,6 +53,8 @@ export function MentorCardCompact({
             mentorTimezone={mentorTimezone}
             onCheckIn={onCheckIn}
             onMessage={onMessage}
+            onPressIn={onPressIn}
+            onPressOut={onPressOut}
             showExpandIcon={true}
           />
         </TouchableOpacity>

@@ -26,7 +26,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "../../hooks/theme/useTheme";
 import { ensureSignedIn } from "../../lib/auth";
 import { auth, updateUserTimezone } from "../../lib/firebase";
 import { setHasOnboarded } from "../../lib/onboarding";

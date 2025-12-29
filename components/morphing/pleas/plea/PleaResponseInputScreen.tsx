@@ -5,7 +5,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/context/ThemeContext";
-import { usePleaUrgencySettings } from "@/hooks/usePleaUrgencySettings";
+import { usePleaUrgencySettings } from "@/hooks/plea/usePleaUrgencySettings";
 import React from "react";
 import {
   Alert,

@@ -2,9 +2,9 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useBlockCheck } from "@/hooks/useBlockCheck";
-import { useBlockUser } from "@/hooks/useBlockUser";
-import { useReportCheck } from "@/hooks/useReportCheck";
+import { useBlockCheck } from "@/hooks/block/useBlockCheck";
+import { useBlockUser } from "@/hooks/block/useBlockUser";
+import { useReportCheck } from "@/hooks/block/useReportCheck";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";

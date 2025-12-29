@@ -9,10 +9,11 @@ import { PleaData } from "./PleaCard";
 
 interface PleaCardContentProps {
   plea: PleaData;
-  now: Date; // <-- NEW
+  now: Date;
+  isUrgent: boolean; // NEW: receive as prop instead of calculating
 }
 
-export function PleaCardContent({ plea, now }: PleaCardContentProps) {
+export function PleaCardContent({ plea, now, isUrgent }: PleaCardContentProps) {
   const { colors } = useTheme();
 
   // Generate anonymous username from UID
@@ -20,7 +21,6 @@ export function PleaCardContent({ plea, now }: PleaCardContentProps) {
 
   // Use now passed from parent for all time math
   const timeAgo = getTimeAgo(plea.createdAt, now);
-  const isUrgent = plea.encouragementCount === 0;
 
   const hasResponded = plea.hasUserResponded || false;
 
@@ -147,7 +147,7 @@ export function PleaCardContent({ plea, now }: PleaCardContentProps) {
   );
 }
 
-// Helper functions (now always expect the "now" argument)
+// Helper functions
 function getTimeAgo(date: Date, now: Date): string {
   const diffInMinutes = Math.floor(
     (now.getTime() - date.getTime()) / (1000 * 60)
@@ -160,10 +160,6 @@ function getTimeAgo(date: Date, now: Date): string {
   if (diffInDays < 7) return `${diffInDays}d ago`;
   const diffInWeeks = Math.floor(diffInDays / 7);
   return `${diffInWeeks}w ago`;
-}
-
-function getHoursAgo(date: Date, now: Date): number {
-  return (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 }
 
 const styles = StyleSheet.create({

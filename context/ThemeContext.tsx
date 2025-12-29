@@ -1,5 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/hooks/theme/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
   createContext,

@@ -9,8 +9,8 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
-import { useBlockedByUsers } from "./useBlockedByUsers";
-import { useBlockedUsers } from "./useBlockedUsers";
+import { useBlockedByUsers } from "../block/useBlockedByUsers";
+import { useBlockedUsers } from "../block/useBlockedUsers";
 
 export interface ThreadData {
   id: string;
