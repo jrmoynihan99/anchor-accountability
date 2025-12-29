@@ -1,4 +1,5 @@
-// app/(tabs)/_layout.tsx
+// app/(tabs)/_layout.tsx - UPDATED
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { FloatingPillNavigation } from "@/components/FloatingPillNavigation";
 import { HapticTab } from "@/components/HapticTab";
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
@@ -7,7 +8,7 @@ import { ReachOutModal } from "@/components/morphing/home/reach-out-main-button/
 import { FloatingSettingsButton } from "@/components/morphing/settings/FloatingSettingsButton";
 import { FloatingSettingsModal } from "@/components/morphing/settings/FloatingSettingsModal";
 import { NotificationPermissionModal } from "@/components/NotificationPermissionModal";
-import { RelationshipBanner } from "@/components/RelationshipBanner"; // ✅ UPDATED
+import { RelationshipBanner } from "@/components/RelationshipBanner";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useAccountability } from "@/context/AccountabilityContext";
@@ -141,6 +142,9 @@ export default function TabLayout() {
           </BlurView>
         </MaskedView>
       </View>
+
+      {/* ✅ NEW: Email Verification Banner (shown above accountability banners) */}
+      <EmailVerificationBanner />
 
       {/* Banner for accountability events */}
       {showBanner && (

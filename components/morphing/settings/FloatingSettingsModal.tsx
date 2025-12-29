@@ -1,4 +1,4 @@
-// components/morphing/settings/FloatingSettingsModal.tsx
+// components/morphing/settings/FloatingSettingsModal.tsx - UPDATED v2
 import { useTheme } from "@/context/ThemeContext";
 import { useLegalContent } from "@/hooks/useLegalContent";
 import { isAnonymousUser } from "@/lib/auth";
@@ -19,9 +19,12 @@ import { AboutSection } from "./AboutSection";
 import { AppearanceSection } from "./AppearanceSection";
 import { BlockListSection } from "./BlockListSection";
 import { BlockListView } from "./BlockListView";
+import { ChangePasswordButton } from "./ChangePasswordButton";
+import { ChangePasswordView } from "./ChangePasswordView";
 import { ConvertAccountButton } from "./ConvertAccountButton";
 import { ConvertAccountView } from "./ConvertAccountView";
 import { DeleteAccountButton } from "./DeleteAccountButton";
+import { EmailVerificationSection } from "./EmailVerificationSection";
 import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
 import { SettingsHeader } from "./SettingsHeader";
@@ -36,7 +39,12 @@ interface FloatingSettingsModalProps {
   initialScreen?: "settings" | "guidelines";
 }
 
-type ScreenType = "settings" | "textContent" | "blockList" | "convertAccount";
+type ScreenType =
+  | "settings"
+  | "textContent"
+  | "blockList"
+  | "convertAccount"
+  | "changePassword";
 
 interface TextContentData {
   title: string;
@@ -127,6 +135,15 @@ export function FloatingSettingsModal({
       easing: Easing.out(Easing.quad),
     });
     setCurrentScreen("convertAccount");
+  };
+
+  // ✅ NEW: Transition to change password view
+  const transitionToChangePassword = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen("changePassword");
   };
 
   const handleBackToSettings = () => {
@@ -276,14 +293,24 @@ Thank you for helping us keep this a safe and welcoming space!`,
           style={styles.scrollContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="interactive"
         >
           <SettingsHeader />
           <View style={styles.settingsSection}>
+            {/* Email Verification Section (shows at top if unverified) */}
+            <EmailVerificationSection isModalOpen={isVisible} />
+
             <NotificationsSection shouldLoad={shouldLoadNotifications} />
             <BlockListSection onNavigateToBlockList={transitionToBlockList} />
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
+
+            {/* ✅ UPDATED: Change Password Button triggers view transition */}
+            <ChangePasswordButton
+              onPress={transitionToChangePassword}
+              isModalOpen={isVisible}
+            />
 
             {/* Only show Sign Out for email users */}
             {!isAnonymous && <SignOutButton />}
@@ -312,14 +339,28 @@ Thank you for helping us keep this a safe and welcoming space!`,
           />
         </Animated.View>
       )}
+
+      {/* Block List Screen */}
       {currentScreen === "blockList" && (
         <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
           <BlockListView onBackPress={handleBackToSettings} colors={colors} />
         </Animated.View>
       )}
+
+      {/* Convert Account Screen */}
       {currentScreen === "convertAccount" && (
         <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
           <ConvertAccountView
+            onBackPress={handleBackToSettings}
+            colors={colors}
+          />
+        </Animated.View>
+      )}
+
+      {/* ✅ NEW: Change Password Screen */}
+      {currentScreen === "changePassword" && (
+        <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
+          <ChangePasswordView
             onBackPress={handleBackToSettings}
             colors={colors}
           />

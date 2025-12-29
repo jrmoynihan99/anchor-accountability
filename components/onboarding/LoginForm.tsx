@@ -1,7 +1,9 @@
-// components/LoginForm.tsx
+// components/LoginForm.tsx - UPDATED
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
 import { AnonymousBadgeModal } from "@/components/morphing/login/anonymous-badge/AnonymousBadgeModal";
+import { ForgotPasswordButton } from "@/components/morphing/login/forgot-password/ForgotPasswordButton";
+import { ForgotPasswordModal } from "@/components/morphing/login/forgot-password/ForgotPasswordModal";
 import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
 import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
 import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
@@ -12,6 +14,7 @@ import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import {
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import React, { useState } from "react";
@@ -97,8 +100,8 @@ export function LoginForm({
   setPassword,
   isSignUp,
   setIsSignUp,
-  loading: _loading, // <- not used anymore, but kept for API compatibility
-  setLoading: _setLoading, // <- not used
+  loading: _loading,
+  setLoading: _setLoading,
   showPassword,
   setShowPassword,
 }: LoginFormProps) {
@@ -125,7 +128,23 @@ export function LoginForm({
     setLoadingButton("auth");
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        // ✅ Send email verification immediately after signup
+        try {
+          await sendEmailVerification(userCredential.user);
+          console.log("✅ Verification email sent to", email);
+        } catch (verificationError) {
+          console.error(
+            "Failed to send verification email:",
+            verificationError
+          );
+          // Don't block signup if verification email fails
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -142,7 +161,7 @@ export function LoginForm({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoadingButton("guest");
     try {
-      await ensureSignedIn(); // Sign in anonymously
+      await ensureSignedIn();
       await completeOnboarding();
     } catch (error) {
       console.error("Error with anonymous sign in:", error);
@@ -216,6 +235,41 @@ export function LoginForm({
             </TouchableOpacity>
           </BlurView>
         </View>
+
+        {/* ✅ Forgot Password Button (only show on sign in) */}
+        {!isSignUp && (
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.5}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              modalAnimatedStyle,
+              buttonAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => (
+              <>
+                <ForgotPasswordButton
+                  buttonRef={buttonRef}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <ForgotPasswordModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                />
+              </>
+            )}
+          </ButtonModalTransitionBridge>
+        )}
 
         {/* Auth Toggle */}
         <TouchableOpacity
@@ -333,9 +387,9 @@ export function LoginForm({
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
                 text="What's the Difference?"
-                icon="questionmark.circle" // <<--- Explicit icon
-                iconColor={colors.textSecondary} // <<--- Explicit color
-                textColor={colors.textSecondary} // <<--- (optional: match modal style)
+                icon="questionmark.circle"
+                iconColor={colors.textSecondary}
+                textColor={colors.textSecondary}
               />
               <AnonymousBadgeModal
                 isVisible={isModalVisible}

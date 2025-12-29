@@ -71,8 +71,11 @@ export function AnonymousBadgeModal({
             type="body"
             style={[styles.bodyText, { color: colors.textSecondary }]}
           >
-            The only difference: if you continue as a guest, your data won't be
-            saved if you get a new phone.
+            If you continue as a guest, you will not have an email address
+            associated with your account, and your account will be completely
+            deleted if you log out or get a new phone. You can convert your
+            guest account to a permanent account with an email & password for
+            login at any time via in app settings.
           </ThemedText>
         </View>
       </View>

@@ -11,7 +11,7 @@ export function IntroFeaturesCard() {
 
   const features = [
     { icon: "eye-off", text: "100% Anonymous" },
-    { icon: "people", text: "Real accountability partners" },
+    { icon: "people", text: "Real Accountability Partners" },
     { icon: "time", text: "Available 24/7" },
   ];
 
