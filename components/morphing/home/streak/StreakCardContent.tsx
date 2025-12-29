@@ -24,7 +24,7 @@ import {
 interface StreakCardContentProps {
   streakData: StreakEntry[];
   onCheckIn: (status: "success" | "fail") => void;
-  onUndo: (date: string) => void;
+  onUndo?: (date: string) => void;
   showButtons?: boolean;
 }
 
@@ -65,7 +65,8 @@ export function StreakCardContent({
   };
 
   const handleUndo = () => {
-    if (lastModifiedDate) {
+    if (lastModifiedDate && onUndo) {
+      // ✅ Add onUndo check
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onUndo(lastModifiedDate);
       setShowUndo(false);

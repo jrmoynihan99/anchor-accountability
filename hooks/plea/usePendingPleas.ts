@@ -64,11 +64,12 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
     const now = new Date();
     const hoursAgo = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
 
-    return (
+    const result =
       hoursAgo <= urgentHoursLimit &&
       encouragementCount < urgentEncouragementThreshold &&
-      !hasUserResponded
-    );
+      !hasUserResponded;
+
+    return result;
   };
 
   // Function to load more pleas
@@ -207,22 +208,27 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
 
             const prevEntry = prev.find((p) => p.id === id);
 
-            const encouragementCount = prevEntry?.encouragementCount ?? 0;
-            const hasUserResponded = prevEntry?.hasUserResponded ?? false;
+            // 🔧 FIX: Only include plea if we have encouragement data
+            // This prevents showing pleas as urgent before we know their real encouragement count
+            if (prevEntry) {
+              const encouragementCount = prevEntry.encouragementCount;
+              const hasUserResponded = prevEntry.hasUserResponded ?? false; // Fix: provide default
 
-            // Calculate urgency
-            const isUrgent = calculateIsUrgent(
-              base.createdAt,
-              encouragementCount,
-              hasUserResponded
-            );
+              // Calculate urgency with real data
+              const isUrgent = calculateIsUrgent(
+                base.createdAt,
+                encouragementCount,
+                hasUserResponded
+              );
 
-            merged.push({
-              ...base,
-              encouragementCount,
-              hasUserResponded,
-              isUrgent,
-            });
+              merged.push({
+                ...base,
+                encouragementCount,
+                hasUserResponded,
+                isUrgent,
+              });
+            }
+            // If no prevEntry, encouragement listener hasn't fired yet - skip this plea for now
           });
 
           return merged.sort(

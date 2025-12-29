@@ -1,4 +1,4 @@
-// StreakCardModal.tsx - Refactored
+// StreakCardModal.tsx - Updated with Timeline Section
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol, type IconSymbolName } from "@/components/ui/IconSymbol";
 
@@ -7,14 +7,12 @@ import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
+import { StreakTimelineSection } from "./streak-timeline/StreakTimelineSection";
 import { StreakCardContent } from "./StreakCardContent";
 import {
   type StreakEntry,
-  filterUpToToday,
-  formatDateWithWeekday,
   getCurrentStreak,
   getPersonalBest,
-  isToday,
 } from "./streakUtils";
 
 interface StreakCardModalProps {
@@ -66,7 +64,7 @@ export function StreakCardModal({
     label,
     color = colors.text,
   }: {
-    icon: IconSymbolName; // <-- Use the strict type
+    icon: IconSymbolName;
     value: string | number;
     label: string;
     color?: string;
@@ -171,90 +169,8 @@ export function StreakCardModal({
         />
       </View>
 
-      {/* Recent Activity */}
-      {/* Recent Activity */}
-      <ThemedText
-        type="title"
-        style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}
-      >
-        Recent Activity
-      </ThemedText>
-
-      <View
-        style={[
-          styles.activityContainer,
-          {
-            backgroundColor: colors.modalCardBackground,
-            borderColor: colors.modalCardBorder,
-          },
-        ]}
-      >
-        <ScrollView
-          style={styles.activityScrollView}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={true}
-        >
-          {(() => {
-            // Only show entries up to (and including) today (local)
-            const visible = filterUpToToday(streakData);
-
-            // Last 14, newest first in UI
-            const last14 = visible.slice(-14);
-            const items = [...last14].reverse();
-
-            return items.map((entry, index) => (
-              <View
-                key={entry.date}
-                style={[
-                  styles.activityItem,
-                  { borderBottomColor: colors.modalCardBorder },
-                  index === items.length - 1 && styles.lastActivityItem,
-                ]}
-              >
-                <ThemedText
-                  type="caption"
-                  style={[styles.activityDate, { color: colors.textSecondary }]}
-                >
-                  {formatDateWithWeekday(entry.date)}
-                </ThemedText>
-
-                {entry.status === "pending" ? (
-                  // Only today shows "In Progress"; past pending shows clock icon
-                  isToday(entry.date) ? (
-                    <ThemedText
-                      type="caption"
-                      style={{
-                        color: colors.textSecondary,
-                        fontStyle: "italic",
-                      }}
-                    >
-                      In Progress
-                    </ThemedText>
-                  ) : (
-                    <IconSymbol
-                      name="clock.badge.questionmark"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  )
-                ) : (
-                  <IconSymbol
-                    name={
-                      entry.status === "success"
-                        ? "checkmark.circle.fill"
-                        : "xmark.circle.fill"
-                    }
-                    size={20}
-                    color={
-                      entry.status === "success" ? colors.success : colors.error
-                    }
-                  />
-                )}
-              </View>
-            ));
-          })()}
-        </ScrollView>
-      </View>
+      {/* NEW: Streak Timeline Section */}
+      <StreakTimelineSection streakData={streakData} />
     </ScrollView>
   );
 
@@ -300,11 +216,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
-    //elevation: 1,
-  },
-  statCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
   },
   statIconCircle: {
     width: 32,
@@ -314,39 +225,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 12,
   },
-  statTextContainer: {
-    flex: 1,
-  },
   statValue: {
     // Typography styles moved to Typography.styles.statValue + inline styles
   },
   statLabel: {
     // Typography styles moved to Typography.styles.statLabel
-  },
-  sectionTitle: {
-    // Typography styles moved to Typography.styles.title + inline styles
-  },
-  activityContainer: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 32,
-    maxHeight: 240, // Limit height to make it scrollable
-  },
-  activityScrollView: {
-    maxHeight: 230, // Slightly less than container to account for padding
-  },
-  activityItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-  },
-  lastActivityItem: {
-    borderBottomWidth: 0, // Remove border from last item
-  },
-  activityDate: {
-    // Typography styles moved to Typography.styles.caption
   },
 });
