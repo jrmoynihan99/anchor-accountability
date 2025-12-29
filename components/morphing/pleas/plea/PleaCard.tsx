@@ -1,6 +1,6 @@
 // components/messages/PleaCard.tsx
 import { useTheme } from "@/context/ThemeContext";
-import React from "react";
+import React, { useEffect } from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
 import { PleaCardContent } from "./PleaCardContent";

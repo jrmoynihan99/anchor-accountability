@@ -80,7 +80,7 @@ export function MentorCardCompactContent({
             type="title"
             style={[styles.title, { color: colors.text }]}
           >
-            Accountability Partner
+            Your Anchor Partner
           </ThemedText>
           <ThemedText
             type="subtitle"
@@ -93,7 +93,7 @@ export function MentorCardCompactContent({
               },
             ]}
           >
-            Check in with your partner
+            Check in with your Anchor Partner
           </ThemedText>
         </View>
       </View>

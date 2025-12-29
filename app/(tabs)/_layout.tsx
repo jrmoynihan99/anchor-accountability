@@ -35,7 +35,8 @@ export default function TabLayout() {
   const segments = useSegments();
   const { myReachOuts } = useMyReachOuts();
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
-  const { hasUrgentPleas } = usePendingPleas(); // NEW: for urgent pleas notification
+  // In your actual _layout.tsx file, add this:
+  const { hasUrgentPleas } = usePendingPleas();
   const { threads } = useThreads();
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
   const {
