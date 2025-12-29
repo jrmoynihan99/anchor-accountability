@@ -74,6 +74,9 @@ export default function MessageThreadScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
 
+  // ✅ NEW: Track input height for MessagesList
+  const [inputHeight, setInputHeight] = useState(60);
+
   // Promotional banner state
   const [showBanner, setShowBanner] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -778,6 +781,7 @@ export default function MessageThreadScreen() {
             onLoadMore={handleLoadMore}
             keyboardHeight={keyboardHeight}
             onScroll={handleScroll}
+            inputHeight={inputHeight}
           />
         </Animated.View>
 
@@ -801,6 +805,7 @@ export default function MessageThreadScreen() {
             }}
             relationshipType={relationshipType}
             relationshipData={relationshipData}
+            onHeightChange={setInputHeight}
           />
         </Animated.View>
       </View>

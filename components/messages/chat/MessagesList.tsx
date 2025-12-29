@@ -30,6 +30,7 @@ interface MessagesListProps {
   onLoadMore?: () => void;
   keyboardHeight?: SharedValue<number>;
   onScroll?: (event: any) => void;
+  inputHeight?: number;
 }
 
 export const MessagesList = forwardRef<FlatList, MessagesListProps>(
@@ -46,13 +47,16 @@ export const MessagesList = forwardRef<FlatList, MessagesListProps>(
       onLoadMore,
       keyboardHeight,
       onScroll,
+      inputHeight = 60,
     },
     ref
   ) => {
     const insets = useSafeAreaInsets();
     const HEADER_HEIGHT = 60;
     const paddingTop = insets.top + HEADER_HEIGHT;
-    const inputHeight = 60 + insets.bottom;
+
+    // Match original logic: inputHeight (measured wrapper) + insets.bottom
+    const effectiveInputHeight = inputHeight + insets.bottom;
 
     const convertMessageForDisplay = (msg: any): Message => ({
       id: msg.id,
@@ -199,7 +203,7 @@ export const MessagesList = forwardRef<FlatList, MessagesListProps>(
         contentContainerStyle={[
           styles.messagesContent,
           {
-            paddingTop: inputHeight + 16,
+            paddingTop: effectiveInputHeight + 16, // ✅ USE EFFECTIVE HEIGHT
             paddingBottom: paddingTop,
           },
         ]}
