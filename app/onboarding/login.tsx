@@ -14,7 +14,7 @@ import Animated, {
   useAnimatedKeyboard,
   useAnimatedStyle,
   useDerivedValue,
-  withTiming,
+  withSpring,
 } from "react-native-reanimated";
 import { LoginForm } from "../../components/onboarding/LoginForm";
 import { LoginHeader } from "../../components/onboarding/LoginHeader";
@@ -31,8 +31,10 @@ export default function LoginScreen() {
   // Smooth keyboard animation
   const keyboard = useAnimatedKeyboard();
   const translateY = useDerivedValue(() => {
-    return withTiming(-keyboard.height.value * 0.5, {
-      duration: 50,
+    return withSpring(-keyboard.height.value * 0.5, {
+      damping: 20,
+      stiffness: 100,
+      mass: 0.5,
     });
   });
 

@@ -64,6 +64,12 @@
         "projectId": "ddea5407-acdc-47f1-b3b8-60ac20360d51"
       }
     },
-    "owner": "jrmoynihan99"
+    "owner": "jrmoynihan99",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ddea5407-acdc-47f1-b3b8-60ac20360d51"
+    }
   }
 }
