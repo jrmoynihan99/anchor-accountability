@@ -1,6 +1,6 @@
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/context/ThemeContext";
-import { useLegalContent } from "@/hooks/useLegalContent";
+import { useLegalContent } from "@/hooks/misc/useLegalContent";
 import React from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";

@@ -14,10 +14,11 @@ import TabBarBackground from "@/components/ui/TabBarBackground";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useAccountabilityBanners } from "@/hooks/useAccountabilityBanners";
-import { useMyReachOuts } from "@/hooks/useMyReachOuts";
-import { useNotificationPermission } from "@/hooks/useNotificationPermission";
-import { useThreads } from "@/hooks/useThreads";
+import { useAccountabilityBanners } from "@/hooks/accountability/useAccountabilityBanners";
+import { useThreads } from "@/hooks/messages/useThreads";
+import { useNotificationPermission } from "@/hooks/notification/useNotificationPermission";
+import { useMyReachOuts } from "@/hooks/plea/useMyReachOuts";
+import { usePendingPleas } from "@/hooks/plea/usePendingPleas";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -34,6 +35,7 @@ export default function TabLayout() {
   const segments = useSegments();
   const { myReachOuts } = useMyReachOuts();
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
+  const { hasUrgentPleas } = usePendingPleas(); // NEW: for urgent pleas notification
   const { threads } = useThreads();
   const hasUnreadMessages = threads.some((thread) => thread.unreadCount > 0);
   const {
@@ -205,11 +207,11 @@ export default function TabLayout() {
         />
       </Tabs>
 
-      {/* Floating nav bar */}
+      {/* Floating nav bar - UPDATED with urgent pleas notification */}
       <FloatingPillNavigation
         activeTab={activeTab}
         onTabPress={handleTabPress}
-        showPleasNotification={hasUnreadEncouragements}
+        showPleasNotification={hasUnreadEncouragements || hasUrgentPleas}
         showMessagesNotification={hasUnreadMessages}
         showAccountabilityNotification={hasPendingAccountabilityInvites}
       />

@@ -2,8 +2,8 @@
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useCreatePost } from "@/hooks/useCreatePost";
-import { usePostRateLimit } from "@/hooks/usePostRateLimit"; // ADD THIS LINE
+import { useCreatePost } from "@/hooks/community/useCreatePost";
+import { usePostRateLimit } from "@/hooks/community/usePostRateLimit"; // ADD THIS LINE
 import { auth, db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";

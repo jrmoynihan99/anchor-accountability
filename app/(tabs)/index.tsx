@@ -17,8 +17,8 @@ import {
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useStreakData } from "@/hooks/useStreakData";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
+import { useStreakData } from "@/hooks/streak/useStreakData";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { streakData, updateStreakStatus } = useStreakData();
+  const { streakData, updateStreakStatus, undoStreakStatus } = useStreakData();
   const { mentor, loading } = useAccountability();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
@@ -170,6 +170,7 @@ export default function HomeScreen() {
               <StreakCard
                 streakData={streakData}
                 onCheckIn={handleStreakCheckIn}
+                onUndo={undoStreakStatus}
                 buttonRef={buttonRef}
                 style={buttonAnimatedStyle}
                 onPress={open}
@@ -321,7 +322,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   buttonContent: {
-    padding: 0,
+    padding: 20,
   },
   blurHeader: {
     position: "absolute",

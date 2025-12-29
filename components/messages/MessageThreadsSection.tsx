@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { DeclinedInviteItem } from "../DeclinedInviteItem"; // ✅ NEW

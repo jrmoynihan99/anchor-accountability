@@ -2,7 +2,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedToggle } from "@/components/ThemedToggle";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useStreakVisibility } from "@/hooks/useStreakVisibility";
+import { useStreakVisibility } from "@/hooks/streak/useStreakVisibility";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";

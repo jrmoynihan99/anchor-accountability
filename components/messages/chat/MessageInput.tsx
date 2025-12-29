@@ -2,7 +2,7 @@
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
-import { useOtherUserAccountability } from "@/hooks/useOtherUserAccountability";
+import { useOtherUserAccountability } from "@/hooks/accountability/useOtherUserAccountability";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
 import {

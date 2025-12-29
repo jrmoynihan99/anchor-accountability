@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { TriggerType } from "@/hooks/useCheckIns";
+import { TriggerType } from "@/hooks/accountability/useCheckIns";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {

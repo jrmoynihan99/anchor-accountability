@@ -12,6 +12,9 @@ interface MentorCardCompactContentProps {
   showExpandIcon?: boolean;
   onCheckIn?: () => void;
   onMessage?: () => void;
+  // Add these new props for proper measurement
+  onPressIn?: () => void;
+  onPressOut?: () => void;
 }
 
 export function MentorCardCompactContent({
@@ -21,6 +24,8 @@ export function MentorCardCompactContent({
   showExpandIcon = true,
   onCheckIn,
   onMessage,
+  onPressIn,
+  onPressOut,
 }: MentorCardCompactContentProps) {
   const { colors } = useTheme();
 
@@ -39,7 +44,17 @@ export function MentorCardCompactContent({
   // Get the actual color from the theme
   const statusColor = colors[checkInStatus.colorKey];
 
-  const handleCheckIn = () => onCheckIn?.();
+  const handleCheckIn = () => {
+    // Measure the card position, then trigger check-in
+    if (onPressIn && onPressOut) {
+      onPressIn();
+      onPressOut();
+      onCheckIn?.();
+    } else {
+      // Fallback if no measurement props
+      onCheckIn?.();
+    }
+  };
 
   return (
     <View style={{ position: "relative" }}>
@@ -117,6 +132,7 @@ export function MentorCardCompactContent({
                 borderWidth: 1,
               },
             ]}
+            pointerEvents="none"
           >
             <IconSymbol
               name="checkmark.circle"

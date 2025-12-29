@@ -1,5 +1,5 @@
 // components/streaks/UserStreakDisplay.tsx
-import { useUserStreak } from "@/hooks/useUserStreak";
+import { useUserStreak } from "@/hooks/streak/useUserStreak";
 import React from "react";
 import { UserStreakBadge } from "./UserStreakBadge";
 

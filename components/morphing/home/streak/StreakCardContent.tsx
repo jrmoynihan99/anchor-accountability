@@ -1,4 +1,4 @@
-// StreakCardContent.tsx (updated to pass `type` to PartialAnimatedText)
+// StreakCardContent.tsx (updated with undo functionality)
 import { AppearingText } from "@/components/text-animation/AppearingText";
 import { PartialAnimatedText } from "@/components/text-animation/PartialAnimatedText";
 import { TransitioningText } from "@/components/text-animation/TransitioningText";
@@ -6,6 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from "expo-haptics";
+import { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 import {
@@ -23,15 +24,20 @@ import {
 interface StreakCardContentProps {
   streakData: StreakEntry[];
   onCheckIn: (status: "success" | "fail") => void;
+  onUndo: (date: string) => void;
   showButtons?: boolean;
 }
 
 export function StreakCardContent({
   streakData,
   onCheckIn,
+  onUndo,
   showButtons = true,
 }: StreakCardContentProps) {
   const { colors } = useTheme();
+
+  const [lastModifiedDate, setLastModifiedDate] = useState<string | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
 
   const currentStreak = getCurrentStreak(streakData);
   const personalBest = getPersonalBest(streakData);
@@ -40,12 +46,31 @@ export function StreakCardContent({
 
   const handleSuccessPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const date = dateToAsk?.date;
     onCheckIn("success");
+    if (date) {
+      setLastModifiedDate(date);
+      setShowUndo(true);
+    }
   };
 
   const handleFailPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const date = dateToAsk?.date;
     onCheckIn("fail");
+    if (date) {
+      setLastModifiedDate(date);
+      setShowUndo(true);
+    }
+  };
+
+  const handleUndo = () => {
+    if (lastModifiedDate) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onUndo(lastModifiedDate);
+      setShowUndo(false);
+      setLastModifiedDate(null);
+    }
   };
 
   const ComeBackBanner = () => (
@@ -124,6 +149,31 @@ export function StreakCardContent({
           </ThemedText>
         </TouchableOpacity>
       </View>
+    );
+  };
+
+  const UndoButton = () => {
+    if (!showUndo) return null;
+
+    return (
+      <TouchableOpacity
+        onPress={handleUndo}
+        style={styles.undoContainer}
+        activeOpacity={0.7}
+      >
+        <ThemedText
+          type="captionMedium"
+          style={[
+            styles.undoText,
+            {
+              color: colors.textSecondary,
+              textDecorationLine: "underline",
+            },
+          ]}
+        >
+          Undo
+        </ThemedText>
+      </TouchableOpacity>
     );
   };
 
@@ -221,6 +271,7 @@ export function StreakCardContent({
           <AppearingText animationKey="banner-success">
             <ComeBackBanner />
           </AppearingText>
+          <UndoButton />
         </View>
       );
     } else {
@@ -301,6 +352,7 @@ export function StreakCardContent({
           <AppearingText animationKey="banner-fail">
             <ComeBackBanner />
           </AppearingText>
+          <UndoButton />
         </View>
       );
     }
@@ -415,6 +467,7 @@ export function StreakCardContent({
       />
 
       <CheckInButtons />
+      <UndoButton />
     </View>
   );
 }
@@ -483,5 +536,13 @@ const styles = StyleSheet.create({
     top: 6,
     right: 6,
     opacity: 0.85,
+  },
+  undoContainer: {
+    alignItems: "center",
+    paddingVertical: 0,
+    marginTop: 8,
+  },
+  undoText: {
+    // Typography.styles.captionMedium handled by ThemedText
   },
 });

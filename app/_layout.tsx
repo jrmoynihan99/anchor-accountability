@@ -4,7 +4,7 @@ import "react-native-reanimated";
 import { AccountabilityProvider } from "@/context/AccountabilityContext";
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
-import { useNotificationHandler } from "@/hooks/useNotificationHandler";
+import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {

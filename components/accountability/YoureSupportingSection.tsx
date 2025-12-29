@@ -6,7 +6,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";

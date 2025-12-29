@@ -1,4 +1,4 @@
-import { useModalRegistration } from "@/hooks/useGlobalModalManager";
+import { useModalRegistration } from "@/hooks/misc/useGlobalModalManager";
 import * as Haptics from "expo-haptics";
 import React, { useEffect, useRef, useState } from "react";
 import { Dimensions, Keyboard, Platform } from "react-native";

@@ -1,4 +1,7 @@
-import { StreakEntry } from "@/components/morphing/home/streak/streakUtils";
+import {
+  getLocalDateString,
+  StreakEntry,
+} from "@/components/morphing/home/streak/streakUtils";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -10,7 +13,6 @@ import {
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
-import { getLocalDateString } from "@/components/morphing/home/streak/streakUtils"; // use your actual import path
 
 // Helper to get YYYY-MM-DD string for a date offset
 const getDate = getLocalDateString;
@@ -163,5 +165,22 @@ export function useStreakData() {
     }
   };
 
-  return { streakData, updateStreakStatus, user };
+  // Undo a specific day's status (revert to pending)
+  const undoStreakStatus = async (date: string) => {
+    const uid = user?.uid;
+
+    if (!uid) {
+      return;
+    }
+
+    const ref = doc(db, "users", uid, "streak", date);
+
+    try {
+      await setDoc(ref, { status: "pending" });
+    } catch (error) {
+      console.error(`🔍 undoStreakStatus: Error:`, error);
+    }
+  };
+
+  return { streakData, updateStreakStatus, undoStreakStatus, user };
 }

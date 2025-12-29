@@ -8,7 +8,7 @@ import { MentorModal } from "@/components/morphing/accountability/mentor/MentorM
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { auth } from "@/lib/firebase";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";

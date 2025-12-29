@@ -1,7 +1,7 @@
 import { useTheme } from "@/context/ThemeContext";
-import { useAccountabilityRelationships } from "@/hooks/useAccountabilityRelationships";
-import { useCheckIns } from "@/hooks/useCheckIns";
-import { useThreads } from "@/hooks/useThreads";
+import { useAccountabilityRelationships } from "@/hooks/accountability/useAccountabilityRelationships";
+import { useCheckIns } from "@/hooks/accountability/useCheckIns";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";

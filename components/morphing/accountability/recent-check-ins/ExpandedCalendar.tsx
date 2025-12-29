@@ -3,7 +3,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { TriggerType } from "@/hooks/useCheckIns";
+import { TriggerType } from "@/hooks/accountability/useCheckIns";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 

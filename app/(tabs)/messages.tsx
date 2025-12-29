@@ -2,7 +2,7 @@
 import { MessageThreadsHeader } from "@/components/messages/MessageThreadsHeader";
 import { MessageThreadsSection } from "@/components/messages/MessageThreadsSection";
 import { useTheme } from "@/context/ThemeContext";
-import { useThreads } from "@/hooks/useThreads";
+import { useThreads } from "@/hooks/messages/useThreads";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { StyleSheet, View } from "react-native";

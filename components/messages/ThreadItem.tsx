@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
-import { ThreadWithMessages } from "@/hooks/useThreads";
+import { ThreadWithMessages } from "@/hooks/messages/useThreads";
 import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";

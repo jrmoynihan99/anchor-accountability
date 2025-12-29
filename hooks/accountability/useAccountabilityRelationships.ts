@@ -18,9 +18,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   calculateCheckInStatus,
   CheckInStatus,
-} from "../components/morphing/accountability/accountabilityUtils";
-import { useBlockedByUsers } from "./useBlockedByUsers";
-import { useBlockedUsers } from "./useBlockedUsers";
+} from "../../components/morphing/accountability/accountabilityUtils";
+import { useBlockedByUsers } from "../block/useBlockedByUsers";
+import { useBlockedUsers } from "../block/useBlockedUsers";
 
 interface AccountabilityWithId extends AccountabilityRelationship {
   id: string; // Firestore doc id
