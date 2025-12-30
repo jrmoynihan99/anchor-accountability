@@ -1,4 +1,5 @@
 // components/messages/MyReachOutModal.tsx
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThread } from "@/context/ThreadContext"; // Add this import
 import { useUnreadCount } from "@/hooks/messages/useUnreadCount";
@@ -44,6 +45,7 @@ export function MyReachOutModal({
   reachOut,
   now,
 }: MyReachOutModalProps) {
+  const { organizationId } = useOrganization();
   const { colors, effectiveTheme } = useTheme();
   const { setCurrentPleaId } = useThread();
   const [encouragements, setEncouragements] = useState<EncouragementData[]>([]);
@@ -76,7 +78,7 @@ export function MyReachOutModal({
 
     // 👈 Mark encouragements as read when modal opens
     // 👈 Mark encouragements as read and refresh unread count when modal opens
-    markEncouragementAsRead(reachOut.id)
+    markEncouragementAsRead(organizationId!, reachOut.id)
       .then(() => refreshUnreadCount())
       .catch(console.error);
 

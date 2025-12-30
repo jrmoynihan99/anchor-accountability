@@ -9,6 +9,7 @@ import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
 import { ThemedText } from "@/components/ThemedText";
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThread } from "@/context/ThreadContext";
 import { useThreadMessages } from "@/hooks/messages/useThreadMessages";
@@ -50,6 +51,7 @@ const RECEIVED_INVITE_BANNER_STORAGE_KEY = "receivedInviteBannerDismissed_";
 const MESSAGE_THRESHOLD = 8;
 
 export default function MessageThreadScreen() {
+  const { organizationId } = useOrganization();
   const { colors, effectiveTheme } = useTheme();
   const { setCurrentThreadId } = useThread();
   const params = useLocalSearchParams();
@@ -392,7 +394,7 @@ export default function MessageThreadScreen() {
     return () => {
       setCurrentThreadId(null);
       if (actualThreadId) {
-        markMessagesAsRead(actualThreadId)
+        markMessagesAsRead(organizationId!, actualThreadId)
           .then(() => refreshUnreadCount())
           .catch(console.error);
       }
@@ -673,7 +675,7 @@ export default function MessageThreadScreen() {
 
   useEffect(() => {
     if (actualThreadId && !isNewThread) {
-      markMessagesAsRead(actualThreadId)
+      markMessagesAsRead(organizationId!, actualThreadId)
         .then(() => refreshUnreadCount())
         .catch(console.error);
     }
@@ -688,7 +690,7 @@ export default function MessageThreadScreen() {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
     }, 100);
     try {
-      await sendMessage(actualThreadId, messageText);
+      await sendMessage(organizationId!, actualThreadId, messageText);
     } catch (error) {
       console.error("Failed to send message:", error);
       Alert.alert("Error", "Failed to send message. Please try again.");
