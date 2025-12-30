@@ -38,7 +38,7 @@ export function AboutSection({ onNavigateToContent }: AboutSectionProps) {
           darkColor={colors.textSecondary}
           style={styles.settingValue}
         >
-          1.1.1
+          1.2.0
         </ThemedText>
       </TouchableOpacity>
 
