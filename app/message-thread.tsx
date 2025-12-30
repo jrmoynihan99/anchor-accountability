@@ -61,6 +61,7 @@ export default function MessageThreadScreen() {
   const otherUserId = params.otherUserId as string;
   const pleaId = params.pleaId as string;
   const encouragementId = params.encouragementId as string;
+  const postId = params.postId as string;
   const messageId = params.messageId as string;
   const isNewThread = params.isNewThread === "true";
 
@@ -74,7 +75,7 @@ export default function MessageThreadScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [sending, setSending] = useState(false);
 
-  // ✅ NEW: Track input height for MessagesList
+  // ✅ Track input height for MessagesList
   const [inputHeight, setInputHeight] = useState(60);
 
   // Promotional banner state
@@ -102,14 +103,17 @@ export default function MessageThreadScreen() {
   const [encouragementMessage, setEncouragementMessage] = useState<
     string | null
   >(null);
+  const [postTitle, setPostTitle] = useState<string | null>(null);
   const [pleaOwnerUid, setPleaOwnerUid] = useState<string | null>(null);
   const [encouragementOwnerUid, setEncouragementOwnerUid] = useState<
     string | null
   >(null);
+  const [postOwnerUid, setPostOwnerUid] = useState<string | null>(null);
   const [contextPleaId, setContextPleaId] = useState<string | null>(null);
   const [contextEncouragementId, setContextEncouragementId] = useState<
     string | null
   >(null);
+  const [contextPostId, setContextPostId] = useState<string | null>(null);
   const [loadingContext, setLoadingContext] = useState(true);
 
   // State for fetched thread data when coming from notification
@@ -163,7 +167,8 @@ export default function MessageThreadScreen() {
   const hasInitiallyLoadedRef = useRef(false);
 
   // Calculate banner top position based on context section
-  const hasContext = !loadingContext && (pleaMessage || encouragementMessage);
+  const hasContext =
+    !loadingContext && (pleaMessage || encouragementMessage || postTitle);
   const HEADER_HEIGHT = 60;
   const CONTEXT_SECTION_HEIGHT = 48;
   const DESIRED_GAP = 12;
@@ -349,10 +354,11 @@ export default function MessageThreadScreen() {
     let isMounted = true;
     setLoadingContext(true);
     async function resolveContextIds() {
-      if (pleaId || encouragementId) {
+      if (pleaId || encouragementId || postId) {
         if (isMounted) {
           setContextPleaId(pleaId ?? null);
           setContextEncouragementId(encouragementId ?? null);
+          setContextPostId(postId ?? null);
         }
         return;
       }
@@ -363,10 +369,12 @@ export default function MessageThreadScreen() {
           if (isMounted) {
             setContextPleaId(data.startedFromPleaId ?? null);
             setContextEncouragementId(data.startedFromEncouragementId ?? null);
+            setContextPostId(data.startedFromPostId ?? null);
           }
         } else if (isMounted) {
           setContextPleaId(null);
           setContextEncouragementId(null);
+          setContextPostId(null);
         }
       }
     }
@@ -374,7 +382,7 @@ export default function MessageThreadScreen() {
     return () => {
       isMounted = false;
     };
-  }, [actualThreadId, pleaId, encouragementId]);
+  }, [actualThreadId, pleaId, encouragementId, postId]);
 
   useEffect(() => {
     if (actualThreadId) {
@@ -399,7 +407,11 @@ export default function MessageThreadScreen() {
       let pleaMsg = null,
         pleaUid = null,
         encMsg = null,
-        encUid = null;
+        encUid = null,
+        postTtl = null,
+        postUid = null;
+
+      // Fetch plea context
       if (contextPleaId) {
         const pleaDoc = await getDoc(doc(db, "pleas", contextPleaId));
         if (pleaDoc.exists()) {
@@ -411,6 +423,8 @@ export default function MessageThreadScreen() {
               : null;
         }
       }
+
+      // Fetch encouragement context
       if (contextPleaId && contextEncouragementId) {
         const encDoc = await getDoc(
           doc(
@@ -430,27 +444,47 @@ export default function MessageThreadScreen() {
               : null;
         }
       }
+
+      // Fetch post context
+      if (contextPostId) {
+        const postDoc = await getDoc(doc(db, "communityPosts", contextPostId));
+        if (postDoc.exists()) {
+          const data = postDoc.data();
+          postUid = data.uid ?? null;
+          postTtl =
+            typeof data.title === "string" && data.title.trim().length > 0
+              ? data.title
+              : null;
+        }
+      }
+
       if (isMounted) {
         setPleaOwnerUid(pleaUid);
         setPleaMessage(pleaMsg);
         setEncouragementOwnerUid(encUid);
         setEncouragementMessage(encMsg);
+        setPostOwnerUid(postUid);
+        setPostTitle(postTtl);
         setLoadingContext(false);
       }
     }
-    if (!contextPleaId) {
+
+    if (!contextPleaId && !contextPostId) {
       setPleaOwnerUid(null);
       setPleaMessage(null);
       setEncouragementOwnerUid(null);
       setEncouragementMessage(null);
+      setPostOwnerUid(null);
+      setPostTitle(null);
       setLoadingContext(false);
       return;
     }
+
     fetchContext();
     return () => {
       isMounted = false;
     };
-  }, [contextPleaId, contextEncouragementId]);
+  }, [contextPleaId, contextEncouragementId, contextPostId]);
 
   const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
     // For FlatList, we don't need contentInset adjustments
@@ -604,7 +638,8 @@ export default function MessageThreadScreen() {
         const newThreadId = await createThread(
           displayOtherUserId,
           pleaId,
-          encouragementId
+          encouragementId,
+          postId
         );
         setActualThreadId(newThreadId);
       } catch (error) {
@@ -613,7 +648,14 @@ export default function MessageThreadScreen() {
       }
     };
     setupNewThread();
-  }, [currentUserId, isNewThread, displayOtherUserId, pleaId, encouragementId]);
+  }, [
+    currentUserId,
+    isNewThread,
+    displayOtherUserId,
+    pleaId,
+    encouragementId,
+    postId,
+  ]);
 
   useEffect(() => {
     if (!hasInitiallyLoadedRef.current) return;
@@ -733,10 +775,12 @@ export default function MessageThreadScreen() {
           <ContextSection
             plea={pleaMessage}
             encouragement={encouragementMessage}
+            postTitle={postTitle}
             colors={colors}
             currentUserId={currentUserId}
             pleaOwnerUid={pleaOwnerUid}
             encouragementOwnerUid={encouragementOwnerUid}
+            postOwnerUid={postOwnerUid}
             loading={loadingContext}
             isNewThread={isNewThread}
             colorScheme={effectiveTheme}

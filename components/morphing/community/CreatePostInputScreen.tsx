@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { OpenToChatToggle } from "../pleas/plea/OpenToChatToggle";
 import type { PostCategory } from "./CreatePostModal";
 
 const CATEGORIES: { value: PostCategory; label: string; icon: string }[] = [
@@ -30,6 +31,8 @@ export function CreatePostInputScreen({
   setContent,
   selectedCategories,
   setSelectedCategories,
+  isOpenToChat,
+  onToggleOpenToChat,
   creating,
   error,
   onSubmit,
@@ -40,6 +43,8 @@ export function CreatePostInputScreen({
   setContent: (s: string) => void;
   selectedCategories: PostCategory[];
   setSelectedCategories: React.Dispatch<React.SetStateAction<PostCategory[]>>;
+  isOpenToChat: boolean;
+  onToggleOpenToChat: (value: boolean) => void;
   creating: boolean;
   error: string | null;
   onSubmit: () => void;
@@ -248,6 +253,16 @@ export function CreatePostInputScreen({
         </View>
       </View>
 
+      {/* Open To Chat Toggle */}
+      <View style={styles.toggleSection}>
+        <OpenToChatToggle
+          isOpen={isOpenToChat}
+          onToggle={onToggleOpenToChat}
+          user="viewers"
+          context="post"
+        />
+      </View>
+
       {/* Error */}
       {error && (
         <View style={styles.errorContainer}>
@@ -306,6 +321,7 @@ const styles = StyleSheet.create({
     minWidth: "45%",
   },
   categoryIcon: { marginRight: 8 },
+  toggleSection: { marginBottom: 24 },
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",

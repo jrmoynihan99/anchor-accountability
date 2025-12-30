@@ -3,10 +3,11 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/context/ThemeContext";
+import { router } from "expo-router";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { BlockUserIcon } from "../../BlockUserIcon";
-import { CommunityPost, PostCategory } from "../../community/types";
+import { CommunityPost, PostCategory } from "./types";
 
 interface PostDetailViewProps {
   post: CommunityPost;
@@ -15,6 +16,7 @@ interface PostDetailViewProps {
   likeCount?: number;
   onLikePress?: (e?: any) => void;
   actionLoading?: boolean;
+  onClose?: () => void;
 }
 
 export function PostDetailView({
@@ -24,6 +26,7 @@ export function PostDetailView({
   likeCount,
   onLikePress,
   actionLoading,
+  onClose,
 }: PostDetailViewProps) {
   const { colors } = useTheme();
 
@@ -169,6 +172,46 @@ export function PostDetailView({
       >
         {post.content}
       </ThemedText>
+
+      {/* Chat invitation section */}
+      {post.openToChat && !isOwnPost && (
+        <TouchableOpacity
+          style={styles.chatInvitation}
+          onPress={() => {
+            // Close the modal first
+            onClose?.();
+
+            // Small delay to let modal close animation start
+            setTimeout(() => {
+              // Start a new chat with the post author
+              router.push({
+                pathname: "/message-thread",
+                params: {
+                  threadId: "", // Empty for new threads
+                  threadName: post.authorUsername,
+                  otherUserId: post.uid,
+                  postId: post.id,
+                  isNewThread: "true",
+                },
+              });
+            }, 100); // 100ms delay for smooth transition
+          }}
+          activeOpacity={0.8}
+        >
+          <View style={styles.chatInvitationContent}>
+            <ThemedText type="small" style={{ color: colors.textSecondary }}>
+              Start a chat with the author
+            </ThemedText>
+            <View style={[styles.chatButton, { backgroundColor: colors.tint }]}>
+              <IconSymbol
+                name="square.and.pencil"
+                size={20}
+                color={colors.white}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -265,5 +308,29 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     right: 44,
+  },
+  // Chat invitation styles
+  chatInvitation: {
+    position: "relative",
+    marginTop: 0,
+    marginBottom: -8,
+    marginRight: -8,
+  },
+  chatInvitationContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+  },
+  chatButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });

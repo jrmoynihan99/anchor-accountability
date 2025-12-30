@@ -23,10 +23,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface ContextSectionProps {
   plea?: string | null;
   encouragement?: string | null;
+  postTitle?: string | null;
   colors: any;
   currentUserId?: string | null;
   pleaOwnerUid?: string | null;
   encouragementOwnerUid?: string | null;
+  postOwnerUid?: string | null;
   loading?: boolean;
   isNewThread?: boolean;
   colorScheme?: "light" | "dark";
@@ -50,13 +52,24 @@ function getEncLabel(
   return `user-${encouragementOwnerUid.substring(0, 5)}'s encouragement`;
 }
 
+function getPostLabel(
+  currentUserId?: string | null,
+  postOwnerUid?: string | null
+) {
+  if (!postOwnerUid || !currentUserId) return "Community post";
+  if (postOwnerUid === currentUserId) return "Your community post";
+  return `user-${postOwnerUid.substring(0, 5)}'s community post`;
+}
+
 export const ContextSection: React.FC<ContextSectionProps> = ({
   plea,
   encouragement,
+  postTitle,
   colors,
   currentUserId,
   pleaOwnerUid,
   encouragementOwnerUid,
+  postOwnerUid,
   loading,
   isNewThread = false,
   colorScheme = "light",
@@ -123,9 +136,10 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
     setContentHeight(height);
   };
 
-  if (!loading && !plea && !encouragement) return null;
+  if (!loading && !plea && !encouragement && !postTitle) return null;
 
   const hasEncouragement = encouragement && encouragement.trim().length > 0;
+  const hasPost = postTitle && postTitle.trim().length > 0;
 
   // ------------------------------------------------------------
   // SHARED CONTENT FOR BOTH ANDROID + IOS
@@ -172,27 +186,27 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
           style={[styles.content, animatedContentStyle]}
           onLayout={onContentLayout}
         >
-          {/* Plea */}
-          <View
-            style={[
-              styles.section,
-              hasEncouragement && styles.sectionWithMargin,
-            ]}
-          >
-            <ThemedText
-              type="caption"
+          {/* Post Context */}
+          {hasPost && (
+            <View
               style={[
-                styles.sectionLabel,
-                {
-                  color: colors.textSecondary,
-                  ...Typography.styles.caption,
-                },
+                styles.section,
+                (plea || hasEncouragement) && styles.sectionWithMargin,
               ]}
             >
-              {getPleaLabel(currentUserId, pleaOwnerUid)}
-            </ThemedText>
+              <ThemedText
+                type="caption"
+                style={[
+                  styles.sectionLabel,
+                  {
+                    color: colors.textSecondary,
+                    ...Typography.styles.caption,
+                  },
+                ]}
+              >
+                {getPostLabel(currentUserId, postOwnerUid)}
+              </ThemedText>
 
-            {plea && plea.trim().length > 0 ? (
               <ThemedText
                 type="body"
                 style={[
@@ -200,24 +214,59 @@ export const ContextSection: React.FC<ContextSectionProps> = ({
                   { color: colors.text, ...Typography.styles.body },
                 ]}
               >
-                {plea}
+                {postTitle}
               </ThemedText>
-            ) : (
+            </View>
+          )}
+
+          {/* Plea */}
+          {plea && (
+            <View
+              style={[
+                styles.section,
+                hasEncouragement && styles.sectionWithMargin,
+              ]}
+            >
               <ThemedText
-                type="body"
+                type="caption"
                 style={[
-                  styles.sectionText,
+                  styles.sectionLabel,
                   {
                     color: colors.textSecondary,
-                    fontStyle: "italic",
-                    ...Typography.styles.body,
+                    ...Typography.styles.caption,
                   },
                 ]}
               >
-                No additional context provided.
+                {getPleaLabel(currentUserId, pleaOwnerUid)}
               </ThemedText>
-            )}
-          </View>
+
+              {plea.trim().length > 0 ? (
+                <ThemedText
+                  type="body"
+                  style={[
+                    styles.sectionText,
+                    { color: colors.text, ...Typography.styles.body },
+                  ]}
+                >
+                  {plea}
+                </ThemedText>
+              ) : (
+                <ThemedText
+                  type="body"
+                  style={[
+                    styles.sectionText,
+                    {
+                      color: colors.textSecondary,
+                      fontStyle: "italic",
+                      ...Typography.styles.body,
+                    },
+                  ]}
+                >
+                  No additional context provided.
+                </ThemedText>
+              )}
+            </View>
+          )}
 
           {/* Encouragement */}
           {hasEncouragement && (

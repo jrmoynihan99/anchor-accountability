@@ -117,7 +117,8 @@ export async function sendMessage(
 export async function createThread(
   otherUserId: string,
   pleaId?: string,
-  encouragementId?: string
+  encouragementId?: string,
+  postId?: string
 ): Promise<string> {
   const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) {
@@ -135,16 +136,25 @@ export async function createThread(
   }
 
   // 2. If not, create new thread
-  const threadData = {
+  const threadData: any = {
     userA: currentUserId,
     userB: otherUserId,
-    startedFromPleaId: pleaId ?? undefined,
-    startedFromEncouragementId: encouragementId ?? undefined,
     createdAt: serverTimestamp(),
     lastActivity: serverTimestamp(),
     userA_unreadCount: 0,
     userB_unreadCount: 0,
   };
+
+  // Only add optional fields if they are defined
+  if (pleaId) {
+    threadData.startedFromPleaId = pleaId;
+  }
+  if (encouragementId) {
+    threadData.startedFromEncouragementId = encouragementId;
+  }
+  if (postId) {
+    threadData.startedFromPostId = postId;
+  }
 
   await setDoc(threadRef, threadData);
   return threadId;

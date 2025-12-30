@@ -4,7 +4,7 @@ import { UserStreakDisplay } from "@/components/UserStreakDisplay";
 import { useTheme } from "@/context/ThemeContext";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { CommunityPost, PostCategory } from "../../community/types";
+import { CommunityPost, PostCategory } from "./types";
 
 interface CommunityPostCardContentProps {
   post: CommunityPost;
