@@ -1,5 +1,6 @@
 // hooks/usePostComments.ts
-import { PostComment } from "@/components/community/types";
+import { PostComment } from "@/components/morphing/community/types";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   addDoc,
@@ -29,6 +30,7 @@ interface UserCommentStatus {
 }
 
 export function usePostComments(postId: string | null) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [allComments, setAllComments] = useState<PostComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function usePostComments(postId: string | null) {
 
   // --- REAL-TIME COMMENT LISTENER (all approved comments) ---
   useEffect(() => {
-    if (!postId || !auth.currentUser) {
+    if (!postId || !auth.currentUser || !organizationId || orgLoading) {
       setAllComments([]);
       setLoading(false);
       return;
@@ -60,7 +62,14 @@ export function usePostComments(postId: string | null) {
     setLoading(true);
 
     const commentsQuery = query(
-      collection(db, "communityPosts", postId, "comments"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId,
+        "comments"
+      ),
       where("status", "==", "approved"),
       orderBy("createdAt", "asc")
     );
@@ -74,7 +83,11 @@ export function usePostComments(postId: string | null) {
             (d) => !shouldHideAuthor((d.data() as any).uid)
           );
 
-          const commentsData = await processComments(visibleDocs, postId);
+          const commentsData = await processComments(
+            visibleDocs,
+            postId,
+            organizationId
+          );
           setAllComments(commentsData);
           setError(null);
         } catch (err) {
@@ -94,6 +107,8 @@ export function usePostComments(postId: string | null) {
     return () => unsubscribe();
   }, [
     postId,
+    organizationId,
+    orgLoading,
     auth.currentUser?.uid,
     blockedLoading,
     blockedByLoading,
@@ -103,13 +118,20 @@ export function usePostComments(postId: string | null) {
 
   // ---- userCommentStatus logic with fix for re-showing ----
   useEffect(() => {
-    if (!postId || !auth.currentUser) {
+    if (!postId || !auth.currentUser || !organizationId || orgLoading) {
       setUserCommentStatus(null);
       return;
     }
 
     const userCommentsQuery = query(
-      collection(db, "communityPosts", postId, "comments"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId,
+        "comments"
+      ),
       where("uid", "==", auth.currentUser.uid),
       orderBy("createdAt", "desc"),
       limit(1)
@@ -146,7 +168,7 @@ export function usePostComments(postId: string | null) {
     );
 
     return () => unsubscribe();
-  }, [postId, auth.currentUser?.uid]);
+  }, [postId, organizationId, orgLoading, auth.currentUser?.uid]);
 
   // Auto-dismiss approved status
   useEffect(() => {
@@ -167,7 +189,8 @@ export function usePostComments(postId: string | null) {
   // ---- Build parent/replies tree ----
   async function processComments(
     docs: QueryDocumentSnapshot[],
-    postId: string
+    postId: string,
+    orgId: string
   ): Promise<PostComment[]> {
     const currentUserId = auth.currentUser?.uid || "";
 
@@ -181,6 +204,8 @@ export function usePostComments(postId: string | null) {
         try {
           const likeRef = doc(
             db,
+            "organizations",
+            orgId,
             "communityPosts",
             postId,
             "comments",
@@ -247,6 +272,10 @@ export function usePostComments(postId: string | null) {
       setError("You must be logged in to comment");
       return false;
     }
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
     if (!content.trim()) {
       setError("Comment cannot be empty");
       return false;
@@ -266,7 +295,14 @@ export function usePostComments(postId: string | null) {
       };
 
       await addDoc(
-        collection(db, "communityPosts", postId, "comments"),
+        collection(
+          db,
+          "organizations",
+          organizationId,
+          "communityPosts",
+          postId,
+          "comments"
+        ),
         commentData
       );
       return true;
@@ -287,6 +323,10 @@ export function usePostComments(postId: string | null) {
       setError("You must be logged in to like comments");
       return false;
     }
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
 
     try {
       const userId = auth.currentUser.uid;
@@ -294,6 +334,8 @@ export function usePostComments(postId: string | null) {
       // Guard: prevent liking if the comment's author is blocked either way
       const commentRef = doc(
         db,
+        "organizations",
+        organizationId,
         "communityPosts",
         postId,
         "comments",
@@ -304,12 +346,14 @@ export function usePostComments(postId: string | null) {
 
       const authorUid = (commentSnap.data() as any).uid as string;
       if (shouldHideAuthor(authorUid)) {
-        setError("You can’t interact with this comment.");
+        setError("You can't interact with this comment.");
         return false;
       }
 
       const likeRef = doc(
         db,
+        "organizations",
+        organizationId,
         "communityPosts",
         postId,
         "comments",
@@ -341,10 +385,16 @@ export function usePostComments(postId: string | null) {
       setError("You must be logged in to delete comments");
       return false;
     }
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
 
     try {
       const commentRef = doc(
         db,
+        "organizations",
+        organizationId,
         "communityPosts",
         postId,
         "comments",
@@ -352,7 +402,13 @@ export function usePostComments(postId: string | null) {
       );
       await deleteDoc(commentRef);
 
-      const postRef = doc(db, "communityPosts", postId);
+      const postRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId
+      );
       await updateDoc(postRef, { commentCount: increment(-1) });
 
       return true;

@@ -3,6 +3,7 @@ import "react-native-reanimated";
 
 import { AccountabilityProvider } from "@/context/AccountabilityContext";
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
+import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth } from "@/lib/firebase";
@@ -241,13 +242,15 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <AccountabilityProvider>
-          <ModalIntentProvider>
-            <ThreadProvider>
-              <AppContent />
-            </ThreadProvider>
-          </ModalIntentProvider>
-        </AccountabilityProvider>
+        <OrganizationProvider>
+          <AccountabilityProvider>
+            <ModalIntentProvider>
+              <ThreadProvider>
+                <AppContent />
+              </ThreadProvider>
+            </ModalIntentProvider>
+          </AccountabilityProvider>
+        </OrganizationProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

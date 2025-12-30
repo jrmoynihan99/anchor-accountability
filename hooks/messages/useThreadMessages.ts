@@ -1,4 +1,5 @@
 // hooks/useThreadMessages.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -26,6 +27,7 @@ export interface MessageData {
 const MESSAGES_PER_PAGE = 30;
 
 export function useThreadMessages(threadId: string | null) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [messages, setMessages] = useState<MessageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -37,7 +39,7 @@ export function useThreadMessages(threadId: string | null) {
   const listenerSetupRef = useRef(false);
 
   useEffect(() => {
-    if (!threadId) {
+    if (!threadId || !organizationId || orgLoading) {
       setMessages([]);
       setLoading(false);
       return;
@@ -55,7 +57,14 @@ export function useThreadMessages(threadId: string | null) {
     }
 
     // Set up real-time listener for most recent messages
-    const messagesRef = collection(db, "threads", threadId, "messages");
+    const messagesRef = collection(
+      db,
+      "organizations",
+      organizationId,
+      "threads",
+      threadId,
+      "messages"
+    );
     const recentMessagesQuery = query(
       messagesRef,
       orderBy("createdAt", "desc"),
@@ -109,12 +118,13 @@ export function useThreadMessages(threadId: string | null) {
       }
       listenerSetupRef.current = false;
     };
-  }, [threadId]);
+  }, [threadId, organizationId, orgLoading]);
 
   // Load older messages (pagination)
   const loadMoreMessages = async () => {
     if (
       !threadId ||
+      !organizationId ||
       !oldestDocRef.current ||
       loadingMore ||
       !hasMore ||
@@ -126,7 +136,14 @@ export function useThreadMessages(threadId: string | null) {
     setLoadingMore(true);
 
     try {
-      const messagesRef = collection(db, "threads", threadId, "messages");
+      const messagesRef = collection(
+        db,
+        "organizations",
+        organizationId,
+        "threads",
+        threadId,
+        "messages"
+      );
 
       const olderMessagesQuery = query(
         messagesRef,

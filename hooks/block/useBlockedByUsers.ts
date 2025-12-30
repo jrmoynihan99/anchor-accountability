@@ -1,4 +1,5 @@
 // hooks/useBlockedByUsers.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,19 +10,27 @@ import { useCallback, useEffect, useMemo, useState } from "react";
  */
 export function useBlockedByUsers() {
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [blockedByUserIds, setBlockedByUserIds] = useState<Set<string>>(
     new Set()
   );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setBlockedByUserIds(new Set());
       setLoading(false);
       return;
     }
 
-    const colRef = collection(db, "users", uid, "blockedBy");
+    const colRef = collection(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "blockedBy"
+    );
     const unsub = onSnapshot(
       colRef,
       (snap) => {
@@ -37,7 +46,7 @@ export function useBlockedByUsers() {
     );
 
     return () => unsub();
-  }, [uid]);
+  }, [uid, organizationId, orgLoading]);
 
   const isBlockedBy = useCallback(
     (userId: string) => blockedByUserIds.has(userId),

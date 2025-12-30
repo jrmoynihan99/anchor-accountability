@@ -1,3 +1,4 @@
+import { useOrganization } from "@/context/OrganizationContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { getAuth } from "firebase/auth";
@@ -34,6 +35,7 @@ const EMPTY_NOTIFICATION_PREFS: NotificationPreferences = {
 const ANDROID_DENIAL_COUNT_KEY = "androidNotificationDenialCount";
 
 export function useNotificationPreferences(enabled: boolean = true) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [state, setState] = useState<NotificationState>({
     systemPermissionGranted: false,
     systemPermissionDenied: false,
@@ -62,10 +64,10 @@ export function useNotificationPreferences(enabled: boolean = true) {
   }, [enabled, state.systemPermissionDenied]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !organizationId || orgLoading) return;
     loadNotificationState();
     // eslint-disable-next-line
-  }, [enabled, auth.currentUser?.uid]);
+  }, [enabled, auth.currentUser?.uid, organizationId, orgLoading]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -81,7 +83,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
   }, [enabled, state.systemPermissionGranted]);
 
   const loadNotificationState = async () => {
-    if (!enabled) return;
+    if (!enabled || !organizationId) return;
 
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -108,7 +110,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
         return;
       }
 
-      const userRef = doc(db, "users", uid);
+      const userRef = doc(db, "organizations", organizationId, "users", uid);
       const userDoc = await getDoc(userRef);
       const userData = userDoc.data();
 
@@ -118,7 +120,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
 
       if (systemPermissionGranted && !hasExpoPushToken) {
         try {
-          await savePushTokenToFirestore();
+          await savePushTokenToFirestore(organizationId ?? undefined);
 
           const updatedUserDoc = await getDoc(userRef);
           const updatedUserData = updatedUserDoc.data();
@@ -182,7 +184,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
 
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
-      await savePushTokenToFirestore();
+      await savePushTokenToFirestore(organizationId ?? undefined);
       await loadNotificationState();
 
       const { status: newStatus } = await Notifications.getPermissionsAsync();
@@ -221,7 +223,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
     preferenceKey: keyof NotificationPreferences,
     value: boolean
   ): Promise<void> => {
-    if (!enabled) return;
+    if (!enabled || !organizationId) return;
 
     const previousValue = state.preferences[preferenceKey];
 
@@ -239,7 +241,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
         throw new Error("No user logged in");
       }
 
-      const userRef = doc(db, "users", uid);
+      const userRef = doc(db, "organizations", organizationId, "users", uid);
       await updateDoc(userRef, {
         [`notificationPreferences.${preferenceKey}`]: value,
       });

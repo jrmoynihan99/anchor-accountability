@@ -1,22 +1,31 @@
 // hooks/useBlockedUsers.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useBlockedUsers() {
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [blockedUserIds, setBlockedUserIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Signed out: clear and stop
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setBlockedUserIds(new Set());
       setLoading(false);
       return;
     }
 
-    const blockListRef = collection(db, "users", uid, "blockList");
+    const blockListRef = collection(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "blockList"
+    );
     const unsubscribe = onSnapshot(
       blockListRef,
       (snapshot) => {
@@ -35,7 +44,7 @@ export function useBlockedUsers() {
     );
 
     return () => unsubscribe();
-  }, [uid]);
+  }, [uid, organizationId, orgLoading]);
 
   const isBlocked = useCallback(
     (userId: string) => blockedUserIds.has(userId),

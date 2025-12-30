@@ -1,10 +1,12 @@
 // hooks/useStreakVisibility.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function useStreakVisibility() {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [streakVisible, setStreakVisibleState] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function useStreakVisibility() {
 
   // Load streak visibility setting from Firebase
   useEffect(() => {
-    if (!user?.uid) {
+    if (!user?.uid || !organizationId || orgLoading) {
       setLoading(false);
       return;
     }
@@ -31,7 +33,13 @@ export function useStreakVisibility() {
         setLoading(true);
         setError(null);
 
-        const userRef = doc(db, "users", user.uid);
+        const userRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "users",
+          user.uid
+        );
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
@@ -50,16 +58,22 @@ export function useStreakVisibility() {
     };
 
     loadStreakVisibility();
-  }, [user?.uid]);
+  }, [user?.uid, organizationId, orgLoading]);
 
   const setStreakVisible = async (visible: boolean) => {
-    if (!user?.uid) return;
+    if (!user?.uid || !organizationId) return;
 
     try {
       setError(null);
       setStreakVisibleState(visible);
 
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "users",
+        user.uid
+      );
       await setDoc(userRef, { streakVisible: visible }, { merge: true });
     } catch (err) {
       console.error("Error updating streak visibility:", err);
@@ -77,11 +91,12 @@ export function useStreakVisibility() {
 }
 
 export function useUserStreakVisibility(userId: string) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [isVisible, setIsVisible] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !organizationId || orgLoading) {
       setIsVisible(true);
       setLoading(false);
       return;
@@ -91,7 +106,13 @@ export function useUserStreakVisibility(userId: string) {
       try {
         setLoading(true);
 
-        const userRef = doc(db, "users", userId);
+        const userRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "users",
+          userId
+        );
         const userDoc = await getDoc(userRef);
 
         if (userDoc.exists()) {
@@ -109,7 +130,7 @@ export function useUserStreakVisibility(userId: string) {
     };
 
     checkUserStreakVisibility();
-  }, [userId]);
+  }, [userId, organizationId, orgLoading]);
 
   return { isVisible, loading };
 }

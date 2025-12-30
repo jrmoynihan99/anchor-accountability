@@ -1,5 +1,6 @@
 // hooks/useCommunityPosts.ts
 import { CommunityPost } from "@/components/morphing/community/types";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -22,6 +23,7 @@ const POSTS_PER_PAGE = 10;
 
 export function useCommunityPosts() {
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
 
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +53,7 @@ export function useCommunityPosts() {
       unsubscribeRef.current = null;
     }
 
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setPosts([]);
       setHasMore(false);
       setLoading(false);
@@ -69,7 +71,7 @@ export function useCommunityPosts() {
     lastDocRef.current = null;
 
     const postsQuery = query(
-      collection(db, "communityPosts"),
+      collection(db, "organizations", organizationId, "communityPosts"),
       where("status", "==", "approved"),
       where("isDeleted", "==", false),
       orderBy("createdAt", "desc"),
@@ -102,7 +104,15 @@ export function useCommunityPosts() {
               let hasUserLiked = false;
               try {
                 const likeSnap = await getDoc(
-                  fsDoc(db, "communityPosts", postId, "likes", uid)
+                  fsDoc(
+                    db,
+                    "organizations",
+                    organizationId,
+                    "communityPosts",
+                    postId,
+                    "likes",
+                    uid
+                  )
                 );
                 hasUserLiked = likeSnap.exists();
               } catch (e) {
@@ -157,6 +167,8 @@ export function useCommunityPosts() {
     };
   }, [
     uid,
+    organizationId,
+    orgLoading,
     refreshKey,
     blockedLoading,
     blockedByLoading,
@@ -166,12 +178,19 @@ export function useCommunityPosts() {
 
   // Pagination (respects 2-way blocks and reuses getDoc like check)
   const loadMore = async () => {
-    if (!uid || !lastDocRef.current || loadingMore || !hasMore) return;
+    if (
+      !uid ||
+      !organizationId ||
+      !lastDocRef.current ||
+      loadingMore ||
+      !hasMore
+    )
+      return;
 
     setLoadingMore(true);
     try {
       const moreQuery = query(
-        collection(db, "communityPosts"),
+        collection(db, "organizations", organizationId, "communityPosts"),
         where("status", "==", "approved"),
         where("isDeleted", "==", false),
         orderBy("createdAt", "desc"),
@@ -211,7 +230,15 @@ export function useCommunityPosts() {
           let hasUserLiked = false;
           try {
             const likeSnap = await getDoc(
-              fsDoc(db, "communityPosts", postId, "likes", uid)
+              fsDoc(
+                db,
+                "organizations",
+                organizationId,
+                "communityPosts",
+                postId,
+                "likes",
+                uid
+              )
             );
             hasUserLiked = likeSnap.exists();
           } catch (e) {

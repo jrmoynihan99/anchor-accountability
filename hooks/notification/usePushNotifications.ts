@@ -36,13 +36,28 @@ export async function registerForPushNotificationsAsync() {
   }
 }
 
-export async function savePushTokenToFirestore() {
+export async function savePushTokenToFirestore(organizationId?: string) {
   const auth = getAuth();
   const db = getFirestore();
   const uid = auth.currentUser?.uid;
 
   if (!uid) {
     console.warn("⚠️ No user logged in — skipping push token save");
+    return;
+  }
+
+  if (!organizationId) {
+    // Get organizationId from user's custom claims
+    try {
+      const idToken = await auth.currentUser?.getIdTokenResult(true);
+      organizationId = idToken?.claims.organizationId as string;
+    } catch (error) {
+      console.error("❌ Error getting organizationId from claims:", error);
+    }
+  }
+
+  if (!organizationId) {
+    console.warn("⚠️ No organizationId available — skipping push token save");
     return;
   }
 
@@ -53,7 +68,7 @@ export async function savePushTokenToFirestore() {
   }
 
   try {
-    const userRef = doc(db, "users", uid);
+    const userRef = doc(db, "organizations", organizationId, "users", uid);
     await setDoc(
       userRef,
       {

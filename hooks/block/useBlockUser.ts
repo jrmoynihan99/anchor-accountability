@@ -1,4 +1,5 @@
 // hooks/useBlockUser.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -19,6 +20,7 @@ import { useState } from "react";
  * Also sets any active accountability relationships to "blocked" status.
  */
 export function useBlockUser() {
+  const { organizationId } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +29,11 @@ export function useBlockUser() {
 
     if (!currentUser) {
       setError("You must be signed in to block users.");
+      return false;
+    }
+
+    if (!organizationId) {
+      setError("Organization not loaded.");
       return false;
     }
 
@@ -45,7 +52,13 @@ export function useBlockUser() {
 
     try {
       // ✅ Verify target user exists (prevents bogus IDs like "user-abc")
-      const targetRef = doc(db, "users", userIdToBlock);
+      const targetRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "users",
+        userIdToBlock
+      );
       const targetSnap = await getDoc(targetRef);
 
       if (!targetSnap.exists()) {
@@ -57,12 +70,15 @@ export function useBlockUser() {
       // ✅ Set any accountability relationships to "blocked" status
       await updateAccountabilityRelationshipsToBlocked(
         currentUser.uid,
-        userIdToBlock
+        userIdToBlock,
+        organizationId
       );
 
       // ✅ Create blockList entry under current user's document
       const blockDocRef = doc(
         db,
+        "organizations",
+        organizationId,
         "users",
         currentUser.uid,
         "blockList",
@@ -86,12 +102,13 @@ export function useBlockUser() {
   // Helper function to update accountability relationships to blocked status
   const updateAccountabilityRelationshipsToBlocked = async (
     currentUserId: string,
-    blockedUserId: string
+    blockedUserId: string,
+    orgId: string
   ) => {
     try {
       // Find relationships where current user is the mentor
       const asMentorQuery = query(
-        collection(db, "accountabilityRelationships"),
+        collection(db, "organizations", orgId, "accountabilityRelationships"),
         where("mentorUid", "==", currentUserId),
         where("menteeUid", "==", blockedUserId),
         where("status", "==", "active")
@@ -99,7 +116,7 @@ export function useBlockUser() {
 
       // Find relationships where current user is the mentee
       const asMenteeQuery = query(
-        collection(db, "accountabilityRelationships"),
+        collection(db, "organizations", orgId, "accountabilityRelationships"),
         where("mentorUid", "==", blockedUserId),
         where("menteeUid", "==", currentUserId),
         where("status", "==", "active")

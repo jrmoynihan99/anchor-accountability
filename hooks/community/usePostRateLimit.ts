@@ -1,4 +1,5 @@
 // hooks/usePostRateLimit.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -17,11 +18,12 @@ interface PostRateLimitInfo {
 }
 
 export function usePostRateLimit(): PostRateLimitInfo {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth.currentUser) {
+    if (!auth.currentUser || !organizationId || orgLoading) {
       setLoading(false);
       setUserPosts([]);
       return;
@@ -31,7 +33,7 @@ export function usePostRateLimit(): PostRateLimitInfo {
 
     // Query for current user's approved posts only
     const userPostsQuery = query(
-      collection(db, "communityPosts"),
+      collection(db, "organizations", organizationId, "communityPosts"),
       where("uid", "==", currentUserId),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
@@ -56,7 +58,7 @@ export function usePostRateLimit(): PostRateLimitInfo {
     );
 
     return () => unsubscribe();
-  }, [auth.currentUser]);
+  }, [auth.currentUser, organizationId, orgLoading]);
 
   // Calculate rate limit info
   const now = new Date();
