@@ -1,12 +1,20 @@
 import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
-export function useReportCheck(reportedUserId: string) {
+export function useReport(reportedUserId: string) {
   const { organizationId, loading: orgLoading } = useOrganization();
   const [hasReported, setHasReported] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [reporting, setReporting] = useState(false);
 
   useEffect(() => {
     const currentUserId = auth.currentUser?.uid;
@@ -47,5 +55,41 @@ export function useReportCheck(reportedUserId: string) {
     return () => unsubscribe();
   }, [reportedUserId, organizationId, orgLoading]);
 
-  return { hasReported, isLoading };
+  const reportUser = async (): Promise<boolean> => {
+    const currentUserId = auth.currentUser?.uid;
+
+    if (!currentUserId) {
+      console.error("No user logged in");
+      return false;
+    }
+
+    if (!organizationId) {
+      console.error("No organization ID available");
+      return false;
+    }
+
+    if (hasReported) {
+      console.warn("User already reported");
+      return false;
+    }
+
+    setReporting(true);
+
+    try {
+      await addDoc(collection(db, "organizations", organizationId, "reports"), {
+        reportedUserId: reportedUserId,
+        reporterUserId: currentUserId,
+        timestamp: serverTimestamp(),
+      });
+
+      setReporting(false);
+      return true;
+    } catch (error) {
+      console.error("Error reporting user:", error);
+      setReporting(false);
+      return false;
+    }
+  };
+
+  return { hasReported, isLoading, reportUser, reporting };
 }

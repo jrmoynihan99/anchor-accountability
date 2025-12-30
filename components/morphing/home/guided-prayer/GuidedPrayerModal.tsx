@@ -1,9 +1,8 @@
 // GuidedPrayerModal.tsx - Updated to fetch dynamic reflection content
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/context/ThemeContext";
-import { db } from "@/lib/firebase";
+import { useVerseData } from "@/hooks/verse/useVerseData";
 import * as Haptics from "expo-haptics";
-import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
@@ -26,6 +25,7 @@ export function GuidedPrayerModal({
   modalAnimatedStyle,
   close,
 }: GuidedPrayerModalProps) {
+  const { prayerContent } = useVerseData(0);
   const { colors, effectiveTheme } = useTheme();
 
   const [currentStep, setCurrentStep] = useState<PrayerStep>("intro");
@@ -33,33 +33,18 @@ export function GuidedPrayerModal({
   const [steps, setSteps] = useState(PRAYER_STEPS);
 
   // Fetch reflection content on mount
+  // Update steps when prayerContent is loaded
   useEffect(() => {
-    const fetchReflectionContent = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      try {
-        const docRef = doc(db, "dailyContent", today);
-        const snapshot = await getDoc(docRef);
-
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          const content = data?.prayerContent;
-          if (content) {
-            setSteps((prev) => ({
-              ...prev,
-              reflection: {
-                ...prev.reflection,
-                content,
-              },
-            }));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch reflection content:", err);
-      }
-    };
-
-    fetchReflectionContent();
-  }, []);
+    if (prayerContent) {
+      setSteps((prev) => ({
+        ...prev,
+        reflection: {
+          ...prev.reflection,
+          content: prayerContent,
+        },
+      }));
+    }
+  }, [prayerContent]);
 
   // Reset state when modal opens
   useEffect(() => {

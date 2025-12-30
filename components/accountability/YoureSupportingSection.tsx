@@ -5,6 +5,7 @@ import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTr
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThreads } from "@/hooks/messages/useThreads";
 import { db } from "@/lib/firebase";
@@ -22,6 +23,7 @@ interface InviteWithData {
 }
 
 export function YoureSupportingSection() {
+  const { organizationId } = useOrganization();
   const { colors } = useTheme();
   const { receivedInvites } = useAccountability();
   const { threads } = useThreads();
@@ -29,6 +31,7 @@ export function YoureSupportingSection() {
 
   useEffect(() => {
     const fetchInviteData = async () => {
+      if (!organizationId) return;
       const inviteDataPromises = receivedInvites.map(async (invite) => {
         // The person who sent us the invite (they want us as their mentor)
         const otherUserId = invite.menteeUid;
@@ -40,7 +43,9 @@ export function YoureSupportingSection() {
 
         // Fetch the user's display name
         try {
-          const userDoc = await getDoc(doc(db, "users", otherUserId));
+          const userDoc = await getDoc(
+            doc(db, "organizations", organizationId, "users", otherUserId)
+          );
           const userName = userDoc.exists()
             ? userDoc.data()?.displayName ||
               `user-${otherUserId.substring(0, 5)}`

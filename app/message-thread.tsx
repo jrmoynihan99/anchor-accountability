@@ -12,19 +12,19 @@ import { useAccountability } from "@/context/AccountabilityContext";
 import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThread } from "@/context/ThreadContext";
+import { useThreadContext } from "@/hooks/messages/useThreadContext";
 import { useThreadMessages } from "@/hooks/messages/useThreadMessages";
 import { useUnreadCount } from "@/hooks/messages/useUnreadCount";
+import { useUserDisplayName } from "@/hooks/misc/useUserDisplayName";
 import {
   auth,
   createThread,
-  db,
   markMessagesAsRead,
   sendMessage,
 } from "@/lib/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
@@ -100,28 +100,28 @@ export default function MessageThreadScreen() {
   // Pulse intervals: only 3 pulses after dismissal at 23, 38, 53
   const PULSE_INTERVALS = [23, 38, 53];
 
-  // Context messages + owner UIDs
-  const [pleaMessage, setPleaMessage] = useState<string | null>(null);
-  const [encouragementMessage, setEncouragementMessage] = useState<
-    string | null
-  >(null);
-  const [postTitle, setPostTitle] = useState<string | null>(null);
-  const [pleaOwnerUid, setPleaOwnerUid] = useState<string | null>(null);
-  const [encouragementOwnerUid, setEncouragementOwnerUid] = useState<
-    string | null
-  >(null);
-  const [postOwnerUid, setPostOwnerUid] = useState<string | null>(null);
-  const [contextPleaId, setContextPleaId] = useState<string | null>(null);
-  const [contextEncouragementId, setContextEncouragementId] = useState<
-    string | null
-  >(null);
-  const [contextPostId, setContextPostId] = useState<string | null>(null);
-  const [loadingContext, setLoadingContext] = useState(true);
+  // Fetch thread context (plea/encouragement/post details)
+  const {
+    pleaId: contextPleaId,
+    encouragementId: contextEncouragementId,
+    postId: contextPostId,
+    pleaMessage,
+    encouragementMessage,
+    postTitle,
+    pleaOwnerUid,
+    encouragementOwnerUid,
+    postOwnerUid,
+    userA,
+    userB,
+    loading: loadingContext,
+  } = useThreadContext(actualThreadId, pleaId, encouragementId, postId);
 
-  // State for fetched thread data when coming from notification
-  const [fetchedThreadName, setFetchedThreadName] = useState<string>("");
+  // State for fetched other user ID (still need this for the flow)
   const [fetchedOtherUserId, setFetchedOtherUserId] = useState<string>("");
-  const [loadingThreadData, setLoadingThreadData] = useState(false);
+
+  // Fetch other user's display name
+  const { displayName: fetchedThreadName, loading: loadingThreadData } =
+    useUserDisplayName(fetchedOtherUserId);
 
   const { messages, loading, error, loadingMore, hasMore, loadMoreMessages } =
     useThreadMessages(actualThreadId);
@@ -353,40 +353,6 @@ export default function MessageThreadScreen() {
   }, [messages.length, bannerDismissed, hasReceivedInvite]);
 
   useEffect(() => {
-    let isMounted = true;
-    setLoadingContext(true);
-    async function resolveContextIds() {
-      if (pleaId || encouragementId || postId) {
-        if (isMounted) {
-          setContextPleaId(pleaId ?? null);
-          setContextEncouragementId(encouragementId ?? null);
-          setContextPostId(postId ?? null);
-        }
-        return;
-      }
-      if (actualThreadId) {
-        const threadDoc = await getDoc(doc(db, "threads", actualThreadId));
-        if (threadDoc.exists()) {
-          const data = threadDoc.data();
-          if (isMounted) {
-            setContextPleaId(data.startedFromPleaId ?? null);
-            setContextEncouragementId(data.startedFromEncouragementId ?? null);
-            setContextPostId(data.startedFromPostId ?? null);
-          }
-        } else if (isMounted) {
-          setContextPleaId(null);
-          setContextEncouragementId(null);
-          setContextPostId(null);
-        }
-      }
-    }
-    resolveContextIds().then(() => setLoadingContext(false));
-    return () => {
-      isMounted = false;
-    };
-  }, [actualThreadId, pleaId, encouragementId, postId]);
-
-  useEffect(() => {
     if (actualThreadId) {
       setCurrentThreadId(actualThreadId);
       hasInitiallyLoadedRef.current = false;
@@ -400,93 +366,6 @@ export default function MessageThreadScreen() {
       }
     };
   }, [actualThreadId, setCurrentThreadId]);
-
-  useEffect(() => {
-    let isMounted = true;
-    setLoadingContext(true);
-
-    async function fetchContext() {
-      let pleaMsg = null,
-        pleaUid = null,
-        encMsg = null,
-        encUid = null,
-        postTtl = null,
-        postUid = null;
-
-      // Fetch plea context
-      if (contextPleaId) {
-        const pleaDoc = await getDoc(doc(db, "pleas", contextPleaId));
-        if (pleaDoc.exists()) {
-          const data = pleaDoc.data();
-          pleaUid = data.uid ?? data.userId ?? null;
-          pleaMsg =
-            typeof data.message === "string" && data.message.trim().length > 0
-              ? data.message
-              : null;
-        }
-      }
-
-      // Fetch encouragement context
-      if (contextPleaId && contextEncouragementId) {
-        const encDoc = await getDoc(
-          doc(
-            db,
-            "pleas",
-            contextPleaId,
-            "encouragements",
-            contextEncouragementId
-          )
-        );
-        if (encDoc.exists()) {
-          const data = encDoc.data();
-          encUid = data.helperUid ?? data.userId ?? null;
-          encMsg =
-            typeof data.message === "string" && data.message.trim().length > 0
-              ? data.message
-              : null;
-        }
-      }
-
-      // Fetch post context
-      if (contextPostId) {
-        const postDoc = await getDoc(doc(db, "communityPosts", contextPostId));
-        if (postDoc.exists()) {
-          const data = postDoc.data();
-          postUid = data.uid ?? null;
-          postTtl =
-            typeof data.title === "string" && data.title.trim().length > 0
-              ? data.title
-              : null;
-        }
-      }
-
-      if (isMounted) {
-        setPleaOwnerUid(pleaUid);
-        setPleaMessage(pleaMsg);
-        setEncouragementOwnerUid(encUid);
-        setEncouragementMessage(encMsg);
-        setPostOwnerUid(postUid);
-        setPostTitle(postTtl);
-        setLoadingContext(false);
-      }
-    }
-
-    if (!contextPleaId && !contextPostId) {
-      setPleaOwnerUid(null);
-      setPleaMessage(null);
-      setEncouragementOwnerUid(null);
-      setEncouragementMessage(null);
-      setPostOwnerUid(null);
-      setPostTitle(null);
-      setLoadingContext(false);
-      return;
-    }
-
-    fetchContext();
-    return () => {
-      isMounted = false;
-    };
-  }, [contextPleaId, contextEncouragementId, contextPostId]);
 
   const adjustScrollViewForKeyboard = (keyboardHeight: number) => {
     // For FlatList, we don't need contentInset adjustments
@@ -576,41 +455,23 @@ export default function MessageThreadScreen() {
     }
   };
 
+  // Derive other user ID from thread data (userA/userB from hook)
   useEffect(() => {
-    const fetchThreadData = async () => {
-      if (threadName && otherUserId) return;
-      if (!threadId || !currentUserId) return;
-      setLoadingThreadData(true);
-      try {
-        const threadDoc = await getDoc(doc(db, "threads", threadId));
-        if (threadDoc.exists()) {
-          const threadData = threadDoc.data();
-          const otherUserIdFromThread =
-            threadData.userA === currentUserId
-              ? threadData.userB
-              : threadData.userA;
-          setFetchedOtherUserId(otherUserIdFromThread);
-          const userDoc = await getDoc(doc(db, "users", otherUserIdFromThread));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setFetchedThreadName(
-              userData.displayName ||
-                `user-${otherUserIdFromThread.substring(0, 5)}`
-            );
-          } else {
-            setFetchedThreadName(
-              `user-${otherUserIdFromThread.substring(0, 5)}`
-            );
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch thread data:", error);
-      } finally {
-        setLoadingThreadData(false);
-      }
-    };
-    fetchThreadData();
-  }, [threadId, threadName, otherUserId, currentUserId]);
+    if (otherUserId) {
+      // Already have it from params
+      setFetchedOtherUserId(otherUserId);
+      return;
+    }
+
+    if (!userA || !userB || !currentUserId) {
+      // Don't have thread data yet
+      return;
+    }
+
+    // Derive from thread data
+    const derivedOtherUserId = userA === currentUserId ? userB : userA;
+    setFetchedOtherUserId(derivedOtherUserId);
+  }, [otherUserId, userA, userB, currentUserId]);
 
   useEffect(() => {
     if (messageId && messages.length > 0) {

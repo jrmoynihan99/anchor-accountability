@@ -3,17 +3,8 @@ import { BackButton } from "@/components/BackButton";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useBlockedUsers } from "@/hooks/block/useBlockedUsers";
-import { auth, db } from "@/lib/firebase";
+import { useUnblockUser } from "@/hooks/block/useUnblockUser";
 import * as Haptics from "expo-haptics";
-import {
-  collection,
-  deleteDoc,
-  getDocs,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -30,6 +21,7 @@ interface BlockListViewProps {
 }
 
 export function BlockListView({ onBackPress, colors }: BlockListViewProps) {
+  const { unblockUser, loading: unblockLoading } = useUnblockUser();
   const { blockedUserIds, loading } = useBlockedUsers();
   const [unblocking, setUnblocking] = useState<Set<string>>(new Set());
 
@@ -56,30 +48,17 @@ export function BlockListView({ onBackPress, colors }: BlockListViewProps) {
   };
 
   const performUnblock = async (userId: string) => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
     setUnblocking((prev) => new Set(prev).add(userId));
 
     try {
-      // Find and delete the block document
-      const blockListRef = collection(
-        db,
-        "users",
-        currentUser.uid,
-        "blockList"
-      );
-      const q = query(blockListRef, where("uid", "==", userId));
-      const snapshot = await getDocs(q);
+      const success = await unblockUser(userId);
 
-      if (!snapshot.empty) {
-        await deleteDoc(snapshot.docs[0].ref);
+      if (success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        Alert.alert("Error", "Failed to unblock user. Please try again.");
       }
-
-      // ✅ NEW: Restore any "blocked" accountability relationships back to "active"
-      await restoreAccountabilityRelationships(currentUser.uid, userId);
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Error unblocking user:", error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -90,60 +69,6 @@ export function BlockListView({ onBackPress, colors }: BlockListViewProps) {
         next.delete(userId);
         return next;
       });
-    }
-  };
-
-  const restoreAccountabilityRelationships = async (
-    currentUserId: string,
-    unblockedUserId: string
-  ) => {
-    try {
-      // Find relationships where current user is the mentor
-      const asMentorQuery = query(
-        collection(db, "accountabilityRelationships"),
-        where("mentorUid", "==", currentUserId),
-        where("menteeUid", "==", unblockedUserId),
-        where("status", "==", "blocked")
-      );
-
-      // Find relationships where current user is the mentee
-      const asMenteeQuery = query(
-        collection(db, "accountabilityRelationships"),
-        where("mentorUid", "==", unblockedUserId),
-        where("menteeUid", "==", currentUserId),
-        where("status", "==", "blocked")
-      );
-
-      const [asMentorSnap, asMenteeSnap] = await Promise.all([
-        getDocs(asMentorQuery),
-        getDocs(asMenteeQuery),
-      ]);
-
-      // Update all found relationships back to "active"
-      const updatePromises = [
-        ...asMentorSnap.docs.map((doc) =>
-          updateDoc(doc.ref, {
-            status: "active",
-            updatedAt: serverTimestamp(),
-          })
-        ),
-        ...asMenteeSnap.docs.map((doc) =>
-          updateDoc(doc.ref, {
-            status: "active",
-            updatedAt: serverTimestamp(),
-          })
-        ),
-      ];
-
-      await Promise.all(updatePromises);
-
-      if (updatePromises.length > 0) {
-        console.log(
-          `✅ Restored ${updatePromises.length} accountability relationship(s) to active status`
-        );
-      }
-    } catch (err) {
-      console.error("Error restoring accountability relationships:", err);
     }
   };
 

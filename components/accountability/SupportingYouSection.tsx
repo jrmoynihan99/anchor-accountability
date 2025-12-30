@@ -5,6 +5,7 @@ import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTr
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useThreads } from "@/hooks/messages/useThreads";
 import { db } from "@/lib/firebase";
@@ -32,6 +33,7 @@ export function SupportingYouSection({
 }: {
   scrollY: SharedValue<number>;
 }) {
+  const { organizationId } = useOrganization();
   const { colors } = useTheme();
   const { sentInvites, declinedInvites } = useAccountability();
   const { threads } = useThreads();
@@ -45,6 +47,7 @@ export function SupportingYouSection({
   // Fetch sent invites data
   useEffect(() => {
     const fetchInviteData = async () => {
+      if (!organizationId) return;
       const inviteDataPromises = sentInvites.map(async (invite) => {
         // The person we sent the invite to (they would be our mentor)
         const otherUserId = invite.mentorUid;
@@ -56,7 +59,9 @@ export function SupportingYouSection({
 
         // Fetch the user's display name
         try {
-          const userDoc = await getDoc(doc(db, "users", otherUserId));
+          const userDoc = await getDoc(
+            doc(db, "organizations", organizationId, "users", otherUserId)
+          );
           const userName = userDoc.exists()
             ? userDoc.data()?.displayName ||
               `user-${otherUserId.substring(0, 5)}`
@@ -90,6 +95,7 @@ export function SupportingYouSection({
   // Fetch declined invites data
   useEffect(() => {
     const fetchDeclinedInviteData = async () => {
+      if (!organizationId) return;
       const inviteDataPromises = declinedInvites.map(async (invite) => {
         // The person who declined our invite (they would have been our mentor)
         const otherUserId = invite.mentorUid;
@@ -101,7 +107,9 @@ export function SupportingYouSection({
 
         // Fetch the user's display name
         try {
-          const userDoc = await getDoc(doc(db, "users", otherUserId));
+          const userDoc = await getDoc(
+            doc(db, "organizations", organizationId, "users", otherUserId)
+          );
           const userName = userDoc.exists()
             ? userDoc.data()?.displayName ||
               `user-${otherUserId.substring(0, 5)}`

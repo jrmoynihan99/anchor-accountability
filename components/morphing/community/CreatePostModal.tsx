@@ -1,6 +1,7 @@
 // components/morphing/home/create-post-main-button/CreatePostModal.tsx
 import { BaseModal } from "@/components/morphing/BaseModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useCreatePost } from "@/hooks/community/useCreatePost";
 import { usePostRateLimit } from "@/hooks/community/usePostRateLimit";
@@ -44,6 +45,7 @@ export function CreatePostModal({
   modalAnimatedStyle,
   close,
 }: CreatePostModalProps) {
+  const { organizationId } = useOrganization();
   const { colors, effectiveTheme } = useTheme();
   const { createPost, creating, error } = useCreatePost();
 
@@ -162,9 +164,14 @@ export function CreatePostModal({
       if (postId) {
         setCurrentPostId(postId);
 
+        if (!organizationId) {
+          console.error("No organization ID available");
+          return;
+        }
+
         // Set up real-time listener for status changes
         const unsubscribe = onSnapshot(
-          doc(db, "communityPosts", postId),
+          doc(db, "organizations", organizationId, "communityPosts", postId),
           (doc) => {
             if (doc.exists()) {
               const data = doc.data();

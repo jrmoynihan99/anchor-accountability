@@ -4,11 +4,9 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import { useBlockCheck } from "@/hooks/block/useBlockCheck";
 import { useBlockUser } from "@/hooks/block/useBlockUser";
-import { useReportCheck } from "@/hooks/block/useReportCheck";
-import { auth, db } from "@/lib/firebase";
+import { useReport } from "@/hooks/block/useReport";
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import React from "react";
 import {
   ActivityIndicator,
@@ -39,18 +37,17 @@ export function ThreadInfoModal({
   otherUserId,
 }: ThreadInfoModalProps) {
   const { colors, effectiveTheme } = useTheme();
-  const { hasReported, isLoading: reportLoading } = useReportCheck(otherUserId);
+  const {
+    hasReported,
+    isLoading: reportLoading,
+    reportUser,
+    reporting,
+  } = useReport(otherUserId);
   const { hasBlocked, isLoading: blockCheckLoading } =
     useBlockCheck(otherUserId);
   const { blockUser, loading: blockLoading } = useBlockUser();
 
   const handleReportUser = async () => {
-    const currentUserId = auth.currentUser?.uid;
-    if (!currentUserId) {
-      Alert.alert("Error", "You must be signed in to report users");
-      return;
-    }
-
     if (hasReported) {
       Alert.alert(
         "Already Reported",
@@ -59,14 +56,11 @@ export function ThreadInfoModal({
       return;
     }
 
-    try {
-      await addDoc(collection(db, "reports"), {
-        reportedUserId: otherUserId,
-        reporterUserId: currentUserId,
-        timestamp: serverTimestamp(),
-      });
+    const success = await reportUser();
+
+    if (success) {
       Alert.alert("Report Submitted", "Thank you for your report.");
-    } catch (error) {
+    } else {
       Alert.alert("Error", "Failed to submit report. Please try again.");
     }
   };
@@ -208,7 +202,7 @@ export function ThreadInfoModal({
               ]}
               activeOpacity={0.8}
               onPress={handleReportUser}
-              disabled={hasReported || reportLoading}
+              disabled={hasReported || reportLoading || reporting}
             >
               <IconSymbol
                 name={hasReported ? "checkmark" : "flag"}
