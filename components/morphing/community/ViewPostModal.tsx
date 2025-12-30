@@ -6,11 +6,11 @@ import { usePostComments } from "@/hooks/community/usePostComments";
 import { auth } from "@/lib/firebase";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { CommunityPost } from "../../community/types";
 import { CommentInput, CommentInputRef } from "../community/CommentInput";
 import { CommunityPostCardContent } from "../community/CommunityPostCardContent";
 import { PostCommentsSection } from "./PostCommentsSection";
 import { PostDetailView } from "./PostDetailView";
+import { CommunityPost, PostComment } from "./types";
 
 const COMMENTS_PER_PAGE = 15;
 
@@ -142,6 +142,13 @@ export function ViewPostModal({
     setReplyingTo(null);
   };
 
+  const replyingToComment: PostComment | undefined = replyingTo
+    ? paginatedComments.find((c): c is PostComment => c.id === replyingTo) ??
+      paginatedComments
+        .flatMap((c) => c.replies ?? [])
+        .find((r) => r.id === replyingTo)
+    : undefined;
+
   return (
     <BaseModal
       isVisible={isVisible}
@@ -185,6 +192,7 @@ export function ViewPostModal({
               likeCount={likeCount}
               onLikePress={handleLike}
               actionLoading={actionLoading}
+              onClose={close}
             />
           </View>
 
@@ -220,14 +228,7 @@ export function ViewPostModal({
           onSubmit={handlePostComment}
           posting={posting}
           replyingTo={replyingTo}
-          replyingToComment={
-            replyingTo
-              ? paginatedComments.find((c) => c.id === replyingTo) ||
-                paginatedComments
-                  .find((c) => c.replies?.find((r) => r.id === replyingTo))
-                  ?.replies?.find((r) => r.id === replyingTo)
-              : undefined
-          }
+          replyingToComment={replyingToComment}
           onCancelReply={handleCancelReply}
           userCommentStatus={userCommentStatus}
           onDismissCommentStatus={dismissCommentStatus}

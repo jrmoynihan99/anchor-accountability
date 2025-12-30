@@ -10,14 +10,24 @@ interface OpenToChatToggleProps {
   isOpen: boolean;
   onToggle: (value: boolean) => void;
   user?: string; // Optional username prop
+  context?: "encouragement" | "post"; // Context for different messaging
 }
 
 export function OpenToChatToggle({
   isOpen,
   onToggle,
   user,
+  context = "encouragement",
 }: OpenToChatToggleProps) {
   const { colors } = useTheme();
+
+  const getSubtitleText = () => {
+    if (context === "post") {
+      return "Allow users who view this post to private message you";
+    }
+    // Default encouragement context
+    return "Allow the recipient to start a chat with you for additional support";
+  };
 
   return (
     <View style={styles.container}>
@@ -36,8 +46,7 @@ export function OpenToChatToggle({
           </ThemedText>
           <View style={styles.subtitleContainer}>
             <ThemedText type="caption" style={{ color: colors.textSecondary }}>
-              Allow the recipient to start a chat with you for additional
-              support
+              {getSubtitleText()}
             </ThemedText>
           </View>
         </View>

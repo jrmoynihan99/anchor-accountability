@@ -4,8 +4,8 @@ import { auth } from "@/lib/firebase";
 import React from "react";
 import { StyleSheet, TouchableOpacity } from "react-native";
 import Animated from "react-native-reanimated";
-import { CommunityPost } from "../../community/types";
 import { CommunityPostCardContent } from "./CommunityPostCardContent";
+import { CommunityPost } from "./types";
 
 interface CommunityPostCardProps {
   post: CommunityPost;

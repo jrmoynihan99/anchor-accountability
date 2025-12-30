@@ -8,6 +8,7 @@ interface CreatePostData {
   title: string;
   content: string;
   categories: PostCategory[];
+  openToChat: boolean;
 }
 
 export function useCreatePost() {
@@ -48,6 +49,7 @@ export function useCreatePost() {
         title: data.title.trim(),
         content: data.content.trim(),
         categories: data.categories,
+        openToChat: data.openToChat,
         createdAt: now,
         updatedAt: now,
         lastEditableAt: fifteenMinutesLater,

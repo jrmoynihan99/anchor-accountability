@@ -10,6 +10,7 @@ export interface CommunityPost {
   title: string;
   content: string;
   categories: PostCategory[];
+  openToChat?: boolean; // Whether the author is open to receiving chat messages
   createdAt: Date;
   updatedAt: Date;
   lastEditableAt: Date;

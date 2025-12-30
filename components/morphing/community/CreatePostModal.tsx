@@ -3,7 +3,7 @@ import { BaseModal } from "@/components/morphing/BaseModal";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import { useCreatePost } from "@/hooks/community/useCreatePost";
-import { usePostRateLimit } from "@/hooks/community/usePostRateLimit"; // ADD THIS LINE
+import { usePostRateLimit } from "@/hooks/community/usePostRateLimit";
 import { auth, db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
@@ -19,7 +19,7 @@ import Animated, {
 import { CreatePostConfirmationScreen } from "./CreatePostConfirmationScreen";
 import { CreatePostInputScreen } from "./CreatePostInputScreen";
 import { CreatePostPendingScreen } from "./CreatePostPendingScreen";
-import { CreatePostRateLimitedScreen } from "./CreatePostRateLimitedScreen"; // ADD THIS LINE
+import { CreatePostRateLimitedScreen } from "./CreatePostRateLimitedScreen";
 import { CreatePostRejectedScreen } from "./CreatePostRejectedScreen";
 
 export type PostCategory = "testimonies" | "resources" | "questions" | "other";
@@ -29,7 +29,7 @@ type ScreenType =
   | "pending"
   | "confirmation"
   | "rejected"
-  | "rateLimited"; // ADD rateLimited
+  | "rateLimited";
 
 interface CreatePostModalProps {
   isVisible: boolean;
@@ -47,7 +47,7 @@ export function CreatePostModal({
   const { colors, effectiveTheme } = useTheme();
   const { createPost, creating, error } = useCreatePost();
 
-  // ADD THIS LINE - Get rate limit info
+  // Get rate limit info
   const rateLimitInfo = usePostRateLimit();
 
   // Screen logic
@@ -65,16 +65,17 @@ export function CreatePostModal({
   const [selectedCategories, setSelectedCategories] = useState<PostCategory[]>(
     []
   );
+  const [isOpenToChat, setIsOpenToChat] = useState(false);
 
-  // ADD THIS - Check rate limit when modal opens
+  // Check rate limit when modal opens
   useEffect(() => {
     if (isVisible) {
       if (rateLimitInfo.isRateLimited) {
         setCurrentScreen("rateLimited");
-        screenTransition.value = 1; // Start with rate limited screen showing
+        screenTransition.value = 1;
       }
     }
-  }, [isVisible]); // Only depend on isVisible
+  }, [isVisible]);
 
   // Reset state when closed
   useEffect(() => {
@@ -87,6 +88,7 @@ export function CreatePostModal({
         setTitle("");
         setContent("");
         setSelectedCategories([]);
+        setIsOpenToChat(false);
         // Clean up any existing listener
         if (unsubscribeRef.current) {
           unsubscribeRef.current();
@@ -154,6 +156,7 @@ export function CreatePostModal({
         title,
         content,
         categories: selectedCategories,
+        openToChat: isOpenToChat,
       });
 
       if (postId) {
@@ -223,6 +226,7 @@ export function CreatePostModal({
               setTitle("");
               setContent("");
               setSelectedCategories([]);
+              setIsOpenToChat(false);
               close();
             },
           },
@@ -289,7 +293,7 @@ export function CreatePostModal({
             rejectionReason={rejectionReason}
           />
         );
-      case "rateLimited": // ADD THIS CASE
+      case "rateLimited":
         return (
           <CreatePostRateLimitedScreen
             waitTimeMs={rateLimitInfo.waitTimeMs}
@@ -339,6 +343,8 @@ export function CreatePostModal({
           setContent={setContent}
           selectedCategories={selectedCategories}
           setSelectedCategories={setSelectedCategories}
+          isOpenToChat={isOpenToChat}
+          onToggleOpenToChat={setIsOpenToChat}
           creating={creating}
           error={error}
           onSubmit={handleSubmit}

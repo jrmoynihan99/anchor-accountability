@@ -13,8 +13,8 @@ import Animated, {
   FadeInDown,
   LinearTransition,
 } from "react-native-reanimated";
-import { PostComment } from "../../community/types";
 import { CommentItem } from "./CommentItem";
+import { PostComment } from "./types";
 
 interface PostCommentsSectionProps {
   comments: PostComment[];

@@ -23,7 +23,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { PostComment } from "../../community/types";
+import { PostComment } from "./types";
 
 interface UserCommentStatus {
   status: "pending" | "approved" | "rejected";
