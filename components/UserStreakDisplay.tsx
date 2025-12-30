@@ -14,10 +14,10 @@ export function UserStreakDisplay({
   size = "small",
   style,
 }: UserStreakDisplayProps) {
-  const { streak, loading, error } = useUserStreak(userId);
+  const { streak, loading } = useUserStreak(userId);
 
   // Don't render anything while loading or if error
-  if (loading || error || streak <= 0) {
+  if (loading || streak <= 0) {
     return null;
   }
 

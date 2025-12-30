@@ -6,7 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { auth } from "@/lib/firebase";
 import React, { useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { PostComment } from "../../community/types";
+import { PostComment } from "./types";
 
 interface CommentItemProps {
   comment: PostComment;
