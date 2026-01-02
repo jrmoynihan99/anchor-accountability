@@ -4,16 +4,16 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import React from "react";
 import { Dimensions, StatusBar, StyleSheet, View } from "react-native";
-import { IntroContinueButton } from "../../components/onboarding/IntroContinueButton";
-import { IntroFeaturesCard } from "../../components/onboarding/IntroFeaturesCard";
-import { IntroHeader } from "../../components/onboarding/IntroHeader";
-import { IntroScrollableMessage } from "../../components/onboarding/IntroScrollableMessage";
+import { IntroContinueButton } from "../../components/onboarding/intro/IntroContinueButton";
+import { IntroFeaturesCard } from "../../components/onboarding/intro/IntroFeaturesCard";
+import { IntroHeader } from "../../components/onboarding/intro/IntroHeader";
+import { IntroScrollableMessage } from "../../components/onboarding/intro/IntroScrollableMessage";
 
 const { width, height } = Dimensions.get("window");
 
 export default function IntroScreen() {
   const handleContinue = () => {
-    router.push("/onboarding/login");
+    router.push("/onboarding/church-selection");
   };
 
   const { colors } = useTheme();

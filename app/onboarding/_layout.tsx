@@ -12,6 +12,7 @@ export default function OnboardingLayout() {
         }}
       >
         <Stack.Screen name="intro" />
+        <Stack.Screen name="church-selection" />
         <Stack.Screen name="login" />
       </Stack>
     </GestureHandlerRootView>

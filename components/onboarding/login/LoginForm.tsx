@@ -26,11 +26,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useTheme } from "../../hooks/theme/useTheme";
-import { ensureSignedIn } from "../../lib/auth";
-import { auth, updateUserTimezone } from "../../lib/firebase";
-import { setHasOnboarded } from "../../lib/onboarding";
-import { ThemedText } from "../ThemedText";
+import { useTheme } from "../../../hooks/theme/useTheme";
+import { ensureSignedIn } from "../../../lib/auth";
+import { auth, updateUserTimezone } from "../../../lib/firebase";
+import { setHasOnboarded } from "../../../lib/onboarding";
+import { ThemedText } from "../../ThemedText";
+import { ChurchIndicator } from "./ChurchIndicator";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -45,6 +46,8 @@ interface LoginFormProps {
   setLoading: (loading: boolean) => void;
   showPassword: boolean;
   setShowPassword: (show: boolean) => void;
+  organizationId: string;
+  organizationName: string;
 }
 
 // Helper to show friendly errors
@@ -104,6 +107,8 @@ export function LoginForm({
   setLoading: _setLoading,
   showPassword,
   setShowPassword,
+  organizationId,
+  organizationName,
 }: LoginFormProps) {
   const { colors } = useTheme();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
@@ -174,6 +179,10 @@ export function LoginForm({
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
+        <ChurchIndicator
+          organizationName={organizationName}
+          isGuest={organizationId === "public"}
+        />
         {/* Email Input */}
         <View style={[styles.inputShadow, { shadowColor: colors.shadow }]}>
           <BlurView

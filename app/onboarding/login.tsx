@@ -1,7 +1,7 @@
-// login.tsx
+// app/onboarding/login.tsx
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Keyboard,
@@ -16,10 +16,19 @@ import Animated, {
   useDerivedValue,
   withSpring,
 } from "react-native-reanimated";
-import { LoginForm } from "../../components/onboarding/LoginForm";
-import { LoginHeader } from "../../components/onboarding/LoginHeader";
+import { LoginForm } from "../../components/onboarding/login/LoginForm";
+import { LoginHeader } from "../../components/onboarding/login/LoginHeader";
 
 export default function LoginScreen() {
+  // Get organization params from route
+  const params = useLocalSearchParams<{
+    organizationId?: string;
+    organizationName?: string;
+  }>();
+
+  const organizationId = params.organizationId || "public";
+  const organizationName = params.organizationName || "Guest";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
@@ -77,6 +86,8 @@ export default function LoginScreen() {
               setLoading={setLoading}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
+              organizationId={organizationId}
+              organizationName={organizationName}
             />
           </Animated.View>
         </LinearGradient>
