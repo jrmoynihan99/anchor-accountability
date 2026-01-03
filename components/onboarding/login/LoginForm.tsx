@@ -1,7 +1,9 @@
-// components/LoginForm.tsx - UPDATED
+// components/onboarding/login/LoginForm.tsx - UPDATED
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
 import { AnonymousBadgeModal } from "@/components/morphing/login/anonymous-badge/AnonymousBadgeModal";
+import { ChurchIndicatorButton } from "@/components/morphing/login/church-badge/ChurchIndicatorButton";
+import { ChurchIndicatorModal } from "@/components/morphing/login/church-badge/ChurchIndicatorModal";
 import { ForgotPasswordButton } from "@/components/morphing/login/forgot-password/ForgotPasswordButton";
 import { ForgotPasswordModal } from "@/components/morphing/login/forgot-password/ForgotPasswordModal";
 import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
@@ -31,7 +33,6 @@ import { ensureSignedIn } from "../../../lib/auth";
 import { auth, updateUserTimezone } from "../../../lib/firebase";
 import { setHasOnboarded } from "../../../lib/onboarding";
 import { ThemedText } from "../../ThemedText";
-import { ChurchIndicator } from "./ChurchIndicator";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -48,6 +49,8 @@ interface LoginFormProps {
   setShowPassword: (show: boolean) => void;
   organizationId: string;
   organizationName: string;
+  onChurchSelected: (organizationId: string, organizationName: string) => void;
+  onChurchModalVisibilityChange: (visible: boolean) => void;
 }
 
 // Helper to show friendly errors
@@ -109,6 +112,8 @@ export function LoginForm({
   setShowPassword,
   organizationId,
   organizationName,
+  onChurchSelected,
+  onChurchModalVisibilityChange,
 }: LoginFormProps) {
   const { colors } = useTheme();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
@@ -137,6 +142,12 @@ export function LoginForm({
           auth,
           email,
           password
+        );
+
+        // TODO: Call Cloud Function to set custom claim with organizationId
+        console.log(
+          "📝 TODO: Set custom claim for organizationId:",
+          organizationId
         );
 
         // ✅ Send email verification immediately after signup
@@ -179,12 +190,60 @@ export function LoginForm({
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
-        <ChurchIndicator
-          organizationName={organizationName}
-          isGuest={organizationId === "public"}
-        />
+        {/* Church Indicator with Modal */}
+        <ButtonModalTransitionBridge
+          modalWidthPercent={0.9}
+          modalHeightPercent={0.58}
+        >
+          {({
+            open,
+            close,
+            isModalVisible,
+            progress,
+            modalAnimatedStyle,
+            buttonAnimatedStyle,
+            buttonRef,
+            handlePressIn,
+            handlePressOut,
+          }) => {
+            // Track modal visibility
+            React.useEffect(() => {
+              onChurchModalVisibilityChange(isModalVisible);
+            }, [isModalVisible]);
+
+            return (
+              <>
+                <ChurchIndicatorButton
+                  organizationId={organizationId}
+                  organizationName={organizationName}
+                  buttonRef={buttonRef}
+                  style={buttonAnimatedStyle}
+                  onPress={open}
+                  onPressIn={handlePressIn}
+                  onPressOut={handlePressOut}
+                />
+                <ChurchIndicatorModal
+                  isVisible={isModalVisible}
+                  progress={progress}
+                  modalAnimatedStyle={modalAnimatedStyle}
+                  close={close}
+                  organizationId={organizationId}
+                  organizationName={organizationName}
+                  onChurchSelected={onChurchSelected}
+                />
+              </>
+            );
+          }}
+        </ButtonModalTransitionBridge>
+
         {/* Email Input */}
-        <View style={[styles.inputShadow, { shadowColor: colors.shadow }]}>
+        <View
+          style={[
+            styles.inputShadow,
+            styles.emailInput,
+            { shadowColor: colors.shadow },
+          ]}
+        >
           <BlurView
             intensity={20}
             tint="light"
@@ -518,6 +577,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+  },
+  emailInput: {
+    paddingTop: 24,
   },
   inputContainer: {
     flexDirection: "row",

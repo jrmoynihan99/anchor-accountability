@@ -1,3 +1,4 @@
+// app/onboarding/intro.tsx
 import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,7 +14,7 @@ const { width, height } = Dimensions.get("window");
 
 export default function IntroScreen() {
   const handleContinue = () => {
-    router.push("/onboarding/church-selection");
+    router.push("/onboarding/login"); // Go directly to login
   };
 
   const { colors } = useTheme();

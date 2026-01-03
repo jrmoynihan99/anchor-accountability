@@ -1,88 +1,38 @@
-// components/onboarding/church-selection/PinEntryView.tsx
+// components/onboarding/login/church-indicator/PinEntryModalView.tsx
 import { BackButton } from "@/components/BackButton";
-import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { ChurchBadgeButton } from "@/components/morphing/login/church-badge/ChurchBadgeButton";
-import { ChurchBadgeModal } from "@/components/morphing/login/church-badge/ChurchBadgeModal";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Keyboard,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
 
-interface PinEntryViewProps {
+interface PinEntryModalViewProps {
   church: {
     id: string;
     name: string;
     pin: string;
-    mission: string;
+    mission?: string;
   };
   onBack: () => void;
   onSuccess: (organizationId: string, organizationName: string) => void;
 }
 
-export function PinEntryView({ church, onBack, onSuccess }: PinEntryViewProps) {
+export function PinEntryModalView({
+  church,
+  onBack,
+  onSuccess,
+}: PinEntryModalViewProps) {
   const { colors } = useTheme();
   const [enteredPin, setEnteredPin] = useState("");
   const [pinError, setPinError] = useState(false);
-
-  // Smooth keyboard animation
-  const keyboardHeight = useSharedValue(0);
-
-  useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (event) => {
-        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        const height = event.endCoordinates.height;
-        keyboardHeight.value = withTiming(height, {
-          duration,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        });
-      }
-    );
-
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      (event) => {
-        const duration = Platform.OS === "ios" ? event.duration || 250 : 250;
-        keyboardHeight.value = withTiming(0, {
-          duration,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-        });
-      }
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateY:
-          Platform.OS === "ios"
-            ? -keyboardHeight.value * 0.3
-            : -keyboardHeight.value * 0.4,
-      },
-    ],
-  }));
 
   const handlePinSubmit = () => {
     if (String(enteredPin).trim() === String(church.pin).trim()) {
@@ -110,46 +60,19 @@ export function PinEntryView({ church, onBack, onSuccess }: PinEntryViewProps) {
           </ThemedText>
         </View>
 
-        <Animated.View
-          style={[styles.pinSection, animatedStyle]}
-          pointerEvents="box-none"
-        >
-          {/* Church Badge with Modal */}
-          <ButtonModalTransitionBridge
-            modalWidthPercent={0.85}
-            modalHeightPercent={0.6}
+        <View style={styles.pinSection} pointerEvents="box-none">
+          {/* Static Church Badge */}
+          <View
+            style={[
+              styles.churchBadge,
+              { backgroundColor: colors.iconCircleSecondaryBackground },
+            ]}
           >
-            {({
-              open,
-              close,
-              isModalVisible,
-              progress,
-              modalAnimatedStyle,
-              buttonAnimatedStyle,
-              buttonRef,
-              handlePressIn,
-              handlePressOut,
-            }) => (
-              <>
-                <ChurchBadgeButton
-                  buttonRef={buttonRef}
-                  style={[buttonAnimatedStyle, { marginBottom: 24 }]}
-                  onPress={open}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  churchName={church.name}
-                />
-                <ChurchBadgeModal
-                  isVisible={isModalVisible}
-                  progress={progress}
-                  modalAnimatedStyle={modalAnimatedStyle}
-                  close={close}
-                  churchName={church.name}
-                  mission={church.mission}
-                />
-              </>
-            )}
-          </ButtonModalTransitionBridge>
+            <IconSymbol name="building.2" size={20} color={colors.icon} />
+            <ThemedText type="bodyMedium" style={{ color: colors.text }}>
+              {church.name}
+            </ThemedText>
+          </View>
 
           <ThemedText
             type="body"
@@ -217,7 +140,7 @@ export function PinEntryView({ church, onBack, onSuccess }: PinEntryViewProps) {
               </ThemedText>
             </TouchableOpacity>
           </View>
-        </Animated.View>
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -231,7 +154,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 24,
   },
   backButtonSpacing: {
@@ -245,6 +168,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingBottom: 100,
+  },
+  churchBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    alignSelf: "center",
+    marginBottom: 24,
   },
   pinInstructions: {
     textAlign: "center",
