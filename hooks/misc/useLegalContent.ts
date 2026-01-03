@@ -1,5 +1,4 @@
 // hooks/useLegalContent.ts
-import { useOrganization } from "@/context/OrganizationContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -16,18 +15,13 @@ const DEFAULT_TERMS = `Terms of Service content is currently unavailable. Please
 const DEFAULT_PRIVACY = `Privacy Policy content is currently unavailable. Please try again later.`;
 
 export function useLegalContent(): LegalContent {
-  const { organizationId, loading: orgLoading } = useOrganization();
+  //const { organizationId, loading: orgLoading } = useOrganization();
   const [termsOfService, setTermsOfService] = useState<string>(DEFAULT_TERMS);
   const [privacyPolicy, setPrivacyPolicy] = useState<string>(DEFAULT_PRIVACY);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!organizationId || orgLoading) {
-      setLoading(false);
-      return;
-    }
-
     const fetchLegalContent = async () => {
       try {
         setLoading(true);
@@ -35,12 +29,8 @@ export function useLegalContent(): LegalContent {
 
         // Fetch both documents in parallel
         const [termsDoc, privacyDoc] = await Promise.all([
-          getDoc(
-            doc(db, "organizations", organizationId, "config", "termsOfService")
-          ),
-          getDoc(
-            doc(db, "organizations", organizationId, "config", "privacyPolicy")
-          ),
+          getDoc(doc(db, "config", "termsOfService")),
+          getDoc(doc(db, "config", "privacyPolicy")),
         ]);
 
         // Update terms if available
@@ -68,12 +58,12 @@ export function useLegalContent(): LegalContent {
     };
 
     fetchLegalContent();
-  }, [organizationId, orgLoading]);
+  }, []);
 
   return {
     termsOfService,
     privacyPolicy,
-    loading: loading || orgLoading,
+    loading: loading,
     error,
   };
 }
