@@ -31,7 +31,7 @@ export function EndRelationship({
     const title = "End Accountability Partnership?";
     const message = isMentor
       ? "Are you sure you want to end your accountability partnership? Please consider messaging them to let them know you're no longer able to support them. If possible, help them understand why so they aren't left feeling alone or abandoned in their recovery journey."
-      : "Are you sure you want to end your accountability partnership? Please consider messaging your mentor to let them know. A brief explanation can help provide closure and maintain the trust you've built together.";
+      : "Are you sure you want to end your accountability partnership? Please consider messaging your Anchor Partner to let them know. A brief explanation can help provide closure and maintain the trust you've built together.";
 
     Alert.alert(title, message, [
       {
