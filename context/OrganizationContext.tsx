@@ -1,11 +1,20 @@
+// context/OrganizationContext.tsx
 import { auth } from "@/lib/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onAuthStateChanged } from "firebase/auth";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 interface OrganizationContextType {
   organizationId: string | null;
   loading: boolean;
+  updateOrganization: (orgId: string) => Promise<void>;
+  setIsSigningUp: (value: boolean) => void; // ✅ Add this
 }
 
 const OrganizationContext = createContext<OrganizationContextType | undefined>(
@@ -21,9 +30,21 @@ export function OrganizationProvider({
 }) {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const isSigningUpRef = useRef(false); // ✅ Add flag
+
+  // ✅ Function to set the flag from outside
+  const setIsSigningUp = (value: boolean) => {
+    isSigningUpRef.current = value;
+  };
+
+  const updateOrganization = async (orgId: string) => {
+    setOrganizationId(orgId);
+    await AsyncStorage.setItem(ORG_CACHE_KEY, orgId);
+    setLoading(false);
+    isSigningUpRef.current = false; // ✅ Reset flag after manual update
+  };
 
   useEffect(() => {
-    // Load cached org ID immediately for faster startup
     const loadCachedOrgId = async () => {
       try {
         const cached = await AsyncStorage.getItem(ORG_CACHE_KEY);
@@ -32,25 +53,36 @@ export function OrganizationProvider({
           setLoading(false);
         }
       } catch (error) {
-        console.error("Error loading cached org ID:", error);
+        console.error(
+          "🔴 [OrganizationContext] Error loading cached org ID:",
+          error
+        );
       }
     };
 
     loadCachedOrgId();
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // ✅ Skip if currently signing up a new user
+      if (isSigningUpRef.current) {
+        return;
+      }
+
       if (user) {
         try {
           const idTokenResult = await user.getIdTokenResult();
+
           const orgId =
             (idTokenResult.claims.organizationId as string | null) || "public";
 
           setOrganizationId(orgId);
 
-          // Cache for next startup
           await AsyncStorage.setItem(ORG_CACHE_KEY, orgId);
         } catch (error) {
-          console.error("Error fetching organization ID:", error);
+          console.error(
+            "🔴 [OrganizationContext] Error fetching organization ID:",
+            error
+          );
           setOrganizationId("public");
           await AsyncStorage.setItem(ORG_CACHE_KEY, "public");
         }
@@ -61,11 +93,15 @@ export function OrganizationProvider({
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return (
-    <OrganizationContext.Provider value={{ organizationId, loading }}>
+    <OrganizationContext.Provider
+      value={{ organizationId, loading, updateOrganization, setIsSigningUp }}
+    >
       {children}
     </OrganizationContext.Provider>
   );

@@ -10,6 +10,7 @@ import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/P
 import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
 import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
 import { TermsOfServiceModal } from "@/components/morphing/login/terms-of-service/TermsOfServiceModal";
+import { useOrganization } from "@/context/OrganizationContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -19,6 +20,7 @@ import {
   sendEmailVerification,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -116,6 +118,7 @@ export function LoginForm({
   onChurchModalVisibilityChange,
 }: LoginFormProps) {
   const { colors } = useTheme();
+  const { updateOrganization, setIsSigningUp } = useOrganization();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
 
   const completeOnboarding = async () => {
@@ -138,30 +141,46 @@ export function LoginForm({
     setLoadingButton("auth");
     try {
       if (isSignUp) {
+        // ✅ Set flag BEFORE creating user
+        setIsSigningUp(true);
+
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
 
-        // TODO: Call Cloud Function to set custom claim with organizationId
-        console.log(
-          "📝 TODO: Set custom claim for organizationId:",
-          organizationId
-        );
+        // Set custom claim via Cloud Function
+        try {
+          const functions = getFunctions();
+          const setUserOrganization = httpsCallable(
+            functions,
+            "setUserOrganization"
+          );
+          const result = await setUserOrganization({ organizationId });
 
-        // ✅ Send email verification immediately after signup
+          // Force token refresh
+          await auth.currentUser?.getIdToken(true);
+
+          // Manually update the context
+          await updateOrganization(organizationId);
+        } catch (claimError) {
+          console.error("Failed to set custom claim:", claimError);
+          setIsSigningUp(false); // ✅ Reset flag on error
+          throw new Error("Failed to complete account setup");
+        }
+
+        // Send email verification
         try {
           await sendEmailVerification(userCredential.user);
-          console.log("✅ Verification email sent to", email);
         } catch (verificationError) {
           console.error(
             "Failed to send verification email:",
             verificationError
           );
-          // Don't block signup if verification email fails
         }
       } else {
+        // ✅ Normal sign in - no flag needed
         await signInWithEmailAndPassword(auth, email, password);
       }
       await updateUserTimezone();
@@ -177,7 +196,32 @@ export function LoginForm({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoadingButton("guest");
     try {
+      // ✅ Set flag BEFORE signing in anonymously
+      setIsSigningUp(true);
+
       await ensureSignedIn();
+
+      // Set custom claim via Cloud Function
+      try {
+        const functions = getFunctions();
+        const setUserOrganization = httpsCallable(
+          functions,
+          "setUserOrganization"
+        );
+        const result = await setUserOrganization({ organizationId });
+
+        // Force token refresh
+        await auth.currentUser?.getIdToken(true);
+
+        // Manually update the context
+        await updateOrganization(organizationId);
+      } catch (claimError) {
+        console.error("Failed to set custom claim:", claimError);
+        setIsSigningUp(false); // ✅ Reset flag on error
+        throw new Error("Failed to complete account setup");
+      }
+
+      await updateUserTimezone();
       await completeOnboarding();
     } catch (error) {
       console.error("Error with anonymous sign in:", error);
@@ -191,50 +235,53 @@ export function LoginForm({
     <View style={styles.container}>
       <View style={styles.formContainer}>
         {/* Church Indicator with Modal */}
-        <ButtonModalTransitionBridge
-          modalWidthPercent={0.9}
-          modalHeightPercent={0.58}
-        >
-          {({
-            open,
-            close,
-            isModalVisible,
-            progress,
-            modalAnimatedStyle,
-            buttonAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => {
-            // Track modal visibility
-            React.useEffect(() => {
-              onChurchModalVisibilityChange(isModalVisible);
-            }, [isModalVisible]);
+        {/* Church Indicator with Modal - only show during signup */}
+        {isSignUp && (
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.58}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              modalAnimatedStyle,
+              buttonAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              // Track modal visibility
+              React.useEffect(() => {
+                onChurchModalVisibilityChange(isModalVisible);
+              }, [isModalVisible]);
 
-            return (
-              <>
-                <ChurchIndicatorButton
-                  organizationId={organizationId}
-                  organizationName={organizationName}
-                  buttonRef={buttonRef}
-                  style={buttonAnimatedStyle}
-                  onPress={open}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                />
-                <ChurchIndicatorModal
-                  isVisible={isModalVisible}
-                  progress={progress}
-                  modalAnimatedStyle={modalAnimatedStyle}
-                  close={close}
-                  organizationId={organizationId}
-                  organizationName={organizationName}
-                  onChurchSelected={onChurchSelected}
-                />
-              </>
-            );
-          }}
-        </ButtonModalTransitionBridge>
+              return (
+                <>
+                  <ChurchIndicatorButton
+                    organizationId={organizationId}
+                    organizationName={organizationName}
+                    buttonRef={buttonRef}
+                    style={buttonAnimatedStyle}
+                    onPress={open}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                  />
+                  <ChurchIndicatorModal
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                    organizationId={organizationId}
+                    organizationName={organizationName}
+                    onChurchSelected={onChurchSelected}
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+        )}
 
         {/* Email Input */}
         <View
@@ -579,7 +626,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   emailInput: {
-    paddingTop: 24,
+    marginTop: 24,
   },
   inputContainer: {
     flexDirection: "row",

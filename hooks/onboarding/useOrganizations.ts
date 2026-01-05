@@ -23,13 +23,12 @@ export function useOrganizations() {
         // Get all organization documents
         const orgsRef = collection(db, "organizations");
         const snapshot = await getDocs(orgsRef);
-
         const orgs: OrganizationData[] = [];
-
         snapshot.forEach((doc) => {
           // Exclude "public" organization
           if (doc.id !== "public") {
             const data = doc.data();
+
             orgs.push({
               id: doc.id,
               name: data.name || doc.id,
@@ -45,7 +44,10 @@ export function useOrganizations() {
         setOrganizations(orgs);
         setError(null);
       } catch (err) {
-        console.error("Error fetching organizations:", err);
+        console.error(
+          "🔴 [useOrganizations] Error fetching organizations:",
+          err
+        );
         setError("Failed to load churches");
       } finally {
         setLoading(false);

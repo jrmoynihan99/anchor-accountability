@@ -116,7 +116,7 @@ export function ChurchIndicatorModal({
     // Auto-close after 3 seconds
     setTimeout(() => {
       close();
-    }, 10000);
+    }, 4000);
   };
 
   const handleClearSelection = () => {

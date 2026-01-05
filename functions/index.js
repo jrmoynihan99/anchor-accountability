@@ -14,6 +14,8 @@ const logger = require("firebase-functions/logger");
 const { OpenAI } = require("openai");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const { HttpsError } = require("firebase-functions/v2/https");
+const { onCall } = require("firebase-functions/v2/https");
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -3156,3 +3158,33 @@ async function deleteBatch(refs) {
     await batch.commit();
   }
 }
+
+exports.setUserOrganization = onCall(async (request) => {
+  // User must be authenticated
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const uid = request.auth.uid;
+  const { organizationId } = request.data;
+
+  // Validate organizationId is provided
+  if (!organizationId || typeof organizationId !== "string") {
+    throw new HttpsError("invalid-argument", "organizationId is required");
+  }
+
+  try {
+    // Set custom claim
+    await admin.auth().setCustomUserClaims(uid, { organizationId });
+
+    console.log(`✅ Set organizationId="${organizationId}" for user ${uid}`);
+
+    return {
+      success: true,
+      organizationId,
+    };
+  } catch (error) {
+    console.error(`❌ Error setting custom claim for ${uid}:`, error);
+    throw new HttpsError("internal", "Failed to set organization");
+  }
+});
