@@ -8,8 +8,9 @@ const { getTotalUnreadForUser } = require("../utils/notifications");
  * Send notification when a new message is created in a thread
  */
 exports.sendMessageNotification = onDocumentCreated(
-  "threads/{threadId}/messages/{messageId}",
+  "organizations/{orgId}/threads/{threadId}/messages/{messageId}",
   async (event) => {
+    const orgId = event.params.orgId;
     const snap = event.data;
     if (!snap) return;
 
@@ -20,8 +21,7 @@ exports.sendMessageNotification = onDocumentCreated(
     // Fetch the thread to find participants
     const threadDoc = await admin
       .firestore()
-      .collection("threads")
-      .doc(threadId)
+      .doc(`organizations/${orgId}/threads/${threadId}`)
       .get();
     if (!threadDoc.exists) return;
 
@@ -35,18 +35,17 @@ exports.sendMessageNotification = onDocumentCreated(
 
     for (const recipientUid of recipients) {
       // Check if users have blocked each other
-      const blocked = await eitherBlocked(senderUid, recipientUid);
+      const blocked = await eitherBlocked(senderUid, recipientUid, orgId);
       if (blocked) {
         console.log(
-          `[message] Skipping notify for blocked pair ${senderUid} <-> ${recipientUid}`
+          `[message] Skipping notify for blocked pair ${senderUid} <-> ${recipientUid} in org ${orgId}`
         );
         continue;
       }
 
       const userDoc = await admin
         .firestore()
-        .collection("users")
-        .doc(recipientUid)
+        .doc(`organizations/${orgId}/users/${recipientUid}`)
         .get();
       if (!userDoc.exists) continue;
 
@@ -60,7 +59,7 @@ exports.sendMessageNotification = onDocumentCreated(
         expoPushToken.startsWith("ExponentPushToken")
       ) {
         try {
-          const totalUnread = await getTotalUnreadForUser(recipientUid);
+          const totalUnread = await getTotalUnreadForUser(recipientUid, orgId);
 
           await axios.post(
             "https://exp.host/--/api/v2/push/send",
@@ -80,10 +79,12 @@ exports.sendMessageNotification = onDocumentCreated(
             { headers: { "Content-Type": "application/json" } }
           );
 
-          console.log(`✅ Sent message notification to ${recipientUid}`);
+          console.log(
+            `✅ Sent message notification to ${recipientUid} in org ${orgId}`
+          );
         } catch (err) {
           console.error(
-            `❌ Failed to send notification to ${recipientUid}:`,
+            `❌ Failed to send notification to ${recipientUid} in org ${orgId}:`,
             err
           );
         }

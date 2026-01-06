@@ -9,10 +9,15 @@ const { getTotalUnreadForUser } = require("../utils/notifications");
 
 /**
  * Helper function to send encouragement notification to plea owner
+ *
+ * @param {DocumentReference} pleaRef - Reference to the plea document
+ * @param {Object} encouragement - Encouragement document data
+ * @param {string} orgId - Organization ID
  */
 async function sendEncouragementNotificationToPleaOwner(
   pleaRef,
-  encouragement
+  encouragement,
+  orgId
 ) {
   // Find the parent plea
   const pleaDoc = await pleaRef.get();
@@ -22,17 +27,16 @@ async function sendEncouragementNotificationToPleaOwner(
   // Don't notify the sender of the encouragement
   if (plea.uid === encouragement.helperUid) return;
 
-  // Fetch the user who created the plea
+  // Fetch the user who created the plea from THIS org
   const userDoc = await admin
     .firestore()
-    .collection("users")
-    .doc(plea.uid)
+    .doc(`organizations/${orgId}/users/${plea.uid}`)
     .get();
   const user = userDoc.data();
 
   // Only notify if they want encouragement notifications and have a token
   if (user?.expoPushToken && user?.notificationPreferences?.encouragements) {
-    const totalUnread = await getTotalUnreadForUser(plea.uid);
+    const totalUnread = await getTotalUnreadForUser(plea.uid, orgId);
 
     const notification = {
       to: user.expoPushToken,
@@ -53,10 +57,13 @@ async function sendEncouragementNotificationToPleaOwner(
         headers: { "Content-Type": "application/json" },
       });
       console.log(
-        `✅ Encouragement notification sent to ${user.expoPushToken}`
+        `✅ Encouragement notification sent to ${user.expoPushToken} in org ${orgId}`
       );
     } catch (err) {
-      console.error("❌ Failed to send encouragement notification:", err);
+      console.error(
+        `❌ Failed to send encouragement notification in org ${orgId}:`,
+        err
+      );
     }
   }
 }
@@ -65,8 +72,9 @@ async function sendEncouragementNotificationToPleaOwner(
  * When an encouragement is created and immediately approved
  */
 exports.sendEncouragementNotification = onDocumentCreated(
-  "pleas/{pleaId}/encouragements/{encId}",
+  "organizations/{orgId}/pleas/{pleaId}/encouragements/{encId}",
   async (event) => {
+    const orgId = event.params.orgId;
     const snap = event.data;
     if (!snap) return;
     const encouragement = snap.data();
@@ -80,9 +88,9 @@ exports.sendEncouragementNotification = onDocumentCreated(
     const plea = pleaDoc.data();
 
     // Skip if blocked either direction
-    if (await eitherBlocked(plea.uid, encouragement.helperUid)) {
+    if (await eitherBlocked(plea.uid, encouragement.helperUid, orgId)) {
       console.log(
-        `[encouragement:create] Skipping due to block between ${plea.uid} and ${encouragement.helperUid}`
+        `[encouragement:create] Skipping due to block between ${plea.uid} and ${encouragement.helperUid} in org ${orgId}`
       );
       return;
     }
@@ -92,7 +100,11 @@ exports.sendEncouragementNotification = onDocumentCreated(
       unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
     });
 
-    await sendEncouragementNotificationToPleaOwner(pleaRef, encouragement);
+    await sendEncouragementNotificationToPleaOwner(
+      pleaRef,
+      encouragement,
+      orgId
+    );
   }
 );
 
@@ -100,8 +112,9 @@ exports.sendEncouragementNotification = onDocumentCreated(
  * When an encouragement's status changes to approved
  */
 exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
-  "pleas/{pleaId}/encouragements/{encId}",
+  "organizations/{orgId}/pleas/{pleaId}/encouragements/{encId}",
   async (event) => {
+    const orgId = event.params.orgId;
     const before = event.data.before.data();
     const after = event.data.after.data();
 
@@ -113,9 +126,9 @@ exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
       const plea = pleaDoc.data();
 
       // Skip if blocked either direction
-      if (await eitherBlocked(plea.uid, after.helperUid)) {
+      if (await eitherBlocked(plea.uid, after.helperUid, orgId)) {
         console.log(
-          `[encouragement:approve] Skipping due to block between ${plea.uid} and ${after.helperUid}`
+          `[encouragement:approve] Skipping due to block between ${plea.uid} and ${after.helperUid} in org ${orgId}`
         );
         return;
       }
@@ -125,7 +138,7 @@ exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
         unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
       });
 
-      await sendEncouragementNotificationToPleaOwner(pleaRef, after);
+      await sendEncouragementNotificationToPleaOwner(pleaRef, after, orgId);
     }
   }
 );

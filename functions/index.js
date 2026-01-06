@@ -14,14 +14,12 @@ const encouragementNotifications = require("./notifications/encouragements");
 const messageNotifications = require("./notifications/messages");
 const streakNotifications = require("./notifications/streaks");
 const accountabilityNotifications = require("./notifications/accountability");
-const relationships = require("./accountability/relationships");
 const checkIns = require("./accountability/checkIns");
 const invites = require("./accountability/invites");
 const blockFunctions = require("./user/blocks");
 const streakFunctions = require("./user/streaks");
 const userDeletion = require("./user/deletion");
 const organizationFunctions = require("./user/organization");
-const communityFunctions = require("./community/posts");
 
 // Export all functions
 module.exports = {
@@ -46,9 +44,6 @@ module.exports = {
   // Notifications - Accountability
   ...accountabilityNotifications,
 
-  // Accountability - Relationships
-  ...relationships,
-
   // Accountability - Check-ins
   ...checkIns,
 
@@ -66,7 +61,4 @@ module.exports = {
 
   // User - Organization
   ...organizationFunctions,
-
-  // Community
-  ...communityFunctions,
 };

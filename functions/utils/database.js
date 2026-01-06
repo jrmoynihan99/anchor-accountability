@@ -34,9 +34,30 @@ async function deleteBatch(refs) {
   }
 }
 
+// ============================================================================
+// NEW: Organization-Aware Helper Functions
+// ============================================================================
+
+/**
+ * Get all organization IDs from Firestore
+ * Used by scheduled functions to process all orgs
+ * @returns {Promise<string[]>} Array of organization IDs
+ */
+async function getAllOrgIds() {
+  try {
+    const orgsSnap = await admin.firestore().collection("organizations").get();
+    return orgsSnap.docs.map((doc) => doc.id);
+  } catch (error) {
+    console.error("Error getting all org IDs:", error);
+    return ["public"]; // Fallback to just public
+  }
+}
+
 module.exports = {
   admin,
   formatDate,
   getDateWithOffset,
   deleteBatch,
+  // NEW org-aware helper
+  getAllOrgIds,
 };
