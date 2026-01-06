@@ -61,6 +61,7 @@ export function LatestCheckInSection({
         hasCheckedInToday: false,
         isOverdue: false,
         overdueText: null,
+        statusText: "Waiting for check-in",
       };
     }
 
@@ -93,19 +94,33 @@ export function LatestCheckInSection({
         hasCheckedInToday: true,
         isOverdue: false,
         overdueText: null,
+        statusText: "Checked in today",
       };
     }
 
-    // Calculate days overdue
+    // Calculate days since last check-in
     const lastDate = new Date(latestCheckIn.date);
     const today = new Date(todayString);
     const diffMs = today.getTime() - lastDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+    // If last check-in was yesterday (1 day ago), that's fine - not overdue
+    if (diffDays === 1) {
+      return {
+        hasCheckedInToday: false,
+        isOverdue: false,
+        overdueText: null,
+        statusText: "Last check-in yesterday",
+      };
+    }
+
+    // If 2+ days ago, then yesterday was missed - NOW it's overdue
     return {
       hasCheckedInToday: false,
-      isOverdue: diffDays > 0,
-      overdueText: diffDays === 1 ? "1d ago" : `${diffDays}d ago`,
+      isOverdue: true,
+      overdueText: diffDays === 2 ? "1d overdue" : `${diffDays - 1}d overdue`,
+      statusText:
+        diffDays === 2 ? "Overdue (1d)" : `Overdue (${diffDays - 1}d)`,
     };
   }, [latestCheckIn, userTimezone]);
 
@@ -141,11 +156,7 @@ export function LatestCheckInSection({
                 : colors.textSecondary,
             }}
           >
-            {checkInStatus.hasCheckedInToday
-              ? "Checked in today"
-              : checkInStatus.isOverdue && checkInStatus.overdueText
-              ? `Overdue (${checkInStatus.overdueText})`
-              : "Waiting for check-in"}
+            {checkInStatus.statusText}
           </ThemedText>
         </View>
       </View>
@@ -289,7 +300,7 @@ export function LatestCheckInSection({
                 type="caption"
                 style={{ color: colors.error, fontWeight: "600" }}
               >
-                Overdue ({checkInStatus.overdueText})
+                {checkInStatus.overdueText}
               </ThemedText>
             </View>
           )}

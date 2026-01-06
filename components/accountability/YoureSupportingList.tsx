@@ -45,6 +45,9 @@ export function YoureSupportingList({
       pathname: "/message-thread",
       params: {
         threadId: thread.id,
+        threadName: thread.otherUserName,
+        otherUserId: thread.otherUserId,
+        isNewThread: "false",
       },
     });
   };

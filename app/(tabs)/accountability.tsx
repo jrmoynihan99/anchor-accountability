@@ -66,6 +66,9 @@ export default function AccountabilityScreen() {
       pathname: "/message-thread",
       params: {
         threadId: thread.id,
+        threadName: thread.otherUserName, // ✅ ADD THIS
+        otherUserId: thread.otherUserId, // ✅ ADD THIS
+        isNewThread: "false", // ✅ ADD THIS
       },
     });
   };

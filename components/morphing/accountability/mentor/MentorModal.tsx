@@ -59,22 +59,22 @@ export function MentorModal({
   );
 
   const handleMessage = () => {
-    // Find thread for this mentor
     const thread = threads.find((t) => t.otherUserId === mentorUid);
 
-    // Always close the modal immediately
     close();
 
     if (!thread) {
       return;
     }
 
-    // Wait for modal animation to complete
     setTimeout(() => {
       router.push({
         pathname: "/message-thread",
         params: {
           threadId: thread.id,
+          threadName: thread.otherUserName, // ✅ ADD THIS
+          otherUserId: thread.otherUserId, // ✅ ADD THIS
+          isNewThread: "false", // ✅ ADD THIS for consistency
         },
       });
     }, 300);

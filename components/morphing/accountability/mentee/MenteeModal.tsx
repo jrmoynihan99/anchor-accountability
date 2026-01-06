@@ -66,6 +66,7 @@ export function MenteeModal({
 
   const handleMessage = () => {
     const thread = threads.find((t) => t.otherUserId === menteeUid);
+
     close();
 
     if (!thread) {
@@ -77,6 +78,9 @@ export function MenteeModal({
         pathname: "/message-thread",
         params: {
           threadId: thread.id,
+          threadName: thread.otherUserName, // ✅ ADD THIS
+          otherUserId: thread.otherUserId, // ✅ ADD THIS
+          isNewThread: "false", // ✅ ADD THIS for consistency
         },
       });
     }, 300);

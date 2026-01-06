@@ -85,46 +85,42 @@ export function VerseCardContent({
         ❝
       </ThemedText>
 
-      {/* Main verse text, max 3 lines */}
-      {Platform.OS === "android" ? (
-        <ThemedText
-          type="verse"
-          numberOfLines={5}
-          ellipsizeMode="tail"
-          // @ts-ignore - includeFontPadding exists on Text but not in ThemedText types
-          includeFontPadding={false}
-          style={[
-            styles.verseText,
-            {
-              color: colors.textSecondary,
-              textAlign: "center",
-              marginTop: 40,
-              marginBottom: 32,
-              maxHeight: 4 * 24, // Constrain to 4 visible lines (adjust line height as needed)
-              overflow: "hidden",
-            },
-          ]}
-        >
-          {verse}
-        </ThemedText>
-      ) : (
-        <ThemedText
-          type="verse"
-          numberOfLines={4}
-          ellipsizeMode="tail"
-          style={[
-            styles.verseText,
-            {
-              color: colors.textSecondary,
-              textAlign: "center",
-              marginTop: 40,
-              marginBottom: 32,
-            },
-          ]}
-        >
-          {verse}
-        </ThemedText>
-      )}
+      {/* Centered verse container - takes up space between positioned elements */}
+      <View style={styles.verseContainer}>
+        {Platform.OS === "android" ? (
+          <ThemedText
+            type="verse"
+            numberOfLines={4}
+            ellipsizeMode="tail"
+            // @ts-ignore - includeFontPadding exists on Text but not in ThemedText types
+            includeFontPadding={false}
+            style={[
+              styles.verseText,
+              {
+                color: colors.textSecondary,
+                textAlign: "center",
+              },
+            ]}
+          >
+            {verse}
+          </ThemedText>
+        ) : (
+          <ThemedText
+            type="verse"
+            numberOfLines={4}
+            ellipsizeMode="tail"
+            style={[
+              styles.verseText,
+              {
+                color: colors.textSecondary,
+                textAlign: "center",
+              },
+            ]}
+          >
+            {verse}
+          </ThemedText>
+        )}
+      </View>
 
       {/* Reference */}
       <View style={styles.referenceContainer}>
@@ -136,7 +132,7 @@ export function VerseCardContent({
               color: colors.textSecondary,
               fontStyle: "italic",
               opacity: 0.8,
-              maxWidth: 125, // adjust as needed!
+              maxWidth: 125,
             },
           ]}
           numberOfLines={1}
@@ -174,7 +170,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  verseText: {},
+  verseContainer: {
+    // This container takes up the available vertical space
+    // between the top positioned elements (quote) and bottom elements (reference/dots)
+    flex: 1,
+    justifyContent: "center", // Centers verse vertically
+    alignItems: "center", // Centers verse horizontally
+    paddingTop: 40, // Space for quote mark at top
+    paddingBottom: 32, // Space for reference/date/dots at bottom
+  },
+  verseText: {
+    // Text will be centered within verseContainer
+  },
   openQuote: {
     position: "absolute",
     top: cardPadding,
