@@ -39,6 +39,4 @@ yarn-error.*
 app-example
 .env
 
-serviceAccountKey.json
-migrateToOrganizations.js
-backfillUserClaims.js
+scripts/
