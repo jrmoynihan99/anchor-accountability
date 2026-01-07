@@ -30,6 +30,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../hooks/theme/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
 import { auth, updateUserTimezone } from "../../../lib/firebase";
@@ -120,6 +121,7 @@ export function LoginForm({
   const { colors } = useTheme();
   const { updateOrganization, setIsSigningUp } = useOrganization();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
+  const insets = useSafeAreaInsets(); // Add this line
 
   const completeOnboarding = async () => {
     try {
@@ -518,7 +520,7 @@ export function LoginForm({
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
         <View style={styles.footerTextContainer}>
           <ThemedText
             type="small"
