@@ -29,6 +29,7 @@ interface MentorModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   buttonContent?: React.ReactNode; // Optional override
+  onMessage?: () => void; // Optional message handler override
 }
 
 export function MentorModal({
@@ -42,6 +43,7 @@ export function MentorModal({
   modalAnimatedStyle,
   close,
   buttonContent: customButtonContent, // Optional override
+  onMessage, // Optional override
 }: MentorModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const uid = auth.currentUser?.uid || null;
@@ -58,27 +60,30 @@ export function MentorModal({
     7
   );
 
-  const handleMessage = () => {
-    const thread = threads.find((t) => t.otherUserId === mentorUid);
+  const handleMessage =
+    onMessage ||
+    (() => {
+      // Default behavior: navigate to thread
+      const thread = threads.find((t) => t.otherUserId === mentorUid);
 
-    close();
+      close();
 
-    if (!thread) {
-      return;
-    }
+      if (!thread) {
+        return;
+      }
 
-    setTimeout(() => {
-      router.push({
-        pathname: "/message-thread",
-        params: {
-          threadId: thread.id,
-          threadName: thread.otherUserName, // ✅ ADD THIS
-          otherUserId: thread.otherUserId, // ✅ ADD THIS
-          isNewThread: "false", // ✅ ADD THIS for consistency
-        },
-      });
-    }, 300);
-  };
+      setTimeout(() => {
+        router.push({
+          pathname: "/message-thread",
+          params: {
+            threadId: thread.id,
+            threadName: thread.otherUserName,
+            otherUserId: thread.otherUserId,
+            isNewThread: "false",
+          },
+        });
+      }, 300);
+    });
 
   const handleSubmitCheckIn = async (
     temptationLevel: number,

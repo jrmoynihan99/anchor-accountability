@@ -23,6 +23,7 @@ interface MenteeModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   buttonContent?: React.ReactNode; // Optional override
+  onMessage?: () => void; // Optional message handler override
 }
 
 export function MenteeModal({
@@ -35,6 +36,7 @@ export function MenteeModal({
   modalAnimatedStyle,
   close,
   buttonContent: customButtonContent, // Optional override
+  onMessage, // Optional override
 }: MenteeModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const { threads } = useThreads();
@@ -64,27 +66,30 @@ export function MenteeModal({
       ? checkIns[0]
       : undefined;
 
-  const handleMessage = () => {
-    const thread = threads.find((t) => t.otherUserId === menteeUid);
+  const handleMessage =
+    onMessage ||
+    (() => {
+      // Default behavior: navigate to thread
+      const thread = threads.find((t) => t.otherUserId === menteeUid);
 
-    close();
+      close();
 
-    if (!thread) {
-      return;
-    }
+      if (!thread) {
+        return;
+      }
 
-    setTimeout(() => {
-      router.push({
-        pathname: "/message-thread",
-        params: {
-          threadId: thread.id,
-          threadName: thread.otherUserName, // ✅ ADD THIS
-          otherUserId: thread.otherUserId, // ✅ ADD THIS
-          isNewThread: "false", // ✅ ADD THIS for consistency
-        },
-      });
-    }, 300);
-  };
+      setTimeout(() => {
+        router.push({
+          pathname: "/message-thread",
+          params: {
+            threadId: thread.id,
+            threadName: thread.otherUserName,
+            otherUserId: thread.otherUserId,
+            isNewThread: "false",
+          },
+        });
+      }, 300);
+    });
 
   // Determine button content
   const defaultButtonContent = (
