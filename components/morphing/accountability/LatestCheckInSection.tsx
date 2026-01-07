@@ -36,8 +36,8 @@ function getTemptationColor(level: number, colors: any): string {
 }
 
 function getTemptationLabel(level: number): string {
-  if (level <= 2) return "Clean & Strong";
-  if (level <= 4) return "Clean but Struggled";
+  if (level <= 2) return "Low Temptation";
+  if (level <= 4) return "Higher Temptation";
   return "Relapsed";
 }
 
@@ -115,9 +115,11 @@ export function LatestCheckInSection({
     }
 
     // If 2+ days ago, then yesterday was missed - NOW it's overdue
+    // If 2+ days ago, then yesterday was missed - NOW it's overdue
     return {
       hasCheckedInToday: false,
       isOverdue: true,
+      daysSinceLastCheckIn: diffDays,
       overdueText: diffDays === 2 ? "1d overdue" : `${diffDays - 1}d overdue`,
       statusText:
         diffDays === 2 ? "Overdue (1d)" : `Overdue (${diffDays - 1}d)`,
@@ -281,8 +283,23 @@ export function LatestCheckInSection({
             type="subtitleMedium"
             style={{ color: colors.text, textAlign: "center" }}
           >
-            No check-in yet today
+            {checkInStatus.isOverdue
+              ? `No check-in for ${checkInStatus.daysSinceLastCheckIn} days`
+              : "No check-in yet today."}
           </ThemedText>
+          {!checkInStatus.isOverdue && (
+            <ThemedText
+              type="caption"
+              style={{
+                color: colors.textSecondary,
+                textAlign: "center",
+                marginTop: 4,
+                opacity: 0.85,
+              }}
+            >
+              Give them time to reflect on their day
+            </ThemedText>
+          )}
           {checkInStatus.isOverdue && checkInStatus.overdueText && (
             <View
               style={[
@@ -310,7 +327,7 @@ export function LatestCheckInSection({
               {
                 backgroundColor: `${colors.buttonBackground}30`,
                 borderWidth: 1,
-                borderColor: colors.buttonBackground,
+                borderColor: colors.icon,
                 marginTop: 16,
               },
             ]}
@@ -319,14 +336,11 @@ export function LatestCheckInSection({
           >
             <IconSymbol
               name="message.fill"
-              color={colors.buttonBackground}
+              color={colors.icon}
               size={18}
               style={{ marginRight: 6 }}
             />
-            <ThemedText
-              type="button"
-              style={{ color: colors.buttonBackground }}
-            >
+            <ThemedText type="button" style={{ color: colors.icon }}>
               Message Partner
             </ThemedText>
           </TouchableOpacity>

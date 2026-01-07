@@ -124,20 +124,13 @@ export const AccountabilityModalHeader = React.memo(
                   {
                     backgroundColor: `${colors.buttonBackground}30`,
                     borderWidth: 1,
-                    borderColor: colors.buttonBackground,
+                    borderColor: colors.icon,
                   },
                 ]}
                 onPress={button.onPress}
               >
-                <IconSymbol
-                  name={button.icon}
-                  size={18}
-                  color={colors.buttonBackground}
-                />
-                <ThemedText
-                  type="button"
-                  style={{ color: colors.buttonBackground }}
-                >
+                <IconSymbol name={button.icon} size={18} color={colors.icon} />
+                <ThemedText type="button" style={{ color: colors.icon }}>
                   {button.label}
                 </ThemedText>
               </TouchableOpacity>

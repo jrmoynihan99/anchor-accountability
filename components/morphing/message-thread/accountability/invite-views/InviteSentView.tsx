@@ -87,8 +87,8 @@ export function InviteSentView({
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          You've invited {threadName} to be your accountability partner. They'll
-          receive a notification to accept or decline your invite.
+          You've invited {threadName} to be your Anchor Partner. They'll receive
+          a notification to accept or decline your invite.
         </ThemedText>
       </View>
 

@@ -46,8 +46,8 @@ function getTemptationColor(level: number, colors: any): string {
 }
 
 function getTemptationLabel(level: number): string {
-  if (level <= 2) return "Clean & Strong";
-  if (level <= 4) return "Clean but Struggled";
+  if (level <= 2) return "Low Temptation";
+  if (level <= 4) return "Higher Temptation";
   return "Relapsed";
 }
 
