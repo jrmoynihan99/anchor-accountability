@@ -21,6 +21,7 @@ const streakFunctions = require("./user/streaks");
 const userDeletion = require("./user/deletion");
 const organizationFunctions = require("./user/organization");
 const adminOrganization = require("./admin/organization");
+const adminOrganizationInvites = require("./admin/organizationInvites");
 
 // Export all functions
 module.exports = {
@@ -65,4 +66,7 @@ module.exports = {
 
   // Admin - Organization
   ...adminOrganization,
+
+  // Admin - Organization Invites
+  ...adminOrganizationInvites,
 };
