@@ -20,6 +20,7 @@ const blockFunctions = require("./user/blocks");
 const streakFunctions = require("./user/streaks");
 const userDeletion = require("./user/deletion");
 const organizationFunctions = require("./user/organization");
+const adminOrganization = require("./admin/organization");
 
 // Export all functions
 module.exports = {
@@ -61,4 +62,7 @@ module.exports = {
 
   // User - Organization
   ...organizationFunctions,
+
+  // Admin - Organization
+  ...adminOrganization,
 };
