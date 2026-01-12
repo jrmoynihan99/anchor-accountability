@@ -1,5 +1,4 @@
-const { onCall } = require("firebase-functions/v2/https");
-const { HttpsError } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin } = require("../utils/database");
 const crypto = require("crypto");
 
@@ -13,28 +12,57 @@ function generateInviteToken() {
 }
 
 /**
- * Create an organization admin invite
- * Platform admin only
+ * Check if user is a platform admin
+ * - supports hardcoded UID
+ * - supports adminUsers.platformAdmin === true
+ */
+async function isPlatformAdmin(uid, db) {
+  if (uid === PLATFORM_ADMIN_UID) return true;
+
+  const snap = await db.collection("adminUsers").doc(uid).get();
+  if (!snap.exists) return false;
+
+  return snap.data()?.platformAdmin === true;
+}
+
+/**
+ * Check if user is super_admin for an organization
+ */
+async function isOrgSuperAdmin(uid, organizationId, db) {
+  const snap = await db.collection("adminUsers").doc(uid).get();
+  if (!snap.exists) return false;
+
+  return snap.data()?.organizationAccess?.[organizationId] === "super_admin";
+}
+
+/**
+ * Permission guard:
+ * platform admin OR org super_admin
+ */
+async function assertCanManageOrg(uid, organizationId, db) {
+  const platform = await isPlatformAdmin(uid, db);
+  if (platform) return;
+
+  const superAdmin = await isOrgSuperAdmin(uid, organizationId, db);
+  if (!superAdmin) {
+    throw new HttpsError(
+      "permission-denied",
+      "Insufficient permissions for this organization"
+    );
+  }
+}
+
+/**
+ * CREATE INVITE
  */
 exports.createOrgAdminInvite = onCall(async (request) => {
-  // Check authentication
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
+  const { organizationId, email, role } = request.data;
   const uid = request.auth.uid;
 
-  // Check if user is platform admin
-  if (uid !== PLATFORM_ADMIN_UID) {
-    throw new HttpsError(
-      "permission-denied",
-      "Only platform admins can create invites"
-    );
-  }
-
-  const { organizationId, email } = request.data;
-
-  // Validate input
   if (!organizationId || typeof organizationId !== "string") {
     throw new HttpsError("invalid-argument", "organizationId is required");
   }
@@ -44,11 +72,15 @@ exports.createOrgAdminInvite = onCall(async (request) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  const normalizedRole = role === "super_admin" ? "super_admin" : "admin";
 
   try {
     const db = admin.firestore();
 
-    // Check if organization exists
+    // 🔐 Permission guard
+    await assertCanManageOrg(uid, organizationId, db);
+
+    // 🔍 Validate organization exists
     const orgRef = db.collection("organizations").doc(organizationId);
     const orgDoc = await orgRef.get();
 
@@ -56,12 +88,26 @@ exports.createOrgAdminInvite = onCall(async (request) => {
       throw new HttpsError("not-found", "Organization not found");
     }
 
-    const orgData = orgDoc.data();
+    // 🔒 BLOCK: email already belongs to an admin in this org
+    const existingAdminSnap = await db
+      .collection("adminUsers")
+      .where("email", "==", normalizedEmail)
+      .limit(1)
+      .get();
 
-    console.log(`📧 Creating invite for ${normalizedEmail} to ${orgData.name}`);
+    if (!existingAdminSnap.empty) {
+      const adminData = existingAdminSnap.docs[0].data();
 
-    // Check if there's already a pending invite for this email and org
-    const existingInvites = await db
+      if (adminData.organizationAccess?.[organizationId]) {
+        throw new HttpsError(
+          "failed-precondition",
+          "This user is already an administrator of this organization"
+        );
+      }
+    }
+
+    // 🔒 BLOCK: pending invite already exists
+    const existingInviteSnap = await db
       .collection("organizationInvites")
       .where("organizationId", "==", organizationId)
       .where("email", "==", normalizedEmail)
@@ -69,124 +115,175 @@ exports.createOrgAdminInvite = onCall(async (request) => {
       .limit(1)
       .get();
 
-    if (!existingInvites.empty) {
-      // Return existing invite
-      const existingInvite = existingInvites.docs[0];
-      console.log(`✅ Returning existing invite for ${normalizedEmail}`);
-
-      return {
-        success: true,
-        inviteId: existingInvite.id,
-        token: existingInvite.data().token,
-        email: normalizedEmail,
-        organizationName: orgData.name,
-      };
+    if (!existingInviteSnap.empty) {
+      throw new HttpsError(
+        "already-exists",
+        "A pending invite already exists for this email"
+      );
     }
 
-    // Generate unique token
+    // ✅ Create invite
     const token = generateInviteToken();
 
-    // Create invite document
     const inviteRef = await db.collection("organizationInvites").add({
-      organizationId: organizationId,
-      organizationName: orgData.name,
+      organizationId,
+      organizationName: orgDoc.data().name,
       email: normalizedEmail,
-      token: token,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      createdBy: uid,
+      token,
+      role: normalizedRole,
       status: "pending",
+      createdBy: uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       usedBy: null,
     });
-
-    console.log(`✅ Created invite ${inviteRef.id} for ${normalizedEmail}`);
 
     return {
       success: true,
       inviteId: inviteRef.id,
-      token: token,
+      token,
       email: normalizedEmail,
-      organizationName: orgData.name,
+      role: normalizedRole,
     };
-  } catch (error) {
-    console.error(`❌ Error creating invite:`, error);
-
-    // Re-throw HttpsErrors as-is
-    if (error instanceof HttpsError) {
-      throw error;
-    }
-
-    // Wrap other errors
-    throw new HttpsError(
-      "internal",
-      `Failed to create invite: ${error.message}`
-    );
+  } catch (err) {
+    console.error("❌ createOrgAdminInvite:", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message);
   }
 });
 
 /**
- * Get invites for an organization
- * Platform admin only
+ * GET INVITES
  */
 exports.getOrgAdminInvites = onCall(async (request) => {
-  // Check authentication
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "User must be authenticated");
   }
 
+  const { organizationId } = request.data;
   const uid = request.auth.uid;
 
-  // Check if user is platform admin
-  if (uid !== PLATFORM_ADMIN_UID) {
-    throw new HttpsError(
-      "permission-denied",
-      "Only platform admins can view invites"
-    );
-  }
-
-  const { organizationId } = request.data;
-
-  // Validate input
-  if (!organizationId || typeof organizationId !== "string") {
+  if (!organizationId) {
     throw new HttpsError("invalid-argument", "organizationId is required");
   }
 
   try {
     const db = admin.firestore();
 
-    // Get all invites for this organization
-    const invitesSnapshot = await db
+    await assertCanManageOrg(uid, organizationId, db);
+
+    const snap = await db
       .collection("organizationInvites")
       .where("organizationId", "==", organizationId)
       .orderBy("createdAt", "desc")
       .get();
 
-    const invites = [];
-    invitesSnapshot.forEach((doc) => {
-      const data = doc.data();
-      invites.push({
-        id: doc.id,
-        email: data.email,
-        status: data.status,
-        token: data.token,
-        createdAt: data.createdAt,
-        usedBy: data.usedBy,
-      });
-    });
+    const invites = snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      role: doc.data().role || "admin",
+    }));
 
-    return {
-      success: true,
-      invites: invites,
-    };
-  } catch (error) {
-    console.error(`❌ Error fetching invites:`, error);
+    return { success: true, invites };
+  } catch (err) {
+    console.error("❌ getOrgAdminInvites:", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message);
+  }
+});
 
-    if (error instanceof HttpsError) {
-      throw error;
+/**
+ * CANCEL INVITE
+ */
+exports.cancelOrgAdminInvite = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { inviteId } = request.data;
+  const uid = request.auth.uid;
+
+  if (!inviteId) {
+    throw new HttpsError("invalid-argument", "inviteId is required");
+  }
+
+  try {
+    const db = admin.firestore();
+
+    const inviteRef = db.collection("organizationInvites").doc(inviteId);
+    const inviteDoc = await inviteRef.get();
+
+    if (!inviteDoc.exists) {
+      throw new HttpsError("not-found", "Invite not found");
     }
 
+    const invite = inviteDoc.data();
+    if (invite.status !== "pending") {
+      throw new HttpsError("failed-precondition", "Invite is not pending");
+    }
+
+    await assertCanManageOrg(uid, invite.organizationId, db);
+
+    await inviteRef.delete();
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ cancelOrgAdminInvite:", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message);
+  }
+});
+
+/**
+ * REMOVE ADMIN
+ */
+exports.removeOrgAdmin = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const { organizationId, userId } = request.data;
+  const callerUid = request.auth.uid;
+
+  if (!organizationId || !userId) {
     throw new HttpsError(
-      "internal",
-      `Failed to fetch invites: ${error.message}`
+      "invalid-argument",
+      "organizationId and userId required"
     );
+  }
+
+  try {
+    const db = admin.firestore();
+
+    await assertCanManageOrg(callerUid, organizationId, db);
+
+    const adminUserRef = db.collection("adminUsers").doc(userId);
+    const snap = await adminUserRef.get();
+
+    if (!snap.exists) {
+      throw new HttpsError("not-found", "Admin user not found");
+    }
+
+    const data = snap.data();
+    if (!data.organizationAccess?.[organizationId]) {
+      throw new HttpsError(
+        "failed-precondition",
+        "User does not belong to this organization"
+      );
+    }
+
+    const updatedAccess = { ...data.organizationAccess };
+    delete updatedAccess[organizationId];
+
+    if (Object.keys(updatedAccess).length === 0) {
+      await adminUserRef.delete();
+    } else {
+      await adminUserRef.update({ organizationAccess: updatedAccess });
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ removeOrgAdmin:", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message);
   }
 });
