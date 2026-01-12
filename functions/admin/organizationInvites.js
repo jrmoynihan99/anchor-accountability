@@ -53,6 +53,106 @@ async function assertCanManageOrg(uid, organizationId, db) {
 }
 
 /**
+ * ACCEPT INVITE
+ */
+exports.acceptOrgAdminInvite = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  // ✅ Accept name parameter from client
+  const { token, name } = request.data;
+  const uid = request.auth.uid;
+  const userEmail = request.auth.token.email?.toLowerCase();
+
+  if (!token || typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Valid token is required");
+  }
+
+  if (!userEmail) {
+    throw new HttpsError("invalid-argument", "User email not found");
+  }
+
+  try {
+    const db = admin.firestore();
+
+    // Find the invite
+    const inviteSnap = await db
+      .collection("organizationInvites")
+      .where("token", "==", token)
+      .where("status", "==", "pending")
+      .limit(1)
+      .get();
+
+    if (inviteSnap.empty) {
+      throw new HttpsError("not-found", "Invite not found or already used");
+    }
+
+    const inviteDoc = inviteSnap.docs[0];
+    const inviteData = inviteDoc.data();
+
+    // Verify email matches
+    if (inviteData.email.toLowerCase() !== userEmail) {
+      throw new HttpsError(
+        "permission-denied",
+        "This invite is for a different email address"
+      );
+    }
+
+    // Use a transaction to ensure atomicity
+    await db.runTransaction(async (transaction) => {
+      const adminUserRef = db.collection("adminUsers").doc(uid);
+      const adminUserSnap = await transaction.get(adminUserRef);
+
+      // Use .exists property, not .exists() method
+      const orgAccess = adminUserSnap.exists
+        ? adminUserSnap.data()?.organizationAccess || {}
+        : {};
+
+      // Add new org access
+      orgAccess[inviteData.organizationId] = inviteData.role;
+
+      // Update or create admin user
+      if (adminUserSnap.exists) {
+        // ✅ User exists - update organizationAccess and optionally update name if provided
+        const updateData = {
+          organizationAccess: orgAccess,
+        };
+
+        // If name is provided and user doesn't have a name, set it
+        const existingData = adminUserSnap.data();
+        if (name && name.trim() && !existingData.name) {
+          updateData.name = name.trim();
+        }
+
+        transaction.update(adminUserRef, updateData);
+      } else {
+        // ✅ New user - create with name (prioritize passed name, fallback to auth token name)
+        transaction.set(adminUserRef, {
+          email: userEmail,
+          name: (name && name.trim()) || request.auth.token.name || "",
+          platformAdmin: false,
+          organizationAccess: orgAccess,
+        });
+      }
+
+      // Mark invite as accepted
+      transaction.update(inviteDoc.ref, {
+        status: "accepted",
+        usedBy: uid,
+        acceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    });
+
+    return { success: true };
+  } catch (err) {
+    console.error("❌ acceptOrgAdminInvite:", err);
+    if (err instanceof HttpsError) throw err;
+    throw new HttpsError("internal", err.message);
+  }
+});
+
+/**
  * CREATE INVITE
  */
 exports.createOrgAdminInvite = onCall(async (request) => {
