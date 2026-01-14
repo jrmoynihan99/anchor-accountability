@@ -22,6 +22,7 @@ const userDeletion = require("./user/deletion");
 const organizationFunctions = require("./user/organization");
 const adminOrganization = require("./admin/organization");
 const adminOrganizationInvites = require("./admin/organizationInvites");
+const adminOrganizationAnalytics = require("./admin/organizationAnalytics");
 
 // Export all functions
 module.exports = {
@@ -69,4 +70,7 @@ module.exports = {
 
   // Admin - Organization Invites
   ...adminOrganizationInvites,
+
+  // Admin - Organization Analytics
+  ...adminOrganizationAnalytics,
 };
