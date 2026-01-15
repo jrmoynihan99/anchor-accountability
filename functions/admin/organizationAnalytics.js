@@ -64,8 +64,11 @@ async function calculateOrgAnalytics(orgId) {
     // 1. Total Active Users
     const totalActiveUsers = totalUsers;
 
-    // 2. Reach Outs This Month
+    // 2. Reach Outs This Month (rolling 30 days)
     const reachOutsThisMonth = pleasThisMonthSnap.size;
+
+    // 2b. Total Reach Outs (all time cumulative)
+    const totalReachOuts = pleasSnap.size;
 
     // 3. Average Replies per Reach Out & Response Time & % Pleas With Reply
     let totalReplies = 0;
@@ -371,16 +374,49 @@ async function calculateOrgAnalytics(orgId) {
     // STORE SNAPSHOT
     // ========================================================================
 
+    // Calculate activity for TODAY (for this snapshot)
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const pleasTodaySnap = await db
+      .collection(`organizations/${orgId}/pleas`)
+      .where("status", "==", "approved")
+      .where("createdAt", ">=", startOfToday)
+      .where("createdAt", "<=", now)
+      .get();
+
+    const reachOutsToday = pleasTodaySnap.size;
+
+    // Count replies created today (to ANY plea, not just today's pleas)
+    let repliesToday = 0;
+    const allCurrentPleasSnap = await db
+      .collection(`organizations/${orgId}/pleas`)
+      .where("status", "==", "approved")
+      .get();
+
+    for (const pleaDoc of allCurrentPleasSnap.docs) {
+      const encouragementsTodaySnap = await db
+        .collection(`organizations/${orgId}/pleas/${pleaDoc.id}/encouragements`)
+        .where("status", "==", "approved")
+        .where("createdAt", ">=", startOfToday)
+        .where("createdAt", "<=", now)
+        .get();
+      repliesToday += encouragementsTodaySnap.size;
+    }
+
     const snapshot = {
       timestamp: now.toISOString(),
       totalActiveUsers,
       reachOutsThisMonth,
+      totalReachOuts,
       avgRepliesPerReachOut,
       percentPleasWithReply,
       activePartnerships,
       percentUsersReachedOut,
       avgResponseTimeHours,
       checkInCompletionRate,
+      reachOutsToday,
+      repliesToday,
     };
 
     await db
@@ -401,8 +437,7 @@ async function calculateOrgAnalytics(orgId) {
       .doc("snapshots")
       .collection("data")
       .orderBy("timestamp", "desc")
-      .limit(200) // Keep last 200 snapshots (about 50 days at 6hr intervals)
-      .get();
+      .get(); // No limit - read all snapshots for true "all time" historical data
 
     const snapshots = snapshotsSnap.docs.map((doc) => doc.data());
 
@@ -414,6 +449,9 @@ async function calculateOrgAnalytics(orgId) {
       })),
       reachOutsThisMonth: sparklineSnapshots.map((s) => ({
         value: s.reachOutsThisMonth || 0,
+      })),
+      totalReachOuts: sparklineSnapshots.map((s) => ({
+        value: s.totalReachOuts || 0,
       })),
       avgRepliesPerReachOut: sparklineSnapshots.map((s) => ({
         value: s.avgRepliesPerReachOut || 0,
@@ -468,6 +506,7 @@ async function calculateOrgAnalytics(orgId) {
         reachOutsThisMonth,
         sparklines.reachOutsThisMonth
       ),
+      totalReachOuts: calculateTrend(totalReachOuts, sparklines.totalReachOuts),
       avgRepliesPerReachOut: calculateTrend(
         avgRepliesPerReachOut,
         sparklines.avgRepliesPerReachOut
@@ -623,6 +662,7 @@ async function calculateOrgAnalytics(orgId) {
     const historical = {
       totalActiveUsers: buildHistoricalRange(snapshots, "totalActiveUsers"),
       reachOutsThisMonth: buildHistoricalRange(snapshots, "reachOutsThisMonth"),
+      totalReachOuts: buildHistoricalRange(snapshots, "totalReachOuts"),
       avgRepliesPerReachOut: buildHistoricalRange(
         snapshots,
         "avgRepliesPerReachOut"
@@ -640,8 +680,151 @@ async function calculateOrgAnalytics(orgId) {
         snapshots,
         "avgResponseTimeHours"
       ),
+      activityData: buildActivityData(snapshots),
       sparklines,
     };
+
+    // Build activity data (reach outs & replies per time period)
+    function buildActivityData(snapshots) {
+      if (snapshots.length === 0) {
+        return {
+          "7d": [],
+          "30d": [],
+          "90d": [],
+          all: [],
+        };
+      }
+
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+      // Helper to bucket snapshots by day (take one snapshot per day, don't sum duplicates)
+      function bucketByDay(snapshots) {
+        const buckets = new Map();
+
+        snapshots.forEach((s) => {
+          const date = new Date(s.timestamp);
+          const dayKey = `${date.getFullYear()}-${String(
+            date.getMonth() + 1
+          ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+          // Only set if not already set (take first snapshot of the day)
+          if (!buckets.has(dayKey)) {
+            buckets.set(dayKey, {
+              date: dayKey,
+              reachOuts: s.reachOutsToday || 0,
+              replies: s.repliesToday || 0,
+            });
+          }
+        });
+
+        return Array.from(buckets.values()).sort((a, b) =>
+          a.date.localeCompare(b.date)
+        );
+      }
+
+      // Helper to format date for display
+      function formatActivityDate(dateStr, range) {
+        const date = new Date(dateStr);
+        if (range === "7d") {
+          const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          return `${days[date.getDay()]} ${
+            date.getMonth() + 1
+          }/${date.getDate()}`;
+        } else if (range === "30d") {
+          return `${date.getMonth() + 1}/${date.getDate()}`;
+        } else {
+          const months = [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ];
+          return `${months[date.getMonth()]} ${date.getDate()}`;
+        }
+      }
+
+      // Get snapshots for each range
+      const sevenDaySnaps = snapshots.filter(
+        (s) => new Date(s.timestamp) >= sevenDaysAgo
+      );
+      const thirtyDaySnaps = snapshots.filter(
+        (s) => new Date(s.timestamp) >= thirtyDaysAgo
+      );
+      const ninetyDaySnaps = snapshots.filter(
+        (s) => new Date(s.timestamp) >= ninetyDaysAgo
+      );
+      const allSnaps = snapshots.slice();
+
+      // Bucket by day
+      const sevenDayBuckets = bucketByDay(sevenDaySnaps);
+      const thirtyDayBuckets = bucketByDay(thirtyDaySnaps);
+      const ninetyDayBuckets = bucketByDay(ninetyDaySnaps);
+      const allBuckets = bucketByDay(allSnaps);
+
+      // Format for display
+      const sevenDayData = sevenDayBuckets.map((b) => ({
+        date: formatActivityDate(b.date, "7d"),
+        reachOuts: b.reachOuts,
+        replies: b.replies,
+      }));
+
+      // For 30d, bucket every 3 days
+      const thirtyDayData = [];
+      for (let i = 0; i < thirtyDayBuckets.length; i += 3) {
+        const chunk = thirtyDayBuckets.slice(i, i + 3);
+        const totalReachOuts = chunk.reduce((sum, b) => sum + b.reachOuts, 0);
+        const totalReplies = chunk.reduce((sum, b) => sum + b.replies, 0);
+        thirtyDayData.push({
+          date: formatActivityDate(chunk[0].date, "30d"),
+          reachOuts: totalReachOuts,
+          replies: totalReplies,
+        });
+      }
+
+      // For 90d, bucket weekly (every 7 days)
+      const ninetyDayData = [];
+      for (let i = 0; i < ninetyDayBuckets.length; i += 7) {
+        const chunk = ninetyDayBuckets.slice(i, i + 7);
+        const totalReachOuts = chunk.reduce((sum, b) => sum + b.reachOuts, 0);
+        const totalReplies = chunk.reduce((sum, b) => sum + b.replies, 0);
+        ninetyDayData.push({
+          date: formatActivityDate(chunk[0].date, "90d"),
+          reachOuts: totalReachOuts,
+          replies: totalReplies,
+        });
+      }
+
+      // For all, bucket weekly
+      const allData = [];
+      for (let i = 0; i < allBuckets.length; i += 7) {
+        const chunk = allBuckets.slice(i, i + 7);
+        const totalReachOuts = chunk.reduce((sum, b) => sum + b.reachOuts, 0);
+        const totalReplies = chunk.reduce((sum, b) => sum + b.replies, 0);
+        allData.push({
+          date: formatActivityDate(chunk[0].date, "all"),
+          reachOuts: totalReachOuts,
+          replies: totalReplies,
+        });
+      }
+
+      return {
+        "7d": sevenDayData,
+        "30d": thirtyDayData,
+        "90d": ninetyDayData,
+        all: allData,
+      };
+    }
 
     // ========================================================================
     // BUILD FINAL ANALYTICS OBJECT
