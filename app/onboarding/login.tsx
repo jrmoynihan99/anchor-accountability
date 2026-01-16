@@ -1,7 +1,7 @@
-// login.tsx
+// app/onboarding/login.tsx - UPDATED
 import { useTheme } from "@/context/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   Keyboard,
@@ -16,21 +16,46 @@ import Animated, {
   useDerivedValue,
   withSpring,
 } from "react-native-reanimated";
-import { LoginForm } from "../../components/onboarding/LoginForm";
-import { LoginHeader } from "../../components/onboarding/LoginHeader";
+import { LoginForm } from "../../components/onboarding/login/LoginForm";
+import { LoginHeader } from "../../components/onboarding/login/LoginHeader";
 
 export default function LoginScreen() {
+  // Get organization params from route
+  const params = useLocalSearchParams<{
+    organizationId?: string;
+    organizationName?: string;
+  }>();
+
+  // State for selected organization (can be updated from modal)
+  const [organizationId, setOrganizationId] = useState(
+    params.organizationId || "public"
+  );
+  const [organizationName, setOrganizationName] = useState(
+    params.organizationName || "Guest"
+  );
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isChurchModalVisible, setIsChurchModalVisible] = useState(false);
 
   const { colors } = useTheme();
 
-  // Smooth keyboard animation
+  // Handle church selection from modal
+  const handleChurchSelected = (orgId: string, orgName: string) => {
+    setOrganizationId(orgId);
+    setOrganizationName(orgName);
+  };
+
+  // Smooth keyboard animation - only when modal is NOT visible
   const keyboard = useAnimatedKeyboard();
   const translateY = useDerivedValue(() => {
+    // Don't animate if church modal is open
+    if (isChurchModalVisible) {
+      return 0;
+    }
     return withSpring(-keyboard.height.value * 0.5, {
       damping: 20,
       stiffness: 100,
@@ -77,6 +102,10 @@ export default function LoginScreen() {
               setLoading={setLoading}
               showPassword={showPassword}
               setShowPassword={setShowPassword}
+              organizationId={organizationId}
+              organizationName={organizationName}
+              onChurchSelected={handleChurchSelected}
+              onChurchModalVisibilityChange={setIsChurchModalVisible}
             />
           </Animated.View>
         </LinearGradient>

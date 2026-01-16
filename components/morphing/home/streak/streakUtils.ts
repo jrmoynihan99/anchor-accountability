@@ -36,7 +36,7 @@ export const STRINGS = {
       days === 1 ? "day" : "days"
     } away from your personal best! Come back tomorrow to continue.`,
   ENCOURAGE_NEW_BEST:
-    "New personal best! Amazing job! Finish today strong and come back tomorrow to keep it going!",
+    "New personal best! Finish today strong and come back tomorrow to keep it going!",
   ENCOURAGE_KEEP_GOING:
     "Great job! Check in again tomorrow to keep your streak alive.",
 

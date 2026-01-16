@@ -39,9 +39,9 @@ export function PartnershipInfoModal({
       {/* Header Section */}
       <View style={styles.headerSection}>
         <View
-          style={[styles.iconCircle, { backgroundColor: `${colors.tint}20` }]}
+          style={[styles.iconCircle, { backgroundColor: `${colors.icon}20` }]}
         >
-          <IconSymbol name="link" size={32} color={colors.tint} />
+          <IconSymbol name="link" size={32} color={colors.icon} />
         </View>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
           How Anchor Partnerships Work
@@ -64,7 +64,7 @@ export function PartnershipInfoModal({
         style={[
           styles.infoCard,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.cardBackground,
             borderColor: colors.border,
           },
         ]}
@@ -76,7 +76,7 @@ export function PartnershipInfoModal({
               { backgroundColor: `${colors.tint}15` },
             ]}
           >
-            <IconSymbol name="link" size={20} color={colors.tint} />
+            <IconSymbol name="link" size={20} color={colors.icon} />
           </View>
           <ThemedText
             type="subtitleSemibold"
@@ -102,7 +102,7 @@ export function PartnershipInfoModal({
         style={[
           styles.infoCard,
           {
-            backgroundColor: colors.background,
+            backgroundColor: colors.cardBackground,
             borderColor: colors.border,
           },
         ]}
@@ -114,7 +114,7 @@ export function PartnershipInfoModal({
               { backgroundColor: `${colors.tint}15` },
             ]}
           >
-            <IconSymbol name="person.2.fill" size={20} color={colors.tint} />
+            <IconSymbol name="person.2.fill" size={20} color={colors.icon} />
           </View>
           <ThemedText
             type="subtitleSemibold"
@@ -140,13 +140,13 @@ export function PartnershipInfoModal({
         style={[
           styles.noteCard,
           {
-            backgroundColor: `${colors.tint}10`,
+            backgroundColor: `${colors.tint}60`,
             borderColor: `${colors.tint}30`,
           },
         ]}
       >
         <View style={styles.noteHeader}>
-          <IconSymbol name="info.circle.fill" size={18} color={colors.tint} />
+          <IconSymbol name="info.circle.fill" size={18} color={colors.icon} />
           <ThemedText
             type="bodyMedium"
             style={[styles.noteTitle, { color: colors.text }]}

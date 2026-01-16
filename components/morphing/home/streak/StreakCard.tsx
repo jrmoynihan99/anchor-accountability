@@ -4,20 +4,21 @@ import Animated from "react-native-reanimated";
 import { StreakCardContent } from "./StreakCardContent";
 import { type StreakEntry } from "./streakUtils";
 
-// ================== TYPES ==================
 interface StreakCardProps {
   streakData: StreakEntry[];
   onCheckIn: (status: "success" | "fail") => void;
   onUndo: (date: string) => void;
-  // ButtonModalTransitionBridge props
   buttonRef?: any;
   style?: any;
   onPress?: () => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
+  // NEW: Props to sync undo state
+  showUndo?: boolean;
+  lastModifiedDate?: string | null;
+  onUndoStateChange?: (showUndo: boolean, date: string | null) => void;
 }
 
-// ================== COMPONENT ==================
 export function StreakCard({
   streakData,
   onCheckIn,
@@ -27,6 +28,9 @@ export function StreakCard({
   onPress,
   onPressIn,
   onPressOut,
+  showUndo,
+  lastModifiedDate,
+  onUndoStateChange,
 }: StreakCardProps) {
   const { colors } = useTheme();
 
@@ -47,6 +51,9 @@ export function StreakCard({
             onCheckIn={onCheckIn}
             onUndo={onUndo}
             showButtons={true}
+            showUndo={showUndo}
+            lastModifiedDate={lastModifiedDate}
+            onUndoStateChange={onUndoStateChange}
           />
         </TouchableOpacity>
       </Animated.View>
@@ -63,6 +70,9 @@ export function StreakCard({
         onCheckIn={onCheckIn}
         onUndo={onUndo}
         showButtons={true}
+        showUndo={showUndo}
+        lastModifiedDate={lastModifiedDate}
+        onUndoStateChange={onUndoStateChange}
       />
     </View>
   );

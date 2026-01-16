@@ -21,6 +21,7 @@ import { BlockListSection } from "./BlockListSection";
 import { BlockListView } from "./BlockListView";
 import { ChangePasswordButton } from "./ChangePasswordButton";
 import { ChangePasswordView } from "./ChangePasswordView";
+import { ChurchInfoSection } from "./ChurchInfoSection";
 import { ConvertAccountButton } from "./ConvertAccountButton";
 import { ConvertAccountView } from "./ConvertAccountView";
 import { DeleteAccountButton } from "./DeleteAccountButton";
@@ -305,6 +306,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
             <AppearanceSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
+            <ChurchInfoSection />
 
             {/* ✅ UPDATED: Change Password Button triggers view transition */}
             <ChangePasswordButton

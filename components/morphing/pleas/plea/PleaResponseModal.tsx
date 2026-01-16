@@ -1,13 +1,10 @@
 // components/messages/PleaResponseModal.tsx
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useCreateEncouragement } from "@/hooks/plea/useCreateEncouragement";
 import { auth, db } from "@/lib/firebase";
 import * as Haptics from "expo-haptics";
-import {
-  addDoc,
-  collection,
-  onSnapshot,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import { Keyboard, StyleSheet, View } from "react-native";
 import Animated, {
@@ -45,6 +42,8 @@ export function PleaResponseModal({
   plea,
   now,
 }: PleaResponseModalProps) {
+  const { organizationId } = useOrganization();
+  const { createEncouragement, creating } = useCreateEncouragement();
   const { colors, effectiveTheme } = useTheme();
 
   // Screen logic
@@ -105,34 +104,52 @@ export function PleaResponseModal({
 
     try {
       transitionToScreen("pending");
-      const docRef = await addDoc(
-        collection(db, "pleas", plea.id, "encouragements"),
-        {
-          helperUid: auth.currentUser.uid,
-          message: encouragementText.trim(),
-          openToChat: isOpenToChat,
-          createdAt: serverTimestamp(),
-          status: "pending",
+
+      const encouragementId = await createEncouragement({
+        pleaId: plea.id,
+        message: encouragementText,
+        openToChat: isOpenToChat,
+      });
+
+      if (!encouragementId) {
+        console.error("Failed to create encouragement");
+        transitionToScreen("input");
+        return;
+      }
+
+      setCurrentEncouragementId(encouragementId);
+
+      if (!organizationId) {
+        console.error("No organization ID available");
+        return;
+      }
+
+      const unsubscribe = onSnapshot(
+        doc(
+          db,
+          "organizations",
+          organizationId,
+          "pleas",
+          plea.id,
+          "encouragements",
+          encouragementId
+        ),
+        (snap) => {
+          if (!snap.exists()) return;
+          const data = snap.data();
+          const status = data.status;
+          if (status === "approved") {
+            transitionToScreen("confirmation");
+            // Auto-close after showing confirmation for 2 seconds
+            setTimeout(() => {
+              close?.();
+            }, 2000);
+          } else if (status === "rejected") {
+            setRejectionReason(data.rejectionReason || undefined);
+            transitionToScreen("rejected");
+          }
         }
       );
-      setCurrentEncouragementId(docRef.id);
-
-      const unsubscribe = onSnapshot(docRef, (snap) => {
-        if (!snap.exists()) return;
-        const data = snap.data();
-        const status = data.status;
-        if (status === "approved") {
-          transitionToScreen("confirmation");
-          // Auto-close after showing confirmation for 2 seconds
-          setTimeout(() => {
-            close?.();
-          }, 2000);
-        } else if (status === "rejected") {
-          // Capture rejection reason if available
-          setRejectionReason(data.rejectionReason || undefined);
-          transitionToScreen("rejected");
-        }
-      });
       unsubscribeRef.current = unsubscribe;
     } catch (error) {
       console.error("Error sending encouragement:", error);
@@ -195,10 +212,11 @@ export function PleaResponseModal({
 
   if (!plea) return null;
 
-  // Button content (keep same padding, border logic)
-  const isUrgent = plea.encouragementCount === 0;
+  const isUrgent = plea.isUrgent;
 
-  const buttonContent = <PleaCardContent plea={plea} now={now} />;
+  const buttonContent = (
+    <PleaCardContent plea={plea} now={now} isUrgent={isUrgent} />
+  );
 
   // --- Screens ---
   const renderActiveScreen = () => {

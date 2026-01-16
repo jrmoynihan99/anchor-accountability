@@ -1,5 +1,6 @@
 // hooks/usePendingPleas.ts
 import { PleaData } from "@/components/morphing/pleas/plea/PleaCard";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -26,6 +27,7 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
   const { pageSize = MAX_RECENT_PLEAS, enablePagination = false } = options;
 
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
 
   const [pendingPleas, setPendingPleas] = useState<PleaData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +81,7 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
   };
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setPendingPleas([]);
       setLoading(false);
       return;
@@ -89,7 +91,7 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
     if (blockedLoading || blockedByLoading) return;
 
     const pleasQuery = query(
-      collection(db, "pleas"),
+      collection(db, "organizations", organizationId, "pleas"),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
       limit(enablePagination ? currentLimit : pageSize)
@@ -153,7 +155,14 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
           if (encouragementListenersRef.current[pleaId]) return;
 
           const encouragementsQuery = query(
-            collection(db, "pleas", pleaId, "encouragements"),
+            collection(
+              db,
+              "organizations",
+              organizationId,
+              "pleas",
+              pleaId,
+              "encouragements"
+            ),
             where("status", "==", "approved")
           );
 
@@ -254,6 +263,8 @@ export function usePendingPleas(options: UsePendingPleasOptions = {}) {
     };
   }, [
     uid,
+    organizationId,
+    orgLoading,
     blockedLoading,
     blockedByLoading,
     blockedUserIds,

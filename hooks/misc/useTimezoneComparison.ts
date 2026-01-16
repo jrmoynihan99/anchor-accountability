@@ -1,4 +1,5 @@
 // hooks/useTimezoneComparison.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -20,6 +21,7 @@ interface TimezoneComparisonResult {
 export function useTimezoneComparison(
   otherUserId: string
 ): TimezoneComparisonResult {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserTimezone, setCurrentUserTimezone] = useState<string | null>(
@@ -45,12 +47,23 @@ export function useTimezoneComparison(
         return;
       }
 
+      if (!organizationId || orgLoading) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
         // Fetch current user's timezone
-        const currentUserRef = doc(db, "users", currentUser.uid);
+        const currentUserRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "users",
+          currentUser.uid
+        );
         const currentUserSnap = await getDoc(currentUserRef);
 
         if (!currentUserSnap.exists()) {
@@ -64,7 +77,13 @@ export function useTimezoneComparison(
         setCurrentUserTimezone(currentTz);
 
         // Fetch other user's timezone
-        const otherUserRef = doc(db, "users", otherUserId);
+        const otherUserRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "users",
+          otherUserId
+        );
         const otherUserSnap = await getDoc(otherUserRef);
 
         if (!otherUserSnap.exists()) {
@@ -85,7 +104,7 @@ export function useTimezoneComparison(
     };
 
     fetchTimezones();
-  }, [otherUserId]);
+  }, [otherUserId, organizationId, orgLoading]);
 
   // Calculate time difference using Intl.DateTimeFormat
   const getTimeDifference = (userTz: string, otherTz: string): number => {
@@ -173,7 +192,7 @@ export function useTimezoneComparison(
     shouldShowWarning,
     timeDifference,
     otherUserLocalTime,
-    loading,
+    loading: loading || orgLoading,
     error,
     currentUserTimezone,
     otherUserTimezone,

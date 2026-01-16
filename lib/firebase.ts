@@ -66,14 +66,28 @@ export interface ThreadData {
 // lib/firebase.ts - Updated sendMessage function
 
 export async function sendMessage(
+  organizationId: string,
   threadId: string,
   text: string
 ): Promise<void> {
   const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) throw new Error("User not authenticated");
 
-  const messagesRef = collection(db, "threads", threadId, "messages");
-  const threadRef = doc(db, "threads", threadId);
+  const messagesRef = collection(
+    db,
+    "organizations",
+    organizationId,
+    "threads",
+    threadId,
+    "messages"
+  );
+  const threadRef = doc(
+    db,
+    "organizations",
+    organizationId,
+    "threads",
+    threadId
+  );
 
   // Use client timestamp to avoid null issues
   const timestamp = Timestamp.now();
@@ -115,6 +129,7 @@ export async function sendMessage(
 
 // Create a new thread
 export async function createThread(
+  organizationId: string,
   otherUserId: string,
   pleaId?: string,
   encouragementId?: string,
@@ -127,7 +142,13 @@ export async function createThread(
 
   // Deterministic thread ID (no duplicates, order doesn't matter)
   const threadId = [currentUserId, otherUserId].sort().join("_");
-  const threadRef = doc(db, "threads", threadId);
+  const threadRef = doc(
+    db,
+    "organizations",
+    organizationId,
+    "threads",
+    threadId
+  );
 
   // 1. Check if the thread already exists
   const threadSnap = await getDoc(threadRef);
@@ -161,11 +182,20 @@ export async function createThread(
 }
 
 // Mark messages as read
-export async function markMessagesAsRead(threadId: string): Promise<void> {
+export async function markMessagesAsRead(
+  organizationId: string,
+  threadId: string
+): Promise<void> {
   const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) throw new Error("User not authenticated");
 
-  const threadRef = doc(db, "threads", threadId);
+  const threadRef = doc(
+    db,
+    "organizations",
+    organizationId,
+    "threads",
+    threadId
+  );
   const threadDoc = await getDoc(threadRef);
 
   if (threadDoc.exists()) {
@@ -185,11 +215,14 @@ export async function markMessagesAsRead(threadId: string): Promise<void> {
 }
 
 // Mark encouragements as read for a plea
-export async function markEncouragementAsRead(pleaId: string): Promise<void> {
+export async function markEncouragementAsRead(
+  organizationId: string,
+  pleaId: string
+): Promise<void> {
   const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) throw new Error("User not authenticated");
 
-  const pleaRef = doc(db, "pleas", pleaId);
+  const pleaRef = doc(db, "organizations", organizationId, "pleas", pleaId);
 
   try {
     // Reset unread count to 0 (similar to how markMessagesAsRead works)
@@ -207,8 +240,19 @@ export async function updateUserTimezone(): Promise<void> {
   if (!currentUserId) return;
 
   try {
+    // Get organizationId from custom claims
+    const idTokenResult = await auth.currentUser?.getIdTokenResult();
+    const organizationId =
+      (idTokenResult?.claims.organizationId as string) || "public";
+
     const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
-    const userRef = doc(db, "users", currentUserId);
+    const userRef = doc(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      currentUserId
+    );
 
     await setDoc(
       userRef,

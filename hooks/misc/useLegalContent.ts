@@ -15,6 +15,7 @@ const DEFAULT_TERMS = `Terms of Service content is currently unavailable. Please
 const DEFAULT_PRIVACY = `Privacy Policy content is currently unavailable. Please try again later.`;
 
 export function useLegalContent(): LegalContent {
+  //const { organizationId, loading: orgLoading } = useOrganization();
   const [termsOfService, setTermsOfService] = useState<string>(DEFAULT_TERMS);
   const [privacyPolicy, setPrivacyPolicy] = useState<string>(DEFAULT_PRIVACY);
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,7 +63,7 @@ export function useLegalContent(): LegalContent {
   return {
     termsOfService,
     privacyPolicy,
-    loading,
+    loading: loading,
     error,
   };
 }

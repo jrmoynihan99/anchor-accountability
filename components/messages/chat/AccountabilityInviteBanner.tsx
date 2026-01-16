@@ -76,7 +76,7 @@ export function AccountabilityInviteBanner({
             type="bodyMedium"
             style={[styles.title, { color: colors.text }]}
           >
-            Invite {threadName} as your Anchor Partner
+            Invite {threadName} to be your Anchor Partner
           </ThemedText>
           <ThemedText
             type="caption"

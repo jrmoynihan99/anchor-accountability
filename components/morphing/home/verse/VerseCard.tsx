@@ -19,7 +19,6 @@ interface VerseCardProps {
   ) => void;
   onPressIn?: () => void;
   onPressOut?: () => void;
-  // New prop for preloaded data - used for today's card to avoid duplicate DB calls
   preloadedData?: {
     verse: string | null;
     reference: string | null;
@@ -39,15 +38,11 @@ export function VerseCard({
   onPress,
   onPressIn,
   onPressOut,
-  preloadedData, // If provided, use this instead of fetching
+  preloadedData,
 }: VerseCardProps) {
   const { colors } = useTheme();
 
-  // Only fetch data if preloadedData is not provided
-  // This means today's card (which has preloadedData) won't hit the database
   const fetchedData = useVerseData(preloadedData ? 0 : offsetDays);
-
-  // Use preloaded data if available, otherwise use fetched data
   const verseData = preloadedData || fetchedData;
 
   return (
@@ -96,5 +91,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
     position: "relative",
+    minHeight: 255, // Ensures consistent minimum height for all cards
   },
 });

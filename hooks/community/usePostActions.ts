@@ -1,4 +1,5 @@
 // hooks/usePostActions.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   deleteDoc,
@@ -11,6 +12,7 @@ import {
 import { useState } from "react";
 
 export function usePostActions() {
+  const { organizationId } = useOrganization();
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,13 +23,32 @@ export function usePostActions() {
       return false;
     }
 
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
+
     setActionLoading(`like-${postId}`);
     setError(null);
 
     try {
       const userId = auth.currentUser.uid;
-      const likeRef = doc(db, "communityPosts", postId, "likes", userId);
-      const postRef = doc(db, "communityPosts", postId);
+      const likeRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId,
+        "likes",
+        userId
+      );
+      const postRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId
+      );
 
       if (currentlyLiked) {
         // Unlike
@@ -62,6 +83,11 @@ export function usePostActions() {
       return false;
     }
 
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
+
     if (!title.trim() || !content.trim()) {
       setError("Title and content are required");
       return false;
@@ -71,7 +97,13 @@ export function usePostActions() {
     setError(null);
 
     try {
-      const postRef = doc(db, "communityPosts", postId);
+      const postRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId
+      );
 
       // The Cloud Function or security rules will verify:
       // 1. User owns the post
@@ -104,11 +136,22 @@ export function usePostActions() {
       return false;
     }
 
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
+
     setActionLoading(`delete-${postId}`);
     setError(null);
 
     try {
-      const postRef = doc(db, "communityPosts", postId);
+      const postRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId
+      );
 
       // Soft delete - just mark as deleted
       await updateDoc(postRef, {
@@ -133,6 +176,11 @@ export function usePostActions() {
       return false;
     }
 
+    if (!organizationId) {
+      setError("Organization not loaded");
+      return false;
+    }
+
     setActionLoading(`report-${postId}`);
     setError(null);
 
@@ -141,7 +189,7 @@ export function usePostActions() {
       // For now, just log it
 
       // In the future:
-      // await addDoc(collection(db, "reports"), {
+      // await addDoc(collection(db, "organizations", organizationId, "reports"), {
       //   postId,
       //   reportedBy: auth.currentUser.uid,
       //   reason,

@@ -1,4 +1,5 @@
 // hooks/useThreads.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -36,6 +37,7 @@ export interface ThreadWithMessages extends ThreadData {
 
 export function useThreads() {
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
 
   const [threads, setThreads] = useState<ThreadWithMessages[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export function useThreads() {
     blockedUserIds.has(otherUid) || blockedByUserIds.has(otherUid);
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setThreads([]);
       setLoading(false);
       return;
@@ -66,7 +68,12 @@ export function useThreads() {
     unsubscribesRef.current.forEach((unsub) => unsub());
     unsubscribesRef.current = [];
 
-    const threadsRef = collection(db, "threads");
+    const threadsRef = collection(
+      db,
+      "organizations",
+      organizationId,
+      "threads"
+    );
 
     // Query for threads where user is either userA or userB
     const userAQuery = query(threadsRef, where("userA", "==", uid));
@@ -177,7 +184,15 @@ export function useThreads() {
       unsubscribesRef.current.forEach((unsub) => unsub());
       unsubscribesRef.current = [];
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
+  }, [
+    uid,
+    organizationId,
+    orgLoading,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+  ]);
 
   return {
     threads,

@@ -1,16 +1,12 @@
 // components/morphing/home/reach-out-main-button/ReachOutModal.tsx
 import { ThemedText } from "@/components/ThemedText";
+import { useOrganization } from "@/context/OrganizationContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useCreatePlea } from "@/hooks/plea/useCreatePlea";
 import { useMyReachOuts } from "@/hooks/plea/useMyReachOuts";
-import { auth, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, {
@@ -84,6 +80,8 @@ export function ReachOutModal({
   iconSize = 38,
   borderWidth = 1,
 }: ReachOutModalProps) {
+  const { organizationId } = useOrganization();
+  const { createPlea, creating } = useCreatePlea();
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
   const [contextMessage, setContextMessage] = useState("");
   const [currentPleaId, setCurrentPleaId] = useState<string | null>(null);
@@ -143,14 +141,7 @@ export function ReachOutModal({
   };
 
   const handleSendMessage = async () => {
-    const user = auth.currentUser;
-    if (!user) {
-      console.error("No user logged in");
-      return;
-    }
-
     const hasMessage = contextMessage && contextMessage.trim();
-    const initialStatus = hasMessage ? "pending" : "approved";
 
     try {
       if (hasMessage) {
@@ -159,28 +150,37 @@ export function ReachOutModal({
         transitionToScreen("confirmation"); // Skip pending for blank messages
       }
 
-      const docRef = await addDoc(collection(db, "pleas"), {
-        uid: user.uid,
-        message: contextMessage || "",
-        createdAt: serverTimestamp(),
-        status: initialStatus,
-      });
+      const pleaId = await createPlea({ message: contextMessage });
+
+      if (!pleaId) {
+        console.error("Failed to create plea");
+        transitionToScreen("input");
+        return;
+      }
 
       if (hasMessage) {
         // Only set up listener if we need to wait for approval
-        setCurrentPleaId(docRef.id);
-        const unsubscribe = onSnapshot(doc(db, "pleas", docRef.id), (snap) => {
-          if (!snap.exists()) return;
-          const data = snap.data();
-          const status = data.status;
-          if (status === "approved") {
-            transitionToScreen("confirmation");
-          } else if (status === "rejected") {
-            // Capture rejection reason if available
-            setRejectionReason(data.rejectionReason || undefined);
-            transitionToScreen("rejected");
+        setCurrentPleaId(pleaId);
+
+        if (!organizationId) {
+          console.error("No organization ID available");
+          return;
+        }
+
+        const unsubscribe = onSnapshot(
+          doc(db, "organizations", organizationId, "pleas", pleaId),
+          (snap) => {
+            if (!snap.exists()) return;
+            const data = snap.data();
+            const status = data.status;
+            if (status === "approved") {
+              transitionToScreen("confirmation");
+            } else if (status === "rejected") {
+              setRejectionReason(data.rejectionReason || undefined);
+              transitionToScreen("rejected");
+            }
           }
-        });
+        );
         unsubscribeRef.current = unsubscribe;
       }
       // If no message, we already transitioned to confirmation above

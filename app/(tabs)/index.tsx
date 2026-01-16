@@ -22,7 +22,7 @@ import { useStreakData } from "@/hooks/streak/useStreakData";
 import { auth } from "@/lib/firebase";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -41,6 +41,12 @@ export default function HomeScreen() {
 
   // Add ref for VerseCarousel
   const verseCarouselRef = useRef<VerseCarouselRef>(null);
+
+  // Undo state for streak card
+  const [undoState, setUndoState] = useState<{
+    showUndo: boolean;
+    lastModifiedDate: string | null;
+  }>({ showUndo: false, lastModifiedDate: null });
 
   // --- Modal Intent context handling ---
   const { modalIntent, setModalIntent } = useModalIntent();
@@ -92,6 +98,9 @@ export default function HomeScreen() {
       pathname: "/message-thread",
       params: {
         threadId: thread.id,
+        threadName: thread.otherUserName,
+        otherUserId: thread.otherUserId,
+        isNewThread: "false",
       },
     });
   };
@@ -176,6 +185,11 @@ export default function HomeScreen() {
                 onPress={open}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
+                showUndo={undoState.showUndo}
+                lastModifiedDate={undoState.lastModifiedDate}
+                onUndoStateChange={(showUndo, date) =>
+                  setUndoState({ showUndo, lastModifiedDate: date })
+                }
               />
               <StreakCardModal
                 isVisible={isModalVisible}
@@ -184,6 +198,12 @@ export default function HomeScreen() {
                 close={close}
                 streakData={streakData}
                 onCheckIn={handleStreakCheckIn}
+                onUndo={undoStreakStatus}
+                showUndo={undoState.showUndo}
+                lastModifiedDate={undoState.lastModifiedDate}
+                onUndoStateChange={(showUndo, date) =>
+                  setUndoState({ showUndo, lastModifiedDate: date })
+                }
               />
             </>
           )}

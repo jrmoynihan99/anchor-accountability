@@ -1,5 +1,6 @@
 // hooks/useAccountabilityRelationships.ts
 
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { AccountabilityRelationship } from "@/types/AccountabilityRelationship";
 import {
@@ -65,6 +66,7 @@ export interface RecentlyDeletedMenteeBanner {
 
 export function useAccountabilityRelationships() {
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
 
   // Active relationships
   const [mentor, setMentor] = useState<AccountabilityWithId | null>(null);
@@ -123,16 +125,19 @@ export function useAccountabilityRelationships() {
   const getTimezoneForUser = async (
     userId: string
   ): Promise<string | undefined> => {
+    if (!organizationId) return undefined;
     if (timezoneCache[userId]) return timezoneCache[userId];
 
-    const snap = await getDoc(doc(db, "users", userId));
+    const snap = await getDoc(
+      doc(db, "organizations", organizationId, "users", userId)
+    );
     const tz = snap.data()?.timezone;
     timezoneCache[userId] = tz;
     return tz;
   };
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setMentor(null);
       setMentees([]);
       setSentInvites([]);
@@ -155,7 +160,12 @@ export function useAccountabilityRelationships() {
     // 🔵 LISTEN FOR MY MENTOR (I am the mentee) - ACTIVE ONLY
     // ===============================
     const mentorQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("menteeUid", "==", uid),
       where("status", "==", "active")
     );
@@ -199,7 +209,12 @@ export function useAccountabilityRelationships() {
     // 🟢 LISTEN FOR MY MENTEES (I am the mentor) - ACTIVE ONLY
     // ===============================
     const menteesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("mentorUid", "==", uid),
       where("status", "==", "active")
     );
@@ -248,7 +263,12 @@ export function useAccountabilityRelationships() {
     // 📤 LISTEN FOR SENT INVITES (I am the mentee sending invites) - PENDING ONLY
     // ===============================
     const sentInvitesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("menteeUid", "==", uid),
       where("status", "==", "pending")
     );
@@ -276,7 +296,12 @@ export function useAccountabilityRelationships() {
     // 📥 LISTEN FOR RECEIVED INVITES (I am being asked to be the MENTOR) - PENDING ONLY
     // ===============================
     const receivedInvitesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("mentorUid", "==", uid),
       where("status", "==", "pending")
     );
@@ -304,7 +329,12 @@ export function useAccountabilityRelationships() {
     // ❌ LISTEN FOR DECLINED INVITES (I sent, they declined)
     // ===============================
     const declinedInvitesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("menteeUid", "==", uid),
       where("status", "==", "declined")
     );
@@ -333,7 +363,12 @@ export function useAccountabilityRelationships() {
     // 💔 LISTEN FOR ENDED MENTOR RELATIONSHIP (I am the mentee)
     // ===============================
     const endedMentorQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("menteeUid", "==", uid),
       where("status", "==", "ended")
     );
@@ -368,7 +403,12 @@ export function useAccountabilityRelationships() {
     // 💔 LISTEN FOR ENDED MENTEE RELATIONSHIPS (I am the mentor)
     // ===============================
     const endedMenteesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("mentorUid", "==", uid),
       where("status", "==", "ended")
     );
@@ -403,7 +443,12 @@ export function useAccountabilityRelationships() {
     // 🗑️ LISTEN FOR DELETED MENTOR RELATIONSHIP (I am the mentee)
     // ===============================
     const deletedMentorQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("menteeUid", "==", uid),
       where("status", "==", "deleted")
     );
@@ -432,7 +477,12 @@ export function useAccountabilityRelationships() {
     // 🗑️ LISTEN FOR DELETED MENTEE RELATIONSHIPS (I am the mentor)
     // ===============================
     const deletedMenteesQuery = query(
-      collection(db, "accountabilityRelationships"),
+      collection(
+        db,
+        "organizations",
+        organizationId,
+        "accountabilityRelationships"
+      ),
       where("mentorUid", "==", uid),
       where("status", "==", "deleted")
     );
@@ -469,7 +519,15 @@ export function useAccountabilityRelationships() {
       deletedMentorUnsubRef.current?.();
       deletedMenteesUnsubRef.current?.();
     };
-  }, [uid, blockedLoading, blockedByLoading, blockedUserIds, blockedByUserIds]);
+  }, [
+    uid,
+    organizationId,
+    orgLoading,
+    blockedLoading,
+    blockedByLoading,
+    blockedUserIds,
+    blockedByUserIds,
+  ]);
 
   // ===============================
   // 📨 INVITE FUNCTIONS
@@ -478,10 +536,16 @@ export function useAccountabilityRelationships() {
   // Send an invite to become someone's mentor
   const sendInvite = async (menteeUid: string): Promise<string> => {
     if (!uid) throw new Error("Not authenticated");
+    if (!organizationId) throw new Error("Organization not loaded");
 
     try {
       const docRef = await addDoc(
-        collection(db, "accountabilityRelationships"),
+        collection(
+          db,
+          "organizations",
+          organizationId,
+          "accountabilityRelationships"
+        ),
         {
           mentorUid: menteeUid, // THEY will be MY mentor
           menteeUid: uid, // I am the mentee
@@ -503,12 +567,22 @@ export function useAccountabilityRelationships() {
   // Accept an invite (just update status to active)
   const acceptInvite = async (inviteId: string): Promise<void> => {
     if (!uid) throw new Error("Not authenticated");
+    if (!organizationId) throw new Error("Organization not loaded");
 
     try {
-      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
-        status: "active",
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(
+        doc(
+          db,
+          "organizations",
+          organizationId,
+          "accountabilityRelationships",
+          inviteId
+        ),
+        {
+          status: "active",
+          updatedAt: serverTimestamp(),
+        }
+      );
     } catch (err) {
       console.error("Error accepting invite:", err);
       throw new Error("Failed to accept invite");
@@ -519,9 +593,12 @@ export function useAccountabilityRelationships() {
   const endRelationship = async (relationshipId: string): Promise<void> => {
     const current = auth.currentUser?.uid;
     if (!current) throw new Error("User not authenticated");
+    if (!organizationId) throw new Error("Organization not loaded");
 
     const relationshipRef = doc(
       db,
+      "organizations",
+      organizationId,
       "accountabilityRelationships",
       relationshipId
     );
@@ -536,11 +613,22 @@ export function useAccountabilityRelationships() {
 
   // Decline an invite
   const declineInvite = async (inviteId: string): Promise<void> => {
+    if (!organizationId) throw new Error("Organization not loaded");
+
     try {
-      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
-        status: "declined",
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(
+        doc(
+          db,
+          "organizations",
+          organizationId,
+          "accountabilityRelationships",
+          inviteId
+        ),
+        {
+          status: "declined",
+          updatedAt: serverTimestamp(),
+        }
+      );
     } catch (err) {
       console.error("Error declining invite:", err);
       throw new Error("Failed to decline invite");
@@ -549,11 +637,22 @@ export function useAccountabilityRelationships() {
 
   // Cancel an invite
   const cancelInvite = async (inviteId: string): Promise<void> => {
+    if (!organizationId) throw new Error("Organization not loaded");
+
     try {
-      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
-        status: "cancelled",
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(
+        doc(
+          db,
+          "organizations",
+          organizationId,
+          "accountabilityRelationships",
+          inviteId
+        ),
+        {
+          status: "cancelled",
+          updatedAt: serverTimestamp(),
+        }
+      );
     } catch (err) {
       console.error("Error cancelling invite:", err);
       throw new Error("Failed to cancel invite");
@@ -562,12 +661,23 @@ export function useAccountabilityRelationships() {
 
   // Acknowledge a declined invite (mark it as seen)
   const acknowledgeDeclinedInvite = async (inviteId: string): Promise<void> => {
+    if (!organizationId) throw new Error("Organization not loaded");
+
     try {
-      await updateDoc(doc(db, "accountabilityRelationships", inviteId), {
-        isAcknowledged: true,
-        acknowledgedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await updateDoc(
+        doc(
+          db,
+          "organizations",
+          organizationId,
+          "accountabilityRelationships",
+          inviteId
+        ),
+        {
+          isAcknowledged: true,
+          acknowledgedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }
+      );
     } catch (err) {
       console.error("Error acknowledging declined invite:", err);
       throw new Error("Failed to acknowledge declined invite");

@@ -1,4 +1,5 @@
 // hooks/useCheckIns.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -65,6 +66,7 @@ export function useCheckIns(
   menteeUid: string | null,
   daysCount: number = 7
 ): UseCheckInsResult {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [checkIns, setCheckIns] = useState<CheckInRecord[]>([]);
   const [userTimezone, setUserTimezone] = useState<string | undefined>(
     undefined
@@ -77,11 +79,17 @@ export function useCheckIns(
   // FETCH USER TIMEZONE FROM USERS/{UID}
   // ========================================
   useEffect(() => {
-    if (!menteeUid) return;
+    if (!menteeUid || !organizationId || orgLoading) return;
 
     const fetchTimezone = async () => {
       try {
-        const userRef = doc(db, "users", menteeUid);
+        const userRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "users",
+          menteeUid
+        );
         const userSnap = await getDoc(userRef);
 
         const tz = userSnap.data()?.timezone ?? undefined;
@@ -92,13 +100,13 @@ export function useCheckIns(
     };
 
     fetchTimezone();
-  }, [menteeUid]);
+  }, [menteeUid, organizationId, orgLoading]);
 
   // ========================================
   // READ: Real-time listener for check-ins
   // ========================================
   useEffect(() => {
-    if (!relationshipId) {
+    if (!relationshipId || !organizationId || orgLoading) {
       setCheckIns([]);
       setLoading(false);
       return;
@@ -108,6 +116,8 @@ export function useCheckIns(
 
     const checkInsRef = collection(
       db,
+      "organizations",
+      organizationId,
       "accountabilityRelationships",
       relationshipId,
       "checkIns"
@@ -132,7 +142,7 @@ export function useCheckIns(
     );
 
     return () => unsubscribe();
-  }, [relationshipId, daysCount]);
+  }, [relationshipId, organizationId, orgLoading, daysCount]);
 
   // ========================================
   // WRITE: Submit check-in function
@@ -147,9 +157,14 @@ export function useCheckIns(
     if (!relationshipId) {
       throw new Error("No relationship ID provided");
     }
+    if (!organizationId) {
+      throw new Error("Organization not loaded");
+    }
 
     const checkInRef = doc(
       db,
+      "organizations",
+      organizationId,
       "accountabilityRelationships",
       relationshipId,
       "checkIns",
@@ -178,6 +193,8 @@ export function useCheckIns(
     // Update lastCheckIn in relationship
     const relationshipRef = doc(
       db,
+      "organizations",
+      organizationId,
       "accountabilityRelationships",
       relationshipId
     );

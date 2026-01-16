@@ -1,5 +1,6 @@
 // hooks/useMyReachOuts.ts
 import { MyReachOutData } from "@/components/morphing/pleas/my-reach-outs/MyReachOutCard";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
@@ -31,6 +32,7 @@ export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
     options;
 
   const uid = auth.currentUser?.uid ?? null;
+  const { organizationId, loading: orgLoading } = useOrganization();
 
   const [myReachOuts, setMyReachOuts] = useState<MyReachOutData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
   };
 
   useEffect(() => {
-    if (!uid) {
+    if (!uid || !organizationId || orgLoading) {
       setMyReachOuts([]);
       setLoading(false);
       return;
@@ -65,7 +67,7 @@ export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
     if (blockedLoading || blockedByLoading) return;
 
     const pleasQuery = query(
-      collection(db, "pleas"),
+      collection(db, "organizations", organizationId, "pleas"),
       where("uid", "==", uid),
       where("status", "==", "approved"),
       orderBy("createdAt", "desc"),
@@ -103,7 +105,14 @@ export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
           if (encouragementListenersRef.current[reachOutId]) return;
 
           const encouragementsQuery = query(
-            collection(db, "pleas", reachOutId, "encouragements"),
+            collection(
+              db,
+              "organizations",
+              organizationId,
+              "pleas",
+              reachOutId,
+              "encouragements"
+            ),
             where("status", "==", "approved")
           );
 
@@ -188,6 +197,8 @@ export function useMyReachOuts(options: UseMyReachOutsOptions = {}) {
     };
   }, [
     uid,
+    organizationId,
+    orgLoading,
     blockedLoading,
     blockedByLoading,
     blockedUserIds,

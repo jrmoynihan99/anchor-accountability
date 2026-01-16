@@ -216,6 +216,7 @@ export const MessageInput = forwardRef<
                       modalAnimatedStyle={modalAnimatedStyle}
                       close={close}
                       buttonContent={partnerButtonContent}
+                      onMessage={close}
                     />
                   );
                 } else if (relationshipType === "mentee" && relationshipData) {
@@ -230,6 +231,7 @@ export const MessageInput = forwardRef<
                       modalAnimatedStyle={modalAnimatedStyle}
                       close={close}
                       buttonContent={partnerButtonContent}
+                      onMessage={close}
                     />
                   );
                 } else {

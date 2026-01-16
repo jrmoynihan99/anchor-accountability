@@ -1,13 +1,16 @@
-// components/LoginForm.tsx - UPDATED
+// components/onboarding/login/LoginForm.tsx - UPDATED
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
 import { AnonymousBadge } from "@/components/morphing/login/anonymous-badge/AnonymousBadge";
 import { AnonymousBadgeModal } from "@/components/morphing/login/anonymous-badge/AnonymousBadgeModal";
+import { ChurchIndicatorButton } from "@/components/morphing/login/church-badge/ChurchIndicatorButton";
+import { ChurchIndicatorModal } from "@/components/morphing/login/church-badge/ChurchIndicatorModal";
 import { ForgotPasswordButton } from "@/components/morphing/login/forgot-password/ForgotPasswordButton";
 import { ForgotPasswordModal } from "@/components/morphing/login/forgot-password/ForgotPasswordModal";
 import { PrivacyPolicyBadge } from "@/components/morphing/login/privacy-policy/PrivacyPolicyBadge";
 import { PrivacyPolicyModal } from "@/components/morphing/login/privacy-policy/PrivacyPolicyModal";
 import { TermsOfServiceBadge } from "@/components/morphing/login/terms-of-service/TermsOfServiceBadge";
 import { TermsOfServiceModal } from "@/components/morphing/login/terms-of-service/TermsOfServiceModal";
+import { useOrganization } from "@/context/OrganizationContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -17,6 +20,7 @@ import {
   sendEmailVerification,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -26,11 +30,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useTheme } from "../../hooks/theme/useTheme";
-import { ensureSignedIn } from "../../lib/auth";
-import { auth, updateUserTimezone } from "../../lib/firebase";
-import { setHasOnboarded } from "../../lib/onboarding";
-import { ThemedText } from "../ThemedText";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../../hooks/theme/useTheme";
+import { ensureSignedIn } from "../../../lib/auth";
+import { auth, updateUserTimezone } from "../../../lib/firebase";
+import { setHasOnboarded } from "../../../lib/onboarding";
+import { ThemedText } from "../../ThemedText";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -45,6 +50,10 @@ interface LoginFormProps {
   setLoading: (loading: boolean) => void;
   showPassword: boolean;
   setShowPassword: (show: boolean) => void;
+  organizationId: string;
+  organizationName: string;
+  onChurchSelected: (organizationId: string, organizationName: string) => void;
+  onChurchModalVisibilityChange: (visible: boolean) => void;
 }
 
 // Helper to show friendly errors
@@ -104,9 +113,15 @@ export function LoginForm({
   setLoading: _setLoading,
   showPassword,
   setShowPassword,
+  organizationId,
+  organizationName,
+  onChurchSelected,
+  onChurchModalVisibilityChange,
 }: LoginFormProps) {
   const { colors } = useTheme();
+  const { updateOrganization, setIsSigningUp } = useOrganization();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
+  const insets = useSafeAreaInsets(); // Add this line
 
   const completeOnboarding = async () => {
     try {
@@ -128,24 +143,46 @@ export function LoginForm({
     setLoadingButton("auth");
     try {
       if (isSignUp) {
+        // ✅ Set flag BEFORE creating user
+        setIsSigningUp(true);
+
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
 
-        // ✅ Send email verification immediately after signup
+        // Set custom claim via Cloud Function
+        try {
+          const functions = getFunctions();
+          const setUserOrganization = httpsCallable(
+            functions,
+            "setUserOrganization"
+          );
+          const result = await setUserOrganization({ organizationId });
+
+          // Force token refresh
+          await auth.currentUser?.getIdToken(true);
+
+          // Manually update the context
+          await updateOrganization(organizationId);
+        } catch (claimError) {
+          console.error("Failed to set custom claim:", claimError);
+          setIsSigningUp(false); // ✅ Reset flag on error
+          throw new Error("Failed to complete account setup");
+        }
+
+        // Send email verification
         try {
           await sendEmailVerification(userCredential.user);
-          console.log("✅ Verification email sent to", email);
         } catch (verificationError) {
           console.error(
             "Failed to send verification email:",
             verificationError
           );
-          // Don't block signup if verification email fails
         }
       } else {
+        // ✅ Normal sign in - no flag needed
         await signInWithEmailAndPassword(auth, email, password);
       }
       await updateUserTimezone();
@@ -161,7 +198,32 @@ export function LoginForm({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoadingButton("guest");
     try {
+      // ✅ Set flag BEFORE signing in anonymously
+      setIsSigningUp(true);
+
       await ensureSignedIn();
+
+      // Set custom claim via Cloud Function
+      try {
+        const functions = getFunctions();
+        const setUserOrganization = httpsCallable(
+          functions,
+          "setUserOrganization"
+        );
+        const result = await setUserOrganization({ organizationId });
+
+        // Force token refresh
+        await auth.currentUser?.getIdToken(true);
+
+        // Manually update the context
+        await updateOrganization(organizationId);
+      } catch (claimError) {
+        console.error("Failed to set custom claim:", claimError);
+        setIsSigningUp(false); // ✅ Reset flag on error
+        throw new Error("Failed to complete account setup");
+      }
+
+      await updateUserTimezone();
       await completeOnboarding();
     } catch (error) {
       console.error("Error with anonymous sign in:", error);
@@ -174,8 +236,63 @@ export function LoginForm({
   return (
     <View style={styles.container}>
       <View style={styles.formContainer}>
+        {/* Church Indicator with Modal */}
+        {/* Church Indicator with Modal - only show during signup */}
+        {isSignUp && (
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.58}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              modalAnimatedStyle,
+              buttonAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              // Track modal visibility
+              React.useEffect(() => {
+                onChurchModalVisibilityChange(isModalVisible);
+              }, [isModalVisible]);
+
+              return (
+                <>
+                  <ChurchIndicatorButton
+                    organizationId={organizationId}
+                    organizationName={organizationName}
+                    buttonRef={buttonRef}
+                    style={buttonAnimatedStyle}
+                    onPress={open}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                  />
+                  <ChurchIndicatorModal
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                    organizationId={organizationId}
+                    organizationName={organizationName}
+                    onChurchSelected={onChurchSelected}
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+        )}
+
         {/* Email Input */}
-        <View style={[styles.inputShadow, { shadowColor: colors.shadow }]}>
+        <View
+          style={[
+            styles.inputShadow,
+            styles.emailInput,
+            { shadowColor: colors.shadow },
+          ]}
+        >
           <BlurView
             intensity={20}
             tint="light"
@@ -403,7 +520,7 @@ export function LoginForm({
       </View>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
         <View style={styles.footerTextContainer}>
           <ThemedText
             type="small"
@@ -509,6 +626,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+  },
+  emailInput: {
+    marginTop: 24,
   },
   inputContainer: {
     flexDirection: "row",

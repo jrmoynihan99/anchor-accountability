@@ -64,18 +64,18 @@ export function AnonymousBadgeModal({
             style={[styles.bodyText, { color: colors.textSecondary }]}
           >
             Both creating an account and continuing as a guest are completely
-            anonymous. Your identity is never shared.
+            anonymous. Your identity or email address is NEVER shared.
           </ThemedText>
 
           <ThemedText
             type="body"
             style={[styles.bodyText, { color: colors.textSecondary }]}
           >
-            If you continue as a guest, you will not have an email address
-            associated with your account, and your account will be completely
-            deleted if you log out or get a new phone. You can convert your
-            guest account to a permanent account with an email & password for
-            login at any time via in app settings.
+            If you continue as a guest, you will not have a login associated
+            with your account, and your account will be completely deleted if
+            you log out for any reason (uninstall app, new phone, etc). You can
+            convert your guest account to a permanent account with an email &
+            password for login at any time via in app settings.
           </ThemedText>
         </View>
       </View>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   modalContent: {
-    marginTop: 80,
+    marginTop: 40,
   },
   title: {
     textAlign: "center",

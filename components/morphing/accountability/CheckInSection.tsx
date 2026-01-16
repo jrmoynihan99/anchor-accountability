@@ -80,8 +80,8 @@ export const CheckInSection = React.memo(function CheckInSection({
   };
 
   const getLevelZone = (level: number): string => {
-    if (level <= 2) return "Clean & Strong";
-    if (level <= 4) return "Clean but Struggled";
+    if (level <= 2) return "Low Temptation";
+    if (level <= 4) return "Higher Temptation";
     return "Relapsed";
   };
 
@@ -92,11 +92,11 @@ export const CheckInSection = React.memo(function CheckInSection({
       case 2:
         return "You stayed strong today. Keep it up!";
       case 3:
-        return "You faced temptation and WON. That takes real strength.";
+        return "You faced medium temptation and won.";
       case 4:
-        return "You fought hard today and won. That's what recovery looks like.";
+        return "You fought hard temptation today and WON!";
       case 5:
-        return "Recovery isn't linear. Tomorrow is a new day. Your mentor is here for you.";
+        return "Recovery isn't linear. Your partner is here for you.";
       default:
         return "Check-in complete!";
     }
@@ -124,11 +124,13 @@ export const CheckInSection = React.memo(function CheckInSection({
         </View>
         <View style={styles.sectionHeaderText}>
           <ThemedText type="subtitleSemibold" style={{ color: colors.text }}>
-            {isRetroactive ? "Add Check-In" : "Daily Check-In"}
+            {isRetroactive
+              ? `Add Check-In for ${displayDate}`
+              : "Daily Check-In"}
           </ThemedText>
           <ThemedText type="caption" style={{ color: colors.textSecondary }}>
             {isRetroactive
-              ? `Add a check-in for ${displayDate}`
+              ? "How was your battle with temptation?"
               : checkInStatus.hasCheckedInToday
               ? "You've checked in today"
               : "How was your battle with temptation today?"}
@@ -212,12 +214,12 @@ export const CheckInSection = React.memo(function CheckInSection({
             <View style={styles.legend}>
               <LegendItem
                 color={colors.success || "#34C759"}
-                label="Clean & Strong (1-2)"
+                label="Low Temptation (1-2)"
                 colors={colors}
               />
               <LegendItem
                 color={colors.warning || "#FF9500"}
-                label="Clean but Struggled (3-4)"
+                label="Higher Temptation (3-4)"
                 colors={colors}
               />
               <LegendItem

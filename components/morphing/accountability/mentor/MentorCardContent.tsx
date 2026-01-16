@@ -188,7 +188,7 @@ export function MentorCardContent({
             {
               backgroundColor: `${colors.buttonBackground}30`,
               borderWidth: 1,
-              borderColor: colors.buttonBackground,
+              borderColor: colors.icon,
             },
           ]}
           onPress={onMessage}
@@ -196,11 +196,11 @@ export function MentorCardContent({
         >
           <IconSymbol
             name="message.fill"
-            color={colors.buttonBackground}
+            color={colors.icon}
             size={18}
             style={{ marginRight: 6 }}
           />
-          <ThemedText type="button" style={{ color: colors.buttonBackground }}>
+          <ThemedText type="button" style={{ color: colors.icon }}>
             Message
           </ThemedText>
         </TouchableOpacity>

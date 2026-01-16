@@ -22,6 +22,10 @@ interface StreakCardModalProps {
   close: (velocity?: number) => void;
   streakData: StreakEntry[];
   onCheckIn: (status: "success" | "fail") => void;
+  onUndo: (date: string) => void;
+  showUndo?: boolean;
+  lastModifiedDate?: string | null;
+  onUndoStateChange?: (showUndo: boolean, date: string | null) => void;
 }
 
 export function StreakCardModal({
@@ -31,6 +35,10 @@ export function StreakCardModal({
   close,
   streakData,
   onCheckIn,
+  onUndo,
+  showUndo,
+  lastModifiedDate,
+  onUndoStateChange,
 }: StreakCardModalProps) {
   const { colors, effectiveTheme } = useTheme();
 
@@ -120,7 +128,11 @@ export function StreakCardModal({
       <StreakCardContent
         streakData={streakData}
         onCheckIn={onCheckIn}
-        showButtons={true} // Show buttons during transition
+        onUndo={onUndo}
+        showButtons={true}
+        showUndo={showUndo}
+        lastModifiedDate={lastModifiedDate}
+        onUndoStateChange={onUndoStateChange}
       />
     </View>
   );

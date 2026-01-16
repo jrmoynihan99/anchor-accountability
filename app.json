@@ -27,13 +27,10 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.jrmoynihan99.anchor",
-      "androidNavigationBar": {
-        "visible": "translucent",
-        "backgroundColor": "#00000000"
-      },
       "googleServicesFile": "./google-services.json",
-      "useNextNotificationsApi": true,
-      "permissions": ["android.permission.POST_NOTIFICATIONS"]
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -53,7 +50,8 @@
       ],
       "expo-font",
       "expo-notifications",
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

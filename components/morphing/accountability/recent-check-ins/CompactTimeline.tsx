@@ -109,7 +109,7 @@ export function CompactTimeline({
                       : colors.cardBackground
                     : isSelected
                     ? `${getTemptationColor(item.temptationLevel, colors)}30`
-                    : colors.cardBackground,
+                    : colors.background,
                   borderWidth: 2,
                   borderColor: missing
                     ? isSelected
@@ -117,7 +117,7 @@ export function CompactTimeline({
                       : colors.textSecondary
                     : isSelected
                     ? getTemptationColor(item.temptationLevel, colors)
-                    : "transparent",
+                    : colors.border,
                   borderStyle: missing ? "dashed" : "solid",
                   opacity: missing && !isSelected ? 0.5 : 1,
                 },

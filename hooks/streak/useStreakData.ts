@@ -2,6 +2,7 @@ import {
   getLocalDateString,
   StreakEntry,
 } from "@/components/morphing/home/streak/streakUtils";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import {
@@ -22,6 +23,9 @@ export function useStreakData() {
   const [user, setUser] = useState(auth.currentUser);
   const lastCheckedDate = useRef<string>(getLocalDateString(0)); // Track when we last checked the date
 
+  // ✅ NEW: Get organizationId from context
+  const { organizationId, loading: orgLoading } = useOrganization();
+
   // Listen to auth state changes
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
@@ -35,12 +39,31 @@ export function useStreakData() {
 
   // Function to ensure recent days exist
   const ensureRecentDaysExist = async (uid: string) => {
+    // ✅ UPDATED: Wait for organizationId to be available
+    if (!organizationId) return;
+
     const today = getLocalDateString(0);
     const yesterday = getLocalDateString(-1);
 
-    // Check and create today's document
-    const todayRef = doc(db, "users", uid, "streak", today);
-    const yesterdayRef = doc(db, "users", uid, "streak", yesterday);
+    // ✅ UPDATED: Use organizations path
+    const todayRef = doc(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "streak",
+      today
+    );
+    const yesterdayRef = doc(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "streak",
+      yesterday
+    );
 
     try {
       // Check today
@@ -107,12 +130,21 @@ export function useStreakData() {
   useEffect(() => {
     const uid = user?.uid;
 
-    if (!uid) {
+    // ✅ UPDATED: Wait for organizationId before setting up listener
+    if (!uid || !organizationId || orgLoading) {
       setStreakData([]);
       return;
     }
 
-    const ref = collection(db, "users", uid, "streak");
+    // ✅ UPDATED: Use organizations path
+    const ref = collection(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "streak"
+    );
 
     const unsub = onSnapshot(
       ref,
@@ -135,7 +167,7 @@ export function useStreakData() {
     return () => {
       unsub();
     };
-  }, [user?.uid]);
+  }, [user?.uid, organizationId, orgLoading]); // ✅ UPDATED: Added dependencies
 
   // Make sure today's and yesterday's records exist when user changes
   useEffect(() => {
@@ -143,7 +175,7 @@ export function useStreakData() {
       ensureRecentDaysExist(user.uid);
       lastCheckedDate.current = getDate(0); // Update our reference date
     }
-  }, [user?.uid]);
+  }, [user?.uid, organizationId]); // ✅ UPDATED: Added organizationId dependency
 
   // Update a specific day's status
   const updateStreakStatus = async (
@@ -152,11 +184,21 @@ export function useStreakData() {
   ) => {
     const uid = user?.uid;
 
-    if (!uid) {
+    // ✅ UPDATED: Check for organizationId
+    if (!uid || !organizationId) {
       return;
     }
 
-    const ref = doc(db, "users", uid, "streak", date);
+    // ✅ UPDATED: Use organizations path
+    const ref = doc(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "streak",
+      date
+    );
 
     try {
       await setDoc(ref, { status });
@@ -169,11 +211,21 @@ export function useStreakData() {
   const undoStreakStatus = async (date: string) => {
     const uid = user?.uid;
 
-    if (!uid) {
+    // ✅ UPDATED: Check for organizationId
+    if (!uid || !organizationId) {
       return;
     }
 
-    const ref = doc(db, "users", uid, "streak", date);
+    // ✅ UPDATED: Use organizations path
+    const ref = doc(
+      db,
+      "organizations",
+      organizationId,
+      "users",
+      uid,
+      "streak",
+      date
+    );
 
     try {
       await setDoc(ref, { status: "pending" });

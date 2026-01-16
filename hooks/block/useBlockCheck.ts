@@ -1,9 +1,11 @@
 // hooks/useBlockCheck.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function useBlockCheck(userIdToCheck: string) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [hasBlocked, setHasBlocked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -11,7 +13,7 @@ export function useBlockCheck(userIdToCheck: string) {
     const checkBlockStatus = async () => {
       const currentUser = auth.currentUser;
 
-      if (!currentUser || !userIdToCheck) {
+      if (!currentUser || !userIdToCheck || !organizationId || orgLoading) {
         setIsLoading(false);
         return;
       }
@@ -26,6 +28,8 @@ export function useBlockCheck(userIdToCheck: string) {
       try {
         const blockListRef = collection(
           db,
+          "organizations",
+          organizationId,
           "users",
           currentUser.uid,
           "blockList"
@@ -44,7 +48,7 @@ export function useBlockCheck(userIdToCheck: string) {
     };
 
     checkBlockStatus();
-  }, [userIdToCheck]);
+  }, [userIdToCheck, organizationId, orgLoading]);
 
   return { hasBlocked, isLoading };
 }

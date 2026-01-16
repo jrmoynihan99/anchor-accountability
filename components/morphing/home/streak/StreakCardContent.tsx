@@ -26,6 +26,10 @@ interface StreakCardContentProps {
   onCheckIn: (status: "success" | "fail") => void;
   onUndo?: (date: string) => void;
   showButtons?: boolean;
+  // NEW: External undo state (optional - if not provided, use internal state)
+  showUndo?: boolean;
+  lastModifiedDate?: string | null;
+  onUndoStateChange?: (showUndo: boolean, date: string | null) => void;
 }
 
 export function StreakCardContent({
@@ -33,24 +37,48 @@ export function StreakCardContent({
   onCheckIn,
   onUndo,
   showButtons = true,
+  showUndo: externalShowUndo,
+  lastModifiedDate: externalLastModifiedDate,
+  onUndoStateChange,
 }: StreakCardContentProps) {
   const { colors } = useTheme();
 
-  const [lastModifiedDate, setLastModifiedDate] = useState<string | null>(null);
-  const [showUndo, setShowUndo] = useState(false);
+  // Internal state (fallback if no external state provided)
+  const [internalLastModifiedDate, setInternalLastModifiedDate] = useState<
+    string | null
+  >(null);
+  const [internalShowUndo, setInternalShowUndo] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const showUndo =
+    externalShowUndo !== undefined ? externalShowUndo : internalShowUndo;
+  const lastModifiedDate =
+    externalLastModifiedDate !== undefined
+      ? externalLastModifiedDate
+      : internalLastModifiedDate;
 
   const currentStreak = getCurrentStreak(streakData);
   const personalBest = getPersonalBest(streakData);
   const dateToAsk = getDateToAskAbout(streakData);
   const hasActiveStreak = currentStreak > 0;
 
+  const updateUndoState = (show: boolean, date: string | null) => {
+    if (onUndoStateChange) {
+      // External state management
+      onUndoStateChange(show, date);
+    } else {
+      // Internal state management
+      setInternalShowUndo(show);
+      setInternalLastModifiedDate(date);
+    }
+  };
+
   const handleSuccessPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const date = dateToAsk?.date;
     onCheckIn("success");
     if (date) {
-      setLastModifiedDate(date);
-      setShowUndo(true);
+      updateUndoState(true, date);
     }
   };
 
@@ -59,18 +87,15 @@ export function StreakCardContent({
     const date = dateToAsk?.date;
     onCheckIn("fail");
     if (date) {
-      setLastModifiedDate(date);
-      setShowUndo(true);
+      updateUndoState(true, date);
     }
   };
 
   const handleUndo = () => {
     if (lastModifiedDate && onUndo) {
-      // ✅ Add onUndo check
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onUndo(lastModifiedDate);
-      setShowUndo(false);
-      setLastModifiedDate(null);
+      updateUndoState(false, null);
     }
   };
 
@@ -491,15 +516,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    // Typography.styles.title applies via ThemedText/PartialAnimatedText
     lineHeight: 24,
   },
-  subtitle: {
-    // Typography.styles.subtitle applies via ThemedText/PartialAnimatedText
-  },
-  description: {
-    // Typography.styles.captionMedium applies via PartialAnimatedText
-  },
+  subtitle: {},
+  description: {},
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -513,12 +533,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     justifyContent: "center",
   },
-  buttonText: {
-    // Typography.styles.button handled by ThemedText type="button"
-  },
-  encouragement: {
-    // Typography.styles.captionMedium handled by ThemedText
-  },
+  buttonText: {},
+  encouragement: {},
   banner: {
     flexDirection: "row",
     alignItems: "center",
@@ -529,9 +545,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  bannerText: {
-    // Typography.styles.body handled by ThemedText
-  },
+  bannerText: {},
   expandIcon: {
     position: "absolute",
     top: 6,
@@ -543,7 +557,5 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     marginTop: 8,
   },
-  undoText: {
-    // Typography.styles.captionMedium handled by ThemedText
-  },
+  undoText: {},
 });

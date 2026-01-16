@@ -1,14 +1,16 @@
 // hooks/useOtherUserAccountability.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function useOtherUserAccountability(userId: string | null) {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [menteeCount, setMenteeCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !organizationId || orgLoading) {
       setMenteeCount(0);
       setLoading(false);
       return;
@@ -20,7 +22,12 @@ export function useOtherUserAccountability(userId: string | null) {
     const fetchMenteeCount = async () => {
       try {
         const menteesQuery = query(
-          collection(db, "accountabilityRelationships"),
+          collection(
+            db,
+            "organizations",
+            organizationId,
+            "accountabilityRelationships"
+          ),
           where("mentorUid", "==", userId),
           where("status", "==", "active")
         );
@@ -35,7 +42,7 @@ export function useOtherUserAccountability(userId: string | null) {
     fetchMenteeCount()
       .then(setMenteeCount)
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId, organizationId, orgLoading]);
 
   return { menteeCount, loading };
 }

@@ -46,8 +46,7 @@ export function RestrictedUserHasMentorView({
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          You already have someone supporting you through daily check-ins and
-          accountability.
+          You already have an Anchor Partner supporting you.
         </ThemedText>
       </View>
 
@@ -77,7 +76,7 @@ export function RestrictedUserHasMentorView({
         >
           Anchor is designed so that each person has{" "}
           <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-            one primary source of accountability
+            one primary source of accountability (their Anchor Partner)
           </ThemedText>{" "}
           — someone who sees their daily check-ins and walks closely with them
           through recovery.
@@ -94,12 +93,11 @@ export function RestrictedUserHasMentorView({
           type="body"
           style={[styles.infoText, { color: colors.textSecondary }]}
         >
-          That said, you’re still free to support others. You can choose to walk
-          alongside{" "}
+          While you can only have one Anchor Partner, you’re able to be{" "}
           <ThemedText type="bodyMedium" style={{ color: colors.text }}>
-            up to three people
-          </ThemedText>{" "}
-          who invite you for accountability.
+            up to three people's Anchor Partner. They can invite you via private
+            chat.
+          </ThemedText>
         </ThemedText>
       </View>
 

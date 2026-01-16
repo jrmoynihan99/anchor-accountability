@@ -1,5 +1,6 @@
 // hooks/useAccountabilityBanners.ts
 import { useAccountability } from "@/context/AccountabilityContext";
+import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs, query, where } from "firebase/firestore";
@@ -24,6 +25,7 @@ const ACK_STORAGE_PREFIX = "accountability_banner_ack_v1";
 
 export function useAccountabilityBanners() {
   const currentUid = auth.currentUser?.uid;
+  const { organizationId, loading: orgLoading } = useOrganization();
   const {
     mentor,
     mentees,
@@ -56,12 +58,12 @@ export function useAccountabilityBanners() {
   const findThreadId = async (
     otherUserId: string
   ): Promise<string | undefined> => {
-    if (!currentUid) return undefined;
+    if (!currentUid || !organizationId) return undefined;
 
     try {
       const threadsAsA = await getDocs(
         query(
-          collection(db, "threads"),
+          collection(db, "organizations", organizationId, "threads"),
           where("userA", "==", currentUid),
           where("userB", "==", otherUserId)
         )
@@ -70,7 +72,7 @@ export function useAccountabilityBanners() {
 
       const threadsAsB = await getDocs(
         query(
-          collection(db, "threads"),
+          collection(db, "organizations", organizationId, "threads"),
           where("userA", "==", otherUserId),
           where("userB", "==", currentUid)
         )
@@ -85,7 +87,8 @@ export function useAccountabilityBanners() {
 
   // Derive banner events from lifecycle transitions
   useEffect(() => {
-    if (loading || !currentUid || activeEvent) return;
+    if (loading || !currentUid || activeEvent || orgLoading || !organizationId)
+      return;
 
     const run = async () => {
       const stored = await AsyncStorage.getItem(ackKey);
@@ -218,6 +221,8 @@ export function useAccountabilityBanners() {
     loading,
     currentUid,
     activeEvent,
+    orgLoading,
+    organizationId,
   ]);
 
   // Acknowledge immediately when shown

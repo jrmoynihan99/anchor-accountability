@@ -89,7 +89,7 @@ export function AccountabilityReceivedInviteBanner({
             type="caption"
             style={[styles.subtitle, { color: colors.textSecondary }]}
           >
-            They want to support your recovery journey
+            They're looking for support in their recovery journey
           </ThemedText>
         </View>
 

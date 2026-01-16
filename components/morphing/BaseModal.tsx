@@ -107,7 +107,7 @@ export function BaseModal({
     });
 
   const overlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 1], [0, 0.5]),
+    opacity: interpolate(progress.value, [0, 1], [0, 0.7]),
   }));
 
   const solidBackgroundStyle = useAnimatedStyle(() => ({

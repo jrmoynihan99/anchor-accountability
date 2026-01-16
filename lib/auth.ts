@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   signInAnonymously,
 } from "firebase/auth";
-import { auth, updateUserTimezone } from "./firebase";
+import { auth } from "./firebase";
 
 const isDev = __DEV__;
 
@@ -39,11 +39,6 @@ export async function ensureSignedIn() {
       if (isDev) {
         console.log("User already signed in:", auth.currentUser.uid);
       }
-    }
-
-    // Update timezone for new users
-    if (isNewUser) {
-      await updateUserTimezone();
     }
   } catch (error) {
     console.error("Error with anonymous sign in:", error);

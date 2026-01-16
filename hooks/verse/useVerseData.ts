@@ -1,4 +1,5 @@
 // hooks/useVerseData.ts
+import { useOrganization } from "@/context/OrganizationContext";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ function getLocalDateString(date: Date): string {
 }
 
 export function useVerseData(offsetDays: number = 0): VerseData {
+  const { organizationId, loading: orgLoading } = useOrganization();
   const [loading, setLoading] = useState(true);
   const [verse, setVerse] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
@@ -43,9 +45,20 @@ export function useVerseData(offsetDays: number = 0): VerseData {
   });
 
   useEffect(() => {
+    if (!organizationId || orgLoading) {
+      setLoading(false);
+      return;
+    }
+
     const fetchVerse = async () => {
       try {
-        const docRef = doc(db, "dailyContent", dateId);
+        const docRef = doc(
+          db,
+          "organizations",
+          organizationId,
+          "dailyContent",
+          dateId
+        );
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -78,7 +91,7 @@ export function useVerseData(offsetDays: number = 0): VerseData {
     };
 
     fetchVerse();
-  }, [dateId]);
+  }, [dateId, organizationId, orgLoading]);
 
   return {
     verse,
