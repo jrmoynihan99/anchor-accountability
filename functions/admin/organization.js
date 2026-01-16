@@ -1,6 +1,7 @@
 const { onCall } = require("firebase-functions/v2/https");
 const { HttpsError } = require("firebase-functions/v2/https");
 const { admin } = require("../utils/database");
+const QRCode = require("qrcode");
 
 const PLATFORM_ADMIN_UID = "yKzJx7a37sPPrDNGnMQ7prpEAbO2";
 
@@ -135,11 +136,25 @@ exports.createOrganization = onCall(async (request) => {
     const pin = await generateUniquePin(db);
     console.log(`🔢 Generated PIN: ${pin}`);
 
+    // Generate deep link and QR code
+    const deepLink = `https://anchoraccountability.com/join?org=${orgId}`;
+    const qrCodeDataURL = await QRCode.toDataURL(deepLink, {
+      width: 400,
+      margin: 2,
+      color: {
+        dark: "#000000",
+        light: "#FFFFFF",
+      },
+    });
+    console.log(`🔗 Generated deep link: ${deepLink}`);
+
     // Create organization document
     await orgRef.set({
       name: name.trim(),
       mission: mission?.trim() || "",
       pin: pin,
+      deepLink: deepLink,
+      qrCode: qrCodeDataURL,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
@@ -181,6 +196,8 @@ exports.createOrganization = onCall(async (request) => {
       organizationId: orgId,
       name: name.trim(),
       pin: pin,
+      deepLink: deepLink,
+      qrCode: qrCodeDataURL,
     };
   } catch (error) {
     console.error(`❌ Error creating organization:`, error);
