@@ -9,7 +9,7 @@ import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth, updateUserTimezone } from "@/lib/firebase";
-import { getDeferredOrg } from "@/lib/installReferrer";
+import { getDeferredOrg } from "@/lib/getDefferedOrg";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
   Stack,
