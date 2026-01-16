@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "797457661968",
+    "project_id": "accountability-app-a7767",
+    "storage_bucket": "accountability-app-a7767.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:797457661968:android:8acee5cbd04fe4a70e8a95",
+        "android_client_info": {
+          "package_name": "com.jrmoynihan99.anchor"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "797457661968-gpfkmu0avohk2k1v9jefoa5vidbp3v5i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDfwpMbwcT4-EoL8hbDgfW5YY6jaQcX6hM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "797457661968-gpfkmu0avohk2k1v9jefoa5vidbp3v5i.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
