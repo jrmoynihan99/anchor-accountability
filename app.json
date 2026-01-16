@@ -61,9 +61,7 @@
       }
     },
     "owner": "jrmoynihan99",
-    "runtimeVersion": {
-      "policy": "1.2.1"
-    },
+    "runtimeVersion": "1.2.1",
     "updates": {
       "url": "https://u.expo.dev/ddea5407-acdc-47f1-b3b8-60ac20360d51"
     }
