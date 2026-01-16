@@ -41,4 +41,29 @@ app-example
 
 scripts/
 
-functions/*.log
+functions/*.logios/Pods/
+ios/build/
+android/build/
+android/.gradle/
+
+# Native build folders
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+android/build/
+android/.gradle/
+android/app/build/
+android/.cxx/
+android/app/.cxx/
+
+# Xcode user-specific files
+ios/**/*.xcuserdata/
+ios/**/*.xcuserstate
+
+# Expo
+.expo/
+.expo-shared/
+
+# macOS
+.DS_Store
+
