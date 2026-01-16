@@ -2,7 +2,7 @@
   "expo": {
     "name": "Anchor",
     "slug": "my-accountability-app",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "anchor",
@@ -28,9 +28,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.jrmoynihan99.anchor",
       "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
-      ]
+      "permissions": ["android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
@@ -64,7 +62,7 @@
     },
     "owner": "jrmoynihan99",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "1.2.1"
     },
     "updates": {
       "url": "https://u.expo.dev/ddea5407-acdc-47f1-b3b8-60ac20360d51"
