@@ -16,4 +16,13 @@ RCT_EXTERN_METHOD(
   (RCTPromiseRejectBlock)reject
 )
 
+RCT_EXTERN_METHOD(
+  setDeferredOrg:
+  (NSString *)org
+  resolver:
+  (RCTPromiseResolveBlock)resolve
+  rejecter:
+  (RCTPromiseRejectBlock)reject
+)
+
 @end

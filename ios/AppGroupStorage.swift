@@ -31,6 +31,17 @@ class AppGroupStorage: NSObject {
   }
 
   @objc
+  func setDeferredOrg(
+    _ org: String,
+    resolver resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    let defaults = UserDefaults(suiteName: suiteName)
+    defaults?.set(org, forKey: orgKey)
+    resolve(true)
+  }
+
+  @objc
   static func requiresMainQueueSetup() -> Bool {
     return false
   }

@@ -10,6 +10,7 @@ import { ThreadProvider, useThread } from "@/context/ThreadContext";
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth, updateUserTimezone } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
+import * as Linking from "expo-linking";
 import {
   Stack,
   router,
@@ -19,7 +20,7 @@ import {
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { ActivityIndicator, NativeModules, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Fonts
@@ -302,6 +303,74 @@ function AppRouterGate({ fontsLoaded }: { fontsLoaded: boolean }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Deep Link Handler                                                   */
+/* ------------------------------------------------------------------ */
+
+function useDeepLinkHandler() {
+  useEffect(() => {
+    // Handle initial URL (app opened from link)
+    const handleInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleDeepLink(initialUrl);
+      }
+    };
+
+    // Handle URL while app is running
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    handleInitialURL();
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  const handleDeepLink = async (url: string) => {
+    console.log("🔗 [Deep Link] Received URL:", url);
+
+    const { path, queryParams } = Linking.parse(url);
+
+    if (path === "join" && queryParams?.org) {
+      const org = queryParams.org as string;
+      console.log("🎯 [Deep Link] Org from URL:", org);
+
+      // Only save if user is NOT authenticated
+      if (!auth.currentUser) {
+        console.log("💾 [Deep Link] User not authenticated, saving org");
+
+        if (Platform.OS === "ios") {
+          const { AppGroupStorage } = NativeModules;
+          if (AppGroupStorage?.setDeferredOrg) {
+            try {
+              await AppGroupStorage.setDeferredOrg(org);
+              console.log("✅ [Deep Link] Saved org to App Group storage");
+            } catch (error) {
+              console.error("❌ [Deep Link] Failed to save org:", error);
+            }
+          }
+        } else if (Platform.OS === "android") {
+          try {
+            const AsyncStorage =
+              require("@react-native-async-storage/async-storage").default;
+            await AsyncStorage.setItem("@deferred_org", org);
+            console.log("✅ [Deep Link] Saved org to AsyncStorage");
+          } catch (error) {
+            console.error("❌ [Deep Link] Failed to save org:", error);
+          }
+        }
+
+        router.push("/onboarding/login");
+      } else {
+        console.log("ℹ️ [Deep Link] User already authenticated, ignoring org");
+      }
+    }
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* RootLayout                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -313,6 +382,9 @@ export default function RootLayout() {
   });
 
   const { authInitialized, claimsReady } = useAuthAndClaimsGate();
+
+  // Handle deep links
+  useDeepLinkHandler();
 
   useEffect(() => {
     if (!auth.currentUser) return;

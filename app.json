@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.jrmoynihan99.anchor",
+      "associatedDomains": ["applinks:anchoraccountability.com"],
       "entitlements": {
         "aps-environment": "production"
       },
@@ -28,7 +29,21 @@
       "edgeToEdgeEnabled": true,
       "package": "com.jrmoynihan99.anchor",
       "googleServicesFile": "./google-services.json",
-      "permissions": ["android.permission.POST_NOTIFICATIONS"]
+      "permissions": ["android.permission.POST_NOTIFICATIONS"],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "anchoraccountability.com",
+              "pathPrefix": "/join"
+            }
+          ],
+          "category": ["BROWSING", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
