@@ -9,7 +9,7 @@ import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth, updateUserTimezone } from "@/lib/firebase";
-import { getDeferredOrg } from "@/lib/getDefferedOrg";
+import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
   Stack,
@@ -199,7 +199,7 @@ function useAuthAndClaimsGate() {
           const functions = getFunctions();
           const setUserOrganization = httpsCallable(
             functions,
-            "setUserOrganization"
+            "setUserOrganization",
           );
 
           await setUserOrganization({ organizationId: "public" });
