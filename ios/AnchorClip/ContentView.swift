@@ -14,30 +14,57 @@ struct ContentView: View {
     @State private var didAttemptOpen = false
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             Spacer()
-
-            Text("Anchor")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            if let org {
-                Text("Join \(org.capitalized)")
-                    .font(.headline)
+            
+            // App Icon
+            Image("AppIconImage")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 100, height: 100)
+                .cornerRadius(22)
+                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+            
+            VStack(spacing: 8) {
+                // App Name with tagline
+                Text("Anchor | Quit Porn Together")
+                    .font(.system(size: 20, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                
+                // Body text with conditional org
+                if let org {
+                    Text("You're joining Anchor through ")
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                    + Text(org.capitalized)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.secondary)
+                    + Text(", download below.")
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("Download below")
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                }
             }
-
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 20)
+            
+            Spacer()
+            
+            // Download Button
             Button(action: openAppStore) {
-                Text("Download Anchor")
-                    .font(.headline)
+                Text("Get")
+                    .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.black)
+                    .frame(height: 50)
+                    .background(Color(red: 0.796, green: 0.678, blue: 0.553))
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
-            .padding(.horizontal)
-
-            Spacer()
+            .padding(.horizontal, 40)
+            .padding(.bottom, 50)
         }
         .padding()
         .onAppear {
