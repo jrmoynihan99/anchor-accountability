@@ -11,51 +11,110 @@ import UIKit
 struct ContentView: View {
 
     let org: String?
+
+    // Animation stages
+    // 0 = org + progress ring
+    // 1 = lock
+    // 2 = app icon
+    @State private var stage: Int = 0
+    @State private var progress: CGFloat = 0
     @State private var didAttemptOpen = false
 
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 28) {
             Spacer()
-            
-            // App Icon
-            Image("AppIconImage")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 100)
-                .cornerRadius(22)
-                .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
-            
-            VStack(spacing: 8) {
-                // App Name with tagline
+
+            // MARK: - Animated Header
+            ZStack {
+                if stage == 0 {
+                    ZStack {
+                        // Background ring
+                        Circle()
+                            .stroke(Color.secondary.opacity(0.2), lineWidth: 2)
+
+                        // Progress ring
+                        Circle()
+                            .trim(from: 0, to: progress)
+                            .stroke(
+                                Color.primary,
+                                style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                            )
+                            .rotationEffect(.degrees(-90))
+
+                        // Org name
+                        HStack(spacing: 6) {
+                            Image(systemName: "building.2.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.primary)
+
+                            Text(org?.capitalized ?? "Your Church")
+                                .font(.system(size: 18, weight: .semibold))
+                                .multilineTextAlignment(.leading)
+                                .foregroundColor(.primary)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.75)
+                        }
+                        .frame(width: 100)
+                    }
+                    .frame(width: 140, height: 140)
+                    .transition(.opacity)
+                }
+
+                if stage == 1 {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 36))
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                if stage == 2 {
+                    Image("AppIconImage")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 100, height: 100)
+                        .cornerRadius(22)
+                        .shadow(
+                            color: Color.black.opacity(0.15),
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.easeInOut(duration: 0.45), value: stage)
+
+            // MARK: - Title + Copy
+            VStack(spacing: 10) {
                 Text("Anchor | Quit Porn Together")
                     .font(.system(size: 20, weight: .semibold))
                     .multilineTextAlignment(.center)
-                
-                // Body text with conditional org
+
                 if let org {
-                    Text("You're joining Anchor through ")
+                    Text("This link will automatically connect you to ")
                         .font(.system(size: 15))
                         .foregroundColor(.secondary)
                     + Text(org.capitalized)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.secondary)
-                    + Text(", download below.")
+                    + Text(" when you install the app.")
                         .font(.system(size: 15))
                         .foregroundColor(.secondary)
                 } else {
-                    Text("Download below")
+                    Text("This link will automatically connect you to the right community when you install the app.")
                         .font(.system(size: 15))
                         .foregroundColor(.secondary)
                 }
             }
             .multilineTextAlignment(.center)
-            .padding(.horizontal, 20)
-            
+            .padding(.horizontal, 24)
+            .opacity(stage >= 2 ? 1 : 0)
+            .animation(.easeInOut(duration: 0.4), value: stage)
+
             Spacer()
-            
-            // Download Button
+
+            // MARK: - App Store Button
             Button(action: openAppStore) {
-                Text("Get")
+                Text("Get on App Store")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
@@ -69,9 +128,36 @@ struct ContentView: View {
         .padding()
         .onAppear {
             attemptOpenAppIfInstalledOnce()
+            runIntroAnimation()
         }
     }
 
+    // MARK: - Animation Driver
+    private func runIntroAnimation() {
+
+        // 1️⃣ Fill progress ring (org confirmation)
+        withAnimation(
+            .timingCurve(0.4, 0.0, 0.2, 1.0, duration: 1.2)
+        ) {
+            progress = 1.0
+        }
+
+        // 2️⃣ Transition to lock
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation {
+                stage = 1
+            }
+        }
+
+        // 3️⃣ Transition to app icon
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation {
+                stage = 2
+            }
+        }
+    }
+
+    // MARK: - Open Main App if Installed
     private func attemptOpenAppIfInstalledOnce() {
         guard !didAttemptOpen else { return }
         didAttemptOpen = true
@@ -82,8 +168,11 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Open App Store
     private func openAppStore() {
-        let appStoreURL = URL(string: "https://apps.apple.com/app/anchor-quit-porn-together/id6752869901")!
+        let appStoreURL = URL(
+            string: "https://apps.apple.com/app/anchor-quit-porn-together/id6752869901"
+        )!
         UIApplication.shared.open(appStoreURL)
     }
 }
