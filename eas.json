@@ -14,11 +14,14 @@
       "channel": "preview"
     },
     "production": {
+      "autoIncrement": true,
+      "channel": "production",
       "android": {
         "buildType": "app-bundle"
       },
-      "autoIncrement": true,
-      "channel": "production"
+      "ios": {
+        "xcodeVersion": "25.0"
+      }
     }
   },
   "submit": {
