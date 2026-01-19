@@ -21,6 +21,12 @@ class AppGroupStorage: NSObject {
   ) {
     let defaults = UserDefaults(suiteName: suiteName)
     let org = defaults?.string(forKey: orgKey)
+
+    // Clear it after reading (so it only works once)
+    if org != nil {
+      defaults?.removeObject(forKey: orgKey)
+    }
+    
     resolve(org)
   }
 
