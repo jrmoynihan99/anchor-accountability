@@ -20,7 +20,7 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "image": "macos-14"
+        "image": "macos-sonoma-14.6-xcode-15.4"
       }
     }
   },
