@@ -20,7 +20,7 @@
         "buildType": "app-bundle"
       },
       "ios": {
-        "xcodeVersion": "25.0"
+        "image": "macos-14"
       }
     }
   },
