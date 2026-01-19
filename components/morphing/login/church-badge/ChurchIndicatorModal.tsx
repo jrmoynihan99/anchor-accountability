@@ -26,6 +26,7 @@ interface ChurchIndicatorModalProps {
   close: (velocity?: number) => void;
   organizationId: string;
   organizationName: string;
+  deferredOrgId: string | null; // ✅ Add this
   onChurchSelected: (organizationId: string, organizationName: string) => void;
 }
 
@@ -38,6 +39,7 @@ export function ChurchIndicatorModal({
   close,
   organizationId,
   organizationName,
+  deferredOrgId, // ✅ Receive this
   onChurchSelected,
 }: ChurchIndicatorModalProps) {
   const { colors, effectiveTheme } = useTheme();
@@ -47,7 +49,7 @@ export function ChurchIndicatorModal({
   const [previousView, setPreviousView] = useState<ViewType | null>(null);
   const [transitionCount, setTransitionCount] = useState(0);
   const [selectedChurch, setSelectedChurch] = useState<OrganizationData | null>(
-    null
+    null,
   );
 
   const justOpened = useRef(false);
@@ -76,7 +78,7 @@ export function ChurchIndicatorModal({
   // Get slide animations based on direction
   const getViewTransition = (
     fromView: ViewType | null,
-    toView: ViewType
+    toView: ViewType,
   ): {
     entering: any;
     exiting: any;
@@ -99,6 +101,15 @@ export function ChurchIndicatorModal({
   // Handlers
   const handleChurchSelect = (org: OrganizationData) => {
     setSelectedChurch(org);
+
+    // ✅ Skip PIN if this is the deferred org
+    if (deferredOrgId && org.id === deferredOrgId) {
+      console.log("✅ [ChurchModal] Skipping PIN for deferred org:", org.id);
+      handlePinSuccess(org.id, org.name);
+      return;
+    }
+
+    // Otherwise, require PIN
     transitionToView("pin");
   };
 

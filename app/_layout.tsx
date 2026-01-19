@@ -9,7 +9,6 @@ import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { auth, updateUserTimezone } from "@/lib/firebase";
-import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
   Stack,
@@ -321,15 +320,6 @@ export default function RootLayout() {
 
     updateUserTimezone();
   }, [claimsReady]);
-
-  useEffect(() => {
-    async function testDeferredOrg() {
-      const org = await getDeferredOrg();
-      console.log("🧭 [Deferred Org]", org);
-    }
-
-    testDeferredOrg();
-  }, []);
 
   // Gate EVERYTHING (including providers that mount Firestore listeners)
   if (!fontsLoaded || !authInitialized || !claimsReady) {

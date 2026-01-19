@@ -1,8 +1,10 @@
-// app/onboarding/login.tsx - UPDATED
+// app/onboarding/login.tsx
 import { useTheme } from "@/context/ThemeContext";
+import { useOrganizations } from "@/hooks/onboarding/useOrganizations";
+import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   StatusBar,
@@ -26,12 +28,18 @@ export default function LoginScreen() {
     organizationName?: string;
   }>();
 
+  // Fetch all organizations
+  const { organizations } = useOrganizations();
+
+  // ✅ Track the deferred org ID (persists even if user clears selection)
+  const [deferredOrgId, setDeferredOrgId] = useState<string | null>(null);
+
   // State for selected organization (can be updated from modal)
   const [organizationId, setOrganizationId] = useState(
-    params.organizationId || "public"
+    params.organizationId || "public",
   );
   const [organizationName, setOrganizationName] = useState(
-    params.organizationName || "Guest"
+    params.organizationName || "Guest",
   );
 
   const [email, setEmail] = useState("");
@@ -42,6 +50,34 @@ export default function LoginScreen() {
   const [isChurchModalVisible, setIsChurchModalVisible] = useState(false);
 
   const { colors } = useTheme();
+
+  // ✅ Load deferred org on mount
+  useEffect(() => {
+    async function loadDeferredOrg() {
+      // URL params take priority over deferred org
+      if (params.organizationId) {
+        return;
+      }
+
+      const orgId = await getDeferredOrg();
+      console.log("🧭 [Login] Deferred org ID:", orgId);
+
+      if (orgId && organizations.length > 0) {
+        const org = organizations.find((o) => o.id === orgId);
+
+        if (org) {
+          console.log("✅ [Login] Pre-filling with deferred org:", org.name);
+          setDeferredOrgId(org.id); // ✅ Remember this permanently
+          setOrganizationId(org.id);
+          setOrganizationName(org.name);
+        } else {
+          console.warn("⚠️ [Login] Deferred org not found in list:", orgId);
+        }
+      }
+    }
+
+    loadDeferredOrg();
+  }, [params.organizationId, organizations]);
 
   // Handle church selection from modal
   const handleChurchSelected = (orgId: string, orgName: string) => {
@@ -104,6 +140,7 @@ export default function LoginScreen() {
               setShowPassword={setShowPassword}
               organizationId={organizationId}
               organizationName={organizationName}
+              deferredOrgId={deferredOrgId} // ✅ Pass this down
               onChurchSelected={handleChurchSelected}
               onChurchModalVisibilityChange={setIsChurchModalVisible}
             />

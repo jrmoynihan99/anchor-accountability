@@ -52,6 +52,7 @@ interface LoginFormProps {
   setShowPassword: (show: boolean) => void;
   organizationId: string;
   organizationName: string;
+  deferredOrgId: string | null; // ✅ Add this
   onChurchSelected: (organizationId: string, organizationName: string) => void;
   onChurchModalVisibilityChange: (visible: boolean) => void;
 }
@@ -78,7 +79,7 @@ function showAuthError({
           onPress: () => setIsSignUp(false),
         },
       ],
-      { cancelable: true }
+      { cancelable: true },
     );
   } else if (
     !isSignUp &&
@@ -91,13 +92,13 @@ function showAuthError({
       "Error",
       "Invalid Email or Password",
       [{ text: "OK", style: "default" }],
-      { cancelable: true }
+      { cancelable: true },
     );
   } else {
     Alert.alert(
       "Error",
       error.message || "Something went wrong. Please try again.",
-      [{ text: "OK", style: "default" }]
+      [{ text: "OK", style: "default" }],
     );
   }
 }
@@ -115,13 +116,14 @@ export function LoginForm({
   setShowPassword,
   organizationId,
   organizationName,
+  deferredOrgId, // ✅ Receive this
   onChurchSelected,
   onChurchModalVisibilityChange,
 }: LoginFormProps) {
   const { colors } = useTheme();
   const { updateOrganization, setIsSigningUp } = useOrganization();
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
-  const insets = useSafeAreaInsets(); // Add this line
+  const insets = useSafeAreaInsets();
 
   const completeOnboarding = async () => {
     try {
@@ -149,7 +151,7 @@ export function LoginForm({
         const userCredential = await createUserWithEmailAndPassword(
           auth,
           email,
-          password
+          password,
         );
 
         // Set custom claim via Cloud Function
@@ -157,7 +159,7 @@ export function LoginForm({
           const functions = getFunctions();
           const setUserOrganization = httpsCallable(
             functions,
-            "setUserOrganization"
+            "setUserOrganization",
           );
           const result = await setUserOrganization({ organizationId });
 
@@ -178,7 +180,7 @@ export function LoginForm({
         } catch (verificationError) {
           console.error(
             "Failed to send verification email:",
-            verificationError
+            verificationError,
           );
         }
       } else {
@@ -208,7 +210,7 @@ export function LoginForm({
         const functions = getFunctions();
         const setUserOrganization = httpsCallable(
           functions,
-          "setUserOrganization"
+          "setUserOrganization",
         );
         const result = await setUserOrganization({ organizationId });
 
@@ -277,6 +279,7 @@ export function LoginForm({
                     close={close}
                     organizationId={organizationId}
                     organizationName={organizationName}
+                    deferredOrgId={deferredOrgId} // ✅ Pass it down
                     onChurchSelected={onChurchSelected}
                   />
                 </>
