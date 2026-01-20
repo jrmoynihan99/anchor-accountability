@@ -14,9 +14,9 @@
 		0D16ECBD2F1EFD2A00F2D924 /* AnchorClipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBB2F1EFD2A00F2D924 /* AnchorClipTests.swift */; };
 		0D16ECC12F1EFD2E00F2D924 /* AnchorClipUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBE2F1EFD2E00F2D924 /* AnchorClipUITests.swift */; };
 		0D16ECC22F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */; };
+		0D16ECC52F1F110100F2D924 /* AppGroupStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */; };
+		0D16ECC62F1F110100F2D924 /* AppGroupStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */; };
 		0D8D15742F1AD5AE00BC0006 /* AnchorClip.app in Embed App Clips */ = {isa = PBXBuildFile; fileRef = 0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		0D8D15872F1ADA9200BC0006 /* AppGroupStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D8D15862F1ADA8800BC0006 /* AppGroupStorage.m */; };
-		0D8D15892F1ADB4200BC0006 /* AppGroupStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D8D15882F1ADB3500BC0006 /* AppGroupStorage.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		8A34F8E8BF210716319C3B32 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D70116897298B943CF40ED16 /* ExpoModulesProvider.swift */; };
@@ -74,11 +74,11 @@
 		0D16ECBB2F1EFD2A00F2D924 /* AnchorClipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipTests.swift; sourceTree = "<group>"; };
 		0D16ECBE2F1EFD2E00F2D924 /* AnchorClipUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipUITests.swift; sourceTree = "<group>"; };
 		0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppGroupStorage.m; sourceTree = "<group>"; };
+		0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStorage.swift; sourceTree = "<group>"; };
 		0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnchorClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D15602F1AD5AE00BC0006 /* AnchorClipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D156A2F1AD5AE00BC0006 /* AnchorClipUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		0D8D15862F1ADA8800BC0006 /* AppGroupStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStorage.m; sourceTree = "<group>"; };
-		0D8D15882F1ADB3500BC0006 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStorage.swift; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Anchor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Anchor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Anchor/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Anchor/Info.plist; sourceTree = "<group>"; };
@@ -160,8 +160,8 @@
 		13B07FAE1A68108700A75B9A /* Anchor */ = {
 			isa = PBXGroup;
 			children = (
-				0D8D15882F1ADB3500BC0006 /* AppGroupStorage.swift */,
-				0D8D15862F1ADA8800BC0006 /* AppGroupStorage.m */,
+				0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */,
+				0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */,
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* Anchor-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
@@ -625,10 +625,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D16ECC52F1F110100F2D924 /* AppGroupStorage.swift in Sources */,
+				0D16ECC62F1F110100F2D924 /* AppGroupStorage.m in Sources */,
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				8A34F8E8BF210716319C3B32 /* ExpoModulesProvider.swift in Sources */,
-				0D8D15872F1ADA9200BC0006 /* AppGroupStorage.m in Sources */,
-				0D8D15892F1ADB4200BC0006 /* AppGroupStorage.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -694,6 +694,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.jrmoynihan99.anchor.Clip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -701,7 +703,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -746,13 +748,15 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.jrmoynihan99.anchor.Clip;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
