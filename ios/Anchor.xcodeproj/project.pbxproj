@@ -3,10 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D16ECB62F1EFD2300F2D924 /* AnchorClipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECB02F1EFD2300F2D924 /* AnchorClipApp.swift */; };
+		0D16ECB72F1EFD2300F2D924 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECB22F1EFD2300F2D924 /* ContentView.swift */; };
+		0D16ECB82F1EFD2300F2D924 /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECB42F1EFD2300F2D924 /* Item.swift */; };
+		0D16ECB92F1EFD2300F2D924 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0D16ECB12F1EFD2300F2D924 /* Assets.xcassets */; };
+		0D16ECBD2F1EFD2A00F2D924 /* AnchorClipTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBB2F1EFD2A00F2D924 /* AnchorClipTests.swift */; };
+		0D16ECC12F1EFD2E00F2D924 /* AnchorClipUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBE2F1EFD2E00F2D924 /* AnchorClipUITests.swift */; };
+		0D16ECC22F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */; };
 		0D8D15742F1AD5AE00BC0006 /* AnchorClip.app in Embed App Clips */ = {isa = PBXBuildFile; fileRef = 0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0D8D15872F1ADA9200BC0006 /* AppGroupStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D8D15862F1ADA8800BC0006 /* AppGroupStorage.m */; };
 		0D8D15892F1ADB4200BC0006 /* AppGroupStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D8D15882F1ADB3500BC0006 /* AppGroupStorage.swift */; };
@@ -58,6 +65,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0D16ECAF2F1EFD2300F2D924 /* AnchorClip.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AnchorClip.entitlements; sourceTree = "<group>"; };
+		0D16ECB02F1EFD2300F2D924 /* AnchorClipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipApp.swift; sourceTree = "<group>"; };
+		0D16ECB12F1EFD2300F2D924 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0D16ECB22F1EFD2300F2D924 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		0D16ECB32F1EFD2300F2D924 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		0D16ECB42F1EFD2300F2D924 /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
+		0D16ECBB2F1EFD2A00F2D924 /* AnchorClipTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipTests.swift; sourceTree = "<group>"; };
+		0D16ECBE2F1EFD2E00F2D924 /* AnchorClipUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipUITests.swift; sourceTree = "<group>"; };
+		0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnchorClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D15602F1AD5AE00BC0006 /* AnchorClipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D156A2F1AD5AE00BC0006 /* AnchorClipUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -77,22 +93,6 @@
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Anchor/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Anchor-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Anchor-Bridging-Header.h"; path = "Anchor/Anchor-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		0D8D157C2F1AD5AE00BC0006 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 0D8D154F2F1AD5AD00BC0006 /* AnchorClip */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		0D8D15512F1AD5AD00BC0006 /* AnchorClip */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (0D8D157C2F1AD5AE00BC0006 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AnchorClip; sourceTree = "<group>"; };
-		0D8D15632F1AD5AE00BC0006 /* AnchorClipTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AnchorClipTests; sourceTree = "<group>"; };
-		0D8D156D2F1AD5AE00BC0006 /* AnchorClipUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AnchorClipUITests; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		0D8D154D2F1AD5AD00BC0006 /* Frameworks */ = {
@@ -127,6 +127,36 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0D16ECB52F1EFD2300F2D924 /* AnchorClip */ = {
+			isa = PBXGroup;
+			children = (
+				0D16ECAF2F1EFD2300F2D924 /* AnchorClip.entitlements */,
+				0D16ECB02F1EFD2300F2D924 /* AnchorClipApp.swift */,
+				0D16ECB12F1EFD2300F2D924 /* Assets.xcassets */,
+				0D16ECB22F1EFD2300F2D924 /* ContentView.swift */,
+				0D16ECB32F1EFD2300F2D924 /* Info.plist */,
+				0D16ECB42F1EFD2300F2D924 /* Item.swift */,
+			);
+			path = AnchorClip;
+			sourceTree = "<group>";
+		};
+		0D16ECBC2F1EFD2A00F2D924 /* AnchorClipTests */ = {
+			isa = PBXGroup;
+			children = (
+				0D16ECBB2F1EFD2A00F2D924 /* AnchorClipTests.swift */,
+			);
+			path = AnchorClipTests;
+			sourceTree = "<group>";
+		};
+		0D16ECC02F1EFD2E00F2D924 /* AnchorClipUITests */ = {
+			isa = PBXGroup;
+			children = (
+				0D16ECBE2F1EFD2E00F2D924 /* AnchorClipUITests.swift */,
+				0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */,
+			);
+			path = AnchorClipUITests;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* Anchor */ = {
 			isa = PBXGroup;
 			children = (
@@ -164,9 +194,9 @@
 			children = (
 				13B07FAE1A68108700A75B9A /* Anchor */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
-				0D8D15512F1AD5AD00BC0006 /* AnchorClip */,
-				0D8D15632F1AD5AE00BC0006 /* AnchorClipTests */,
-				0D8D156D2F1AD5AE00BC0006 /* AnchorClipUITests */,
+				0D16ECB52F1EFD2300F2D924 /* AnchorClip */,
+				0D16ECBC2F1EFD2A00F2D924 /* AnchorClipTests */,
+				0D16ECC02F1EFD2E00F2D924 /* AnchorClipUITests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				F2C657D00B957256243FCA8C /* Pods */,
@@ -237,9 +267,6 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				0D8D15512F1AD5AD00BC0006 /* AnchorClip */,
-			);
 			name = AnchorClip;
 			packageProductDependencies = (
 			);
@@ -260,9 +287,6 @@
 			dependencies = (
 				0D8D15622F1AD5AE00BC0006 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				0D8D15632F1AD5AE00BC0006 /* AnchorClipTests */,
-			);
 			name = AnchorClipTests;
 			packageProductDependencies = (
 			);
@@ -282,9 +306,6 @@
 			);
 			dependencies = (
 				0D8D156C2F1AD5AE00BC0006 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				0D8D156D2F1AD5AE00BC0006 /* AnchorClipUITests */,
 			);
 			name = AnchorClipUITests;
 			packageProductDependencies = (
@@ -323,6 +344,7 @@
 		83CBB9F71A601CBA00E9B192 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = NO;
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
@@ -343,7 +365,7 @@
 				};
 			};
 			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Anchor" */;
-			compatibilityVersion = "Xcode 3.2";
+			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -368,6 +390,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D16ECB92F1EFD2300F2D924 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -575,6 +598,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D16ECB62F1EFD2300F2D924 /* AnchorClipApp.swift in Sources */,
+				0D16ECB72F1EFD2300F2D924 /* ContentView.swift in Sources */,
+				0D16ECB82F1EFD2300F2D924 /* Item.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -582,6 +608,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D16ECBD2F1EFD2A00F2D924 /* AnchorClipTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -589,6 +616,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0D16ECC12F1EFD2E00F2D924 /* AnchorClipUITests.swift in Sources */,
+				0D16ECC22F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
