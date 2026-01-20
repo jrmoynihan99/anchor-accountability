@@ -4,7 +4,7 @@ import { useOrganizations } from "@/hooks/onboarding/useOrganizations";
 import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Keyboard,
   StatusBar,
@@ -28,11 +28,14 @@ export default function LoginScreen() {
     organizationName?: string;
   }>();
 
-  // Fetch all organizations
+  // Fetch all organizations from Firebase
   const { organizations } = useOrganizations();
 
-  // ✅ Track the deferred org ID (persists even if user clears selection)
+  // Track the deferred org ID (persists even if user clears selection)
   const [deferredOrgId, setDeferredOrgId] = useState<string | null>(null);
+
+  // Store the org ID from storage so we don't lose it after the first read
+  const storedOrgId = useRef<string | null | undefined>(undefined);
 
   // State for selected organization (can be updated from modal)
   const [organizationId, setOrganizationId] = useState(
@@ -51,7 +54,7 @@ export default function LoginScreen() {
 
   const { colors } = useTheme();
 
-  // ✅ Load deferred org on mount
+  // Load deferred org on mount and when organizations load
   useEffect(() => {
     async function loadDeferredOrg() {
       // URL params take priority over deferred org
@@ -59,25 +62,32 @@ export default function LoginScreen() {
         return;
       }
 
-      const orgId = await getDeferredOrg();
-      console.log("🧭 [Login] Deferred org ID:", orgId);
+      // Only read from storage once (before it gets cleared)
+      if (storedOrgId.current === undefined) {
+        storedOrgId.current = await getDeferredOrg();
+      }
 
-      if (orgId && organizations.length > 0) {
-        const org = organizations.find((o) => o.id === orgId);
+      // Wait for organizations to load from Firebase
+      if (!storedOrgId.current || organizations.length === 0) {
+        return;
+      }
 
-        if (org) {
-          console.log("✅ [Login] Pre-filling with deferred org:", org.name);
-          setDeferredOrgId(org.id); // ✅ Remember this permanently
-          setOrganizationId(org.id);
-          setOrganizationName(org.name);
-        } else {
-          console.warn("⚠️ [Login] Deferred org not found in list:", orgId);
-        }
+      // Only set state once
+      if (deferredOrgId !== null) {
+        return;
+      }
+
+      const org = organizations.find((o) => o.id === storedOrgId.current);
+
+      if (org) {
+        setDeferredOrgId(org.id);
+        setOrganizationId(org.id);
+        setOrganizationName(org.name);
       }
     }
 
     loadDeferredOrg();
-  }, [params.organizationId, organizations]);
+  }, [params.organizationId, organizations, deferredOrgId]);
 
   // Handle church selection from modal
   const handleChurchSelected = (orgId: string, orgName: string) => {
@@ -140,7 +150,7 @@ export default function LoginScreen() {
               setShowPassword={setShowPassword}
               organizationId={organizationId}
               organizationName={organizationName}
-              deferredOrgId={deferredOrgId} // ✅ Pass this down
+              deferredOrgId={deferredOrgId}
               onChurchSelected={handleChurchSelected}
               onChurchModalVisibilityChange={setIsChurchModalVisible}
             />

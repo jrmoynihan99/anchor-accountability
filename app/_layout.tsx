@@ -365,6 +365,7 @@ function useDeepLinkHandler() {
         router.push("/onboarding/login");
       } else {
         console.log("ℹ️ [Deep Link] User already authenticated, ignoring org");
+        router.replace("/(tabs)");
       }
     }
   };
