@@ -479,7 +479,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PROJECT_DIR}/scripts/sync-app-clip-version.sh\"\n";
+			shellScript = "#!/bin/bash\nset -e\n\necho \"🔄 Syncing App Clip build number...\"\n\nMAIN_PLIST=\"${PROJECT_DIR}/Anchor/Info.plist\"\nCLIP_PLIST=\"${PROJECT_DIR}/AnchorClip/Info.plist\"\n\nMAIN_BUILD=$(/usr/libexec/PlistBuddy -c \"Print CFBundleVersion\" \"$MAIN_PLIST\")\necho \"Main app build number: $MAIN_BUILD\"\n\n/usr/libexec/PlistBuddy -c \"Set CFBundleVersion $MAIN_BUILD\" \"$CLIP_PLIST\"\n\necho \"✅ Synced App Clip to build number: $MAIN_BUILD\"\n";
+			showEnvVarsInLog = 0;
 		};
 		487BA42E8682127A86A5D4C9 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
