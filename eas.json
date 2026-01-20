@@ -18,9 +18,6 @@
       "channel": "production",
       "android": {
         "buildType": "app-bundle"
-      },
-      "ios": {
-        "buildHook": "./ios/sync-build-numbers.sh"
       }
     }
   },
