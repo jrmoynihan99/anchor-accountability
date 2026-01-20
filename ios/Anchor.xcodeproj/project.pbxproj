@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 90;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -53,14 +53,12 @@
 /* Begin PBXCopyFilesBuildPhase section */
 		0D8D15752F1AD5AE00BC0006 /* Embed App Clips */ = {
 			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
 			dstPath = "$(CONTENTS_FOLDER_PATH)/AppClips";
-			dstSubfolderSpec = 16;
+			dstSubfolder = Product;
 			files = (
 				0D8D15742F1AD5AE00BC0006 /* AnchorClip.app in Embed App Clips */,
 			);
 			name = "Embed App Clips";
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -97,32 +95,24 @@
 /* Begin PBXFrameworksBuildPhase section */
 		0D8D154D2F1AD5AD00BC0006 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D155D2F1AD5AE00BC0006 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D15672F1AD5AE00BC0006 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				C4BC86BA698434FEBFDDB1AD /* libPods-Anchor.a in Frameworks */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -265,11 +255,7 @@
 			);
 			buildRules = (
 			);
-			dependencies = (
-			);
 			name = AnchorClip;
-			packageProductDependencies = (
-			);
 			productName = AnchorClip;
 			productReference = 0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */;
 			productType = "com.apple.product-type.application.on-demand-install-capable";
@@ -288,8 +274,6 @@
 				0D8D15622F1AD5AE00BC0006 /* PBXTargetDependency */,
 			);
 			name = AnchorClipTests;
-			packageProductDependencies = (
-			);
 			productName = AnchorClipTests;
 			productReference = 0D8D15602F1AD5AE00BC0006 /* AnchorClipTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -308,8 +292,6 @@
 				0D8D156C2F1AD5AE00BC0006 /* PBXTargetDependency */,
 			);
 			name = AnchorClipUITests;
-			packageProductDependencies = (
-			);
 			productName = AnchorClipUITests;
 			productReference = 0D8D156A2F1AD5AE00BC0006 /* AnchorClipUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -365,7 +347,6 @@
 				};
 			};
 			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Anchor" */;
-			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -373,6 +354,7 @@
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
+			preferredProjectObjectVersion = 90;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -388,36 +370,28 @@
 /* Begin PBXResourcesBuildPhase section */
 		0D8D154E2F1AD5AD00BC0006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				0D16ECB92F1EFD2300F2D924 /* Assets.xcassets in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D155E2F1AD5AE00BC0006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D15682F1AD5AE00BC0006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				B2A6392DE0B645DDD22456EF /* PrivacyInfo.xcprivacy in Resources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
@@ -425,50 +399,83 @@
 		00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
 			inputPaths = (
 				"$(SRCROOT)/.xcode.env",
 				"$(SRCROOT)/.xcode.env.local",
 			);
 			name = "Bundle React Native code and images";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\nif [[ -z \"$ENTRY_FILE\" ]]; then\n  # Set the entry JS file using the bundler's entry resolution.\n  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"\nfi\n\nif [[ -z \"$CLI_PATH\" ]]; then\n  # Use Expo CLI\n  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"\nfi\nif [[ -z \"$BUNDLE_COMMAND\" ]]; then\n  # Default Expo CLI command for bundling\n  export BUNDLE_COMMAND=\"export:embed\"\nfi\n\n# Source .xcode.env.updates if it exists to allow\n# SKIP_BUNDLING to be unset if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.updates\"\nfi\n# Source local changes to allow overrides\n# if needed\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
+			shellScript = (
+				"if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then",
+				"  source \"$PODS_ROOT/../.xcode.env\"",
+				"fi",
+				"if [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then",
+				"  source \"$PODS_ROOT/../.xcode.env.local\"",
+				"fi",
+				"",
+				"# The project root by default is one level up from the ios directory",
+				"export PROJECT_ROOT=\"$PROJECT_DIR\"/..",
+				"",
+				"if [[ \"$CONFIGURATION\" = *Debug* ]]; then",
+				"  export SKIP_BUNDLING=1",
+				"fi",
+				"if [[ -z \"$ENTRY_FILE\" ]]; then",
+				"  # Set the entry JS file using the bundler's entry resolution.",
+				"  export ENTRY_FILE=\"$(\"$NODE_BINARY\" -e \"require('expo/scripts/resolveAppEntry')\" \"$PROJECT_ROOT\" ios absolute | tail -n 1)\"",
+				"fi",
+				"",
+				"if [[ -z \"$CLI_PATH\" ]]; then",
+				"  # Use Expo CLI",
+				"  export CLI_PATH=\"$(\"$NODE_BINARY\" --print \"require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })\")\"",
+				"fi",
+				"if [[ -z \"$BUNDLE_COMMAND\" ]]; then",
+				"  # Default Expo CLI command for bundling",
+				"  export BUNDLE_COMMAND=\"export:embed\"",
+				"fi",
+				"",
+				"# Source .xcode.env.updates if it exists to allow",
+				"# SKIP_BUNDLING to be unset if needed",
+				"if [[ -f \"$PODS_ROOT/../.xcode.env.updates\" ]]; then",
+				"  source \"$PODS_ROOT/../.xcode.env.updates\"",
+				"fi",
+				"# Source local changes to allow overrides",
+				"# if needed",
+				"if [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then",
+				"  source \"$PODS_ROOT/../.xcode.env.local\"",
+				"fi",
+				"",
+				"`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`",
+				"",
+				"",
+			);
 		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-Anchor-checkManifestLockResult.txt",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			shellScript = (
+				"diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null",
+				"if [ $? != 0 ] ; then",
+				"    # print error to STDERR",
+				"    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2",
+				"    exit 1",
+				"fi",
+				"# This output is used by Xcode 'outputs' to avoid re-running this script phase.",
+				"echo \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"",
+				"",
+			);
 			showEnvVarsInLog = 0;
 		};
 		487BA42E8682127A86A5D4C9 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"$(SRCROOT)/.xcode.env",
 				"$(SRCROOT)/.xcode.env.local",
@@ -476,20 +483,18 @@
 				"$(SRCROOT)/Pods/Target Support Files/Pods-Anchor/expo-configure-project.sh",
 			);
 			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(SRCROOT)/Pods/Target Support Files/Pods-Anchor/ExpoModulesProvider.swift",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Anchor/expo-configure-project.sh\"\n";
+			shellScript = (
+				"# This script configures Expo modules and generates the modules provider file.",
+				"bash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Anchor/expo-configure-project.sh\"",
+				"",
+			);
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
@@ -564,16 +569,15 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevLauncher.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXDevMenu.bundle",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-resources.sh\"\n";
+			shellScript = (
+				"\"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-resources.sh\"",
+				"",
+			);
 			showEnvVarsInLog = 0;
 		};
 		D03EF2BF24B1784E00AC0889 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
@@ -586,9 +590,11 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-frameworks.sh\"\n";
+			shellScript = (
+				"\"${PODS_ROOT}/Target Support Files/Pods-Anchor/Pods-Anchor-frameworks.sh\"",
+				"",
+			);
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -596,41 +602,33 @@
 /* Begin PBXSourcesBuildPhase section */
 		0D8D154C2F1AD5AD00BC0006 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				0D16ECB62F1EFD2300F2D924 /* AnchorClipApp.swift in Sources */,
 				0D16ECB72F1EFD2300F2D924 /* ContentView.swift in Sources */,
 				0D16ECB82F1EFD2300F2D924 /* Item.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D155C2F1AD5AE00BC0006 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				0D16ECBD2F1EFD2A00F2D924 /* AnchorClipTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		0D8D15662F1AD5AE00BC0006 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				0D16ECC12F1EFD2E00F2D924 /* AnchorClipUITests.swift in Sources */,
 				0D16ECC22F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				8A34F8E8BF210716319C3B32 /* ExpoModulesProvider.swift in Sources */,
 				0D8D15872F1ADA9200BC0006 /* AppGroupStorage.m in Sources */,
 				0D8D15892F1ADB4200BC0006 /* AppGroupStorage.swift in Sources */,
 			);
-			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
@@ -653,7 +651,7 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		0D8D15762F1AD5AE00BC0006 /* Debug */ = {
+		0D8D15762F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClip" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -705,7 +703,7 @@
 			};
 			name = Debug;
 		};
-		0D8D15772F1AD5AE00BC0006 /* Release */ = {
+		0D8D15772F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClip" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -756,7 +754,7 @@
 			};
 			name = Release;
 		};
-		0D8D15782F1AD5AE00BC0006 /* Debug */ = {
+		0D8D15782F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClipTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -794,7 +792,7 @@
 			};
 			name = Debug;
 		};
-		0D8D15792F1AD5AE00BC0006 /* Release */ = {
+		0D8D15792F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClipTests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -831,7 +829,7 @@
 			};
 			name = Release;
 		};
-		0D8D157A2F1AD5AE00BC0006 /* Debug */ = {
+		0D8D157A2F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClipUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -868,7 +866,7 @@
 			};
 			name = Debug;
 		};
-		0D8D157B2F1AD5AE00BC0006 /* Release */ = {
+		0D8D157B2F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClipUITests" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -904,7 +902,7 @@
 			};
 			name = Release;
 		};
-		13B07F941A680F5B00A75B9A /* Debug */ = {
+		13B07F941A680F5B00A75B9A /* Debug configuration for PBXNativeTarget "Anchor" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D1CD5BA01891C74541CCCAA9 /* Pods-Anchor.debug.xcconfig */;
 			buildSettings = {
@@ -941,7 +939,7 @@
 			};
 			name = Debug;
 		};
-		13B07F951A680F5B00A75B9A /* Release */ = {
+		13B07F951A680F5B00A75B9A /* Release configuration for PBXNativeTarget "Anchor" */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 63AF8D72E43CB25E92AA7D3C /* Pods-Anchor.release.xcconfig */;
 			buildSettings = {
@@ -972,7 +970,7 @@
 			};
 			name = Release;
 		};
-		83CBBA201A601CBA00E9B192 /* Debug */ = {
+		83CBBA201A601CBA00E9B192 /* Debug configuration for PBXProject "Anchor" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1035,7 +1033,7 @@
 			};
 			name = Debug;
 		};
-		83CBBA211A601CBA00E9B192 /* Release */ = {
+		83CBBA211A601CBA00E9B192 /* Release configuration for PBXProject "Anchor" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1096,46 +1094,41 @@
 		0D8D157D2F1AD5AE00BC0006 /* Build configuration list for PBXNativeTarget "AnchorClip" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0D8D15762F1AD5AE00BC0006 /* Debug */,
-				0D8D15772F1AD5AE00BC0006 /* Release */,
+				0D8D15762F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClip" */,
+				0D8D15772F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClip" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		0D8D157E2F1AD5AE00BC0006 /* Build configuration list for PBXNativeTarget "AnchorClipTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0D8D15782F1AD5AE00BC0006 /* Debug */,
-				0D8D15792F1AD5AE00BC0006 /* Release */,
+				0D8D15782F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClipTests" */,
+				0D8D15792F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClipTests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		0D8D157F2F1AD5AE00BC0006 /* Build configuration list for PBXNativeTarget "AnchorClipUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				0D8D157A2F1AD5AE00BC0006 /* Debug */,
-				0D8D157B2F1AD5AE00BC0006 /* Release */,
+				0D8D157A2F1AD5AE00BC0006 /* Debug configuration for PBXNativeTarget "AnchorClipUITests" */,
+				0D8D157B2F1AD5AE00BC0006 /* Release configuration for PBXNativeTarget "AnchorClipUITests" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Anchor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				13B07F941A680F5B00A75B9A /* Debug */,
-				13B07F951A680F5B00A75B9A /* Release */,
+				13B07F941A680F5B00A75B9A /* Debug configuration for PBXNativeTarget "Anchor" */,
+				13B07F951A680F5B00A75B9A /* Release configuration for PBXNativeTarget "Anchor" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "Anchor" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				83CBBA201A601CBA00E9B192 /* Debug */,
-				83CBBA211A601CBA00E9B192 /* Release */,
+				83CBBA201A601CBA00E9B192 /* Debug configuration for PBXProject "Anchor" */,
+				83CBBA211A601CBA00E9B192 /* Release configuration for PBXProject "Anchor" */,
 			);
-			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
