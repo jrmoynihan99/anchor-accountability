@@ -18,6 +18,9 @@
       "channel": "production",
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "prebuildCommand": "bash -c '/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $(/usr/libexec/PlistBuddy -c \"Print :CFBundleVersion\" ios/Anchor/Info.plist)\" ios/AnchorClip/Info.plist'"
       }
     }
   },
