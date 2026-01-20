@@ -1,15 +1,28 @@
 #!/bin/bash
 
-# Get the build number from the main app
-MAIN_BUILD_NUMBER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" Anchor/Info.plist)
+echo "========== SYNC BUILD NUMBERS DEBUG =========="
+echo "Working directory: $(pwd)"
+echo "Listing ios directory:"
+ls -la ios/
 
-echo "Main app build number: $MAIN_BUILD_NUMBER"
+echo ""
+echo "---Anchor Info.plist---"
+if [ -f "ios/Anchor/Info.plist" ]; then
+  /usr/libexec/PlistBuddy -c "Print" ios/Anchor/Info.plist || echo "Failed to read Anchor Info.plist"
+else
+  echo "ios/Anchor/Info.plist does NOT exist"
+fi
 
-# Set the App Clip build number to match
-/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $MAIN_BUILD_NUMBER" AnchorClip/Info.plist
+echo ""
+echo "---AnchorClip Info.plist---"
+if [ -f "ios/AnchorClip/Info.plist" ]; then
+  /usr/libexec/PlistBuddy -c "Print" ios/AnchorClip/Info.plist || echo "Failed to read AnchorClip Info.plist"
+else
+  echo "ios/AnchorClip/Info.plist does NOT exist"
+fi
 
-echo "App Clip build number updated to: $MAIN_BUILD_NUMBER"
+echo ""
+echo "---Checking project.pbxproj for CURRENT_PROJECT_VERSION---"
+grep "CURRENT_PROJECT_VERSION" ios/Anchor.xcodeproj/project.pbxproj | head -5
 
-# Verify they match
-CLIP_BUILD_NUMBER=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" AnchorClip/Info.plist)
-echo "Verification - Main: $MAIN_BUILD_NUMBER, Clip: $CLIP_BUILD_NUMBER"
+echo "========== END DEBUG =========="
