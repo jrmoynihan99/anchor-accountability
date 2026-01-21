@@ -486,7 +486,7 @@ export function LoginForm({
         {/* Anonymous Badge - Interactive Modal */}
         <ButtonModalTransitionBridge
           modalWidthPercent={0.8}
-          modalHeightPercent={0.5}
+          modalHeightPercent={0.6}
         >
           {({
             open,
