@@ -23,8 +23,6 @@
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
-      
-      <!-- Custom scheme (anchor://) -->
       <intent-filter>
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
@@ -32,8 +30,6 @@
         <data android:scheme="anchor"/>
         <data android:scheme="exp+my-accountability-app"/>
       </intent-filter>
-      
-      <!-- HTTPS App Links (anchoraccountability.com) -->
       <intent-filter android:autoVerify="true">
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
