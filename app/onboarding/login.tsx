@@ -1,10 +1,7 @@
-// app/onboarding/login.tsx
 import { useTheme } from "@/context/ThemeContext";
-import { useOrganizations } from "@/hooks/onboarding/useOrganizations";
-import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Keyboard,
   StatusBar,
@@ -20,6 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LoginForm } from "../../components/onboarding/login/LoginForm";
 import { LoginHeader } from "../../components/onboarding/login/LoginHeader";
+import { useOnboardingContext } from "./_layout";
 
 export default function LoginScreen() {
   // Get organization params from route
@@ -28,21 +26,21 @@ export default function LoginScreen() {
     organizationName?: string;
   }>();
 
-  // Fetch all organizations from Firebase
-  const { organizations } = useOrganizations();
+  // Get deferred org from onboarding context (persists across navigation)
+  const {
+    deferredOrgId: contextDeferredOrgId,
+    deferredOrgName: contextDeferredOrgName,
+  } = useOnboardingContext();
 
   // Track the deferred org ID (persists even if user clears selection)
   const [deferredOrgId, setDeferredOrgId] = useState<string | null>(null);
 
-  // Store the org ID from storage so we don't lose it after the first read
-  const storedOrgId = useRef<string | null | undefined>(undefined);
-
   // State for selected organization (can be updated from modal)
   const [organizationId, setOrganizationId] = useState(
-    params.organizationId || "public",
+    params.organizationId || contextDeferredOrgId || "public",
   );
   const [organizationName, setOrganizationName] = useState(
-    params.organizationName || "Guest",
+    params.organizationName || contextDeferredOrgName || "Guest",
   );
 
   const [email, setEmail] = useState("");
@@ -54,40 +52,14 @@ export default function LoginScreen() {
 
   const { colors } = useTheme();
 
-  // Load deferred org on mount and when organizations load
+  // Set deferred org from context when it loads
   useEffect(() => {
-    async function loadDeferredOrg() {
-      // URL params take priority over deferred org
-      if (params.organizationId) {
-        return;
-      }
-
-      // Only read from storage once (before it gets cleared)
-      if (storedOrgId.current === undefined) {
-        storedOrgId.current = await getDeferredOrg();
-      }
-
-      // Wait for organizations to load from Firebase
-      if (!storedOrgId.current || organizations.length === 0) {
-        return;
-      }
-
-      // Only set state once
-      if (deferredOrgId !== null) {
-        return;
-      }
-
-      const org = organizations.find((o) => o.id === storedOrgId.current);
-
-      if (org) {
-        setDeferredOrgId(org.id);
-        setOrganizationId(org.id);
-        setOrganizationName(org.name);
-      }
+    if (contextDeferredOrgId && !params.organizationId) {
+      setDeferredOrgId(contextDeferredOrgId);
+      setOrganizationId(contextDeferredOrgId);
+      setOrganizationName(contextDeferredOrgName || "Guest");
     }
-
-    loadDeferredOrg();
-  }, [params.organizationId, organizations, deferredOrgId]);
+  }, [contextDeferredOrgId, contextDeferredOrgName, params.organizationId]);
 
   // Handle church selection from modal
   const handleChurchSelected = (orgId: string, orgName: string) => {
