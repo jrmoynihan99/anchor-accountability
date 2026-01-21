@@ -77,7 +77,7 @@
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "_XCAppClipURL"
-            value = "https://anchoraccountability.com/join?org=aletheia"
+            value = "https://anchoraccountability.com/join?org=aletheia&amp;name=Every_Nation_Campus"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

@@ -20,6 +20,30 @@ struct ContentView: View {
     @State private var progress: CGFloat = 0
     @State private var didAttemptOpen = false
 
+    // Dynamic circle size - only grows if text is long
+    private var circleSize: CGFloat {
+        guard let org = org else { return 140 }
+        
+        let textLength = org.count
+        
+        // Only grow if text is longer than ~12 characters
+        if textLength <= 12 {
+            return 140
+        }
+        
+        // Grow by ~6px per character over 12
+        let extraSize = CGFloat(textLength - 12) * 6
+        let calculatedSize = 140 + extraSize
+        
+        // Cap at 200
+        return min(calculatedSize, 200)
+    }
+    
+    // Dynamic text width
+    private var textWidth: CGFloat {
+        circleSize * 0.7
+    }
+
     var body: some View {
         VStack(spacing: 28) {
             Spacer()
@@ -30,7 +54,7 @@ struct ContentView: View {
                     // Background ring
                     Circle()
                         .stroke(Color.secondary.opacity(0.2), lineWidth: 2)
-                        .frame(width: 140, height: 140)
+                        .frame(width: circleSize, height: circleSize)
 
                     // Progress ring
                     Circle()
@@ -40,7 +64,7 @@ struct ContentView: View {
                             style: StrokeStyle(lineWidth: 2, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .frame(width: 140, height: 140)
+                        .frame(width: circleSize, height: circleSize)
                 }
 
                 if stage == 0 {
@@ -57,7 +81,7 @@ struct ContentView: View {
                             .lineLimit(2)
                             .minimumScaleFactor(0.75)
                     }
-                    .frame(width: 100)
+                    .frame(width: textWidth)
                     .transition(.opacity)
                 }
 

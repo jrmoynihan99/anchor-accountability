@@ -24,15 +24,21 @@ struct AnchorClipApp: App {
     private func handleInvocation(_ activity: NSUserActivity) {
         guard
             let url = activity.webpageURL,
-            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            let orgValue = components.queryItems?.first(where: { $0.name == "org" })?.value
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         else {
             return
         }
 
-        org = orgValue
+        let orgValue = components.queryItems?.first(where: { $0.name == "org" })?.value
+        let nameValue = components.queryItems?.first(where: { $0.name == "name" })?.value
+        
+        // Use display name if provided, otherwise fall back to org ID
+        org = nameValue?.replacingOccurrences(of: "_", with: " ") ?? orgValue
 
-        let defaults = UserDefaults(suiteName: "group.com.jrmoynihan99.anchor")
-        defaults?.set(orgValue, forKey: "pendingOrganization")
+        // Still save the org ID (not the display name) to UserDefaults
+        if let orgValue = orgValue {
+            let defaults = UserDefaults(suiteName: "group.com.jrmoynihan99.anchor")
+            defaults?.set(orgValue, forKey: "pendingOrganization")
+        }
     }
 }
