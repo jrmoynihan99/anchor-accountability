@@ -14,8 +14,8 @@ struct ContentView: View {
 
     // Animation stages
     // 0 = org + progress ring
-    // 1 = lock
-    // 2 = app icon
+    // 1 = checkmark (replaces org text, ring stays)
+    // 2 = app icon (ring and checkmark fade out)
     @State private var stage: Int = 0
     @State private var progress: CGFloat = 0
     @State private var didAttemptOpen = false
@@ -26,44 +26,46 @@ struct ContentView: View {
 
             // MARK: - Animated Header
             ZStack {
+                if stage < 2 {
+                    // Background ring
+                    Circle()
+                        .stroke(Color.secondary.opacity(0.2), lineWidth: 2)
+                        .frame(width: 140, height: 140)
+
+                    // Progress ring
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            Color.primary,
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 140, height: 140)
+                }
+
                 if stage == 0 {
-                    ZStack {
-                        // Background ring
-                        Circle()
-                            .stroke(Color.secondary.opacity(0.2), lineWidth: 2)
+                    // Org name
+                    HStack(spacing: 6) {
+                        Image(systemName: "building.2.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.primary)
 
-                        // Progress ring
-                        Circle()
-                            .trim(from: 0, to: progress)
-                            .stroke(
-                                Color.primary,
-                                style: StrokeStyle(lineWidth: 2, lineCap: .round)
-                            )
-                            .rotationEffect(.degrees(-90))
-
-                        // Org name
-                        HStack(spacing: 6) {
-                            Image(systemName: "building.2.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.primary)
-
-                            Text(org?.capitalized ?? "Your Church")
-                                .font(.system(size: 18, weight: .semibold))
-                                .multilineTextAlignment(.leading)
-                                .foregroundColor(.primary)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.75)
-                        }
-                        .frame(width: 100)
+                        Text(org?.capitalized ?? "Your Church")
+                            .font(.system(size: 18, weight: .semibold))
+                            .multilineTextAlignment(.leading)
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.75)
                     }
-                    .frame(width: 140, height: 140)
+                    .frame(width: 100)
                     .transition(.opacity)
                 }
 
                 if stage == 1 {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 36))
-                        .transition(.scale.combined(with: .opacity))
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 36, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .transition(.opacity)
                 }
 
                 if stage == 2 {
@@ -142,14 +144,14 @@ struct ContentView: View {
             progress = 1.0
         }
 
-        // 2️⃣ Transition to lock
+        // 2️⃣ Org name fades out, checkmark fades in (ring stays)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
             withAnimation {
                 stage = 1
             }
         }
 
-        // 3️⃣ Transition to app icon
+        // 3️⃣ Ring and checkmark fade out, app icon fades in
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
             withAnimation {
                 stage = 2
