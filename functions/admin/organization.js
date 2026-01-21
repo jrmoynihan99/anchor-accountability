@@ -102,7 +102,7 @@ exports.createOrganization = onCall(async (request) => {
   if (uid !== PLATFORM_ADMIN_UID) {
     throw new HttpsError(
       "permission-denied",
-      "Only platform admins can create organizations"
+      "Only platform admins can create organizations",
     );
   }
 
@@ -128,7 +128,7 @@ exports.createOrganization = onCall(async (request) => {
     if (orgDoc.exists) {
       throw new HttpsError(
         "already-exists",
-        "An organization with this name already exists"
+        "An organization with this name already exists",
       );
     }
 
@@ -137,7 +137,8 @@ exports.createOrganization = onCall(async (request) => {
     console.log(`🔢 Generated PIN: ${pin}`);
 
     // Generate deep link and QR code
-    const deepLink = `https://anchoraccountability.com/join?org=${orgId}`;
+    const encodedName = name.trim().replace(/\s+/g, "_");
+    const deepLink = `https://anchoraccountability.com/join?org=${orgId}&name=${encodedName}`;
     const qrCodeDataURL = await QRCode.toDataURL(deepLink, {
       width: 400,
       margin: 2,
@@ -210,7 +211,7 @@ exports.createOrganization = onCall(async (request) => {
     // Wrap other errors
     throw new HttpsError(
       "internal",
-      `Failed to create organization: ${error.message}`
+      `Failed to create organization: ${error.message}`,
     );
   }
 });
