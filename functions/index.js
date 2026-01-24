@@ -14,6 +14,7 @@ const encouragementNotifications = require("./notifications/encouragements");
 const messageNotifications = require("./notifications/messages");
 const streakNotifications = require("./notifications/streaks");
 const accountabilityNotifications = require("./notifications/accountability");
+const sendUpdateNotification = require("./notifications/sendUpdateNotification");
 const checkIns = require("./accountability/checkIns");
 const invites = require("./accountability/invites");
 const blockFunctions = require("./user/blocks");
@@ -46,6 +47,9 @@ module.exports = {
 
   // Notifications - Accountability
   ...accountabilityNotifications,
+
+  // Notifications - Manual callable update notif
+  ...sendUpdateNotification,
 
   // Accountability - Check-ins
   ...checkIns,
