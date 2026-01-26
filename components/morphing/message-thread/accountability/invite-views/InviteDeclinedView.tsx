@@ -44,8 +44,8 @@ export function InviteDeclinedView({
           type="body"
           style={[styles.subtitle, { color: colors.textSecondary }]}
         >
-          {threadName} has declined your invitation to become your
-          accountability partner. You can send them a new invite anytime.
+          {threadName} has declined your invitation to become your Anchor
+          partner. You can send them a new invite anytime.
         </ThemedText>
       </View>
 

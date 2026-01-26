@@ -67,7 +67,7 @@ export function ReceivedInviteItem({
               type="caption"
               style={[styles.inviteMessage, { color: colors.textSecondary }]}
             >
-              invited you to be their accountability partner
+              invited you to be their Anchor partner
             </ThemedText>
           </View>
         </View>

@@ -16,7 +16,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
   },
   async () => {
     console.log(
-      "🔔 Running accountability check-in reminder check for all orgs..."
+      "🔔 Running accountability check-in reminder check for all orgs...",
     );
 
     try {
@@ -42,7 +42,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
 
           if (usersSnap.empty) {
             console.log(
-              `No users with accountability notifications enabled in org ${orgId}.`
+              `No users with accountability notifications enabled in org ${orgId}.`,
             );
             continue;
           }
@@ -71,7 +71,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
 
             const userHour = parseInt(
               hourFormatter.formatToParts(now).find((p) => p.type === "hour")
-                ?.value || "0"
+                ?.value || "0",
             );
 
             // Only process if it's between 6:00 PM (18) and 6:59 PM (18)
@@ -99,7 +99,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
 
             if (lastNotificationDate === todayDate) {
               console.log(
-                `Already sent accountability reminder to ${userId} today in org ${orgId}.`
+                `Already sent accountability reminder to ${userId} today in org ${orgId}.`,
               );
               continue;
             }
@@ -114,7 +114,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
 
             if (menteeRelationshipsSnap.empty) {
               console.log(
-                `${userId} has no active accountability relationship as mentee in org ${orgId}.`
+                `${userId} has no active accountability relationship as mentee in org ${orgId}.`,
               );
               continue;
             }
@@ -148,12 +148,11 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
               // Haven't checked in today yet
               if (lastCheckIn === todayDate) {
                 console.log(
-                  `${userId} already checked in today in org ${orgId}.`
+                  `${userId} already checked in today in org ${orgId}.`,
                 );
                 continue;
               }
-              body =
-                "Don't forget to check in with your accountability partner today";
+              body = "Don't forget to check in with your Anchor partner today";
             } else if (daysSinceCheckIn === 1) {
               body =
                 "You didn't check in with your partner yesterday, do it now!";
@@ -183,7 +182,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
             });
 
             console.log(
-              `✅ Queued accountability reminder for ${userId} in org ${orgId} (${daysSinceCheckIn} days since check-in)`
+              `✅ Queued accountability reminder for ${userId} in org ${orgId} (${daysSinceCheckIn} days since check-in)`,
             );
           }
 
@@ -195,20 +194,20 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
               const res = await axios.post(
                 "https://exp.host/--/api/v2/push/send",
                 chunk,
-                { headers: { "Content-Type": "application/json" } }
+                { headers: { "Content-Type": "application/json" } },
               );
               console.log(
                 `✅ Sent batch of ${chunk.length} for org ${orgId}:`,
-                res.data?.data
+                res.data?.data,
               );
             }
             console.log(
-              `✅ Accountability reminders sent for org ${orgId}: ${notifications.length}`
+              `✅ Accountability reminders sent for org ${orgId}: ${notifications.length}`,
             );
             totalNotificationsSent += notifications.length;
           } else {
             console.log(
-              `No accountability reminders to send for org ${orgId} this hour.`
+              `No accountability reminders to send for org ${orgId} this hour.`,
             );
           }
         } catch (orgError) {
@@ -218,12 +217,12 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
       }
 
       console.log(
-        `\n✅ Total accountability reminders sent across all orgs: ${totalNotificationsSent}`
+        `\n✅ Total accountability reminders sent across all orgs: ${totalNotificationsSent}`,
       );
     } catch (error) {
       console.error("❌ Error in sendAccountabilityCheckInReminders:", error);
     }
-  }
+  },
 );
 
 /**
@@ -287,7 +286,7 @@ exports.testAccountabilityReminder = onRequest(async (req, res) => {
     let daysSince = 0;
     if (lastCheckIn) {
       daysSince = Math.floor(
-        (new Date(todayDate) - new Date(lastCheckIn)) / (1000 * 60 * 60 * 24)
+        (new Date(todayDate) - new Date(lastCheckIn)) / (1000 * 60 * 60 * 24),
       );
     }
 
@@ -296,7 +295,7 @@ exports.testAccountabilityReminder = onRequest(async (req, res) => {
     if (lastCheckIn === todayDate) {
       body = "You already checked in today";
     } else if (daysSince === 0) {
-      body = "Don't forget to check in with your accountability partner today";
+      body = "Don't forget to check in with your Anchor partner today";
     } else if (daysSince === 1) {
       body = "You haven't checked in for 1 day";
     } else if (daysSince >= 7) {

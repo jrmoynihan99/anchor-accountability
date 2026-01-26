@@ -39,7 +39,7 @@ export function DeleteAccountButton({ onPress }: DeleteAccountButtonProps) {
 
     // Add suggestion to message partners if they have any
     if (hasPartnerships) {
-      message += `\n\nConsider messaging your accountability partner${
+      message += `\n\nConsider messaging your partner${
         partnershipCount > 1 ? "s" : ""
       } before deleting.`;
     }
@@ -74,7 +74,7 @@ export function DeleteAccountButton({ onPress }: DeleteAccountButtonProps) {
           style: "destructive",
           onPress: performDeleteAccount,
         },
-      ]
+      ],
     );
   };
 

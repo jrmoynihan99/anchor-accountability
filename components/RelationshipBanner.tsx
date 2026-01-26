@@ -44,7 +44,7 @@ export function RelationshipBanner({
       icon: "checkmark.circle.fill" as const,
       iconColor: colors.white,
       iconBackgroundColor: `${colors.white}20`,
-      title: "Accountability Partner! 🎉",
+      title: "Anchor Partner! 🎉",
       titleColor: colors.white,
       subtitle: `${personName} accepted your invite`,
       subtitleColor: colors.white,
@@ -154,7 +154,7 @@ export function RelationshipBanner({
         if (finished) {
           runOnJS(onDismiss)();
         }
-      }
+      },
     );
   };
 

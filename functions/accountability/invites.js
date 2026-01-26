@@ -24,7 +24,7 @@ exports.sendAccountabilityInviteNotification = onDocumentCreated(
     try {
       if (await eitherBlocked(menteeUid, mentorUid, orgId)) {
         console.log(
-          `[accountability-invite] Skipping due to block in org ${orgId}`
+          `[accountability-invite] Skipping due to block in org ${orgId}`,
         );
         return;
       }
@@ -72,7 +72,7 @@ exports.sendAccountabilityInviteNotification = onDocumentCreated(
             to: mentorData.expoPushToken,
             sound: "default",
             title: "New Accountability Request",
-            body: `${menteeName} wants you to be their accountability partner`,
+            body: `${menteeName} wants you to be their Anchor partner`,
             badge: totalUnread,
             data: {
               type: "accountability_invite",
@@ -83,19 +83,19 @@ exports.sendAccountabilityInviteNotification = onDocumentCreated(
             },
           },
         ],
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" } },
       );
 
       console.log(
-        `✅ Sent accountability invite notification to ${mentorUid} in org ${orgId}`
+        `✅ Sent accountability invite notification to ${mentorUid} in org ${orgId}`,
       );
     } catch (error) {
       console.error(
         `❌ Error sending accountability invite notification in org ${orgId}:`,
-        error
+        error,
       );
     }
-  }
+  },
 );
 
 // Clean up other pending invites when one is accepted
@@ -147,14 +147,14 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
             batch.update(threadDoc.ref, {
               userA_unreadCount: Math.max(
                 0,
-                (threadData.userA_unreadCount || 0) - 1
+                (threadData.userA_unreadCount || 0) - 1,
               ),
             });
           } else if (threadData.userB === otherMentorUid) {
             batch.update(threadDoc.ref, {
               userB_unreadCount: Math.max(
                 0,
-                (threadData.userB_unreadCount || 0) - 1
+                (threadData.userB_unreadCount || 0) - 1,
               ),
             });
           }
@@ -164,17 +164,17 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
       if (canceledCount > 0) {
         await batch.commit();
         console.log(
-          `✅ Successfully canceled ${canceledCount} pending invite(s) in org ${orgId}`
+          `✅ Successfully canceled ${canceledCount} pending invite(s) in org ${orgId}`,
         );
       }
     } catch (error) {
       console.error(
         `❌ Error canceling pending invites in org ${orgId}:`,
-        error
+        error,
       );
       throw error;
     }
-  }
+  },
 );
 
 // Send notifications for declined/accepted/ended relationships
@@ -239,19 +239,19 @@ exports.sendAccountabilityDeclinedNotification = onDocumentUpdated(
               },
             },
           ],
-          { headers: { "Content-Type": "application/json" } }
+          { headers: { "Content-Type": "application/json" } },
         );
         console.log(
-          `✅ Sent accountability declined notification in org ${orgId}`
+          `✅ Sent accountability declined notification in org ${orgId}`,
         );
       } catch (err) {
         console.error(
           `❌ Failed to send declined notification in org ${orgId}:`,
-          err
+          err,
         );
       }
     }
-  }
+  },
 );
 
 exports.sendAccountabilityAcceptedNotification = onDocumentUpdated(
@@ -287,25 +287,25 @@ exports.sendAccountabilityAcceptedNotification = onDocumentUpdated(
             {
               to: menteeData.expoPushToken,
               sound: "default",
-              title: "Accountability Partner! 🎉",
+              title: "Anchor Partner! 🎉",
               body: `${mentorName} accepted your invite`,
               badge: totalUnread,
               data: { type: "accountability_accepted" },
             },
           ],
-          { headers: { "Content-Type": "application/json" } }
+          { headers: { "Content-Type": "application/json" } },
         );
         console.log(
-          `✅ Sent accountability accepted notification in org ${orgId}`
+          `✅ Sent accountability accepted notification in org ${orgId}`,
         );
       } catch (err) {
         console.error(
           `❌ Failed to send accepted notification in org ${orgId}:`,
-          err
+          err,
         );
       }
     }
-  }
+  },
 );
 
 exports.sendAccountabilityEndedNotification = onDocumentUpdated(
@@ -351,17 +351,17 @@ exports.sendAccountabilityEndedNotification = onDocumentUpdated(
               data: { type: "accountability_ended" },
             },
           ],
-          { headers: { "Content-Type": "application/json" } }
+          { headers: { "Content-Type": "application/json" } },
         );
         console.log(
-          `✅ Sent accountability ended notification in org ${orgId}`
+          `✅ Sent accountability ended notification in org ${orgId}`,
         );
       } catch (err) {
         console.error(
           `❌ Failed to send ended notification in org ${orgId}:`,
-          err
+          err,
         );
       }
     }
-  }
+  },
 );
