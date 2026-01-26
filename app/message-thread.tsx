@@ -142,12 +142,12 @@ export default function MessageThreadScreen() {
   // Self-determine relationship by checking if otherUserId matches any accountability relationships
   const isMentor = React.useMemo(
     () => mentor?.mentorUid === actualOtherUserId,
-    [mentor, actualOtherUserId]
+    [mentor, actualOtherUserId],
   );
 
   const menteeRelationship = React.useMemo(
     () => mentees.find((m) => m.menteeUid === actualOtherUserId),
-    [mentees, actualOtherUserId]
+    [mentees, actualOtherUserId],
   );
 
   const isMentee = !!menteeRelationship;
@@ -156,8 +156,8 @@ export default function MessageThreadScreen() {
   const relationshipType = isMentor
     ? "mentor"
     : isMentee
-    ? "mentee"
-    : undefined;
+      ? "mentee"
+      : undefined;
   const relationshipData = isMentor ? mentor : menteeRelationship || undefined;
   const isAccountabilityPartner = !!relationshipType;
 
@@ -240,7 +240,7 @@ export default function MessageThreadScreen() {
 
         // ✅ Clear the param from URL after opening
         router.setParams({ openInviteModal: undefined });
-      }, 100);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [openInviteModal, inviteModalOpenRef.current]);
@@ -380,9 +380,9 @@ export default function MessageThreadScreen() {
         keyboardHeight.value = withTiming(
           height,
           { duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1) },
-          () => runOnJS(adjustScrollViewForKeyboard)(height)
+          () => runOnJS(adjustScrollViewForKeyboard)(height),
         );
-      }
+      },
     );
     const keyboardWillHide = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
@@ -391,15 +391,15 @@ export default function MessageThreadScreen() {
         keyboardHeight.value = withTiming(
           0,
           { duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1) },
-          () => runOnJS(adjustScrollViewForKeyboard)(0)
+          () => runOnJS(adjustScrollViewForKeyboard)(0),
         );
-      }
+      },
     );
     const keyboardDidHide = Keyboard.addListener("keyboardDidHide", (event) => {
       keyboardHeight.value = withTiming(
         0,
         { duration: 200, easing: Easing.out(Easing.quad) },
-        () => runOnJS(adjustScrollViewForKeyboard)(0)
+        () => runOnJS(adjustScrollViewForKeyboard)(0),
       );
     });
     return () => {
@@ -439,7 +439,7 @@ export default function MessageThreadScreen() {
 
   const handleContentSizeChange = (
     contentWidth: number,
-    contentHeight: number
+    contentHeight: number,
   ) => {
     if (!hasInitiallyLoadedRef.current && messages.length > 0) {
       hasInitiallyLoadedRef.current = true;
@@ -502,7 +502,7 @@ export default function MessageThreadScreen() {
           displayOtherUserId,
           pleaId,
           encouragementId,
-          postId
+          postId,
         );
         setActualThreadId(newThreadId);
       } catch (error) {
