@@ -49,12 +49,12 @@ const generateDailyContent = async (orgId, targetDate) => {
   const candidates = bibleVersesSnap.docs
     .map((doc) => doc.data())
     .filter(
-      (d) => !usedRefs.has(d.reference) && !usedRefs.has(d.chapterReference)
+      (d) => !usedRefs.has(d.reference) && !usedRefs.has(d.chapterReference),
     );
 
   if (!candidates.length)
     throw new Error(
-      `No eligible bible verses found for org ${orgId} on ${targetDate}.`
+      `No eligible bible verses found for org ${orgId} on ${targetDate}.`,
     );
 
   const picked = candidates[Math.floor(Math.random() * candidates.length)];
@@ -74,7 +74,7 @@ const generateDailyContent = async (orgId, targetDate) => {
 Here is today's Bible verse:
 
 Reference: ${picked.reference}
-Text: ${picked.text}
+Text: ${picked.verse}
 
 Please write a short, heartfelt prayer (2-3 sentences) that:
 1. Reflects on the meaning and message of this verse
@@ -94,15 +94,17 @@ Keep it concise and meaningful.
   const prayerText = completion.choices[0].message.content.trim();
 
   logger.info(
-    `Generated content for org ${orgId} on ${targetDate}: ${picked.reference}`
+    `Generated content for org ${orgId} on ${targetDate}: ${picked.reference}`,
   );
 
   return {
     date: targetDate,
     reference: picked.reference,
-    text: picked.text,
+    verse: picked.verse,
+    chapterText: picked.chapterText,
     chapterReference: picked.chapterReference || picked.reference,
-    prayer: prayerText,
+    bibleVersion: picked.bibleVersion,
+    prayerContent: prayerText,
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 };
@@ -191,7 +193,7 @@ exports.createContentNow = onRequest(async (request, response) => {
     const dateString = request.query.date || formatDate(getDateWithOffset(2));
 
     logger.info(
-      `Manual content creation triggered for org ${orgId} on ${dateString}`
+      `Manual content creation triggered for org ${orgId} on ${dateString}`,
     );
 
     const content = await generateDailyContent(orgId, dateString);
@@ -203,7 +205,7 @@ exports.createContentNow = onRequest(async (request, response) => {
       .set(content);
 
     logger.info(
-      `Successfully created content for org ${orgId} on ${dateString}`
+      `Successfully created content for org ${orgId} on ${dateString}`,
     );
 
     response.json({
@@ -261,7 +263,7 @@ exports.generateDailyContentScheduled = onSchedule(
           // Log error but continue with other orgs
           logger.error(
             `❌ Error generating content for org ${orgId}:`,
-            orgError
+            orgError,
           );
         }
       }
@@ -271,5 +273,5 @@ exports.generateDailyContentScheduled = onSchedule(
       logger.error("Error in scheduled content generation:", error);
       throw error;
     }
-  }
+  },
 );
