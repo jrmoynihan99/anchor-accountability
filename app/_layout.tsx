@@ -195,18 +195,32 @@ function useAuthAndClaimsGate() {
         let token = await user.getIdTokenResult();
 
         if (!token.claims.organizationId) {
-          // Self-heal migrated users by setting to public (server decides)
-          const functions = getFunctions();
-          const setUserOrganization = httpsCallable(
-            functions,
-            "setUserOrganization",
-          );
+          // Check if this is a fresh signup (don't self-heal new users)
+          const creationTime = new Date(user.metadata.creationTime!).getTime();
+          const now = Date.now();
+          const isRecentlyCreated = now - creationTime < 30000; // 30 seconds
 
-          await setUserOrganization({ organizationId: "public" });
+          if (isRecentlyCreated) {
+            // New user - wait for claim to propagate, then check again
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await user.getIdToken(true);
+            token = await user.getIdTokenResult();
+          }
 
-          // Refresh token after claim mutation
-          await user.getIdToken(true);
-          token = await user.getIdTokenResult();
+          // If still no claim (and not a brand new user), self-heal migrated users
+          if (!token.claims.organizationId && !isRecentlyCreated) {
+            const functions = getFunctions();
+            const setUserOrganization = httpsCallable(
+              functions,
+              "setUserOrganization",
+            );
+
+            await setUserOrganization({ organizationId: "public" });
+
+            // Refresh token after claim mutation
+            await user.getIdToken(true);
+            token = await user.getIdTokenResult();
+          }
         }
 
         if (!token.claims.organizationId) {

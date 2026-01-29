@@ -33,9 +33,10 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../hooks/theme/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
-import { auth, updateUserTimezone } from "../../../lib/firebase";
+import { auth } from "../../../lib/firebase";
 import { setHasOnboarded } from "../../../lib/onboarding";
 import { ThemedText } from "../../ThemedText";
+import * as Localization from "expo-localization";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -154,14 +155,15 @@ export function LoginForm({
           password,
         );
 
-        // Set custom claim via Cloud Function
+        // Set custom claim and create user document via Cloud Function
         try {
           const functions = getFunctions();
           const setUserOrganization = httpsCallable(
             functions,
             "setUserOrganization",
           );
-          const result = await setUserOrganization({ organizationId });
+          const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+          const result = await setUserOrganization({ organizationId, timezone });
 
           // Force token refresh
           await auth.currentUser?.getIdToken(true);
@@ -187,7 +189,6 @@ export function LoginForm({
         // ✅ Normal sign in - no flag needed
         await signInWithEmailAndPassword(auth, email, password);
       }
-      await updateUserTimezone();
       await completeOnboarding();
     } catch (error: any) {
       showAuthError({ error, isSignUp, setIsSignUp });
@@ -205,14 +206,15 @@ export function LoginForm({
 
       await ensureSignedIn();
 
-      // Set custom claim via Cloud Function
+      // Set custom claim and create user document via Cloud Function
       try {
         const functions = getFunctions();
         const setUserOrganization = httpsCallable(
           functions,
           "setUserOrganization",
         );
-        const result = await setUserOrganization({ organizationId });
+        const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+        const result = await setUserOrganization({ organizationId, timezone });
 
         // Force token refresh
         await auth.currentUser?.getIdToken(true);
@@ -225,7 +227,6 @@ export function LoginForm({
         throw new Error("Failed to complete account setup");
       }
 
-      await updateUserTimezone();
       await completeOnboarding();
     } catch (error) {
       console.error("Error with anonymous sign in:", error);
