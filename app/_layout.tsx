@@ -36,6 +36,7 @@ import { getFunctions, httpsCallable } from "firebase/functions";
 // Notifications
 import * as NavigationBar from "expo-navigation-bar";
 import * as Notifications from "expo-notifications";
+import * as Localization from "expo-localization";
 
 /* ------------------------------------------------------------------ */
 /* Notification plumbing                                               */
@@ -215,7 +216,8 @@ function useAuthAndClaimsGate() {
               "setUserOrganization",
             );
 
-            await setUserOrganization({ organizationId: "public" });
+            const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+            await setUserOrganization({ organizationId: "public", timezone });
 
             // Refresh token after claim mutation
             await user.getIdToken(true);

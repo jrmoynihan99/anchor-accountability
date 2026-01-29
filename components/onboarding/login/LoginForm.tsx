@@ -165,8 +165,25 @@ export function LoginForm({
           const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
           const result = await setUserOrganization({ organizationId, timezone });
 
-          // Force token refresh
+          // Force token refresh and verify claim is present
           await auth.currentUser?.getIdToken(true);
+
+          // Verify the claim is actually in the token (retry up to 3 times)
+          let claimVerified = false;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const tokenResult = await auth.currentUser?.getIdTokenResult();
+            if (tokenResult?.claims.organizationId === organizationId) {
+              claimVerified = true;
+              break;
+            }
+            // Wait 1 second before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await auth.currentUser?.getIdToken(true);
+          }
+
+          if (!claimVerified) {
+            throw new Error("Custom claim verification failed - please try signing in again");
+          }
 
           // Manually update the context
           await updateOrganization(organizationId);
@@ -216,8 +233,25 @@ export function LoginForm({
         const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
         const result = await setUserOrganization({ organizationId, timezone });
 
-        // Force token refresh
+        // Force token refresh and verify claim is present
         await auth.currentUser?.getIdToken(true);
+
+        // Verify the claim is actually in the token (retry up to 3 times)
+        let claimVerified = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const tokenResult = await auth.currentUser?.getIdTokenResult();
+          if (tokenResult?.claims.organizationId === organizationId) {
+            claimVerified = true;
+            break;
+          }
+          // Wait 1 second before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await auth.currentUser?.getIdToken(true);
+        }
+
+        if (!claimVerified) {
+          throw new Error("Custom claim verification failed - please try signing in again");
+        }
 
         // Manually update the context
         await updateOrganization(organizationId);

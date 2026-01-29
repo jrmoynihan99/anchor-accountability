@@ -55,7 +55,16 @@ exports.recalculateUserStreak = onDocumentWritten(
         }
       }
 
-      await admin.firestore().doc(`organizations/${orgId}/users/${uid}`).set(
+      // Check if user document exists before updating
+      const userDocRef = admin.firestore().doc(`organizations/${orgId}/users/${uid}`);
+      const userDoc = await userDocRef.get();
+
+      if (!userDoc.exists) {
+        console.log(`⚠️ User document doesn't exist for ${uid} in org ${orgId}, skipping streak update`);
+        return;
+      }
+
+      await userDocRef.set(
         {
           currentStreak,
           bestStreak,
