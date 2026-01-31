@@ -189,7 +189,10 @@ function useAuthAndClaimsGate() {
       inFlightRef.current = true;
 
       try {
-        console.log("[_layout.useAuthAndClaimsGate] 🔵 User signed in:", user.uid);
+        console.log(
+          "[_layout.useAuthAndClaimsGate] 🔵 User signed in:",
+          user.uid,
+        );
 
         // Simple gate: just mark auth as ready
         // OrganizationContext will handle finding the user document and setting the org
@@ -228,6 +231,7 @@ function AppRouterGate({
 }) {
   const [appReady, setAppReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const isNavigatingRef = useRef(false);
 
   const navigationState = useRootNavigationState();
   const segments = useSegments();
@@ -245,8 +249,10 @@ function AppRouterGate({
   // Routing gate (update check -> onboarding vs tabs)
   useEffect(() => {
     if (!fontsLoaded || !navigationState?.key) return;
+    if (isNavigatingRef.current) return; // Prevent concurrent navigation attempts
 
     const route = async () => {
+      isNavigatingRef.current = true;
       setRedirecting(true);
       try {
         const isJoinRoute = segments[0] === "join";
@@ -258,23 +264,15 @@ function AppRouterGate({
           currentSegment: segments[0],
         });
 
-        // If update is required, redirect to update screen
+        // If update is required, redirect to update screen and stop
         if (updateRequired && !isUpdateRoute) {
           console.log("[AppRouterGate] ➡️ Redirecting to /update");
-          await router.replace("/update");
-          setTimeout(async () => {
-            setAppReady(true);
-            await SplashScreen.hideAsync();
-          }, 40);
-          setRedirecting(false);
-          return;
-        }
 
-        // If we're on update screen but no longer need update, redirect away
-        if (isUpdateRoute && !updateRequired) {
-          console.log("[AppRouterGate] ➡️ Update no longer required, redirecting away from /update");
-          const hasOnboarded = await getHasOnboarded();
-          await router.replace(hasOnboarded ? "/(tabs)" : "/onboarding/intro");
+          // Defer navigation to next tick to avoid navigator state conflicts
+          setTimeout(() => {
+            router.replace("/update");
+          }, 0);
+
           setTimeout(async () => {
             setAppReady(true);
             await SplashScreen.hideAsync();
@@ -294,23 +292,27 @@ function AppRouterGate({
         const hasOnboarded = await getHasOnboarded();
         const inOnboarding = segments[0] === "onboarding";
 
-        // If segments is undefined/empty and we don't need update, force navigation
-        // This handles the case where Android Expo Go has cached the /update route
-        if (!segments[0] && !updateRequired) {
-          console.log("[AppRouterGate] ➡️ Segments undefined and no update needed, forcing navigation");
-          await router.replace(hasOnboarded ? "/(tabs)" : "/onboarding/intro");
+        // If we're on update screen but no longer need update, route based on onboarding status
+        // OR if we're in wrong place for onboarding state
+        if (
+          (isUpdateRoute && !updateRequired) ||
+          (hasOnboarded && inOnboarding) ||
+          (!hasOnboarded && !inOnboarding && !isUpdateRoute)
+        ) {
+          const targetRoute = hasOnboarded ? "/(tabs)" : "/onboarding/intro";
+          console.log(`[AppRouterGate] ➡️ Routing to ${targetRoute}`);
+
+          // Defer navigation to next tick to avoid navigator state conflicts
+          setTimeout(() => {
+            router.replace(targetRoute);
+          }, 0);
+
           setTimeout(async () => {
             setAppReady(true);
             await SplashScreen.hideAsync();
           }, 40);
           setRedirecting(false);
           return;
-        }
-
-        if (hasOnboarded && inOnboarding) {
-          await router.replace("/(tabs)");
-        } else if (!hasOnboarded && !inOnboarding) {
-          await router.replace("/onboarding/intro");
         }
 
         setTimeout(async () => {
@@ -326,6 +328,7 @@ function AppRouterGate({
         }, 40);
       } finally {
         setRedirecting(false);
+        isNavigatingRef.current = false;
       }
     };
 

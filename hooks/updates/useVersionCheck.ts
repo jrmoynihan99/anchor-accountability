@@ -1,6 +1,6 @@
 // hooks/updates/useVersionCheck.ts
 import { db } from "@/lib/firebase";
-import { doc, getDocFromServer } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Constants from "expo-constants";
 
@@ -15,50 +15,56 @@ export function useVersionCheck() {
   const [minimumVersion, setMinimumVersion] = useState<string>("");
 
   useEffect(() => {
-    checkVersion();
-  }, []);
+    // Get current app version
+    const currentVersion = Constants.expoConfig?.version || "0.0.0";
+    console.log("[useVersionCheck] Current version:", currentVersion);
 
-  const checkVersion = async () => {
-    try {
-      // Get current app version
-      const currentVersion = Constants.expoConfig?.version || "0.0.0";
+    // Real-time listener for version control document
+    const versionDocRef = doc(db, "config", "versionControl");
 
-      console.log("[useVersionCheck] Current version:", currentVersion);
+    const unsubscribe = onSnapshot(
+      versionDocRef,
+      (versionDoc) => {
+        try {
+          if (!versionDoc.exists()) {
+            console.log("[useVersionCheck] No version control document found, allowing app access");
+            setUpdateRequired(false);
+            setLoading(false);
+            return;
+          }
 
-      // Fetch minimum required version from Firestore (force fresh from server, no cache)
-      const versionDocRef = doc(db, "config", "versionControl");
-      const versionDoc = await getDocFromServer(versionDocRef);
+          const versionConfig = versionDoc.data() as VersionConfig;
+          const requiredVersion = versionConfig.minimumVersion || "0.0.0";
 
-      if (!versionDoc.exists()) {
-        console.log("[useVersionCheck] No version control document found, allowing app access");
+          console.log("[useVersionCheck] Required version:", requiredVersion);
+
+          // Compare semantic versions
+          const needsUpdate = compareVersions(currentVersion, requiredVersion) < 0;
+          console.log("[useVersionCheck] Version comparison:", {
+            current: currentVersion,
+            required: requiredVersion,
+            needsUpdate,
+          });
+
+          setUpdateRequired(needsUpdate);
+          setMinimumVersion(requiredVersion);
+          setLoading(false);
+        } catch (error) {
+          console.error("[useVersionCheck] Error processing version check:", error);
+          setUpdateRequired(false);
+          setLoading(false);
+        }
+      },
+      (error) => {
+        // Fail open - allow app access on error
+        console.error("[useVersionCheck] Error listening to version control, allowing app access:", error);
         setUpdateRequired(false);
         setLoading(false);
-        return;
       }
+    );
 
-      const versionConfig = versionDoc.data() as VersionConfig;
-      const requiredVersion = versionConfig.minimumVersion || "0.0.0";
-
-      console.log("[useVersionCheck] Required version:", requiredVersion);
-
-      // Compare semantic versions
-      const needsUpdate = compareVersions(currentVersion, requiredVersion) < 0;
-      console.log("[useVersionCheck] Version comparison:", {
-        current: currentVersion,
-        required: requiredVersion,
-        needsUpdate,
-      });
-
-      setUpdateRequired(needsUpdate);
-      setMinimumVersion(requiredVersion);
-      setLoading(false);
-    } catch (error) {
-      // Fail open - allow app access on error
-      console.error("[useVersionCheck] Error checking version, allowing app access:", error);
-      setUpdateRequired(false);
-      setLoading(false);
-    }
-  };
+    return () => unsubscribe();
+  }, []);
 
   return { updateRequired, loading, minimumVersion };
 }
