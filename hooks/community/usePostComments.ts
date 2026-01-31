@@ -305,6 +305,17 @@ export function usePostComments(postId: string | null) {
         ),
         commentData
       );
+
+      // Increment comment count on the post
+      const postRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId
+      );
+      await updateDoc(postRef, { commentCount: increment(1) });
+
       return true;
     } catch (err) {
       console.error("Error posting comment:", err);

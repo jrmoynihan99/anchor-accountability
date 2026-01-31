@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
+import { useVersionCheck } from "@/hooks/updates/useVersionCheck";
 import { auth, updateUserTimezone } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
@@ -30,13 +31,9 @@ import {
   useFonts as useSpectralFonts,
 } from "@expo-google-fonts/spectral";
 
-// Firebase Functions
-import { getFunctions, httpsCallable } from "firebase/functions";
-
 // Notifications
 import * as NavigationBar from "expo-navigation-bar";
 import * as Notifications from "expo-notifications";
-import * as Localization from "expo-localization";
 
 /* ------------------------------------------------------------------ */
 /* Notification plumbing                                               */
@@ -139,6 +136,7 @@ function ThemedStack() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="update" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="message-thread" />
@@ -191,57 +189,20 @@ function useAuthAndClaimsGate() {
       inFlightRef.current = true;
 
       try {
-        // Always force refresh first to avoid stale cached claims
-        await user.getIdToken(true);
-        let token = await user.getIdTokenResult();
+        console.log("[_layout.useAuthAndClaimsGate] 🔵 User signed in:", user.uid);
 
-        if (!token.claims.organizationId) {
-          // Check if this is a fresh signup (don't self-heal new users)
-          const creationTime = new Date(user.metadata.creationTime!).getTime();
-          const now = Date.now();
-          const isRecentlyCreated = now - creationTime < 30000; // 30 seconds
-
-          if (isRecentlyCreated) {
-            // New user - wait for claim to propagate, then check again
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            await user.getIdToken(true);
-            token = await user.getIdTokenResult();
-          }
-
-          // If still no claim (and not a brand new user), self-heal migrated users
-          if (!token.claims.organizationId && !isRecentlyCreated) {
-            const functions = getFunctions();
-            const setUserOrganization = httpsCallable(
-              functions,
-              "setUserOrganization",
-            );
-
-            const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
-            await setUserOrganization({ organizationId: "public", timezone });
-
-            // Refresh token after claim mutation
-            await user.getIdToken(true);
-            token = await user.getIdTokenResult();
-          }
-        }
-
-        if (!token.claims.organizationId) {
-          throw new Error("organizationId claim missing after self-heal");
-        }
-
+        // Simple gate: just mark auth as ready
+        // OrganizationContext will handle finding the user document and setting the org
+        console.log("[_layout.useAuthAndClaimsGate] ✅ Auth ready");
         setState((prev) => ({
           ...prev,
           claimsReady: true,
         }));
       } catch (err) {
-        console.error("❌ Fatal auth/claim gate failure:", err);
-        // Hard fail closed: sign out to force clean login + claim set
-        try {
-          await auth.signOut();
-        } catch {}
+        console.error("❌ Fatal auth gate failure:", err);
         setState((prev) => ({
           ...prev,
-          claimsReady: true, // allow app to render login/onboarding after signOut
+          claimsReady: true,
         }));
       } finally {
         inFlightRef.current = false;
@@ -258,7 +219,13 @@ function useAuthAndClaimsGate() {
 /* App routing (requires ThreadProvider)                               */
 /* ------------------------------------------------------------------ */
 
-function AppRouterGate({ fontsLoaded }: { fontsLoaded: boolean }) {
+function AppRouterGate({
+  fontsLoaded,
+  updateRequired,
+}: {
+  fontsLoaded: boolean;
+  updateRequired: boolean;
+}) {
   const [appReady, setAppReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
 
@@ -275,21 +242,67 @@ function AppRouterGate({ fontsLoaded }: { fontsLoaded: boolean }) {
     }
   }, []);
 
-  // Routing gate (onboarding vs tabs)
+  // Routing gate (update check -> onboarding vs tabs)
   useEffect(() => {
     if (!fontsLoaded || !navigationState?.key) return;
 
     const route = async () => {
       setRedirecting(true);
       try {
-        const hasOnboarded = await getHasOnboarded();
-        const inOnboarding = segments[0] === "onboarding";
         const isJoinRoute = segments[0] === "join";
+        const isUpdateRoute = segments[0] === "update";
+
+        console.log("[AppRouterGate] Routing check:", {
+          updateRequired,
+          isUpdateRoute,
+          currentSegment: segments[0],
+        });
+
+        // If update is required, redirect to update screen
+        if (updateRequired && !isUpdateRoute) {
+          console.log("[AppRouterGate] ➡️ Redirecting to /update");
+          await router.replace("/update");
+          setTimeout(async () => {
+            setAppReady(true);
+            await SplashScreen.hideAsync();
+          }, 40);
+          setRedirecting(false);
+          return;
+        }
+
+        // If we're on update screen but no longer need update, redirect away
+        if (isUpdateRoute && !updateRequired) {
+          console.log("[AppRouterGate] ➡️ Update no longer required, redirecting away from /update");
+          const hasOnboarded = await getHasOnboarded();
+          await router.replace(hasOnboarded ? "/(tabs)" : "/onboarding/intro");
+          setTimeout(async () => {
+            setAppReady(true);
+            await SplashScreen.hideAsync();
+          }, 40);
+          setRedirecting(false);
+          return;
+        }
 
         // Skip routing if we're on the join route - it handles its own navigation
         if (isJoinRoute) {
           setAppReady(true);
           await SplashScreen.hideAsync();
+          setRedirecting(false);
+          return;
+        }
+
+        const hasOnboarded = await getHasOnboarded();
+        const inOnboarding = segments[0] === "onboarding";
+
+        // If segments is undefined/empty and we don't need update, force navigation
+        // This handles the case where Android Expo Go has cached the /update route
+        if (!segments[0] && !updateRequired) {
+          console.log("[AppRouterGate] ➡️ Segments undefined and no update needed, forcing navigation");
+          await router.replace(hasOnboarded ? "/(tabs)" : "/onboarding/intro");
+          setTimeout(async () => {
+            setAppReady(true);
+            await SplashScreen.hideAsync();
+          }, 40);
           setRedirecting(false);
           return;
         }
@@ -318,7 +331,7 @@ function AppRouterGate({ fontsLoaded }: { fontsLoaded: boolean }) {
 
     route();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fontsLoaded, navigationState?.key]);
+  }, [fontsLoaded, navigationState?.key, updateRequired]);
 
   if (!fontsLoaded || !appReady || redirecting) {
     return <FullScreenLoader />;
@@ -338,6 +351,8 @@ export default function RootLayout() {
     Spectral_700Bold_Italic,
   });
 
+  const { updateRequired, loading: versionLoading } = useVersionCheck();
+
   const { authInitialized, claimsReady } = useAuthAndClaimsGate();
 
   useEffect(() => {
@@ -347,8 +362,18 @@ export default function RootLayout() {
     updateUserTimezone();
   }, [claimsReady]);
 
+  // Gate on fonts loading first
+  if (!fontsLoaded) {
+    return <FullScreenLoader />;
+  }
+
+  // Check version requirement (after fonts, before auth)
+  if (versionLoading) {
+    return <FullScreenLoader />;
+  }
+
   // Gate EVERYTHING (including providers that mount Firestore listeners)
-  if (!fontsLoaded || !authInitialized || !claimsReady) {
+  if (!authInitialized || !claimsReady) {
     return <FullScreenLoader />;
   }
 
@@ -359,7 +384,10 @@ export default function RootLayout() {
           <AccountabilityProvider>
             <ModalIntentProvider>
               <ThreadProvider>
-                <AppRouterGate fontsLoaded={fontsLoaded} />
+                <AppRouterGate
+                  fontsLoaded={fontsLoaded}
+                  updateRequired={updateRequired}
+                />
               </ThreadProvider>
             </ModalIntentProvider>
           </AccountabilityProvider>

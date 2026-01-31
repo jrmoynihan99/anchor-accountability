@@ -495,10 +495,11 @@ export default function MessageThreadScreen() {
   }, []);
 
   useEffect(() => {
-    if (!currentUserId || !isNewThread || !displayOtherUserId) return;
+    if (!currentUserId || !isNewThread || !displayOtherUserId || !organizationId) return;
     const setupNewThread = async () => {
       try {
         const newThreadId = await createThread(
+          organizationId,
           displayOtherUserId,
           pleaId,
           encouragementId,
@@ -515,6 +516,7 @@ export default function MessageThreadScreen() {
     currentUserId,
     isNewThread,
     displayOtherUserId,
+    organizationId,
     pleaId,
     encouragementId,
     postId,

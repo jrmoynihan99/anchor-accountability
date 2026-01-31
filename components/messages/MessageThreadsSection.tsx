@@ -126,7 +126,7 @@ export function MessageThreadsSection({
 
           {receivedInvites.map((invite) => {
             const thread = threads.find(
-              (t) => t.otherUserId === invite.menteeUid
+              (t) => t.otherUserId === invite.menteeUid,
             );
 
             if (!thread) return null;
@@ -164,7 +164,7 @@ export function MessageThreadsSection({
           {/* ✅ Show declined invites first */}
           {declinedInvites.map((invite) => {
             const thread = threads.find(
-              (t) => t.otherUserId === invite.mentorUid
+              (t) => t.otherUserId === invite.mentorUid,
             );
 
             if (!thread) return null;
@@ -184,7 +184,7 @@ export function MessageThreadsSection({
           {/* Show sent invites after declined */}
           {sentInvites.map((invite) => {
             const thread = threads.find(
-              (t) => t.otherUserId === invite.mentorUid
+              (t) => t.otherUserId === invite.mentorUid,
             );
 
             if (!thread) return null;
@@ -251,31 +251,33 @@ export function MessageThreadsSection({
             PEOPLE YOU SUPPORT
           </ThemedText>
 
-          {menteeThreads.map((t) => {
-            const menteeRelationship = mentees.find(
-              (m) => m.menteeUid === t.otherUserId
-            );
+          <View style={styles.threadsList}>
+            {menteeThreads.map((t) => {
+              const menteeRelationship = mentees.find(
+                (m) => m.menteeUid === t.otherUserId,
+              );
 
-            return (
-              <ThreadItem
-                key={t.id}
-                thread={t}
-                colors={colors}
-                now={now}
-                relationshipData={
-                  menteeRelationship
-                    ? {
-                        type: "mentee",
-                        id: menteeRelationship.id,
-                        streak: menteeRelationship.streak,
-                        checkInStatus: menteeRelationship.checkInStatus,
-                        timezone: menteeRelationship.menteeTimezone,
-                      }
-                    : undefined
-                }
-              />
-            );
-          })}
+              return (
+                <ThreadItem
+                  key={t.id}
+                  thread={t}
+                  colors={colors}
+                  now={now}
+                  relationshipData={
+                    menteeRelationship
+                      ? {
+                          type: "mentee",
+                          id: menteeRelationship.id,
+                          streak: menteeRelationship.streak,
+                          checkInStatus: menteeRelationship.checkInStatus,
+                          timezone: menteeRelationship.menteeTimezone,
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </View>
         </View>
       )}
 

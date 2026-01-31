@@ -163,32 +163,40 @@ export function LoginForm({
             "setUserOrganization",
           );
           const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+          console.log("[LoginForm] 🔵 Calling setUserOrganization with:", { organizationId, timezone });
           const result = await setUserOrganization({ organizationId, timezone });
+          console.log("[LoginForm] ✅ setUserOrganization completed:", result);
 
-          // Force token refresh and verify claim is present
-          await auth.currentUser?.getIdToken(true);
-
-          // Verify the claim is actually in the token (retry up to 3 times)
+          // Wait for claim to appear in client token before proceeding
+          console.log("[LoginForm] 🔵 Waiting for claim to propagate to client token...");
           let claimVerified = false;
-          for (let attempt = 0; attempt < 3; attempt++) {
+          for (let attempt = 0; attempt < 10; attempt++) {
+            await auth.currentUser?.getIdToken(true); // Force refresh
             const tokenResult = await auth.currentUser?.getIdTokenResult();
+            console.log(`[LoginForm] 🔍 Attempt ${attempt + 1}: organizationId in token:`, tokenResult?.claims.organizationId);
+
             if (tokenResult?.claims.organizationId === organizationId) {
               claimVerified = true;
+              console.log("[LoginForm] ✅ Claim verified in token!");
               break;
             }
-            // Wait 1 second before retry
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            await auth.currentUser?.getIdToken(true);
+
+            // Wait 500ms before next attempt
+            if (attempt < 9) {
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
           }
 
           if (!claimVerified) {
-            throw new Error("Custom claim verification failed - please try signing in again");
+            throw new Error("Token refresh timed out - claim not appearing in token after 5 seconds");
           }
 
-          // Manually update the context
+          // NOW update the context - token has the claim, hooks will work
+          console.log("[LoginForm] 🔵 Updating organization context...");
           await updateOrganization(organizationId);
+          console.log("[LoginForm] ✅ Organization context updated");
         } catch (claimError) {
-          console.error("Failed to set custom claim:", claimError);
+          console.error("Failed to set organization:", claimError);
           setIsSigningUp(false); // ✅ Reset flag on error
           throw new Error("Failed to complete account setup");
         }
@@ -231,32 +239,40 @@ export function LoginForm({
           "setUserOrganization",
         );
         const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+        console.log("[LoginForm-Anonymous] 🔵 Calling setUserOrganization with:", { organizationId, timezone });
         const result = await setUserOrganization({ organizationId, timezone });
+        console.log("[LoginForm-Anonymous] ✅ setUserOrganization completed:", result);
 
-        // Force token refresh and verify claim is present
-        await auth.currentUser?.getIdToken(true);
-
-        // Verify the claim is actually in the token (retry up to 3 times)
+        // Wait for claim to appear in client token before proceeding
+        console.log("[LoginForm-Anonymous] 🔵 Waiting for claim to propagate to client token...");
         let claimVerified = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 10; attempt++) {
+          await auth.currentUser?.getIdToken(true); // Force refresh
           const tokenResult = await auth.currentUser?.getIdTokenResult();
+          console.log(`[LoginForm-Anonymous] 🔍 Attempt ${attempt + 1}: organizationId in token:`, tokenResult?.claims.organizationId);
+
           if (tokenResult?.claims.organizationId === organizationId) {
             claimVerified = true;
+            console.log("[LoginForm-Anonymous] ✅ Claim verified in token!");
             break;
           }
-          // Wait 1 second before retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          await auth.currentUser?.getIdToken(true);
+
+          // Wait 500ms before next attempt
+          if (attempt < 9) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
         }
 
         if (!claimVerified) {
-          throw new Error("Custom claim verification failed - please try signing in again");
+          throw new Error("Token refresh timed out - claim not appearing in token after 5 seconds");
         }
 
-        // Manually update the context
+        // NOW update the context - token has the claim, hooks will work
+        console.log("[LoginForm-Anonymous] 🔵 Updating organization context...");
         await updateOrganization(organizationId);
+        console.log("[LoginForm-Anonymous] ✅ Organization context updated");
       } catch (claimError) {
-        console.error("Failed to set custom claim:", claimError);
+        console.error("Failed to set organization:", claimError);
         setIsSigningUp(false); // ✅ Reset flag on error
         throw new Error("Failed to complete account setup");
       }
