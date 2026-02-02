@@ -19,7 +19,8 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserNotificationUsageDescription": "We use notifications to alert you about new help requests, encouragements, and messages."
+        "NSUserNotificationUsageDescription": "We use notifications to alert you about new help requests, encouragements, and messages.",
+        "NSCameraUsageDescription": "Camera access is used to scan credit cards for faster payment entry."
       }
     },
     "android": {
