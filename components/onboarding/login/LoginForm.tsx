@@ -216,6 +216,7 @@ export function LoginForm({
       }
       await completeOnboarding();
     } catch (error: any) {
+      setIsSigningUp(false); // Reset flag on any auth error
       showAuthError({ error, isSignUp, setIsSignUp });
     } finally {
       setLoadingButton(null);
@@ -279,6 +280,7 @@ export function LoginForm({
 
       await completeOnboarding();
     } catch (error) {
+      setIsSigningUp(false); // Reset flag on any error
       console.error("Error with anonymous sign in:", error);
       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
