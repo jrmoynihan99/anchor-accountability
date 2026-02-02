@@ -8,7 +8,9 @@ import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
 import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
+import { useReviewPrompt } from "@/hooks/misc/useReviewPrompt";
 import { useVersionCheck } from "@/hooks/updates/useVersionCheck";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { auth, updateUserTimezone } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
 import {
@@ -239,6 +241,9 @@ function AppRouterGate({
 
   useNotificationHandler({ currentThreadId, currentPleaId });
 
+  // Review prompt (tracks opens, triggers native review after 5 opens)
+  useReviewPrompt();
+
   // Android nav bar styling
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -382,20 +387,25 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <OrganizationProvider>
-          <AccountabilityProvider>
-            <ModalIntentProvider>
-              <ThreadProvider>
-                <AppRouterGate
-                  fontsLoaded={fontsLoaded}
-                  updateRequired={updateRequired}
-                />
-              </ThreadProvider>
-            </ModalIntentProvider>
-          </AccountabilityProvider>
-        </OrganizationProvider>
-      </ThemeProvider>
+      <StripeProvider
+        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}
+        merchantIdentifier="merchant.com.jrmoynihan99.anchor"
+      >
+        <ThemeProvider>
+          <OrganizationProvider>
+            <AccountabilityProvider>
+              <ModalIntentProvider>
+                <ThreadProvider>
+                  <AppRouterGate
+                    fontsLoaded={fontsLoaded}
+                    updateRequired={updateRequired}
+                  />
+                </ThreadProvider>
+              </ModalIntentProvider>
+            </AccountabilityProvider>
+          </OrganizationProvider>
+        </ThemeProvider>
+      </StripeProvider>
     </GestureHandlerRootView>
   );
 }

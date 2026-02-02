@@ -30,6 +30,7 @@ import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
 import { SettingsHeader } from "./SettingsHeader";
 import { SignOutButton } from "./SignOutButton";
+import { SupportSection } from "./SupportSection";
 import { TextContentView } from "./TextContentView";
 
 interface FloatingSettingsModalProps {
@@ -304,6 +305,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
             <NotificationsSection shouldLoad={shouldLoadNotifications} />
             <BlockListSection onNavigateToBlockList={transitionToBlockList} />
             <AppearanceSection />
+            <SupportSection />
             <AboutSection onNavigateToContent={transitionToTextContent} />
             <PrivacySection onNavigateToContent={transitionToTextContent} />
             <ChurchInfoSection />
