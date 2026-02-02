@@ -39,7 +39,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>50</string>
+    <string>51</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -57,6 +57,8 @@
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
     </array>
+    <key>NSCameraUsageDescription</key>
+    <string>Camera access is used to scan credit cards for faster payment entry.</string>
     <key>NSUserNotificationUsageDescription</key>
     <string>We use notifications to alert you about new help requests, encouragements, and messages.</string>
     <key>RCTNewArchEnabled</key>
