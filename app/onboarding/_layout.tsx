@@ -64,6 +64,7 @@ export default function OnboardingLayout() {
         >
           <Stack.Screen name="intro" />
           <Stack.Screen name="login" />
+          <Stack.Screen name="notifications" />
         </Stack>
       </GestureHandlerRootView>
     </OnboardingContext.Provider>

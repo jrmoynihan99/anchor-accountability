@@ -8,6 +8,7 @@ import { Platform } from "react-native";
 const NOTIFICATION_PROMPT_KEY = "hasSeenNotificationPrompt";
 const NOTIFICATION_DISMISSED_KEY = "notificationPromptDismissedAt";
 const ANDROID_DENIAL_COUNT_KEY = "androidNotificationDenialCount";
+const NOTIFICATION_ONBOARDING_KEY = "hasSeenNotificationOnboarding";
 
 export function useNotificationPermission() {
   const [hasSeenPrompt, setHasSeenPrompt] = useState<boolean | null>(null);
@@ -47,9 +48,12 @@ export function useNotificationPermission() {
       const uid = auth.currentUser?.uid || "anonymous";
       const userSpecificPromptKey = `${NOTIFICATION_PROMPT_KEY}_${uid}`;
       const userSpecificDismissedKey = `${NOTIFICATION_DISMISSED_KEY}_${uid}`;
+      const userSpecificOnboardingKey = `${NOTIFICATION_ONBOARDING_KEY}_${uid}`;
 
       const seenPrompt = await AsyncStorage.getItem(userSpecificPromptKey);
-      const hasSeenBefore = seenPrompt === "true";
+      const seenOnboarding = await AsyncStorage.getItem(userSpecificOnboardingKey);
+      // If user went through onboarding notification page, treat as "seen prompt"
+      const hasSeenBefore = seenPrompt === "true" || seenOnboarding === "true";
 
       let denialCount = 0;
       if (Platform.OS === "android") {

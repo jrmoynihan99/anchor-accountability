@@ -126,12 +126,19 @@ export function LoginForm({
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
   const insets = useSafeAreaInsets();
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = async (isNewAccount: boolean) => {
     try {
       await setHasOnboarded();
-      router.replace("/(tabs)");
+      // New accounts go to notification onboarding page first
+      // Existing accounts (login) go directly to main app
+      if (isNewAccount) {
+        router.replace("/onboarding/notifications");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (error) {
       console.error("Error saving onboarding status:", error);
+      // On error, still navigate but skip notification page
       router.replace("/(tabs)");
     }
   };
@@ -214,7 +221,7 @@ export function LoginForm({
         // ✅ Normal sign in - no flag needed
         await signInWithEmailAndPassword(auth, email, password);
       }
-      await completeOnboarding();
+      await completeOnboarding(isSignUp);
     } catch (error: any) {
       setIsSigningUp(false); // Reset flag on any auth error
       showAuthError({ error, isSignUp, setIsSignUp });
@@ -278,7 +285,8 @@ export function LoginForm({
         throw new Error("Failed to complete account setup");
       }
 
-      await completeOnboarding();
+      // Guest accounts are always "new" accounts
+      await completeOnboarding(true);
     } catch (error) {
       setIsSigningUp(false); // Reset flag on any error
       console.error("Error with anonymous sign in:", error);

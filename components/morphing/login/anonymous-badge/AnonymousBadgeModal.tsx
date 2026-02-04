@@ -11,6 +11,13 @@ interface AnonymousBadgeModalProps {
   progress: SharedValue<number>;
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
+  // Optional customization for the collapsed badge appearance
+  badgeText?: string;
+  badgeIcon?: string;
+  badgeIconColor?: string;
+  badgeTextColor?: string;
+  // Variant for different content
+  variant?: "login" | "notifications";
 }
 
 export function AnonymousBadgeModal({
@@ -18,16 +25,21 @@ export function AnonymousBadgeModal({
   progress,
   modalAnimatedStyle,
   close,
+  badgeText = "What's the Difference?",
+  badgeIcon = "questionmark.circle",
+  badgeIconColor,
+  badgeTextColor,
+  variant = "login",
 }: AnonymousBadgeModalProps) {
   const { colors, effectiveTheme } = useTheme();
 
   // Use the same badge component for morphing!
   const buttonContent = (
     <AnonymousBadge
-      text="What's the Difference?"
-      icon="questionmark.circle"
-      iconColor={colors.textSecondary}
-      textColor={colors.textSecondary}
+      text={badgeText}
+      icon={badgeIcon}
+      iconColor={badgeIconColor || colors.textSecondary}
+      textColor={badgeTextColor || colors.textSecondary}
       style={{ alignSelf: "center" }}
     />
   );
@@ -59,24 +71,47 @@ export function AnonymousBadgeModal({
             100% Anonymous
           </ThemedText>
 
-          <ThemedText
-            type="body"
-            style={[styles.bodyText, { color: colors.textSecondary }]}
-          >
-            Both creating an account and continuing as a guest are completely
-            anonymous. Your identity or email address is NEVER shared.
-          </ThemedText>
+          {variant === "login" ? (
+            <>
+              <ThemedText
+                type="body"
+                style={[styles.bodyText, { color: colors.textSecondary }]}
+              >
+                Both creating an account and continuing as a guest are completely
+                anonymous. Your identity or email address is NEVER shared.
+              </ThemedText>
 
-          <ThemedText
-            type="body"
-            style={[styles.bodyText, { color: colors.textSecondary }]}
-          >
-            If you continue as a guest, you will not have a login associated
-            with your account, and your account will be completely deleted if
-            you log out for any reason (uninstall app, new phone, etc). You can
-            convert your guest account to a permanent account with an email &
-            password for login at any time via in app settings.
-          </ThemedText>
+              <ThemedText
+                type="body"
+                style={[styles.bodyText, { color: colors.textSecondary }]}
+              >
+                If you continue as a guest, you will not have a login associated
+                with your account, and your account will be completely deleted if
+                you log out for any reason (uninstall app, new phone, etc). You can
+                convert your guest account to a permanent account with an email &
+                password for login at any time via in app settings.
+              </ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText
+                type="body"
+                style={[styles.bodyText, { color: colors.textSecondary }]}
+              >
+                When you reach out for help or encourage someone else, your
+                identity is never revealed. No names, no emails — just support
+                from real people who understand what you're going through.
+              </ThemedText>
+
+              <ThemedText
+                type="body"
+                style={[styles.bodyText, { color: colors.textSecondary }]}
+              >
+                This allows you to be honest about your struggles without fear
+                of judgment. Everyone here is fighting the same battle.
+              </ThemedText>
+            </>
+          )}
         </View>
       </View>
     </BaseModal>
