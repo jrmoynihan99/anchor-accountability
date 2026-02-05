@@ -1,5 +1,6 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
+import { useModalTargetDimensions } from "./ButtonModalTransitionBridge";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
 import {
@@ -56,6 +57,7 @@ export function BaseModal({
   buttonBorderRadius = 0,
 }: BaseModalProps) {
   const { colors } = useTheme();
+  const modalDimensions = useModalTargetDimensions();
   const gestureY = useSharedValue(0);
 
   // Simple fix: render BlurView on next frame
@@ -118,9 +120,19 @@ export function BaseModal({
     opacity: interpolate(progress.value, [0.1, 0.3], [0, 1], "clamp"),
   }));
 
-  const modalContentStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),
-  }));
+  const contentScaleStart = modalDimensions?.contentScaleStart ?? 1;
+  const modalContentStyle = useAnimatedStyle(() => {
+    const scale = interpolate(
+      progress.value,
+      [0, 1],
+      [contentScaleStart, 1],
+      "clamp"
+    );
+    return {
+      opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),
+      transform: [{ scale }],
+    };
+  });
 
   const buttonContentStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
@@ -173,8 +185,13 @@ export function BaseModal({
       <Animated.View
         style={[
           modalAnimatedStyle,
-          modalFadeStyle, // <<<<< The fade out effect!
-          { overflow: "hidden", zIndex: 20 },
+          modalFadeStyle,
+          {
+            overflow: "hidden",
+            zIndex: 20,
+            alignItems: "center",
+            justifyContent: "center",
+          },
         ]}
         pointerEvents="box-none"
       >
@@ -242,9 +259,19 @@ export function BaseModal({
           {buttonContent}
         </Animated.View>
 
-        {/* Modal Content - WITH RASTERIZATION */}
+        {/* Modal Content - fixed size to avoid re-layout during morph animation */}
         <Animated.View
-          style={[styles.modalContent, modalContentStyle]}
+          style={[
+            modalDimensions
+              ? {
+                  width: modalDimensions.targetWidth,
+                  height: modalDimensions.targetHeight,
+                  padding: 24,
+                  zIndex: 15,
+                }
+              : styles.modalContent,
+            modalContentStyle,
+          ]}
           shouldRasterizeIOS={true}
           renderToHardwareTextureAndroid={true}
         >

@@ -1,6 +1,12 @@
 import { useModalRegistration } from "@/hooks/misc/useGlobalModalManager";
 import * as Haptics from "expo-haptics";
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Dimensions, Keyboard, Platform } from "react-native";
 import {
   Easing,
@@ -13,6 +19,17 @@ import {
 } from "react-native-reanimated";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+// Context to pass target modal dimensions from Bridge to BaseModal,
+// bypassing all intermediate modal components
+const ModalDimensionsContext = createContext<{
+  targetWidth: number;
+  targetHeight: number;
+  contentScaleStart: number;
+} | null>(null);
+
+export const useModalTargetDimensions = () =>
+  useContext(ModalDimensionsContext);
 
 export interface ButtonModalTransitionBridgeProps {
   children: (args: {
@@ -71,14 +88,14 @@ export function ButtonModalTransitionBridge({
       const progressVelocity = Math.abs(velocity) / 150;
       const duration = Math.max(
         80,
-        Math.min(600, (remainingDistance / progressVelocity) * 1000)
+        Math.min(600, (remainingDistance / progressVelocity) * 1000),
       );
       progress.value = withTiming(
         0,
         { duration, easing: Easing.out(Easing.quad) },
         (finished) => {
           if (finished) runOnJS(setIsModalVisible)(false);
-        }
+        },
       );
     } else {
       progress.value = withTiming(
@@ -86,7 +103,7 @@ export function ButtonModalTransitionBridge({
         { duration: 300, easing: Easing.bezier(0.4, 0, 0.6, 1) },
         (finished) => {
           if (finished) runOnJS(setIsModalVisible)(false);
-        }
+        },
       );
     }
   };
@@ -115,7 +132,7 @@ export function ButtonModalTransitionBridge({
             });
           }
         }
-      }
+      },
     );
 
     const hideSubscription = Keyboard.addListener(
@@ -128,7 +145,7 @@ export function ButtonModalTransitionBridge({
               ? Easing.bezier(0.25, 0.46, 0.45, 0.94)
               : Easing.bezier(0.22, 1, 0.36, 1),
         });
-      }
+      },
     );
 
     return () => {
@@ -147,7 +164,7 @@ export function ButtonModalTransitionBridge({
         buttonRef.current.measureInWindow(
           (x: number, y: number, width: number, height: number) => {
             setButtonLayout({ x, y, width, height });
-          }
+          },
         );
       }
 
@@ -172,6 +189,13 @@ export function ButtonModalTransitionBridge({
   const targetHeight = screenHeight * modalHeightPercent;
   const targetLeft = (screenWidth * (1 - modalWidthPercent)) / 2;
   const targetTop = (screenHeight - targetHeight) / 2;
+
+  // Scale factor for content: matches container width ratio so content
+  // visually tracks the container size via GPU transform (no layout work).
+  // Use midpoint (50%) so the content doesn't shrink all the way down.
+  const fullScaleStart =
+    buttonLayout.width > 0 ? buttonLayout.width / targetWidth : 1;
+  const contentScaleStart = (fullScaleStart + 1) / 2;
 
   // --- Modal open (morph-first, auto-fallback if no origin) ---
   const open = () => {
@@ -215,7 +239,7 @@ export function ButtonModalTransitionBridge({
             progress.value,
             [0, buttonFadeThreshold],
             [1, 0],
-            "clamp"
+            "clamp",
           ),
     transform: [{ scale: pressScale.value }],
   }));
@@ -226,7 +250,7 @@ export function ButtonModalTransitionBridge({
       const y = interpolate(
         progress.value,
         [0, 1],
-        [screenHeight, targetTop + keyboardOffset.value]
+        [screenHeight, targetTop + keyboardOffset.value],
       );
 
       return {
@@ -244,27 +268,27 @@ export function ButtonModalTransitionBridge({
     const width = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.width, targetWidth]
+      [buttonLayout.width, targetWidth],
     );
     const height = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.height, targetHeight]
+      [buttonLayout.height, targetHeight],
     );
     const left = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.x, targetLeft]
+      [buttonLayout.x, targetLeft],
     );
     const top = interpolate(
       progress.value,
       [0, 1],
-      [buttonLayout.y, targetTop + keyboardOffset.value]
+      [buttonLayout.y, targetTop + keyboardOffset.value],
     );
     const borderRadius = interpolate(
       progress.value,
       [0, 1],
-      [buttonBorderRadius, modalBorderRadius]
+      [buttonBorderRadius, modalBorderRadius],
     );
 
     return {
@@ -278,17 +302,23 @@ export function ButtonModalTransitionBridge({
     };
   });
 
-  return children({
-    open,
-    openOriginless, // <- NEW
-    close,
-    isModalVisible,
-    progress,
-    buttonAnimatedStyle,
-    modalAnimatedStyle,
-    buttonRef,
-    buttonLayout,
-    handlePressIn,
-    handlePressOut,
-  });
+  return (
+    <ModalDimensionsContext.Provider
+      value={{ targetWidth, targetHeight, contentScaleStart }}
+    >
+      {children({
+        open,
+        openOriginless,
+        close,
+        isModalVisible,
+        progress,
+        buttonAnimatedStyle,
+        modalAnimatedStyle,
+        buttonRef,
+        buttonLayout,
+        handlePressIn,
+        handlePressOut,
+      })}
+    </ModalDimensionsContext.Provider>
+  );
 }
