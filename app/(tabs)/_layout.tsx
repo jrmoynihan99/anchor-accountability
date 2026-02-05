@@ -298,6 +298,7 @@ export default function TabLayout() {
                 }}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
+                showAttentionBadge={permissionStatus !== "granted"}
               />
               <FloatingSettingsModal
                 isVisible={isModalVisible}
@@ -305,6 +306,7 @@ export default function TabLayout() {
                 modalAnimatedStyle={modalAnimatedStyle}
                 close={close}
                 initialScreen={settingsInitialScreen}
+                showAttentionBadge={permissionStatus !== "granted"}
               />
             </>
           );

@@ -10,6 +10,7 @@ import {
   AppStateStatus,
   Platform,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -103,6 +104,11 @@ export function NotificationsSection({
         <ThemedText type="bodyMedium" style={styles.sectionTitle}>
           Notifications
         </ThemedText>
+        {shouldShowEnableButton && !notificationLoading && (
+          <View style={styles.attentionBadge}>
+            <Text style={styles.attentionBadgeText}>!</Text>
+          </View>
+        )}
       </View>
 
       {notificationLoading ? (
@@ -296,6 +302,21 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginLeft: 8,
+  },
+  attentionBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  attentionBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "800",
+    lineHeight: 13,
   },
   settingItem: {
     paddingVertical: 8,

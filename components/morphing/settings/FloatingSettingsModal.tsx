@@ -5,7 +5,7 @@ import { isAnonymousUser } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -39,6 +39,7 @@ interface FloatingSettingsModalProps {
   modalAnimatedStyle: any;
   close: (velocity?: number) => void;
   initialScreen?: "settings" | "guidelines";
+  showAttentionBadge?: boolean;
 }
 
 type ScreenType =
@@ -59,6 +60,7 @@ export function FloatingSettingsModal({
   modalAnimatedStyle,
   close,
   initialScreen = "settings",
+  showAttentionBadge,
 }: FloatingSettingsModalProps) {
   const { colors, effectiveTheme } = useTheme();
   const { termsOfService, privacyPolicy, loading } = useLegalContent();
@@ -262,28 +264,35 @@ Thank you for helping us keep this a safe and welcoming space!`,
 
   // Button content (the settings icon in its collapsed state)
   const buttonContent = (
-    <BlurView
-      intensity={80}
-      tint={effectiveTheme === "dark" ? "dark" : "light"}
-      style={styles.buttonBlur}
-    >
-      <View
-        style={[
-          styles.backgroundContainer,
-          {
-            backgroundColor: colors.navBackground,
-            borderColor: colors.navBorder,
-            borderWidth: 1,
-          },
-        ]}
+    <View style={styles.buttonContentWrapper}>
+      <BlurView
+        intensity={80}
+        tint={effectiveTheme === "dark" ? "dark" : "light"}
+        style={styles.buttonBlur}
       >
-        <Ionicons
-          name="settings-sharp"
-          size={24}
-          color={colors.tabIconSelected}
-        />
-      </View>
-    </BlurView>
+        <View
+          style={[
+            styles.backgroundContainer,
+            {
+              backgroundColor: colors.navBackground,
+              borderColor: colors.navBorder,
+              borderWidth: 1,
+            },
+          ]}
+        >
+          <Ionicons
+            name="settings-sharp"
+            size={24}
+            color={colors.tabIconSelected}
+          />
+        </View>
+      </BlurView>
+      {showAttentionBadge && (
+        <View style={styles.attentionBadge}>
+          <Text style={styles.attentionBadgeText}>!</Text>
+        </View>
+      )}
+    </View>
   );
 
   // Modal content with screen transitions
@@ -393,12 +402,36 @@ Thank you for helping us keep this a safe and welcoming space!`,
 }
 
 const styles = StyleSheet.create({
+  buttonContentWrapper: {
+    width: 40,
+    height: 40,
+  },
   buttonBlur: {
     width: 40,
     height: 40,
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: "transparent",
+  },
+  attentionBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+    zIndex: 3,
+  },
+  attentionBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 12,
   },
   backgroundContainer: {
     alignItems: "center",
