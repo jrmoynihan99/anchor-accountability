@@ -1,6 +1,5 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useModalTargetDimensions } from "./ButtonModalTransitionBridge";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
 import {
@@ -20,6 +19,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { useModalTargetDimensions } from "./ButtonModalTransitionBridge";
 
 interface BaseModalProps {
   isVisible: boolean;
@@ -97,7 +97,7 @@ export function BaseModal({
               scheduleOnRN(close, event.velocityY);
               gestureY.value = 0;
             }
-          }
+          },
         );
       } else {
         progress.value = withTiming(1, {
@@ -133,14 +133,14 @@ export function BaseModal({
       progress.value,
       [0, 1],
       [contentScaleStart, 1],
-      "clamp"
+      "clamp",
     );
     // Animate the offset: start with offset, end at 0 (normal position)
     const translateY = interpolate(
       progress.value,
       [0, 1],
       [contentOffsetY, 0],
-      "clamp"
+      "clamp",
     );
     // Use array format for transformOrigin to avoid RN string parsing issues
     const yPercent = Math.round(buttonYPercent * 10000) / 100;
@@ -156,7 +156,7 @@ export function BaseModal({
       progress.value,
       buttonContentOpacityRange,
       [1, 0],
-      "clamp"
+      "clamp",
     ),
   }));
 
@@ -170,7 +170,7 @@ export function BaseModal({
       progress.value,
       [0, 0.02, 1], // last 12% of animation will fade out
       [0, 1, 1],
-      "clamp"
+      "clamp",
     ),
   }));
 
@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
     backgroundColor: "transparent",
     justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
     flex: 1,
