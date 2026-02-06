@@ -9,14 +9,17 @@ import Animated, {
   Extrapolation,
   interpolate,
   SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Constants for header transition
 const HEADER_HEIGHT = 120;
 const STICKY_HEADER_HEIGHT = 44;
-const SCROLL_THRESHOLD = 80;
+const SCROLL_THRESHOLD = 40;
 
 // --- Large Section Header (for ListHeaderComponent)
 interface SectionHeaderProps {
@@ -39,7 +42,7 @@ export function SectionHeader({
       scrollY.value,
       [0, 24, 48],
       [1, 0.4, 0],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return { opacity };
   });
@@ -153,25 +156,27 @@ export function MessageThreadsHeader({
   loading = false,
   error = null,
 }: MessageThreadsHeaderProps) {
-  // Sticky header animation style
+  const visible = useSharedValue(0);
+
+  useAnimatedReaction(
+    () => scrollY.value > SCROLL_THRESHOLD,
+    (isPast, wasPast) => {
+      if (isPast !== wasPast) {
+        visible.value = withTiming(isPast ? 1 : 0, {
+          duration: 200,
+        });
+      }
+    },
+  );
+
   const stickyHeaderAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, SCROLL_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP
-    );
-
-    const translateY = interpolate(
-      scrollY.value,
-      [0, SCROLL_THRESHOLD],
-      [-20, 0],
-      Extrapolation.CLAMP
-    );
-
     return {
-      opacity,
-      transform: [{ translateY }],
+      opacity: visible.value,
+      transform: [
+        {
+          translateY: interpolate(visible.value, [0, 1], [-20, 0]),
+        },
+      ],
     };
   });
 
