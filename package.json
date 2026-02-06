@@ -28,7 +28,7 @@
     "@stripe/stripe-react-native": "0.50.3",
     "axios": "^1.11.0",
     "cheerio": "^1.1.2",
-    "expo": "~54.0.30",
+    "expo": "~54.0.33",
     "expo-auth-session": "~7.0.10",
     "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.0",
@@ -41,7 +41,7 @@
     "expo-localization": "~17.0.8",
     "expo-navigation-bar": "~5.0.10",
     "expo-notifications": "~0.32.15",
-    "expo-router": "~6.0.21",
+    "expo-router": "~6.0.23",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",
     "expo-store-review": "~9.0.9",
@@ -69,7 +69,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "^19.1.13",
+    "@types/react": "~19.1.10",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"

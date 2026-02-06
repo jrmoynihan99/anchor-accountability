@@ -2,7 +2,7 @@
   "expo": {
     "name": "Anchor",
     "slug": "my-accountability-app",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "anchor",
@@ -11,9 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.jrmoynihan99.anchor",
-      "associatedDomains": [
-        "applinks:anchoraccountability.com"
-      ],
+      "associatedDomains": ["applinks:anchoraccountability.com"],
       "entitlements": {
         "aps-environment": "production"
       },
@@ -32,9 +30,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.jrmoynihan99.anchor",
       "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
-      ],
+      "permissions": ["android.permission.POST_NOTIFICATIONS"],
       "intentFilters": [
         {
           "action": "VIEW",
@@ -46,10 +42,7 @@
               "pathPrefix": "/join"
             }
           ],
-          "category": [
-            "BROWSING",
-            "DEFAULT"
-          ]
+          "category": ["BROWSING", "DEFAULT"]
         }
       ]
     },
