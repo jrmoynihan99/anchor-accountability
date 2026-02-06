@@ -168,7 +168,7 @@ export function GuidedPrayerModal({
 
 const styles = StyleSheet.create({
   prayerButtonContent: {
-    alignItems: "stretch",
+    width: "100%",
   },
   modalHeader: {
     alignItems: "center",

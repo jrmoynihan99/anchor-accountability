@@ -57,7 +57,7 @@ export function MentorModal({
   const { timeline, loading, submitCheckIn } = useCheckIns(
     relationshipId,
     uid,
-    7
+    7,
   );
 
   const handleMessage =
@@ -88,7 +88,7 @@ export function MentorModal({
   const handleSubmitCheckIn = async (
     temptationLevel: number,
     triggers: TriggerType[] | undefined,
-    note: string
+    note: string,
   ) => {
     if (!uid) return;
 
@@ -205,6 +205,7 @@ export function MentorModal({
 const styles = StyleSheet.create({
   buttonContent: {
     padding: 0,
+    width: "100%",
   },
   screenContainer: {
     flex: 1,

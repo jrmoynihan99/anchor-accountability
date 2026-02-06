@@ -58,7 +58,7 @@ export function MenteeModal({
   const { checkIns, timeline, loading, userTimezone } = useCheckIns(
     relationshipId,
     menteeUid,
-    7
+    7,
   );
 
   const latestCheckIn =
@@ -176,6 +176,7 @@ export function MenteeModal({
 const styles = StyleSheet.create({
   buttonContent: {
     padding: 0,
+    width: "100%",
   },
   screenContainer: {
     flex: 1,

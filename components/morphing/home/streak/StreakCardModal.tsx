@@ -45,17 +45,17 @@ export function StreakCardModal({
   // Helper functions for stats
   const getTotalDaysTracked = (data: StreakEntry[]) => {
     return data.filter(
-      (entry) => entry.status === "success" || entry.status === "fail"
+      (entry) => entry.status === "success" || entry.status === "fail",
     ).length;
   };
 
   const getSuccessRate = (data: StreakEntry[]) => {
     const trackedEntries = data.filter(
-      (entry) => entry.status === "success" || entry.status === "fail"
+      (entry) => entry.status === "success" || entry.status === "fail",
     );
     if (trackedEntries.length === 0) return 0;
     const successCount = trackedEntries.filter(
-      (entry) => entry.status === "success"
+      (entry) => entry.status === "success",
     ).length;
     return (successCount / trackedEntries.length) * 100;
   };
@@ -203,7 +203,7 @@ export function StreakCardModal({
 
 const styles = StyleSheet.create({
   streakButtonContent: {
-    alignItems: "stretch", // Full width for the streak card
+    width: "100%", // Full width for the streak card
   },
   modalHeader: {
     alignItems: "center",

@@ -200,7 +200,10 @@ export function ButtonModalTransitionBridge({
 
   // Button Y position as percentage (0 = top, 1 = bottom) for continuous
   // transform origin and content positioning
-  const buttonYPercent = Math.min(Math.max(buttonLayout.y / screenHeight, 0), 1);
+  const buttonYPercent = Math.min(
+    Math.max(buttonLayout.y / screenHeight, 0),
+    1,
+  );
 
   // --- Modal open (morph-first, auto-fallback if no origin) ---
   const open = () => {
