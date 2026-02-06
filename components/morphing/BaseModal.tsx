@@ -121,11 +121,19 @@ export function BaseModal({
   }));
 
   const contentScaleStart = modalDimensions?.contentScaleStart ?? 1;
-  const buttonYPercent = modalDimensions?.buttonYPercent ?? 0.5;
+  const rawButtonYPercent = modalDimensions?.buttonYPercent ?? 0.5;
   const targetHeight = modalDimensions?.targetHeight ?? 0;
 
-  // Offset content so the buttonYPercent point is visible in the window
-  // 0% → no offset (top visible), 50% → center visible, 100% → bottom visible
+  // Clamp buttonYPercent to valid range (0.25 to 0.75)
+  // If raw value is negative or very low, clamp to 0.25
+  // If raw value is too high, clamp to 0.75
+  // This keeps the dynamic percentage behavior while preventing extreme edge effects
+  const buttonYPercent = Math.max(0.2, Math.min(0.8, rawButtonYPercent));
+
+  // Original formula - fully dynamic based on clamped percentage
+  // Button at top (0.15) → positive offset (content shifts down)
+  // Button at middle (0.5) → 0 offset
+  // Button at bottom (0.85) → negative offset (content shifts up)
   const contentOffsetY = -(buttonYPercent - 0.5) * targetHeight;
 
   const modalContentStyle = useAnimatedStyle(() => {
