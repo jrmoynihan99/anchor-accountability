@@ -104,8 +104,8 @@ export function MyReachOutCardContent({
             {reachOut.encouragementCount === 0
               ? "Waiting for encouragement"
               : reachOut.encouragementCount === 1
-              ? "View 1 encouragement"
-              : `View ${reachOut.encouragementCount} encouragements`}
+                ? "View 1 encouragement"
+                : `View ${reachOut.encouragementCount} encouragements`}
           </ThemedText>
           <IconSymbol
             name={reachOut.encouragementCount === 0 ? "clock" : "arrow.right"}
@@ -121,7 +121,7 @@ export function MyReachOutCardContent({
 // Helper function
 function getTimeAgo(date: Date, now: Date): string {
   const diffInMinutes = Math.floor(
-    (now.getTime() - date.getTime()) / (1000 * 60)
+    (now.getTime() - date.getTime()) / (1000 * 60),
   );
 
   // Check if it's today

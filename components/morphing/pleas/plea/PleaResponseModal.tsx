@@ -215,7 +215,9 @@ export function PleaResponseModal({
   const isUrgent = plea.isUrgent;
 
   const buttonContent = (
-    <PleaCardContent plea={plea} now={now} isUrgent={isUrgent} />
+    <View style={styles.buttonContentWrapper}>
+      <PleaCardContent plea={plea} now={now} isUrgent={isUrgent} />
+    </View>
   );
 
   // --- Screens ---
@@ -284,7 +286,7 @@ export function PleaResponseModal({
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.cardBackground}
-      buttonContentPadding={20}
+      buttonContentPadding={0}
       buttonBorderWidth={isUrgent ? 1.5 : 1}
       buttonBorderColor={isUrgent ? colors.error : "transparent"}
       buttonBorderRadius={16}
@@ -302,6 +304,11 @@ function getHoursAgo(date: Date, now: Date): number {
 }
 
 const styles = StyleSheet.create({
+  buttonContentWrapper: {
+    width: "100%",
+    position: "relative",
+    padding: 20,
+  },
   screenContainer: {
     flex: 1,
     position: "relative",

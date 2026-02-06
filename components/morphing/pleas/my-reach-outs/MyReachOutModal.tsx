@@ -12,7 +12,7 @@ import {
   where,
 } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SharedValue } from "react-native-reanimated";
 import { BaseModal } from "../../BaseModal";
 import { EncouragementsList } from "./EncouragementsList";
@@ -122,7 +122,11 @@ export function MyReachOutModal({
   if (!reachOut) return null;
 
   // Button content (shows the reach out card in collapsed state)
-  const buttonContent = <MyReachOutCardContent reachOut={reachOut} now={now} />;
+  const buttonContent = (
+    <View style={styles.buttonContentWrapper}>
+      <MyReachOutCardContent reachOut={reachOut} now={now} />
+    </View>
+  );
 
   // Modal content - Much cleaner now!
   const modalContent = (
@@ -153,7 +157,7 @@ export function MyReachOutModal({
       theme={effectiveTheme ?? "dark"}
       backgroundColor={colors.cardBackground}
       buttonBackgroundColor={colors.cardBackground}
-      buttonContentPadding={20}
+      buttonContentPadding={0}
       buttonBorderWidth={1}
       buttonBorderColor="transparent"
       buttonBorderRadius={16}
@@ -166,6 +170,13 @@ export function MyReachOutModal({
 }
 
 const styles = StyleSheet.create({
+  buttonContentWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+  },
   scrollContainer: {
     flex: 1,
   },
