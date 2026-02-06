@@ -121,6 +121,13 @@ export function BaseModal({
   }));
 
   const contentScaleStart = modalDimensions?.contentScaleStart ?? 1;
+  const buttonYPercent = modalDimensions?.buttonYPercent ?? 0.5;
+  const targetHeight = modalDimensions?.targetHeight ?? 0;
+
+  // Offset content so the buttonYPercent point is visible in the window
+  // 0% → no offset (top visible), 50% → center visible, 100% → bottom visible
+  const contentOffsetY = -(buttonYPercent - 0.5) * targetHeight;
+
   const modalContentStyle = useAnimatedStyle(() => {
     const scale = interpolate(
       progress.value,
@@ -128,9 +135,19 @@ export function BaseModal({
       [contentScaleStart, 1],
       "clamp"
     );
+    // Animate the offset: start with offset, end at 0 (normal position)
+    const translateY = interpolate(
+      progress.value,
+      [0, 1],
+      [contentOffsetY, 0],
+      "clamp"
+    );
+    // Use array format for transformOrigin to avoid RN string parsing issues
+    const yPercent = Math.round(buttonYPercent * 10000) / 100;
     return {
       opacity: interpolate(progress.value, [0.15, 1], [0, 1], "clamp"),
-      transform: [{ scale }],
+      transform: [{ scale }, { translateY }],
+      transformOrigin: ["50%", `${yPercent}%`, 0],
     };
   });
 

@@ -26,6 +26,7 @@ const ModalDimensionsContext = createContext<{
   targetWidth: number;
   targetHeight: number;
   contentScaleStart: number;
+  buttonYPercent: number;
 } | null>(null);
 
 export const useModalTargetDimensions = () =>
@@ -197,6 +198,10 @@ export function ButtonModalTransitionBridge({
     buttonLayout.width > 0 ? buttonLayout.width / targetWidth : 1;
   const contentScaleStart = (fullScaleStart + 1) / 2;
 
+  // Button Y position as percentage (0 = top, 1 = bottom) for continuous
+  // transform origin and content positioning
+  const buttonYPercent = Math.min(Math.max(buttonLayout.y / screenHeight, 0), 1);
+
   // --- Modal open (morph-first, auto-fallback if no origin) ---
   const open = () => {
     // If we don't have a measured origin, use originless slide-up fallback
@@ -304,7 +309,7 @@ export function ButtonModalTransitionBridge({
 
   return (
     <ModalDimensionsContext.Provider
-      value={{ targetWidth, targetHeight, contentScaleStart }}
+      value={{ targetWidth, targetHeight, contentScaleStart, buttonYPercent }}
     >
       {children({
         open,

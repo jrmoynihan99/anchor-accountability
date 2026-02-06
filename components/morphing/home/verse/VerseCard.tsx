@@ -46,24 +46,21 @@ export function VerseCard({
   const verseData = preloadedData || fetchedData;
 
   return (
-    <TouchableOpacity
-      onPress={() =>
-        onPress?.(verseData.verse, verseData.reference, verseData.formattedDate)
-      }
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
-      activeOpacity={1}
-      style={{ flex: 1 }}
-    >
-      <Animated.View
+    <Animated.View style={style}>
+      <TouchableOpacity
         ref={buttonRef}
+        onPress={() =>
+          onPress?.(verseData.verse, verseData.reference, verseData.formattedDate)
+        }
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        activeOpacity={1}
         style={[
           styles.card,
           {
             backgroundColor: colors.cardBackground,
             shadowColor: colors.shadow,
           },
-          style,
         ]}
       >
         <VerseCardContent
@@ -75,8 +72,8 @@ export function VerseCard({
           currentIndex={currentIndex}
           total={total}
         />
-      </Animated.View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
