@@ -2,6 +2,7 @@
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import * as Application from "expo-application";
 import Constants from "expo-constants";
 
 interface VersionConfig {
@@ -15,8 +16,13 @@ export function useVersionCheck() {
   const [minimumVersion, setMinimumVersion] = useState<string>("");
 
   useEffect(() => {
-    // Get current app version
-    const currentVersion = Constants.expoConfig?.version || "0.0.0";
+    // Get current app version - try multiple sources for cross-platform compatibility
+    const currentVersion =
+      Constants.expoConfig?.version ||
+      (Constants as any).manifest?.version ||
+      (Constants as any).manifest2?.extra?.expoClient?.version ||
+      Application.nativeApplicationVersion ||
+      "0.0.0";
     console.log("[useVersionCheck] Current version:", currentVersion);
 
     // Real-time listener for version control document

@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
-    elevation: 1,
+    //elevation: 1,
   },
   reachOutHeader: {
     flexDirection: "row",

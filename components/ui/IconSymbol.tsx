@@ -53,6 +53,7 @@ const MAPPING = {
   plus: "plus",
   book: "book-outline",
   star: "star-outline",
+  "star.fill": "star",
   "ellipsis.circle": "dots-horizontal-circle",
   "arrow.right": "arrow-right",
   "hand.raised.slash": "hand-back-right-off",
@@ -101,6 +102,7 @@ const MAPPING = {
   "arrow.right.circle.fill": "arrow-right-circle",
   "doc.text.fill": "file-document",
   "book.fill": "book",
+  "envelope.badge": "email-alert",
 } as const;
 
 // 3. Fallback icon for unmapped symbols on Android
