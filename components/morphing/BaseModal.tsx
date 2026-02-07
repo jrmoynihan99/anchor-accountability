@@ -1,8 +1,10 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useModalPortal } from "@/context/ModalPortalContext";
 import { useTheme } from "@/context/ThemeContext";
 import { BlurView } from "expo-blur";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useLayoutEffect, useState } from "react";
 import {
+  BackHandler,
   Modal,
   Platform,
   StyleSheet,
@@ -59,18 +61,31 @@ export function BaseModal({
   const { colors } = useTheme();
   const modalDimensions = useModalTargetDimensions();
   const gestureY = useSharedValue(0);
+  const { mount, unmount } = useModalPortal();
+  const portalKey = useId();
 
-  // Simple fix: render BlurView on next frame
+  // Delay BlurView mount on iOS until after animation starts
+  // BlurView is skipped entirely on Android for performance
   const [blurReady, setBlurReady] = useState(false);
 
   useEffect(() => {
+    if (Platform.OS === "android") return;
     if (isVisible) {
-      // 100ms delay ensures BlurView initializes properly
       setTimeout(() => setBlurReady(true), 50);
     } else {
       setBlurReady(false);
     }
   }, [isVisible]);
+
+  // Android back button (portal has no onRequestClose)
+  useEffect(() => {
+    if (Platform.OS !== "android" || !isVisible) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      close();
+      return true;
+    });
+    return () => sub.remove();
+  }, [isVisible, close]);
 
   const buttonColor = closeButtonColor || colors.closeButtonText;
   const buttonBgColor = buttonBackgroundColor || backgroundColor;
@@ -182,14 +197,9 @@ export function BaseModal({
     ),
   }));
 
-  return (
-    <Modal
-      visible={isVisible}
-      transparent
-      statusBarTranslucent
-      animationType="none"
-      onRequestClose={() => close()}
-    >
+  // --- Modal content (shared between iOS Modal and Android portal) ---
+  const modalInner = (
+    <>
       {/* Overlay */}
       <Animated.View
         style={[
@@ -219,6 +229,7 @@ export function BaseModal({
           },
         ]}
         pointerEvents="box-none"
+        renderToHardwareTextureAndroid={true}
       >
         {/* Invisible touch blocker to prevent overlay taps from closing modal */}
         <View style={StyleSheet.absoluteFill} pointerEvents="auto" />
@@ -231,11 +242,11 @@ export function BaseModal({
           ]}
         />
 
-        {/* BlurView - render after next frame */}
-        {blurReady && (
+        {/* BlurView - iOS only */}
+        {Platform.OS === "ios" && blurReady && (
           <Animated.View style={[StyleSheet.absoluteFill, blurBackgroundStyle]}>
             <BlurView
-              intensity={Platform.OS === "android" ? 100 : 50}
+              intensity={50}
               tint={theme === "dark" ? "dark" : "light"}
               style={StyleSheet.absoluteFill}
             >
@@ -252,8 +263,8 @@ export function BaseModal({
           </Animated.View>
         )}
 
-        {/* Fallback background (very brief, until blur renders) */}
-        {!blurReady && (
+        {/* Fallback background (iOS: brief until blur renders, Android: permanent) */}
+        {(Platform.OS === "android" || !blurReady) && (
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
@@ -331,8 +342,45 @@ export function BaseModal({
           </GestureDetector>
         </Animated.View>
       </Animated.View>
-    </Modal>
+    </>
   );
+
+  // --- Android: render via portal (same window, no Dialog) ---
+  // useLayoutEffect runs synchronously before paint, eliminating the
+  // one-frame delay that useEffect would cause before portal content appears.
+  useLayoutEffect(() => {
+    if (Platform.OS !== "android") return;
+    if (isVisible) {
+      mount(portalKey, modalInner);
+    } else {
+      unmount(portalKey);
+    }
+  });
+
+  // Cleanup portal on component unmount
+  useLayoutEffect(() => {
+    if (Platform.OS !== "android") return;
+    return () => unmount(portalKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- iOS: use native Modal ---
+  if (Platform.OS === "ios") {
+    return (
+      <Modal
+        visible={isVisible}
+        transparent
+        statusBarTranslucent
+        animationType="none"
+        onRequestClose={() => close()}
+      >
+        {modalInner}
+      </Modal>
+    );
+  }
+
+  // Android: portal renders the content at root level
+  return null;
 }
 
 const styles = StyleSheet.create({

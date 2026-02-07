@@ -3,6 +3,7 @@ import "react-native-reanimated";
 
 import { AccountabilityProvider } from "@/context/AccountabilityContext";
 import { ModalIntentProvider } from "@/context/ModalIntentContext";
+import { ModalPortalHost } from "@/context/ModalPortalContext";
 import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
@@ -402,10 +403,12 @@ export default function RootLayout() {
             <AccountabilityProvider>
               <ModalIntentProvider>
                 <ThreadProvider>
-                  <AppRouterGate
-                    fontsLoaded={fontsLoaded}
-                    updateRequired={updateRequired}
-                  />
+                  <ModalPortalHost>
+                    <AppRouterGate
+                      fontsLoaded={fontsLoaded}
+                      updateRequired={updateRequired}
+                    />
+                  </ModalPortalHost>
                 </ThreadProvider>
               </ModalIntentProvider>
             </AccountabilityProvider>

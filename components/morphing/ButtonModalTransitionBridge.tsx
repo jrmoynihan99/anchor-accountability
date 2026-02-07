@@ -160,11 +160,24 @@ export function ButtonModalTransitionBridge({
     if (!isModalVisible) {
       if (
         buttonRef.current &&
-        typeof buttonRef.current.measureInWindow === "function"
+        typeof buttonRef.current.measure === "function"
       ) {
-        buttonRef.current.measureInWindow(
-          (x: number, y: number, width: number, height: number) => {
-            setButtonLayout({ x, y, width, height });
+        // Use measure() with pageX/pageY (relative to the root view) instead of
+        // measureInWindow() (relative to the device window). On Android with
+        // edge-to-edge, react-native-screens extends Stack screens beyond the
+        // root view bounds, so measureInWindow coordinates don't match the
+        // portal's coordinate system. measure()'s pageX/pageY are relative to
+        // the root view, which matches the portal.
+        buttonRef.current.measure(
+          (
+            _x: number,
+            _y: number,
+            width: number,
+            height: number,
+            pageX: number,
+            pageY: number,
+          ) => {
+            setButtonLayout({ x: pageX, y: pageY, width, height });
           },
         );
       }
@@ -210,9 +223,8 @@ export function ButtonModalTransitionBridge({
     // If we don't have a measured origin, use originless slide-up fallback
     const hasOrigin = buttonLayout.width > 0 && buttonLayout.height > 0;
 
-    // iOS: morph when we have origin, otherwise slide-up
-    // Android: ALWAYS use slide-up (perf-friendly)
-    const shouldMorph = Platform.OS === "ios" && hasOrigin;
+    // Morph when we have a measured origin, otherwise slide-up
+    const shouldMorph = hasOrigin;
     openMode.value = shouldMorph ? 0 : 1;
 
     setIsModalVisible(true);
