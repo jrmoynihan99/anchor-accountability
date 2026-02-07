@@ -1,9 +1,9 @@
 // hooks/updates/useVersionCheck.ts
 import { db } from "@/lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-import { useEffect, useState } from "react";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
+import { doc, onSnapshot } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
 interface VersionConfig {
   minimumVersion?: string;
@@ -33,7 +33,9 @@ export function useVersionCheck() {
       (versionDoc) => {
         try {
           if (!versionDoc.exists()) {
-            console.log("[useVersionCheck] No version control document found, allowing app access");
+            console.log(
+              "[useVersionCheck] No version control document found, allowing app access",
+            );
             setUpdateRequired(false);
             setLoading(false);
             return;
@@ -45,7 +47,8 @@ export function useVersionCheck() {
           console.log("[useVersionCheck] Required version:", requiredVersion);
 
           // Compare semantic versions
-          const needsUpdate = compareVersions(currentVersion, requiredVersion) < 0;
+          const needsUpdate =
+            compareVersions(currentVersion, requiredVersion) < 0;
           console.log("[useVersionCheck] Version comparison:", {
             current: currentVersion,
             required: requiredVersion,
@@ -56,17 +59,23 @@ export function useVersionCheck() {
           setMinimumVersion(requiredVersion);
           setLoading(false);
         } catch (error) {
-          console.error("[useVersionCheck] Error processing version check:", error);
+          console.error(
+            "[useVersionCheck] Error processing version check:",
+            error,
+          );
           setUpdateRequired(false);
           setLoading(false);
         }
       },
       (error) => {
         // Fail open - allow app access on error
-        console.error("[useVersionCheck] Error listening to version control, allowing app access:", error);
+        console.error(
+          "[useVersionCheck] Error listening to version control, allowing app access:",
+          error,
+        );
         setUpdateRequired(false);
         setLoading(false);
-      }
+      },
     );
 
     return () => unsubscribe();

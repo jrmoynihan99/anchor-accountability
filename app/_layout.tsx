@@ -7,12 +7,12 @@ import { OrganizationProvider } from "@/context/OrganizationContext";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { ThreadProvider, useThread } from "@/context/ThreadContext";
 
-import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { useReviewPrompt } from "@/hooks/misc/useReviewPrompt";
+import { useNotificationHandler } from "@/hooks/notification/useNotificationHandler";
 import { useVersionCheck } from "@/hooks/updates/useVersionCheck";
-import { StripeProvider } from "@stripe/stripe-react-native";
 import { auth, updateUserTimezone } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import {
   Stack,
   router,
@@ -296,16 +296,22 @@ function AppRouterGate({
 
         const hasOnboarded = await getHasOnboarded();
         const inOnboarding = segments[0] === "onboarding";
+        const inTabs = segments[0] === "(tabs)";
+        const segmentUndefined = segments[0] === undefined;
 
         // If we're on update screen but no longer need update, route based on onboarding status
         // OR if we're in wrong place for onboarding state
+        // OR if segment is undefined (navigation not ready yet but we need to route)
         if (
           (isUpdateRoute && !updateRequired) ||
           (hasOnboarded && inOnboarding) ||
-          (!hasOnboarded && !inOnboarding && !isUpdateRoute)
+          (!hasOnboarded && !inOnboarding && !isUpdateRoute) ||
+          (segmentUndefined && !updateRequired) // Force route when segment is undefined
         ) {
           const targetRoute = hasOnboarded ? "/(tabs)" : "/onboarding/intro";
-          console.log(`[AppRouterGate] ➡️ Routing to ${targetRoute}`);
+          console.log(
+            `[AppRouterGate] ➡️ Routing to ${targetRoute} (segmentUndefined: ${segmentUndefined})`,
+          );
 
           // Defer navigation to next tick to avoid navigator state conflicts
           setTimeout(() => {
