@@ -26,7 +26,7 @@ interface ChurchIndicatorModalProps {
   close: (velocity?: number) => void;
   organizationId: string;
   organizationName: string;
-  deferredOrgId: string | null; // ✅ Add this
+  deepLinkedOrgIds: Set<string>;
   onChurchSelected: (organizationId: string, organizationName: string) => void;
 }
 
@@ -39,7 +39,7 @@ export function ChurchIndicatorModal({
   close,
   organizationId,
   organizationName,
-  deferredOrgId, // ✅ Receive this
+  deepLinkedOrgIds,
   onChurchSelected,
 }: ChurchIndicatorModalProps) {
   const { colors, effectiveTheme } = useTheme();
@@ -102,9 +102,9 @@ export function ChurchIndicatorModal({
   const handleChurchSelect = (org: OrganizationData) => {
     setSelectedChurch(org);
 
-    // ✅ Skip PIN if this is the deferred org
-    if (deferredOrgId && org.id === deferredOrgId) {
-      console.log("✅ [ChurchModal] Skipping PIN for deferred org:", org.id);
+    // Skip PIN if this org was accessed via a deep link
+    if (deepLinkedOrgIds.has(org.id)) {
+      console.log("[ChurchModal] Skipping PIN for deep-linked org:", org.id);
       handlePinSuccess(org.id, org.name);
       return;
     }

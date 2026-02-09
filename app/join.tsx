@@ -1,4 +1,5 @@
 import { useTheme } from "@/context/ThemeContext";
+import { addDeepLinkedOrg } from "@/lib/deepLinkedOrgs";
 import { auth } from "@/lib/firebase";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
@@ -29,6 +30,11 @@ export default function JoinRedirect() {
         }
       } else {
         // Not authenticated, save org and go to login
+
+        // Persist durably for PIN bypass and pre-selection (survives restarts)
+        await addDeepLinkedOrg(org);
+
+        // Also save to platform temp storage (for getDeferredOrg compatibility)
         if (Platform.OS === "ios") {
           const { AppGroupStorage } = NativeModules;
           if (AppGroupStorage?.setDeferredOrg) {

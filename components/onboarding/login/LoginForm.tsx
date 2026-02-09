@@ -53,7 +53,7 @@ interface LoginFormProps {
   setShowPassword: (show: boolean) => void;
   organizationId: string;
   organizationName: string;
-  deferredOrgId: string | null; // ✅ Add this
+  deepLinkedOrgIds: Set<string>;
   onChurchSelected: (organizationId: string, organizationName: string) => void;
   onChurchModalVisibilityChange: (visible: boolean) => void;
 }
@@ -117,7 +117,7 @@ export function LoginForm({
   setShowPassword,
   organizationId,
   organizationName,
-  deferredOrgId, // ✅ Receive this
+  deepLinkedOrgIds,
   onChurchSelected,
   onChurchModalVisibilityChange,
 }: LoginFormProps) {
@@ -340,7 +340,7 @@ export function LoginForm({
                     close={close}
                     organizationId={organizationId}
                     organizationName={organizationName}
-                    deferredOrgId={deferredOrgId} // ✅ Pass it down
+                    deepLinkedOrgIds={deepLinkedOrgIds}
                     onChurchSelected={onChurchSelected}
                   />
                 </>

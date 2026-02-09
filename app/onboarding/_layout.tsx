@@ -1,4 +1,5 @@
 import { useOrganizations } from "@/hooks/onboarding/useOrganizations";
+import { getDeepLinkedOrgs } from "@/lib/deepLinkedOrgs";
 import { getDeferredOrg } from "@/lib/getDeferredOrg";
 import { Stack } from "expo-router";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
@@ -9,11 +10,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 type OnboardingContextType = {
   deferredOrgId: string | null;
   deferredOrgName: string | null;
+  deepLinkedOrgIds: Set<string>;
 };
 
 const OnboardingContext = createContext<OnboardingContextType>({
   deferredOrgId: null,
   deferredOrgName: null,
+  deepLinkedOrgIds: new Set(),
 });
 
 export const useOnboardingContext = () => useContext(OnboardingContext);
@@ -22,6 +25,9 @@ export default function OnboardingLayout() {
   const { organizations } = useOrganizations();
   const [deferredOrgId, setDeferredOrgId] = useState<string | null>(null);
   const [deferredOrgName, setDeferredOrgName] = useState<string | null>(null);
+  const [deepLinkedOrgIds, setDeepLinkedOrgIds] = useState<Set<string>>(
+    new Set(),
+  );
   const storedOrgId = useRef<string | null | undefined>(undefined);
 
   // Load deferred org once for entire onboarding flow
@@ -29,7 +35,19 @@ export default function OnboardingLayout() {
     async function loadDeferredOrg() {
       // Only read from storage once
       if (storedOrgId.current === undefined) {
+        // getDeferredOrg() also persists to deepLinkedOrgs internally
         storedOrgId.current = await getDeferredOrg();
+
+        // Load ALL previously deep-linked orgs from persistent storage
+        const deepLinkedData = await getDeepLinkedOrgs();
+        if (deepLinkedData) {
+          setDeepLinkedOrgIds(new Set(deepLinkedData.orgIds));
+
+          // If no fresh deferred link this launch, fall back to persisted latest
+          if (!storedOrgId.current && deepLinkedData.latestOrgId) {
+            storedOrgId.current = deepLinkedData.latestOrgId;
+          }
+        }
       }
 
       // Wait for organizations to load
@@ -54,7 +72,9 @@ export default function OnboardingLayout() {
   }, [organizations, deferredOrgId]);
 
   return (
-    <OnboardingContext.Provider value={{ deferredOrgId, deferredOrgName }}>
+    <OnboardingContext.Provider
+      value={{ deferredOrgId, deferredOrgName, deepLinkedOrgIds }}
+    >
       <GestureHandlerRootView style={styles.container}>
         <Stack
           screenOptions={{

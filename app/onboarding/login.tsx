@@ -30,10 +30,8 @@ export default function LoginScreen() {
   const {
     deferredOrgId: contextDeferredOrgId,
     deferredOrgName: contextDeferredOrgName,
+    deepLinkedOrgIds,
   } = useOnboardingContext();
-
-  // Track the deferred org ID (persists even if user clears selection)
-  const [deferredOrgId, setDeferredOrgId] = useState<string | null>(null);
 
   // State for selected organization (can be updated from modal)
   const [organizationId, setOrganizationId] = useState(
@@ -55,7 +53,6 @@ export default function LoginScreen() {
   // Set deferred org from context when it loads
   useEffect(() => {
     if (contextDeferredOrgId && !params.organizationId) {
-      setDeferredOrgId(contextDeferredOrgId);
       setOrganizationId(contextDeferredOrgId);
       setOrganizationName(contextDeferredOrgName || "Guest");
     }
@@ -122,7 +119,7 @@ export default function LoginScreen() {
               setShowPassword={setShowPassword}
               organizationId={organizationId}
               organizationName={organizationName}
-              deferredOrgId={deferredOrgId}
+              deepLinkedOrgIds={deepLinkedOrgIds}
               onChurchSelected={handleChurchSelected}
               onChurchModalVisibilityChange={setIsChurchModalVisible}
             />
