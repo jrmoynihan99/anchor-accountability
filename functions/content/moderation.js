@@ -82,6 +82,7 @@ exports.moderatePlea = onDocumentCreated(
 
     // GPT moderation with org-specific Firestore prompt
     let gptFlagged = false;
+    let isCrisis = false;
     try {
       const filteringPrompt = await getFilteringPrompt(orgId, "plea");
       logger.info(`[moderatePlea] Using prompt: ${filteringPrompt}`);
@@ -96,7 +97,10 @@ exports.moderatePlea = onDocumentCreated(
       const result = gptCheck.choices[0].message.content.trim();
       logger.info(`[moderatePlea] GPT result: ${result}`);
 
-      if (result !== "ALLOW") {
+      isCrisis = result === "ALLOW: crisis";
+      const isAllowed = result === "ALLOW" || isCrisis;
+
+      if (!isAllowed) {
         gptFlagged = true;
         if (result === "BLOCK: hateful/derogatory") {
           rejectionReason = "Content contains hateful or derogatory language";
@@ -124,6 +128,10 @@ exports.moderatePlea = onDocumentCreated(
 
     if (rejectionReason) {
       updateData.rejectionReason = rejectionReason;
+    }
+    if (isCrisis) {
+      updateData.crisis = true;
+      logger.info(`Plea ${snap.id} in org ${orgId} flagged as crisis content`);
     }
 
     await snap.ref.update(updateData);
@@ -154,6 +162,7 @@ exports.moderatePleaTEST = onDocumentCreated(
 
     let rejectionReason = null;
     let gptFlagged = false;
+    let isCrisis = false;
 
     try {
       const filteringPrompt = await getFilteringPrompt(orgId, "pleaTEST");
@@ -171,7 +180,10 @@ exports.moderatePleaTEST = onDocumentCreated(
       const result = gptCheck.choices[0].message.content.trim();
       logger.info(`[moderatePleaTEST] GPT result: ${result}`);
 
-      if (result !== "ALLOW") {
+      isCrisis = result === "ALLOW: crisis";
+      const isAllowed = result === "ALLOW" || isCrisis;
+
+      if (!isAllowed) {
         gptFlagged = true;
         if (result === "BLOCK: hateful/derogatory") {
           rejectionReason = "Content contains hateful or derogatory language";
@@ -200,6 +212,10 @@ exports.moderatePleaTEST = onDocumentCreated(
     if (rejectionReason) {
       updateData.rejectionReason = rejectionReason;
     }
+    if (isCrisis) {
+      updateData.crisis = true;
+      logger.info(`TEST Plea ${snap.id} in org ${orgId} flagged as crisis content`);
+    }
 
     await snap.ref.update(updateData);
   }
@@ -212,6 +228,7 @@ exports.moderateEncouragement = onDocumentCreated(
   "organizations/{orgId}/pleas/{pleaId}/encouragements/{encId}",
   async (event) => {
     const orgId = event.params.orgId;
+    const pleaId = event.params.pleaId;
     const snap = event.data;
     if (!snap) return;
     const encouragement = snap.data();
@@ -227,13 +244,30 @@ exports.moderateEncouragement = onDocumentCreated(
       return;
     }
 
+    // Fetch parent plea for context
+    let originalPlea = "";
+    try {
+      const pleaDoc = await admin
+        .firestore()
+        .doc(`organizations/${orgId}/pleas/${pleaId}`)
+        .get();
+      if (pleaDoc.exists) {
+        originalPlea = (pleaDoc.data().message || "").trim();
+      }
+    } catch (err) {
+      logger.error(`Failed to fetch parent plea ${pleaId}:`, err);
+    }
+
     let rejectionReason = null;
     let gptFlagged = false;
 
     try {
       const filteringPrompt = await getFilteringPrompt(orgId, "encouragement");
       logger.info(`[moderateEncouragement] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", message);
+      const promptText = filteringPrompt
+        .replace("{originalPlea}", originalPlea)
+        .replace("{message}", message);
+      logger.info(`[moderateEncouragement] Sending prompt text: ${promptText}`);
 
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -279,9 +313,10 @@ exports.moderateEncouragement = onDocumentCreated(
  * Moderate encouragement TEST collection on creation
  */
 exports.moderateEncouragementTEST = onDocumentCreated(
-  "organizations/{orgId}/encouragements_test/{encId}",
+  "organizations/{orgId}/pleas_test/{pleaId}/encouragements/{encId}",
   async (event) => {
     const orgId = event.params.orgId;
+    const pleaId = event.params.pleaId;
     const snap = event.data;
     if (!snap) return;
     const encouragement = snap.data();
@@ -290,6 +325,20 @@ exports.moderateEncouragementTEST = onDocumentCreated(
     logger.info(
       `[moderateEncouragementTEST] Org: ${orgId}, Message: "${message}"`
     );
+
+    // Fetch parent plea from pleas_test collection
+    let originalPlea = "";
+    try {
+      const pleaDoc = await admin
+        .firestore()
+        .doc(`organizations/${orgId}/pleas_test/${pleaId}`)
+        .get();
+      if (pleaDoc.exists) {
+        originalPlea = (pleaDoc.data().message || "").trim();
+      }
+    } catch (err) {
+      logger.error(`Failed to fetch test plea ${pleaId}:`, err);
+    }
 
     if (!message) {
       await snap.ref.update({ status: "approved" });
@@ -310,7 +359,10 @@ exports.moderateEncouragementTEST = onDocumentCreated(
       logger.info(
         `[moderateEncouragementTEST] Using prompt: ${filteringPrompt}`
       );
-      const promptText = filteringPrompt.replace("{message}", message);
+      const promptText = filteringPrompt
+        .replace("{originalPlea}", originalPlea)
+        .replace("{message}", message);
+      logger.info(`[moderateEncouragementTEST] Sending prompt text: ${promptText}`);
 
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -362,9 +414,10 @@ exports.moderatePost = onDocumentCreated(
     const snap = event.data;
     if (!snap) return;
     const post = snap.data();
+    const title = (post?.title || "").trim();
     const content = (post?.content || "").trim();
 
-    logger.info(`[moderatePost] Org: ${orgId}, Content: "${content}"`);
+    logger.info(`[moderatePost] Org: ${orgId}, Title: "${title}", Content: "${content}"`);
 
     if (!content) {
       await snap.ref.update({ status: "approved" });
@@ -376,11 +429,16 @@ exports.moderatePost = onDocumentCreated(
 
     let rejectionReason = null;
     let gptFlagged = false;
+    let isCrisis = false;
 
     try {
       const filteringPrompt = await getFilteringPrompt(orgId, "post");
       logger.info(`[moderatePost] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", content);
+      const promptText = filteringPrompt
+        .replace("{title}", title)
+        .replace("{content}", content)
+        .replace("{message}", content);
+      logger.info(`[moderatePost] Sending prompt text: ${promptText}`);
 
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -392,7 +450,10 @@ exports.moderatePost = onDocumentCreated(
       const result = gptCheck.choices[0].message.content.trim();
       logger.info(`[moderatePost] GPT result: ${result}`);
 
-      if (result !== "ALLOW") {
+      isCrisis = result === "ALLOW: crisis";
+      const isAllowed = result === "ALLOW" || isCrisis;
+
+      if (!isAllowed) {
         gptFlagged = true;
         if (result === "BLOCK: hateful/derogatory") {
           rejectionReason = "Content contains hateful or derogatory language";
@@ -417,6 +478,10 @@ exports.moderatePost = onDocumentCreated(
     if (rejectionReason) {
       updateData.rejectionReason = rejectionReason;
     }
+    if (isCrisis) {
+      updateData.crisis = true;
+      logger.info(`Post ${snap.id} in org ${orgId} flagged as crisis content`);
+    }
 
     await snap.ref.update(updateData);
   }
@@ -432,9 +497,10 @@ exports.moderatePostTEST = onDocumentCreated(
     const snap = event.data;
     if (!snap) return;
     const post = snap.data();
+    const title = (post?.title || "").trim();
     const content = (post?.content || "").trim();
 
-    logger.info(`[moderatePostTEST] Org: ${orgId}, Content: "${content}"`);
+    logger.info(`[moderatePostTEST] Org: ${orgId}, Title: "${title}", Content: "${content}"`);
 
     if (!content) {
       await snap.ref.update({ status: "approved" });
@@ -446,11 +512,16 @@ exports.moderatePostTEST = onDocumentCreated(
 
     let rejectionReason = null;
     let gptFlagged = false;
+    let isCrisis = false;
 
     try {
       const filteringPrompt = await getFilteringPrompt(orgId, "postTEST");
       logger.info(`[moderatePostTEST] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", content);
+      const promptText = filteringPrompt
+        .replace("{title}", title)
+        .replace("{content}", content)
+        .replace("{message}", content);
+      logger.info(`[moderatePostTEST] Sending prompt text: ${promptText}`);
 
       const gptCheck = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -462,7 +533,10 @@ exports.moderatePostTEST = onDocumentCreated(
       const result = gptCheck.choices[0].message.content.trim();
       logger.info(`[moderatePostTEST] GPT result: ${result}`);
 
-      if (result !== "ALLOW") {
+      isCrisis = result === "ALLOW: crisis";
+      const isAllowed = result === "ALLOW" || isCrisis;
+
+      if (!isAllowed) {
         gptFlagged = true;
         if (result === "BLOCK: hateful/derogatory") {
           rejectionReason = "Content contains hateful or derogatory language";
@@ -487,6 +561,10 @@ exports.moderatePostTEST = onDocumentCreated(
     if (rejectionReason) {
       updateData.rejectionReason = rejectionReason;
     }
+    if (isCrisis) {
+      updateData.crisis = true;
+      logger.info(`TEST Post ${snap.id} in org ${orgId} flagged as crisis content`);
+    }
 
     await snap.ref.update(updateData);
   }
@@ -499,6 +577,7 @@ exports.moderateComment = onDocumentCreated(
   "organizations/{orgId}/communityPosts/{postId}/comments/{commentId}",
   async (event) => {
     const orgId = event.params.orgId;
+    const postId = event.params.postId;
     const snap = event.data;
     if (!snap) return;
     const comment = snap.data();
@@ -506,49 +585,71 @@ exports.moderateComment = onDocumentCreated(
 
     logger.info(`[moderateComment] Org: ${orgId}, Content: "${content}"`);
 
+    // Fetch parent post for context
+    let originalPost = "";
+    try {
+      const postDoc = await admin
+        .firestore()
+        .doc(`organizations/${orgId}/communityPosts/${postId}`)
+        .get();
+      if (postDoc.exists) {
+        const postData = postDoc.data();
+        const title = (postData.title || "").trim();
+        const body = (postData.content || "").trim();
+        originalPost = title ? `${title}\n${body}` : body;
+      }
+    } catch (err) {
+      logger.error(`Failed to fetch parent post ${postId}:`, err);
+    }
+
+    let newStatus;
+    let rejectionReason = null;
+
     if (!content) {
-      await snap.ref.update({ status: "approved" });
+      newStatus = "approved";
       logger.info(
         `Comment ${snap.id} in org ${orgId} has empty content, auto-approved.`
       );
-      return;
-    }
+    } else {
+      let gptFlagged = false;
 
-    let rejectionReason = null;
-    let gptFlagged = false;
+      try {
+        const filteringPrompt = await getFilteringPrompt(orgId, "comment");
+        logger.info(`[moderateComment] Using prompt: ${filteringPrompt}`);
+        const promptText = filteringPrompt
+          .replace("{originalPost}", originalPost)
+          .replace("{message}", content);
+        logger.info(`[moderateComment] Sending prompt text: ${promptText}`);
 
-    try {
-      const filteringPrompt = await getFilteringPrompt(orgId, "comment");
-      logger.info(`[moderateComment] Using prompt: ${filteringPrompt}`);
-      const promptText = filteringPrompt.replace("{message}", content);
+        const gptCheck = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "system", content: promptText }],
+          temperature: 0,
+          max_tokens: 20,
+        });
 
-      const gptCheck = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "system", content: promptText }],
-        temperature: 0,
-        max_tokens: 20,
-      });
+        const result = gptCheck.choices[0].message.content.trim();
+        logger.info(`[moderateComment] GPT result: ${result}`);
 
-      const result = gptCheck.choices[0].message.content.trim();
-      logger.info(`[moderateComment] GPT result: ${result}`);
-
-      if (result !== "ALLOW") {
-        gptFlagged = true;
-        if (result === "BLOCK: hateful/derogatory") {
-          rejectionReason = "Content contains hateful or derogatory language";
-        } else if (result === "BLOCK: spam/trolling") {
-          rejectionReason = "Content appears to be spam or trolling";
-        } else {
-          rejectionReason = "Content doesn't align with community guidelines";
+        if (result !== "ALLOW") {
+          gptFlagged = true;
+          if (result === "BLOCK: hateful/derogatory") {
+            rejectionReason = "Content contains hateful or derogatory language";
+          } else if (result === "BLOCK: spam/trolling") {
+            rejectionReason = "Content appears to be spam or trolling";
+          } else {
+            rejectionReason = "Content doesn't align with community guidelines";
+          }
         }
+      } catch (err) {
+        logger.error("GPT comment moderation failed:", err);
+        gptFlagged = true;
+        rejectionReason = "Unable to process content at this time";
       }
-    } catch (err) {
-      logger.error("GPT comment moderation failed:", err);
-      gptFlagged = true;
-      rejectionReason = "Unable to process content at this time";
+
+      newStatus = gptFlagged ? "rejected" : "approved";
     }
 
-    const newStatus = gptFlagged ? "rejected" : "approved";
     logger.info(
       `Moderation result for comment ${snap.id} in org ${orgId}: ${newStatus}`
     );
@@ -559,5 +660,25 @@ exports.moderateComment = onDocumentCreated(
     }
 
     await snap.ref.update(updateData);
+
+    // Increment commentCount on the parent post when approved
+    if (newStatus === "approved") {
+      try {
+        const postRef = admin
+          .firestore()
+          .doc(`organizations/${orgId}/communityPosts/${postId}`);
+        await postRef.update({
+          commentCount: admin.firestore.FieldValue.increment(1),
+        });
+        logger.info(
+          `Incremented commentCount for post ${postId} in org ${orgId}`
+        );
+      } catch (err) {
+        logger.error(
+          `Failed to increment commentCount for post ${postId} in org ${orgId}:`,
+          err
+        );
+      }
+    }
   }
 );

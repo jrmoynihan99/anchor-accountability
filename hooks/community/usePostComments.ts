@@ -306,15 +306,8 @@ export function usePostComments(postId: string | null) {
         commentData
       );
 
-      // Increment comment count on the post
-      const postRef = doc(
-        db,
-        "organizations",
-        organizationId,
-        "communityPosts",
-        postId
-      );
-      await updateDoc(postRef, { commentCount: increment(1) });
+      // commentCount is incremented server-side by the moderateComment
+      // cloud function when the comment is approved
 
       return true;
     } catch (err) {

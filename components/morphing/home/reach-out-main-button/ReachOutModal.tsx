@@ -88,6 +88,7 @@ export function ReachOutModal({
   const [rejectionReason, setRejectionReason] = useState<string | undefined>(
     undefined
   );
+  const [isCrisis, setIsCrisis] = useState(false);
   const screenTransition = useSharedValue(0);
   const { colors, effectiveTheme } = useTheme();
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -113,6 +114,7 @@ export function ReachOutModal({
         setContextMessage("");
         setCurrentPleaId(null);
         setRejectionReason(undefined);
+        setIsCrisis(false);
         screenTransition.value = 0;
         if (unsubscribeRef.current) {
           unsubscribeRef.current();
@@ -174,6 +176,9 @@ export function ReachOutModal({
             const data = snap.data();
             const status = data.status;
             if (status === "approved") {
+              if (data.crisis) {
+                setIsCrisis(true);
+              }
               transitionToScreen("confirmation");
             } else if (status === "rejected") {
               setRejectionReason(data.rejectionReason || undefined);
@@ -319,7 +324,7 @@ export function ReachOutModal({
       case "pending":
         return <ReachOutPendingScreen />;
       case "confirmation":
-        return <ReachOutConfirmationScreen onClose={close} />;
+        return <ReachOutConfirmationScreen onClose={close} crisis={isCrisis} />;
       case "rejected":
         return (
           <ReachOutRejectedScreen

@@ -58,6 +58,7 @@ export function CreatePostModal({
   const [rejectionReason, setRejectionReason] = useState<string | undefined>(
     undefined
   );
+  const [isCrisis, setIsCrisis] = useState(false);
   const screenTransition = useSharedValue(0);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
@@ -86,6 +87,7 @@ export function CreatePostModal({
         setCurrentScreen("input");
         setCurrentPostId(null);
         setRejectionReason(undefined);
+        setIsCrisis(false);
         screenTransition.value = 0;
         setTitle("");
         setContent("");
@@ -178,11 +180,16 @@ export function CreatePostModal({
               const status = data.status;
 
               if (status === "approved") {
+                if (data.crisis) {
+                  setIsCrisis(true);
+                }
                 transitionToScreen("confirmation");
-                // Auto-close after 3 seconds
-                setTimeout(() => {
-                  close?.();
-                }, 3000);
+                // Auto-close after 3 seconds, but NOT for crisis posts
+                if (!data.crisis) {
+                  setTimeout(() => {
+                    close?.();
+                  }, 3000);
+                }
               } else if (status === "rejected") {
                 // Capture rejection reason if available
                 setRejectionReason(data.rejectionReason || undefined);
@@ -289,7 +296,7 @@ export function CreatePostModal({
       case "pending":
         return <CreatePostPendingScreen />;
       case "confirmation":
-        return <CreatePostConfirmationScreen />;
+        return <CreatePostConfirmationScreen crisis={isCrisis} />;
       case "rejected":
         return (
           <CreatePostRejectedScreen
