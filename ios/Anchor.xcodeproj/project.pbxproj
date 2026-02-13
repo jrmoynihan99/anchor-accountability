@@ -16,6 +16,8 @@
 		0D16ECC22F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */; };
 		0D16ECC52F1F110100F2D924 /* AppGroupStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */; };
 		0D16ECC62F1F110100F2D924 /* AppGroupStorage.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */; };
+		0D2C02412F3FA6B400E303E5 /* StorefrontModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2C02402F3FA6B400E303E5 /* StorefrontModule.swift */; };
+		0D2C02422F3FA6B400E303E5 /* StorefrontModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D2C023F2F3FA6B400E303E5 /* StorefrontModule.m */; };
 		0D8D15742F1AD5AE00BC0006 /* AnchorClip.app in Embed App Clips */ = {isa = PBXBuildFile; fileRef = 0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -76,6 +78,8 @@
 		0D16ECBF2F1EFD2E00F2D924 /* AnchorClipUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnchorClipUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppGroupStorage.m; sourceTree = "<group>"; };
 		0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupStorage.swift; sourceTree = "<group>"; };
+		0D2C023F2F3FA6B400E303E5 /* StorefrontModule.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = StorefrontModule.m; path = Anchor/StorefrontModule.m; sourceTree = "<group>"; };
+		0D2C02402F3FA6B400E303E5 /* StorefrontModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StorefrontModule.swift; path = Anchor/StorefrontModule.swift; sourceTree = "<group>"; };
 		0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AnchorClip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D15602F1AD5AE00BC0006 /* AnchorClipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0D8D156A2F1AD5AE00BC0006 /* AnchorClipUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AnchorClipUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -160,6 +164,8 @@
 		13B07FAE1A68108700A75B9A /* Anchor */ = {
 			isa = PBXGroup;
 			children = (
+				0D2C023F2F3FA6B400E303E5 /* StorefrontModule.m */,
+				0D2C02402F3FA6B400E303E5 /* StorefrontModule.swift */,
 				0D16ECC32F1F110100F2D924 /* AppGroupStorage.m */,
 				0D16ECC42F1F110100F2D924 /* AppGroupStorage.swift */,
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
@@ -627,6 +633,8 @@
 			files = (
 				0D16ECC52F1F110100F2D924 /* AppGroupStorage.swift in Sources */,
 				0D16ECC62F1F110100F2D924 /* AppGroupStorage.m in Sources */,
+				0D2C02412F3FA6B400E303E5 /* StorefrontModule.swift in Sources */,
+				0D2C02422F3FA6B400E303E5 /* StorefrontModule.m in Sources */,
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				8A34F8E8BF210716319C3B32 /* ExpoModulesProvider.swift in Sources */,
 			);
