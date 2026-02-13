@@ -24,8 +24,12 @@ export function useDonation() {
       try {
         const countryCode =
           await NativeModules.StorefrontModule.getCountryCode();
-        setIsDonationAvailable(countryCode === "USA");
-      } catch {
+        // Handle both Alpha-2 ("US") and Alpha-3 ("USA") formats
+        const isUS =
+          countryCode === "USA" || countryCode === "US" || countryCode === "us";
+        setIsDonationAvailable(isUS);
+      } catch (err: any) {
+        console.error("[useDonation] Storefront check failed:", err);
         // If storefront check fails, hide the button (safe default)
         setIsDonationAvailable(false);
       }
