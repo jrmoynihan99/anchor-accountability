@@ -7,7 +7,12 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import {
   STRINGS,
@@ -23,6 +28,7 @@ import {
 
 interface StreakCardContentProps {
   streakData: StreakEntry[];
+  loading?: boolean;
   onCheckIn: (status: "success" | "fail") => void;
   onUndo?: (date: string) => void;
   showButtons?: boolean;
@@ -34,6 +40,7 @@ interface StreakCardContentProps {
 
 export function StreakCardContent({
   streakData,
+  loading,
   onCheckIn,
   onUndo,
   showButtons = true,
@@ -56,6 +63,14 @@ export function StreakCardContent({
     externalLastModifiedDate !== undefined
       ? externalLastModifiedDate
       : internalLastModifiedDate;
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="small" color={colors.textSecondary} />
+      </View>
+    );
+  }
 
   const currentStreak = getCurrentStreak(streakData);
   const personalBest = getPersonalBest(streakData);
@@ -219,8 +234,8 @@ export function StreakCardContent({
         daysFromBest > 0 && daysFromBest <= 7
           ? STRINGS.ENCOURAGE_CLOSE_TO_BEST(daysFromBest)
           : currentStreak >= personalBest
-          ? STRINGS.ENCOURAGE_NEW_BEST
-          : STRINGS.ENCOURAGE_KEEP_GOING;
+            ? STRINGS.ENCOURAGE_NEW_BEST
+            : STRINGS.ENCOURAGE_KEEP_GOING;
 
       return (
         <View style={{ position: "relative" }}>
@@ -499,6 +514,11 @@ export function StreakCardContent({
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 64,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

@@ -6,6 +6,7 @@ import { type StreakEntry } from "./streakUtils";
 
 interface StreakCardProps {
   streakData: StreakEntry[];
+  loading?: boolean;
   onCheckIn: (status: "success" | "fail") => void;
   onUndo: (date: string) => void;
   buttonRef?: any;
@@ -21,6 +22,7 @@ interface StreakCardProps {
 
 export function StreakCard({
   streakData,
+  loading,
   onCheckIn,
   onUndo,
   buttonRef,
@@ -48,6 +50,7 @@ export function StreakCard({
         >
           <StreakCardContent
             streakData={streakData}
+            loading={loading}
             onCheckIn={onCheckIn}
             onUndo={onUndo}
             showButtons={true}
@@ -67,6 +70,7 @@ export function StreakCard({
     >
       <StreakCardContent
         streakData={streakData}
+        loading={loading}
         onCheckIn={onCheckIn}
         onUndo={onUndo}
         showButtons={true}

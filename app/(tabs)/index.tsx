@@ -30,7 +30,7 @@ export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { streakData, updateStreakStatus, undoStreakStatus } = useStreakData();
+  const { streakData, loading: streakLoading, updateStreakStatus, undoStreakStatus } = useStreakData();
   const { mentor, loading } = useAccountability();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
@@ -178,6 +178,7 @@ export default function HomeScreen() {
             <>
               <StreakCard
                 streakData={streakData}
+                loading={streakLoading}
                 onCheckIn={handleStreakCheckIn}
                 onUndo={undoStreakStatus}
                 buttonRef={buttonRef}

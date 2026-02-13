@@ -2,8 +2,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { getAuth } from "firebase/auth";
-import { useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { AppState, AppStateStatus, Platform } from "react-native";
 
 const NOTIFICATION_PROMPT_KEY = "hasSeenNotificationPrompt";
 const NOTIFICATION_DISMISSED_KEY = "notificationPromptDismissedAt";
@@ -35,6 +35,33 @@ export function useNotificationPermission() {
   useEffect(() => {
     checkNotificationState();
   }, [auth.currentUser?.uid]);
+
+  // Re-check permission when app returns to foreground
+  // (covers: user enabled from system settings, or from settings modal triggering OS prompt)
+  const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (
+        (appState.current === "inactive" ||
+          appState.current === "background") &&
+        nextAppState === "active"
+      ) {
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status === "granted" && permissionStatus !== "granted") {
+          setPermissionStatus("granted");
+          setShouldShowModal(false);
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+    return () => subscription.remove();
+  }, [permissionStatus]);
 
   const checkNotificationState = async () => {
     try {

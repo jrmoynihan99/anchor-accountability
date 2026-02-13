@@ -20,6 +20,7 @@ const getDate = getLocalDateString;
 
 export function useStreakData() {
   const [streakData, setStreakData] = useState<StreakEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(auth.currentUser);
   const lastCheckedDate = useRef<string>(getLocalDateString(0)); // Track when we last checked the date
 
@@ -158,6 +159,7 @@ export function useStreakData() {
         });
 
         setStreakData(data);
+        setLoading(false);
       },
       (error) => {
         console.error(`🔍 useStreakData: Error in snapshot listener:`, error);
@@ -234,5 +236,5 @@ export function useStreakData() {
     }
   };
 
-  return { streakData, updateStreakStatus, undoStreakStatus, user };
+  return { streakData, loading, updateStreakStatus, undoStreakStatus, user };
 }

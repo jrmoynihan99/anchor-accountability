@@ -64,6 +64,7 @@ export default function TabLayout() {
     handlePermissionResult,
     closeModal,
     androidDenialCount,
+    refreshPermissionStatus,
   } = useNotificationPermission();
 
   // Settings modal state management
@@ -284,6 +285,8 @@ export default function TabLayout() {
           React.useEffect(() => {
             if (!isModalVisible) {
               setSettingsInitialScreen("settings");
+              // Re-check notification permission in case user enabled from settings modal
+              refreshPermissionStatus();
             }
           }, [isModalVisible]);
 
