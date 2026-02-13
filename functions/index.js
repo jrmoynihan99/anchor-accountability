@@ -24,7 +24,6 @@ const organizationFunctions = require("./user/organization");
 const adminOrganization = require("./admin/organization");
 const adminOrganizationInvites = require("./admin/organizationInvites");
 const adminOrganizationAnalytics = require("./admin/organizationAnalytics");
-const stripePayments = require("./stripe/payments");
 
 // Export all functions
 module.exports = {
@@ -78,7 +77,4 @@ module.exports = {
 
   // Admin - Organization Analytics
   ...adminOrganizationAnalytics,
-
-  // Stripe - Payments
-  ...stripePayments,
 };

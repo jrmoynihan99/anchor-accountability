@@ -1,30 +1,21 @@
 // components/morphing/settings/SupportSection.tsx
-import { DonationAmountSheet } from "@/components/DonationAmountSheet";
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { useDonation } from "@/hooks/misc/useDonation";
+import { isDonationAvailable, useDonation } from "@/hooks/misc/useDonation";
 import { useReviewPrompt } from "@/hooks/misc/useReviewPrompt";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 
 export function SupportSection() {
   const { colors } = useTheme();
-  const { donate, isLoading } = useDonation();
+  const { openDonationPage } = useDonation();
   const { triggerReview } = useReviewPrompt();
-  const [showDonationSheet, setShowDonationSheet] = useState(false);
 
   const handleSupportPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setShowDonationSheet(true);
-  };
-
-  const handleDonationAmount = async (amount: 200 | 500 | 1000) => {
-    const result = await donate(amount);
-    if (result.success || result.error === "cancelled") {
-      setShowDonationSheet(false);
-    }
+    openDonationPage();
   };
 
   const handleRatePress = () => {
@@ -33,16 +24,16 @@ export function SupportSection() {
   };
 
   return (
-    <>
-      <View style={styles.sectionCard}>
-        <View style={styles.sectionHeader}>
-          <IconSymbol name="heart" size={20} color={colors.textSecondary} />
-          <ThemedText type="bodyMedium" style={styles.sectionTitle}>
-            Support
-          </ThemedText>
-        </View>
+    <View style={styles.sectionCard}>
+      <View style={styles.sectionHeader}>
+        <IconSymbol name="heart" size={20} color={colors.textSecondary} />
+        <ThemedText type="bodyMedium" style={styles.sectionTitle}>
+          Support
+        </ThemedText>
+      </View>
 
-        {/* Donate Section */}
+      {/* Tip / Support Section — only shown where external payments are allowed */}
+      {isDonationAvailable && (
         <View style={styles.buttonSection}>
           <ThemedText
             type="caption"
@@ -66,45 +57,38 @@ export function SupportSection() {
             </ThemedText>
           </TouchableOpacity>
         </View>
+      )}
 
-        {/* Review Section */}
-        <View style={[styles.buttonSection, styles.lastSection]}>
+      {/* Review Section */}
+      <View style={[styles.buttonSection, styles.lastSection]}>
+        <ThemedText
+          type="caption"
+          style={[styles.description, { color: colors.textSecondary }]}
+        >
+          Help others who are struggling find this app
+        </ThemedText>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.secondaryButton,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.cardBorder,
+            },
+          ]}
+          onPress={handleRatePress}
+          activeOpacity={0.8}
+        >
+          <IconSymbol name="star.fill" size={18} color={colors.tint} />
           <ThemedText
-            type="caption"
-            style={[styles.description, { color: colors.textSecondary }]}
+            type="bodyMedium"
+            style={[styles.buttonText, { color: colors.text }]}
           >
-            Help others who are struggling find this app
+            Leave a Review
           </ThemedText>
-          <TouchableOpacity
-            style={[
-              styles.button,
-              styles.secondaryButton,
-              {
-                backgroundColor: colors.cardBackground,
-                borderColor: colors.cardBorder,
-              },
-            ]}
-            onPress={handleRatePress}
-            activeOpacity={0.8}
-          >
-            <IconSymbol name="star.fill" size={18} color={colors.tint} />
-            <ThemedText
-              type="bodyMedium"
-              style={[styles.buttonText, { color: colors.text }]}
-            >
-              Leave a Review
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
-
-      <DonationAmountSheet
-        visible={showDonationSheet}
-        onClose={() => setShowDonationSheet(false)}
-        onSelectAmount={handleDonationAmount}
-        isLoading={isLoading}
-      />
-    </>
+    </View>
   );
 }
 

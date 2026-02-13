@@ -13,7 +13,6 @@ import { useNotificationHandler } from "@/hooks/notification/useNotificationHand
 import { useVersionCheck } from "@/hooks/updates/useVersionCheck";
 import { auth, updateUserTimezone } from "@/lib/firebase";
 import { getHasOnboarded } from "@/lib/onboarding";
-import { StripeProvider } from "@stripe/stripe-react-native";
 import {
   Stack,
   router,
@@ -394,11 +393,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <StripeProvider
-        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}
-        merchantIdentifier="merchant.com.jrmoynihan99.anchor"
-      >
-        <ThemeProvider>
+      <ThemeProvider>
           <OrganizationProvider>
             <AccountabilityProvider>
               <ModalIntentProvider>
@@ -414,7 +409,6 @@ export default function RootLayout() {
             </AccountabilityProvider>
           </OrganizationProvider>
         </ThemeProvider>
-      </StripeProvider>
     </GestureHandlerRootView>
   );
 }

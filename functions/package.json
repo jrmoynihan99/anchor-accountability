@@ -20,8 +20,7 @@
     "firebase-functions": "^7.0.3",
     "node-fetch": "^3.3.2",
     "openai": "^5.12.2",
-    "qrcode": "^1.5.4",
-    "stripe": "^20.3.0"
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "firebase-functions-test": "^3.1.0"

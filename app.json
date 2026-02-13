@@ -17,8 +17,7 @@
       },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserNotificationUsageDescription": "We use notifications to alert you about new help requests, encouragements, and messages.",
-        "NSCameraUsageDescription": "Camera access is used to scan credit cards for faster payment entry."
+        "NSUserNotificationUsageDescription": "We use notifications to alert you about new help requests, encouragements, and messages."
       }
     },
     "android": {
@@ -65,14 +64,7 @@
       "expo-font",
       "expo-notifications",
       "expo-localization",
-      "expo-web-browser",
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": "merchant.com.jrmoynihan99.anchor",
-          "enableGooglePay": true
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
