@@ -5,17 +5,21 @@ import { useTheme } from "@/context/ThemeContext";
 import { isDonationAvailable, useDonation } from "@/hooks/misc/useDonation";
 import { useReviewPrompt } from "@/hooks/misc/useReviewPrompt";
 import * as Haptics from "expo-haptics";
-import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export function SupportSection() {
   const { colors } = useTheme();
   const { openDonationPage } = useDonation();
   const { triggerReview } = useReviewPrompt();
 
-  const handleSupportPress = () => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSupportPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    openDonationPage();
+    setIsLoading(true);
+    await openDonationPage();
+    setIsLoading(false);
   };
 
   const handleRatePress = () => {
@@ -50,11 +54,18 @@ export function SupportSection() {
             ]}
             onPress={handleSupportPress}
             activeOpacity={0.8}
+            disabled={isLoading}
           >
-            <IconSymbol name="heart.fill" size={18} color="#FFFFFF" />
-            <ThemedText type="bodyMedium" style={styles.buttonText}>
-              Support
-            </ThemedText>
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <IconSymbol name="heart.fill" size={18} color="#FFFFFF" />
+                <ThemedText type="bodyMedium" style={styles.buttonText}>
+                  Support
+                </ThemedText>
+              </>
+            )}
           </TouchableOpacity>
         </View>
       )}
