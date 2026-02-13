@@ -2,7 +2,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
-import { isDonationAvailable, useDonation } from "@/hooks/misc/useDonation";
+import { useDonation } from "@/hooks/misc/useDonation";
 import { useReviewPrompt } from "@/hooks/misc/useReviewPrompt";
 import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
@@ -10,7 +10,7 @@ import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from "react-nat
 
 export function SupportSection() {
   const { colors } = useTheme();
-  const { openDonationPage } = useDonation();
+  const { openDonationPage, isDonationAvailable } = useDonation();
   const { triggerReview } = useReviewPrompt();
 
   const [isLoading, setIsLoading] = useState(false);
