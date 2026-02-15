@@ -94,7 +94,7 @@ exports.moderatePlea = onDocumentCreated(
         temperature: 0,
         max_tokens: 20,
       });
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderatePlea] GPT result: ${result}`);
 
       isCrisis = result === "ALLOW: crisis";
@@ -177,7 +177,7 @@ exports.moderatePleaTEST = onDocumentCreated(
         max_tokens: 20,
       });
 
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderatePleaTEST] GPT result: ${result}`);
 
       isCrisis = result === "ALLOW: crisis";
@@ -276,7 +276,7 @@ exports.moderateEncouragement = onDocumentCreated(
         max_tokens: 20,
       });
 
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderateEncouragement] GPT result: ${result}`);
 
       if (result !== "ALLOW") {
@@ -371,7 +371,7 @@ exports.moderateEncouragementTEST = onDocumentCreated(
         max_tokens: 20,
       });
 
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderateEncouragementTEST] GPT result: ${result}`);
 
       if (result !== "ALLOW") {
@@ -447,7 +447,7 @@ exports.moderatePost = onDocumentCreated(
         max_tokens: 20,
       });
 
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderatePost] GPT result: ${result}`);
 
       isCrisis = result === "ALLOW: crisis";
@@ -530,7 +530,7 @@ exports.moderatePostTEST = onDocumentCreated(
         max_tokens: 20,
       });
 
-      const result = gptCheck.choices[0].message.content.trim();
+      const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
       logger.info(`[moderatePostTEST] GPT result: ${result}`);
 
       isCrisis = result === "ALLOW: crisis";
@@ -628,7 +628,7 @@ exports.moderateComment = onDocumentCreated(
           max_tokens: 20,
         });
 
-        const result = gptCheck.choices[0].message.content.trim();
+        const result = gptCheck.choices[0].message.content.trim().replace(/^["']|["']$/g, "");
         logger.info(`[moderateComment] GPT result: ${result}`);
 
         if (result !== "ALLOW") {
