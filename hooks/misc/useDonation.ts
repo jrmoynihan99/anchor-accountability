@@ -1,6 +1,6 @@
 // hooks/misc/useDonation.ts
-import { useCallback, useEffect, useState } from "react";
-import { Alert, Linking, NativeModules, Platform } from "react-native";
+import { useCallback, useState } from "react";
+import { Alert, Linking, Platform } from "react-native";
 
 const STRIPE_PAYMENT_LINK =
   "https://buy.stripe.com/3cI6oH4pPeLa8fk6ep0oM00";
@@ -10,33 +10,10 @@ const STRIPE_PAYMENT_LINK =
  *
  * Availability rules:
  * - Android: always available (Google Play allows external payments)
- * - iOS: only available when the App Store storefront is US (per Apple's US storefront ruling)
+ * - iOS: disabled (Apple requires in-app purchase for tips/donations)
  */
 export function useDonation() {
-  const [isDonationAvailable, setIsDonationAvailable] = useState(
-    Platform.OS === "android"
-  );
-
-  useEffect(() => {
-    if (Platform.OS !== "ios") return;
-
-    const checkStorefront = async () => {
-      try {
-        const countryCode =
-          await NativeModules.StorefrontModule.getCountryCode();
-        // Handle both Alpha-2 ("US") and Alpha-3 ("USA") formats
-        const isUS =
-          countryCode === "USA" || countryCode === "US" || countryCode === "us";
-        setIsDonationAvailable(isUS);
-      } catch (err: any) {
-        console.error("[useDonation] Storefront check failed:", err);
-        // If storefront check fails, hide the button (safe default)
-        setIsDonationAvailable(false);
-      }
-    };
-
-    checkStorefront();
-  }, []);
+  const [isDonationAvailable] = useState(Platform.OS === "android");
 
   const openDonationPage = useCallback(async () => {
     try {

@@ -73,10 +73,12 @@ export function FloatingSettingsModal({
   // Check if user is anonymous
   const isAnonymous = isAnonymousUser();
 
-  // Delay loading notifications until modal is fully open
+  // Delay loading notifications until modal is fully open.
+  // Once loaded, keep the state alive across sub-page navigations
+  // to avoid layout shifts when returning to the settings screen.
   useEffect(() => {
     let timer: number | null = null;
-    if (isVisible && currentScreen === "settings") {
+    if (isVisible) {
       timer = setTimeout(() => {
         setShouldLoadNotifications(true);
       }, 350);
@@ -86,7 +88,7 @@ export function FloatingSettingsModal({
     return () => {
       if (timer) clearTimeout(timer);
     };
-  }, [isVisible, currentScreen]);
+  }, [isVisible]);
 
   // Initialize modal state based on initialScreen prop
   useEffect(() => {

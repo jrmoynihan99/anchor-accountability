@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { getAuth } from "firebase/auth";
 import { doc, getDoc, getFirestore, updateDoc } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform } from "react-native";
 import { savePushTokenToFirestore } from "./usePushNotifications";
 
@@ -46,6 +46,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
   });
 
   const [androidDenialCount, setAndroidDenialCount] = useState(0);
+  const hasLoadedOnce = useRef(false);
 
   const auth = getAuth();
   const db = getFirestore();
@@ -65,7 +66,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
 
   useEffect(() => {
     if (!enabled || !organizationId || orgLoading) return;
-    loadNotificationState();
+    loadNotificationState(hasLoadedOnce.current);
     // eslint-disable-next-line
   }, [enabled, auth.currentUser?.uid, organizationId, orgLoading]);
 
@@ -82,11 +83,13 @@ export function useNotificationPreferences(enabled: boolean = true) {
     // eslint-disable-next-line
   }, [enabled, state.systemPermissionGranted]);
 
-  const loadNotificationState = async () => {
+  const loadNotificationState = async (silent = false) => {
     if (!enabled || !organizationId) return;
 
     try {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      if (!silent) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+      }
 
       const { status } = await Notifications.getPermissionsAsync();
 
@@ -138,6 +141,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
         loading: false,
         error: null,
       });
+      hasLoadedOnce.current = true;
     } catch (error) {
       console.error("Error loading notification state:", error);
       setState((prev) => ({
@@ -277,7 +281,7 @@ export function useNotificationPreferences(enabled: boolean = true) {
     androidDenialCount,
     enableNotifications,
     updatePreference,
-    reload: loadNotificationState,
+    reload: () => loadNotificationState(true),
     shouldShowEnableButton:
       !state.systemPermissionGranted || !state.hasExpoPushToken,
     shouldShowPreferences:
