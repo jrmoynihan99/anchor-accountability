@@ -2,10 +2,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useThreads } from "@/hooks/messages/useThreads";
+import { ThreadWithMessages } from "@/hooks/messages/useThreads";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { DeclinedInviteItem } from "../DeclinedInviteItem"; // ✅ NEW
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { DeclinedInviteItem } from "../DeclinedInviteItem";
 import { ReceivedInviteItem } from "../ReceivedInviteItem";
 import { SentInviteItem } from "../SentInviteItem";
 import { SectionHeader } from "./MessageThreadsHeader";
@@ -13,17 +13,23 @@ import { ThreadItem } from "./ThreadItem";
 
 interface MessageThreadsSectionProps {
   scrollY: any;
-  onScroll: (event: any) => void;
+  threads: ThreadWithMessages[];
+  loading: boolean;
+  loadingMore: boolean;
+  hasMore: boolean;
+  error: string | null;
 }
 
 export function MessageThreadsSection({
   scrollY,
-  onScroll,
+  threads,
+  loading,
+  loadingMore,
+  hasMore,
+  error,
 }: MessageThreadsSectionProps) {
   const { colors } = useTheme();
-  const { threads, loading, error } = useThreads();
 
-  // ✅ Add declinedInvites to destructuring
   const { mentor, mentees, receivedInvites, sentInvites, declinedInvites } =
     useAccountability();
 
@@ -109,7 +115,7 @@ export function MessageThreadsSection({
       <SectionHeader scrollY={scrollY} threadsCount={threads.length} />
 
       {/* -----------------------
-          🟡 RECEIVED INVITES SECTION
+          RECEIVED INVITES SECTION
       ------------------------ */}
       {receivedInvites.length > 0 && (
         <View style={{ marginBottom: 18 }}>
@@ -146,7 +152,7 @@ export function MessageThreadsSection({
       )}
 
       {/* -----------------------
-          🟠 SENT INVITES SECTION (includes declined)
+          SENT INVITES SECTION (includes declined)
       ------------------------ */}
       {(sentInvites.length > 0 || declinedInvites.length > 0) && (
         <View style={{ marginBottom: 18 }}>
@@ -161,7 +167,6 @@ export function MessageThreadsSection({
             ANCHOR PARTNER INVITES SENT
           </ThemedText>
 
-          {/* ✅ Show declined invites first */}
           {declinedInvites.map((invite) => {
             const thread = threads.find(
               (t) => t.otherUserId === invite.mentorUid,
@@ -181,7 +186,6 @@ export function MessageThreadsSection({
             );
           })}
 
-          {/* Show sent invites after declined */}
           {sentInvites.map((invite) => {
             const thread = threads.find(
               (t) => t.otherUserId === invite.mentorUid,
@@ -204,7 +208,7 @@ export function MessageThreadsSection({
       )}
 
       {/* -----------------------
-          🔵 MENTOR SECTION
+          MENTOR SECTION
       ------------------------ */}
       {mentorThread && mentor && (
         <View style={{ marginBottom: 24 }}>
@@ -236,7 +240,7 @@ export function MessageThreadsSection({
       )}
 
       {/* -----------------------
-          🟢 MENTEES SECTION
+          MENTEES SECTION
       ------------------------ */}
       {menteeThreads.length > 0 && (
         <View style={{ marginBottom: 24 }}>
@@ -282,7 +286,7 @@ export function MessageThreadsSection({
       )}
 
       {/* -----------------------
-          🟣 REGULAR THREADS
+          REGULAR THREADS
       ------------------------ */}
       {regularThreads.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -324,6 +328,24 @@ export function MessageThreadsSection({
           ))}
         </View>
       )}
+
+      {/* -----------------------
+          LOAD MORE FOOTER
+      ------------------------ */}
+      {regularThreads.length > 0 && (
+        <View style={styles.footerContainer}>
+          {loadingMore ? (
+            <ActivityIndicator size="small" color={colors.textSecondary} />
+          ) : !hasMore ? (
+            <ThemedText
+              type="caption"
+              style={[styles.footerText, { color: colors.textSecondary }]}
+            >
+              You've seen all conversations
+            </ThemedText>
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -353,5 +375,12 @@ const styles = StyleSheet.create({
   },
   threadsList: {
     gap: 8,
+  },
+  footerContainer: {
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  footerText: {
+    opacity: 0.6,
   },
 });
