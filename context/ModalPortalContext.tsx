@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useRef,
   useSyncExternalStore,
@@ -7,35 +8,57 @@ import React, {
 import { StyleSheet, View } from "react-native";
 
 type PortalStore = {
-  subscribe: (listener: () => void) => () => void;
-  getSnapshot: () => Map<string, React.ReactNode>;
+  subscribeKeys: (listener: () => void) => () => void;
+  getKeysSnapshot: () => readonly string[];
+  subscribeContent: (key: string, listener: () => void) => () => void;
+  getContentSnapshot: (key: string) => React.ReactNode;
   mount: (key: string, content: React.ReactNode) => void;
   unmount: (key: string) => void;
 };
 
 function createPortalStore(): PortalStore {
-  let portals = new Map<string, React.ReactNode>();
-  const listeners = new Set<() => void>();
-  const notify = () => listeners.forEach((l) => l());
+  let keys: readonly string[] = [];
+  const contentMap = new Map<string, React.ReactNode>();
+  const keyListeners = new Set<() => void>();
+  const contentListeners = new Map<string, Set<() => void>>();
+
+  const notifyKeys = () => keyListeners.forEach((l) => l());
+  const notifyContent = (key: string) =>
+    contentListeners.get(key)?.forEach((l) => l());
 
   return {
-    subscribe(listener) {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
+    subscribeKeys(listener) {
+      keyListeners.add(listener);
+      return () => keyListeners.delete(listener);
     },
-    getSnapshot() {
-      return portals;
+    getKeysSnapshot() {
+      return keys;
+    },
+    subscribeContent(key, listener) {
+      if (!contentListeners.has(key)) contentListeners.set(key, new Set());
+      contentListeners.get(key)!.add(listener);
+      return () => {
+        contentListeners.get(key)?.delete(listener);
+      };
+    },
+    getContentSnapshot(key) {
+      return contentMap.get(key) ?? null;
     },
     mount(key, content) {
-      portals = new Map(portals).set(key, content);
-      notify();
+      const isNew = !contentMap.has(key);
+      contentMap.set(key, content);
+      if (isNew) {
+        keys = [...keys, key];
+        notifyKeys();
+      }
+      notifyContent(key);
     },
     unmount(key) {
-      if (!portals.has(key)) return;
-      const next = new Map(portals);
-      next.delete(key);
-      portals = next;
-      notify();
+      if (!contentMap.has(key)) return;
+      contentMap.delete(key);
+      contentListeners.delete(key);
+      keys = keys.filter((k) => k !== key);
+      notifyKeys();
     },
   };
 }
@@ -50,23 +73,38 @@ export function useModalPortal() {
   return { mount: store.mount, unmount: store.unmount };
 }
 
-/** Renders only the portal content — isolated from the app tree. */
+/** Renders a single portal's content — only re-renders when THIS key's content changes. */
+function PortalSlot({ portalKey }: { portalKey: string }) {
+  const store = useContext(PortalStoreContext)!;
+  const subscribe = useCallback(
+    (listener: () => void) => store.subscribeContent(portalKey, listener),
+    [store, portalKey],
+  );
+  const getSnapshot = useCallback(
+    () => store.getContentSnapshot(portalKey),
+    [store, portalKey],
+  );
+  const content = useSyncExternalStore(subscribe, getSnapshot);
+  return <>{content}</>;
+}
+
+/** Renders portal containers — only re-renders when keys are added/removed. */
 function PortalRenderer() {
   const store = useContext(PortalStoreContext)!;
-  const portals = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const keys = useSyncExternalStore(store.subscribeKeys, store.getKeysSnapshot);
 
-  if (portals.size === 0) return null;
+  if (keys.length === 0) return null;
 
   return (
     <>
-      {Array.from(portals.entries()).map(([key, content]) => (
+      {keys.map((key) => (
         <View
           key={key}
           style={StyleSheet.absoluteFill}
           pointerEvents="box-none"
           collapsable={false}
         >
-          {content}
+          <PortalSlot portalKey={key} />
         </View>
       ))}
     </>
