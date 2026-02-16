@@ -24,6 +24,7 @@ const organizationFunctions = require("./user/organization");
 const adminOrganization = require("./admin/organization");
 const adminOrganizationInvites = require("./admin/organizationInvites");
 const adminOrganizationAnalytics = require("./admin/organizationAnalytics");
+const notificationUtils = require("./utils/notifications");
 
 // Export all functions
 module.exports = {
@@ -77,4 +78,7 @@ module.exports = {
 
   // Admin - Organization Analytics
   ...adminOrganizationAnalytics,
+
+  // Migration - Unread totals
+  migrateUnreadTotals: notificationUtils.migrateUnreadTotals,
 };

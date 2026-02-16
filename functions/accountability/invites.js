@@ -5,7 +5,7 @@ const {
 const axios = require("axios");
 const { admin } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
-const { getTotalUnreadForUser } = require("../utils/notifications");
+const { getUnreadTotal, incrementUnreadTotal } = require("../utils/notifications");
 
 // Send notification when accountability invite is created
 exports.sendAccountabilityInviteNotification = onDocumentCreated(
@@ -63,7 +63,7 @@ exports.sendAccountabilityInviteNotification = onDocumentCreated(
 
       if (allThreads.length === 0) return;
       const threadId = allThreads[0].id;
-      const totalUnread = await getTotalUnreadForUser(mentorUid, orgId);
+      const totalUnread = await incrementUnreadTotal(mentorUid, orgId);
 
       await axios.post(
         "https://exp.host/--/api/v2/push/send",
@@ -141,24 +141,34 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
           .where("userA", "in", [menteeUid, otherMentorUid])
           .where("userB", "in", [menteeUid, otherMentorUid])
           .get();
+        let decrementAmount = 1; // 1 for the invite badge itself
         for (const threadDoc of threadsSnapshot.docs) {
           const threadData = threadDoc.data();
           if (threadData.userA === otherMentorUid) {
-            batch.update(threadDoc.ref, {
-              userA_unreadCount: Math.max(
-                0,
-                (threadData.userA_unreadCount || 0) - 1,
-              ),
-            });
+            const current = threadData.userA_unreadCount || 0;
+            if (current > 0) {
+              batch.update(threadDoc.ref, {
+                userA_unreadCount: current - 1,
+              });
+              decrementAmount++;
+            }
           } else if (threadData.userB === otherMentorUid) {
-            batch.update(threadDoc.ref, {
-              userB_unreadCount: Math.max(
-                0,
-                (threadData.userB_unreadCount || 0) - 1,
-              ),
-            });
+            const current = threadData.userB_unreadCount || 0;
+            if (current > 0) {
+              batch.update(threadDoc.ref, {
+                userB_unreadCount: current - 1,
+              });
+              decrementAmount++;
+            }
           }
         }
+        // Decrement centralized unreadTotal (invite + any thread unreads)
+        const mentorRef = db.doc(
+          `organizations/${orgId}/users/${otherMentorUid}`,
+        );
+        batch.update(mentorRef, {
+          unreadTotal: admin.firestore.FieldValue.increment(-decrementAmount),
+        });
       }
 
       if (canceledCount > 0) {
@@ -189,6 +199,14 @@ exports.sendAccountabilityDeclinedNotification = onDocumentUpdated(
       const menteeUid = after.menteeUid;
       const mentorUid = after.mentorUid;
       if (await eitherBlocked(menteeUid, mentorUid, orgId)) return;
+
+      // Decrement mentor's unreadTotal (invite resolved by declining)
+      await admin
+        .firestore()
+        .doc(`organizations/${orgId}/users/${mentorUid}`)
+        .update({
+          unreadTotal: admin.firestore.FieldValue.increment(-1),
+        });
 
       const menteeDoc = await admin
         .firestore()
@@ -221,7 +239,7 @@ exports.sendAccountabilityDeclinedNotification = onDocumentUpdated(
       if (!threadId) return;
 
       try {
-        const totalUnread = await getTotalUnreadForUser(menteeUid, orgId);
+        const totalUnread = await getUnreadTotal(menteeUid, orgId);
         const mentorName = `user-${mentorUid.substring(0, 5)}`;
         await axios.post(
           "https://exp.host/--/api/v2/push/send",
@@ -266,6 +284,14 @@ exports.sendAccountabilityAcceptedNotification = onDocumentUpdated(
       const mentorUid = after.mentorUid;
       if (await eitherBlocked(menteeUid, mentorUid, orgId)) return;
 
+      // Decrement mentor's unreadTotal (invite resolved by accepting)
+      await admin
+        .firestore()
+        .doc(`organizations/${orgId}/users/${mentorUid}`)
+        .update({
+          unreadTotal: admin.firestore.FieldValue.increment(-1),
+        });
+
       const menteeDoc = await admin
         .firestore()
         .doc(`organizations/${orgId}/users/${menteeUid}`)
@@ -279,7 +305,7 @@ exports.sendAccountabilityAcceptedNotification = onDocumentUpdated(
         return;
 
       try {
-        const totalUnread = await getTotalUnreadForUser(menteeUid, orgId);
+        const totalUnread = await getUnreadTotal(menteeUid, orgId);
         const mentorName = `user-${mentorUid.substring(0, 5)}`;
         await axios.post(
           "https://exp.host/--/api/v2/push/send",
@@ -337,7 +363,7 @@ exports.sendAccountabilityEndedNotification = onDocumentUpdated(
         return;
 
       try {
-        const totalUnread = await getTotalUnreadForUser(recipientUid, orgId);
+        const totalUnread = await getUnreadTotal(recipientUid, orgId);
         const enderName = `user-${enderUid.substring(0, 5)}`;
         await axios.post(
           "https://exp.host/--/api/v2/push/send",

@@ -5,6 +5,7 @@ const {
 const axios = require("axios");
 const { admin } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
+const { incrementUnreadTotal } = require("../utils/notifications");
 
 /**
  * Send help notifications to all opted-in helpers within the same organization
@@ -46,7 +47,8 @@ async function sendHelpNotificationToHelpers(plea, pleaId, orgId) {
       return;
     }
 
-    // Filter out helpers that are blocked either direction
+    // Filter out helpers that are blocked either direction,
+    // increment unread counts, and build notification payloads
     const notifications = [];
     for (const { token, helperUid } of tokenPairs) {
       const blocked = await eitherBlocked(uid, helperUid, orgId);
@@ -57,6 +59,17 @@ async function sendHelpNotificationToHelpers(plea, pleaId, orgId) {
         continue;
       }
 
+      // Increment unreadPleaCount on helper's user doc
+      await admin
+        .firestore()
+        .doc(`organizations/${orgId}/users/${helperUid}`)
+        .update({
+          unreadPleaCount: admin.firestore.FieldValue.increment(1),
+        });
+
+      // Increment centralized unreadTotal and get badge value
+      const totalUnread = await incrementUnreadTotal(helperUid, orgId);
+
       notifications.push({
         to: token,
         sound: "default",
@@ -64,6 +77,7 @@ async function sendHelpNotificationToHelpers(plea, pleaId, orgId) {
         body: message?.length
           ? `They wrote: "${message.slice(0, 100)}"`
           : "They need encouragement. Tap to respond.",
+        badge: totalUnread,
         data: {
           pleaId,
           type: "plea",

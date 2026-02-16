@@ -2,7 +2,7 @@ const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const axios = require("axios");
 const { admin } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
-const { getTotalUnreadForUser } = require("../utils/notifications");
+const { incrementUnreadTotal } = require("../utils/notifications");
 
 /**
  * Send notification when a new message is created in a thread
@@ -28,6 +28,7 @@ exports.sendMessageNotification = onDocumentCreated(
     const thread = threadDoc.data();
     const userA = thread.userA;
     const userB = thread.userB;
+    const threadRef = threadDoc.ref;
 
     // Determine recipients (everyone except sender)
     const recipients = [userA, userB].filter((uid) => uid !== senderUid);
@@ -42,6 +43,16 @@ exports.sendMessageNotification = onDocumentCreated(
         );
         continue;
       }
+
+      // Increment unread count on thread doc (moved from client-side)
+      const unreadField =
+        recipientUid === userA ? "userA_unreadCount" : "userB_unreadCount";
+      await threadRef.update({
+        [unreadField]: admin.firestore.FieldValue.increment(1),
+      });
+
+      // Increment centralized unreadTotal on recipient's user doc
+      const totalUnread = await incrementUnreadTotal(recipientUid, orgId);
 
       const userDoc = await admin
         .firestore()
@@ -59,8 +70,6 @@ exports.sendMessageNotification = onDocumentCreated(
         expoPushToken.startsWith("ExponentPushToken")
       ) {
         try {
-          const totalUnread = await getTotalUnreadForUser(recipientUid, orgId);
-
           await axios.post(
             "https://exp.host/--/api/v2/push/send",
             [

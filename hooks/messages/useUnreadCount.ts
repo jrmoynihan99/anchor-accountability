@@ -1,50 +1,18 @@
 import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import * as Notifications from "expo-notifications";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useCallback, useEffect, useState } from "react";
 
-// --- Helper: Get total unread count for current user ---
+// --- Helper: Get total unread count from centralized user doc field ---
 async function fetchTotalUnreadCount(organizationId: string): Promise<number> {
   const uid = auth.currentUser?.uid;
   if (!uid) return 0;
 
-  let totalUnread = 0;
-
-  // --- Threads: userA ---
-  let threadsSnap = await getDocs(
-    query(
-      collection(db, "organizations", organizationId, "threads"),
-      where("userA", "==", uid)
-    )
+  const userDoc = await getDoc(
+    doc(db, "organizations", organizationId, "users", uid)
   );
-  threadsSnap.forEach((doc) => {
-    totalUnread += doc.data().userA_unreadCount || 0;
-  });
-
-  // --- Threads: userB ---
-  threadsSnap = await getDocs(
-    query(
-      collection(db, "organizations", organizationId, "threads"),
-      where("userB", "==", uid)
-    )
-  );
-  threadsSnap.forEach((doc) => {
-    totalUnread += doc.data().userB_unreadCount || 0;
-  });
-
-  // --- Pleas: unread encouragements ---
-  const pleasSnap = await getDocs(
-    query(
-      collection(db, "organizations", organizationId, "pleas"),
-      where("uid", "==", uid)
-    )
-  );
-  pleasSnap.forEach((doc) => {
-    totalUnread += doc.data().unreadEncouragementCount || 0;
-  });
-
-  return totalUnread;
+  return Math.max(0, userDoc.data()?.unreadTotal || 0);
 }
 
 // --- Hook: useUnreadCount ---

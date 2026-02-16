@@ -5,7 +5,7 @@ const {
 const axios = require("axios");
 const { admin } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
-const { getTotalUnreadForUser } = require("../utils/notifications");
+const { incrementUnreadTotal } = require("../utils/notifications");
 
 /**
  * Helper function to send encouragement notification to plea owner
@@ -17,7 +17,8 @@ const { getTotalUnreadForUser } = require("../utils/notifications");
 async function sendEncouragementNotificationToPleaOwner(
   pleaRef,
   encouragement,
-  orgId
+  orgId,
+  totalUnread
 ) {
   // Find the parent plea
   const pleaDoc = await pleaRef.get();
@@ -36,8 +37,6 @@ async function sendEncouragementNotificationToPleaOwner(
 
   // Only notify if they want encouragement notifications and have a token
   if (user?.expoPushToken && user?.notificationPreferences?.encouragements) {
-    const totalUnread = await getTotalUnreadForUser(plea.uid, orgId);
-
     const notification = {
       to: user.expoPushToken,
       sound: "default",
@@ -95,15 +94,19 @@ exports.sendEncouragementNotification = onDocumentCreated(
       return;
     }
 
-    // Increment unread count
+    // Increment unread count on plea doc (for in-app UI)
     await pleaRef.update({
       unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
     });
 
+    // Increment centralized unreadTotal on plea owner's user doc
+    const totalUnread = await incrementUnreadTotal(plea.uid, orgId);
+
     await sendEncouragementNotificationToPleaOwner(
       pleaRef,
       encouragement,
-      orgId
+      orgId,
+      totalUnread
     );
   }
 );
@@ -133,12 +136,20 @@ exports.sendEncouragementNotificationOnApprove = onDocumentUpdated(
         return;
       }
 
-      // Increment unread count
+      // Increment unread count on plea doc (for in-app UI)
       await pleaRef.update({
         unreadEncouragementCount: admin.firestore.FieldValue.increment(1),
       });
 
-      await sendEncouragementNotificationToPleaOwner(pleaRef, after, orgId);
+      // Increment centralized unreadTotal on plea owner's user doc
+      const totalUnread = await incrementUnreadTotal(plea.uid, orgId);
+
+      await sendEncouragementNotificationToPleaOwner(
+        pleaRef,
+        after,
+        orgId,
+        totalUnread
+      );
     }
   }
 );

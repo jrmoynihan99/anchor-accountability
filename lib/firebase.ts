@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   getFirestore,
+  increment,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -111,20 +112,7 @@ export async function sendMessage(
     lastActivity: timestamp, // Client timestamp for consistency
   });
 
-  // Update unread counts
-  const threadDoc = await getDoc(threadRef);
-  if (threadDoc.exists()) {
-    const threadData = threadDoc.data() as ThreadData;
-    if (threadData.userA === currentUserId) {
-      await updateDoc(threadRef, {
-        userB_unreadCount: threadData.userB_unreadCount + 1,
-      });
-    } else {
-      await updateDoc(threadRef, {
-        userA_unreadCount: threadData.userA_unreadCount + 1,
-      });
-    }
-  }
+  // Unread count increment is handled server-side in sendMessageNotification
 }
 
 // Create a new thread
@@ -201,6 +189,12 @@ export async function markMessagesAsRead(
   if (threadDoc.exists()) {
     const threadData = threadDoc.data() as ThreadData;
 
+    // Read current unread count before zeroing
+    const currentUnread =
+      threadData.userA === currentUserId
+        ? threadData.userA_unreadCount || 0
+        : threadData.userB_unreadCount || 0;
+
     // Reset unread count for current user
     if (threadData.userA === currentUserId) {
       await updateDoc(threadRef, {
@@ -209,6 +203,20 @@ export async function markMessagesAsRead(
     } else {
       await updateDoc(threadRef, {
         userB_unreadCount: 0,
+      });
+    }
+
+    // Decrement centralized unreadTotal on own user doc
+    if (currentUnread > 0) {
+      const userRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "users",
+        currentUserId
+      );
+      await updateDoc(userRef, {
+        unreadTotal: increment(-currentUnread),
       });
     }
   }
@@ -225,13 +233,62 @@ export async function markEncouragementAsRead(
   const pleaRef = doc(db, "organizations", organizationId, "pleas", pleaId);
 
   try {
-    // Reset unread count to 0 (similar to how markMessagesAsRead works)
+    // Read current count before zeroing
+    const pleaDoc = await getDoc(pleaRef);
+    const currentUnread = pleaDoc.data()?.unreadEncouragementCount || 0;
+
+    // Reset unread count to 0
     await updateDoc(pleaRef, {
       unreadEncouragementCount: 0,
     });
+
+    // Decrement centralized unreadTotal on own user doc
+    if (currentUnread > 0) {
+      const userRef = doc(
+        db,
+        "organizations",
+        organizationId,
+        "users",
+        currentUserId
+      );
+      await updateDoc(userRef, {
+        unreadTotal: increment(-currentUnread),
+      });
+    }
   } catch (error) {
     console.error("❌ Error marking encouragements as read:", error);
     throw error;
+  }
+}
+
+// Mark pleas as seen — clears unreadPleaCount and decrements unreadTotal
+export async function markPleasAsSeen(
+  organizationId: string
+): Promise<void> {
+  const currentUserId = auth.currentUser?.uid;
+  if (!currentUserId) return;
+
+  const userRef = doc(
+    db,
+    "organizations",
+    organizationId,
+    "users",
+    currentUserId
+  );
+
+  try {
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) return;
+
+    const unreadPleaCount = userDoc.data()?.unreadPleaCount || 0;
+    if (unreadPleaCount <= 0) return;
+
+    await updateDoc(userRef, {
+      unreadPleaCount: 0,
+      unreadTotal: increment(-unreadPleaCount),
+    });
+  } catch (error) {
+    console.error("❌ Error marking pleas as seen:", error);
   }
 }
 
