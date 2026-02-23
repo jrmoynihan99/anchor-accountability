@@ -1,71 +1,58 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 struct ReachOutEntry: TimelineEntry {
     let date: Date
     let isConfigured: Bool
-    let lastPleaSentAt: Date?
-    let isRateLimited: Bool
+    let showSent: Bool
 }
 
-struct ReachOutProvider: TimelineProvider {
+@available(iOS 17.0, *)
+struct ReachOutProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> ReachOutEntry {
-        ReachOutEntry(date: Date(), isConfigured: true, lastPleaSentAt: nil, isRateLimited: false)
+        ReachOutEntry(date: Date(), isConfigured: true, showSent: false)
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (ReachOutEntry) -> Void) {
-        completion(buildEntry())
+    func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> ReachOutEntry {
+        return buildEntry()
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<ReachOutEntry>) -> Void) {
+    func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<ReachOutEntry> {
         let entry = buildEntry()
-
-        // Schedule next refresh based on current state
-        let nextUpdate: Date
-        if let sent = entry.lastPleaSentAt, Date().timeIntervalSince(sent) < 8 {
-            // Refresh after confirmation state expires
-            nextUpdate = sent.addingTimeInterval(8)
-        } else if entry.isRateLimited {
-            // Check again in 1 minute
-            nextUpdate = Date().addingTimeInterval(60)
-        } else {
-            nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
-        }
-
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
+        
+        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
-
+    
     private func buildEntry() -> ReachOutEntry {
         let data = WidgetData.load()
         let defaults = UserDefaults(suiteName: "group.com.jrmoynihan99.anchor")
-
-        // Check if a plea was sent recently (show confirmation for 8 seconds)
+        
+        // Check if we should show "Sent" (within 3 seconds of being set)
         let lastSentTimestamp = defaults?.double(forKey: "widget_lastPleaSent") ?? 0
-        let lastSent: Date? = {
-            guard lastSentTimestamp > 0 else { return nil }
-            let sent = Date(timeIntervalSince1970: lastSentTimestamp)
-            return Date().timeIntervalSince(sent) < 8 ? sent : nil
-        }()
-
-        // Check rate limit (5 minute window)
-        let lastRateLimitedTimestamp = defaults?.double(forKey: "widget_lastRateLimited") ?? 0
-        let isRateLimited = (Date().timeIntervalSince1970 - lastRateLimitedTimestamp) < 300
-
+        let showSent = lastSentTimestamp > 0 && (Date().timeIntervalSince1970 - lastSentTimestamp) < 3
+        
         return ReachOutEntry(
             date: Date(),
             isConfigured: data.isConfigured,
-            lastPleaSentAt: lastSent,
-            isRateLimited: isRateLimited
+            showSent: showSent
         )
     }
 }
 
+@available(iOS 17.0, *)
+struct ConfigurationAppIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Configuration"
+    static var description = IntentDescription("Widget configuration")
+}
+
+@available(iOS 17.0, *)
 struct ReachOutWidget: Widget {
     let kind: String = "ReachOutWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: ReachOutProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: ReachOutProvider()) { entry in
             ReachOutWidgetView(entry: entry)
         }
         .configurationDisplayName("Reach Out")

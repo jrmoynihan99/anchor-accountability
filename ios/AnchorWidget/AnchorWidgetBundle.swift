@@ -11,7 +11,9 @@ import SwiftUI
 @main
 struct AnchorWidgetBundle: WidgetBundle {
     var body: some Widget {
-      QRCodeWidget()
-      ReachOutWidget()
+        QRCodeWidget()
+        if #available(iOS 17.0, *) {
+            ReachOutWidget()
+        }
     }
 }

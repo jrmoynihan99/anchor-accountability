@@ -48,7 +48,6 @@ struct QRCodeProvider: TimelineProvider {
 }
 
 func generateQRCode(from string: String) -> UIImage? {
-    let context = CIContext()
     let filter = CIFilter.qrCodeGenerator()
     filter.message = Data(string.utf8)
     filter.correctionLevel = "M"
@@ -61,10 +60,20 @@ func generateQRCode(from string: String) -> UIImage? {
         by: CGAffineTransform(scaleX: scale, y: scale)
     )
 
-    guard let cgImage = context.createCGImage(scaledImage, from: scaledImage.extent) else {
-        return nil
+    // Render with transparent background
+    let format = UIGraphicsImageRendererFormat()
+    format.opaque = false
+    
+    let size = scaledImage.extent.size
+    let renderer = UIGraphicsImageRenderer(size: size, format: format)
+    
+    return renderer.image { context in
+        // Draw QR code with transparent background
+        let ciContext = CIContext()
+        if let cgImage = ciContext.createCGImage(scaledImage, from: scaledImage.extent) {
+            context.cgContext.draw(cgImage, in: CGRect(origin: .zero, size: size))
+        }
     }
-    return UIImage(cgImage: cgImage)
 }
 
 struct QRCodeWidget: Widget {
@@ -77,6 +86,6 @@ struct QRCodeWidget: Widget {
         }
         .configurationDisplayName("Community QR Code")
         .description("Share your community's join link as a QR code.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall])
     }
 }

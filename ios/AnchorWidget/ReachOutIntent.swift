@@ -1,17 +1,51 @@
 import AppIntents
 import Foundation
+import WidgetKit
 
 @available(iOS 17.0, *)
 struct ReachOutIntent: AppIntent {
     static var title: LocalizedStringResource = "Reach Out"
-    static var description = IntentDescription("Send an anonymous reach out to your community")
+    static var description = IntentDescription("Send reach out to your community")
+    
+    // This makes the intent show up in Shortcuts and Siri
+    static var openAppWhenRun: Bool = false
 
     func perform() async throws -> some IntentResult {
+        NSLog("🔥🔥🔥 ReachOutIntent.perform() CALLED at \(Date())")
+        print("🔥🔥🔥 ReachOutIntent.perform() CALLED at \(Date())")
+        
+        let defaults = UserDefaults(suiteName: "group.com.jrmoynihan99.anchor")
+        NSLog("🔥 UserDefaults loaded: \(defaults != nil)")
+        
+        // Show "Sent" immediately
+        let timestamp = Date().timeIntervalSince1970
+        defaults?.set(timestamp, forKey: "widget_lastPleaSent")
+        defaults?.synchronize()
+        
+        NSLog("🔥 Set widget_lastPleaSent to: \(timestamp)")
+        
+        // Reload widget to show "Sent" state
+        WidgetCenter.shared.reloadTimelines(ofKind: "ReachOutWidget")
+        NSLog("🔥 Called reloadTimelines")
+        
+        // Wait 3 seconds
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        
+        // Clear and return to default
+        defaults?.removeObject(forKey: "widget_lastPleaSent")
+        defaults?.synchronize()
+        WidgetCenter.shared.reloadTimelines(ofKind: "ReachOutWidget")
+        NSLog("🔥 Cleared sent state and reloaded")
+        
+        return .result()
+        
+        /* PRODUCTION CODE - Uncomment this when ready to use real API
         let data = WidgetData.load()
 
         guard let userId = data.userId,
               let orgId = data.orgId,
               let widgetToken = data.widgetToken else {
+            defaults?.removeObject(forKey: "widget_loadingStarted")
             return .result()
         }
 
@@ -33,9 +67,8 @@ struct ReachOutIntent: AppIntent {
 
         let (_, response) = try await URLSession.shared.data(for: request)
 
-        let defaults = UserDefaults(suiteName: "group.com.jrmoynihan99.anchor")
-
         guard let httpResponse = response as? HTTPURLResponse else {
+            defaults?.removeObject(forKey: "widget_loadingStarted")
             return .result()
         }
 
@@ -44,8 +77,14 @@ struct ReachOutIntent: AppIntent {
         } else if httpResponse.statusCode == 200 {
             defaults?.set(Date().timeIntervalSince1970, forKey: "widget_lastPleaSent")
         }
-
+        
+        defaults?.removeObject(forKey: "widget_loadingStarted")
+        
+        // Request widget refresh
+        WidgetCenter.shared.reloadTimelines(ofKind: "ReachOutWidget")
+        
         return .result()
+        */
     }
 }
 

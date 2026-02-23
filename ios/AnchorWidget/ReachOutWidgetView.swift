@@ -5,87 +5,102 @@ import AppIntents
 struct ReachOutWidgetView: View {
     let entry: ReachOutEntry
 
-    // Brand colors (Warm & Earthy palette)
-    private let brandTan = Color(red: 0.796, green: 0.678, blue: 0.553)       // #CBAD8D
-    private let brandBrown = Color(red: 0.227, green: 0.176, blue: 0.157)     // #3A2D28
-    private let brandRosewood = Color(red: 0.643, green: 0.514, blue: 0.455)  // #A48374
+    // Brand colors
+    private let brandTan = Color(red: 0.796, green: 0.678, blue: 0.553)
 
     var body: some View {
         if !entry.isConfigured {
             unconfiguredView
-        } else if entry.lastPleaSentAt != nil {
-            confirmationView
-        } else if entry.isRateLimited {
-            rateLimitedView
+        } else if entry.showSent {
+            sentView
         } else {
-            buttonView
+            defaultView
         }
     }
-
-    // MARK: - States
-
-    private var buttonView: some View {
-        Button(intent: ReachOutIntent()) {
-            VStack(spacing: 8) {
-                Image(systemName: "hand.raised.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(brandTan)
-                Text("Reach Out")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                Text("Get support now")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+    
+    @ViewBuilder
+    private var defaultView: some View {
+        if #available(iOS 17.0, *) {
+            Button(intent: ReachOutIntent()) {
+                defaultContent
             }
+            .buttonStyle(.plain)
+            .containerBackground(for: .widget) { }
+        } else {
+            defaultContent
+                .containerBackground(for: .widget) { }
         }
-        .buttonStyle(.plain)
-        .containerBackground(.fill.tertiary, for: .widget)
     }
-
-    private var confirmationView: some View {
-        VStack(spacing: 8) {
+    
+    private var defaultContent: some View {
+        VStack(spacing: 4) {
+            Spacer()
+            
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 64))
+                .foregroundStyle(brandTan)
+            
+            Spacer()
+            
+            Text("Feeling tempted?")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundStyle(.secondary)
+            
+            Text("Reach Out Now")
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(2)
+    }
+    
+    private var sentView: some View {
+        VStack(spacing: 4) {
+            Spacer()
+            
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 40))
-                .foregroundStyle(.green)
+                .font(.system(size: 64))
+                .foregroundStyle(brandTan)
+            
+            Spacer()
+            
             Text("Sent")
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundStyle(.primary)
-            Text("Your community is praying")
-                .font(.caption2)
+            
+            Text("Support is coming")
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .containerBackground(.fill.tertiary, for: .widget)
-    }
-
-    private var rateLimitedView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "clock.fill")
-                .font(.system(size: 28))
-                .foregroundStyle(brandRosewood)
-            Text("Please wait")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundStyle(.primary)
-            Text("Try again in a few minutes")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .containerBackground(.fill.tertiary, for: .widget)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(2)
+        .containerBackground(for: .widget) { }
     }
 
     private var unconfiguredView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "hand.raised.fill")
-                .font(.title)
+        VStack(spacing: 4) {
+            Spacer()
+            
+            Image(systemName: "person.circle")
+                .font(.system(size: 64))
                 .foregroundStyle(brandTan)
-            Text("Open Anchor to set up")
+            
+            Spacer()
+            
+            Text("Log In")
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+            
+            Text("Open Anchor to setup")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
-        .padding()
-        .containerBackground(.fill.tertiary, for: .widget)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(2)
+        .containerBackground(for: .widget) { }
     }
 }

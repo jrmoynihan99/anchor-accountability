@@ -26,7 +26,7 @@ struct QRCodeWidgetView: View {
                 }
             }
             .padding(12)
-            .containerBackground(.fill.tertiary, for: .widget)
+            .containerBackground(for: .widget) { }
         } else {
             // Not configured
             VStack(spacing: 8) {
@@ -39,7 +39,7 @@ struct QRCodeWidgetView: View {
                     .multilineTextAlignment(.center)
             }
             .padding()
-            .containerBackground(.fill.tertiary, for: .widget)
+            .containerBackground(for: .widget) { }
         }
     }
 }
