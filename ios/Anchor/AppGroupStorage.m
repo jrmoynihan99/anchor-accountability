@@ -25,4 +25,27 @@ RCT_EXTERN_METHOD(
   (RCTPromiseRejectBlock)reject
 )
 
+RCT_EXTERN_METHOD(
+  setWidgetData:
+  (NSDictionary *)data
+  resolver:
+  (RCTPromiseResolveBlock)resolve
+  rejecter:
+  (RCTPromiseRejectBlock)reject
+)
+
+RCT_EXTERN_METHOD(
+  clearWidgetData:
+  (RCTPromiseResolveBlock)resolve
+  rejecter:
+  (RCTPromiseRejectBlock)reject
+)
+
+RCT_EXTERN_METHOD(
+  reloadWidgetTimelines:
+  (RCTPromiseResolveBlock)resolve
+  rejecter:
+  (RCTPromiseRejectBlock)reject
+)
+
 @end

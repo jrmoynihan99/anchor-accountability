@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   signInAnonymously,
 } from "firebase/auth";
+import { NativeModules, Platform } from "react-native";
 import { auth } from "./firebase";
 
 const isDev = __DEV__;
@@ -59,6 +60,13 @@ export async function signOut() {
     await auth.signOut();
     await AsyncStorage.removeItem("hasCompletedOnboarding");
 
+    // Clear widget data from App Group
+    if (Platform.OS === "ios") {
+      const { AppGroupStorage } = NativeModules;
+      await AppGroupStorage?.clearWidgetData?.();
+      await AppGroupStorage?.reloadWidgetTimelines?.();
+    }
+
     if (isDev) {
       console.log("Sign out process completed successfully");
     }
@@ -78,6 +86,13 @@ export async function deleteAccount() {
 
     if (isDev) {
       console.log("Starting account deletion for user:", user.uid);
+    }
+
+    // Clear widget data before deleting the user
+    if (Platform.OS === "ios") {
+      const { AppGroupStorage } = NativeModules;
+      await AppGroupStorage?.clearWidgetData?.();
+      await AppGroupStorage?.reloadWidgetTimelines?.();
     }
 
     // Delete the user account from Firebase Auth

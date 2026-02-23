@@ -30,12 +30,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TourProvider } from "@/context/TourContext";
 import { getHasCompletedTour } from "@/lib/tour";
 import { TourActiveProvider, ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
+import { useWidgetDataSync } from "@/hooks/widget/useWidgetDataSync";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
+
+  // Sync widget data to App Group for iOS widgets
+  useWidgetDataSync();
 
   // Tour state management - both AsyncStorage status and runtime visibility
   const [tourCompleted, setTourCompleted] = useState<boolean | null>(null);
