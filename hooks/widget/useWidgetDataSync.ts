@@ -1,5 +1,6 @@
 import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
+import * as Crypto from "expo-crypto";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useEffect } from "react";
 import { NativeModules, Platform } from "react-native";
@@ -38,7 +39,7 @@ export function useWidgetDataSync() {
         let widgetToken = userDoc.data()?.widgetToken;
 
         if (!widgetToken) {
-          widgetToken = crypto.randomUUID();
+          widgetToken = Crypto.randomUUID();
           await setDoc(userRef, { widgetToken }, { merge: true });
         }
 
