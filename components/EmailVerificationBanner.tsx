@@ -25,7 +25,7 @@ const BANNER_DISMISSED_KEY = "email_verification_banner_dismissed_session";
 
 type BannerState = "unverified" | "verified" | "hidden";
 
-export function EmailVerificationBanner() {
+export function EmailVerificationBanner({ suppress = false }: { suppress?: boolean }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(-200);
@@ -165,7 +165,7 @@ export function EmailVerificationBanner() {
     transform: [{ translateY: translateY.value }],
   }));
 
-  if (bannerState === "hidden") return null;
+  if (bannerState === "hidden" || suppress) return null;
 
   // ✅ Verified state (success)
   if (bannerState === "verified") {

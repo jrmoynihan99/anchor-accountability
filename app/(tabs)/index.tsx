@@ -17,6 +17,7 @@ import {
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useAppTour } from "@/context/TourContext";
 import { useThreads } from "@/hooks/messages/useThreads";
 import { useStreakData } from "@/hooks/streak/useStreakData";
 import { auth } from "@/lib/firebase";
@@ -25,12 +26,18 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
 
 export default function HomeScreen() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { streakData, loading: streakLoading, updateStreakStatus, undoStreakStatus } = useStreakData();
+  const {
+    streakData,
+    loading: streakLoading,
+    updateStreakStatus,
+    undoStreakStatus,
+  } = useStreakData();
   const { mentor, loading } = useAccountability();
   const { threads } = useThreads();
   const currentUid = auth.currentUser?.uid;
@@ -41,6 +48,16 @@ export default function HomeScreen() {
 
   // Add ref for VerseCarousel
   const verseCarouselRef = useRef<VerseCarouselRef>(null);
+
+  // Tour: register ScrollView ref so tour can scroll to off-screen elements
+  const scrollViewRef = useRef<ScrollView>(null);
+  const { setHomeScrollRef, registerStepY } = useAppTour();
+
+  useEffect(() => {
+    if (scrollViewRef.current) {
+      setHomeScrollRef(scrollViewRef.current);
+    }
+  }, [setHomeScrollRef]);
 
   // Undo state for streak card
   const [undoState, setUndoState] = useState<{
@@ -87,7 +104,7 @@ export default function HomeScreen() {
     const thread = threads.find(
       (t) =>
         (t.userA === currentUid && t.userB === mentorUid) ||
-        (t.userB === currentUid && t.userA === mentorUid)
+        (t.userB === currentUid && t.userA === mentorUid),
     );
 
     if (!thread) {
@@ -109,6 +126,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar style={effectiveTheme === "dark" ? "light" : "dark"} />
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
@@ -125,90 +143,104 @@ export default function HomeScreen() {
         <VerseCarousel ref={verseCarouselRef} />
 
         {/* ---- Reach Out ---- */}
-        <ButtonModalTransitionBridge
-          modalWidthPercent={0.9}
-          modalHeightPercent={0.75}
+        <View
+          style={{ marginVertical: 16 }}
+          onLayout={(e) => registerStepY(0, e.nativeEvent.layout.y)}
         >
-          {({
-            open,
-            close,
-            isModalVisible,
-            progress,
-            buttonAnimatedStyle,
-            modalAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => {
-            reachOutCloseRef.current = close;
+          <ButtonModalTransitionBridge
+            modalWidthPercent={0.9}
+            modalHeightPercent={0.75}
+          >
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              reachOutCloseRef.current = close;
 
-            return (
+              return (
+                <>
+                  <ConditionalAttachStep index={0} fill>
+                    <ReachOutButton
+                      buttonRef={buttonRef}
+                      style={buttonAnimatedStyle}
+                      onPress={open}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                    />
+                  </ConditionalAttachStep>
+                  <ReachOutModal
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+        </View>
+
+        {/* ---- Streak Card ---- */}
+        <View
+          style={{ marginVertical: 16 }}
+          onLayout={(e) => registerStepY(1, e.nativeEvent.layout.y)}
+        >
+          <ButtonModalTransitionBridge>
+            {({
+              open,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => (
               <>
-                <ReachOutButton
-                  buttonRef={buttonRef}
-                  style={buttonAnimatedStyle}
-                  onPress={open}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                />
-                <ReachOutModal
+                <ConditionalAttachStep index={1} fill>
+                  <StreakCard
+                    streakData={streakData}
+                    loading={streakLoading}
+                    onCheckIn={handleStreakCheckIn}
+                    onUndo={undoStreakStatus}
+                    buttonRef={buttonRef}
+                    style={buttonAnimatedStyle}
+                    onPress={open}
+                    onPressIn={handlePressIn}
+                    onPressOut={handlePressOut}
+                    showUndo={undoState.showUndo}
+                    lastModifiedDate={undoState.lastModifiedDate}
+                    onUndoStateChange={(showUndo, date) =>
+                      setUndoState({ showUndo, lastModifiedDate: date })
+                    }
+                  />
+                </ConditionalAttachStep>
+                <StreakCardModal
                   isVisible={isModalVisible}
                   progress={progress}
                   modalAnimatedStyle={modalAnimatedStyle}
                   close={close}
+                  streakData={streakData}
+                  onCheckIn={handleStreakCheckIn}
+                  onUndo={undoStreakStatus}
+                  showUndo={undoState.showUndo}
+                  lastModifiedDate={undoState.lastModifiedDate}
+                  onUndoStateChange={(showUndo, date) =>
+                    setUndoState({ showUndo, lastModifiedDate: date })
+                  }
                 />
               </>
-            );
-          }}
-        </ButtonModalTransitionBridge>
-
-        {/* ---- Streak Card ---- */}
-        <ButtonModalTransitionBridge>
-          {({
-            open,
-            close,
-            isModalVisible,
-            progress,
-            buttonAnimatedStyle,
-            modalAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => (
-            <>
-              <StreakCard
-                streakData={streakData}
-                loading={streakLoading}
-                onCheckIn={handleStreakCheckIn}
-                onUndo={undoStreakStatus}
-                buttonRef={buttonRef}
-                style={buttonAnimatedStyle}
-                onPress={open}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                showUndo={undoState.showUndo}
-                lastModifiedDate={undoState.lastModifiedDate}
-                onUndoStateChange={(showUndo, date) =>
-                  setUndoState({ showUndo, lastModifiedDate: date })
-                }
-              />
-              <StreakCardModal
-                isVisible={isModalVisible}
-                progress={progress}
-                modalAnimatedStyle={modalAnimatedStyle}
-                close={close}
-                streakData={streakData}
-                onCheckIn={handleStreakCheckIn}
-                onUndo={undoStreakStatus}
-                showUndo={undoState.showUndo}
-                lastModifiedDate={undoState.lastModifiedDate}
-                onUndoStateChange={(showUndo, date) =>
-                  setUndoState({ showUndo, lastModifiedDate: date })
-                }
-              />
-            </>
-          )}
-        </ButtonModalTransitionBridge>
+            )}
+          </ButtonModalTransitionBridge>
+        </View>
 
         {/* ---- Mentor Card (Compact) ---- */}
         {hasMentor && (
@@ -288,45 +320,54 @@ export default function HomeScreen() {
         )}
 
         {/* ---- Guided Prayer ---- */}
-        <ButtonModalTransitionBridge>
-          {({
-            open,
-            openOriginless,
-            close,
-            isModalVisible,
-            progress,
-            buttonAnimatedStyle,
-            modalAnimatedStyle,
-            buttonRef,
-            handlePressIn,
-            handlePressOut,
-          }) => {
-            // Use originless opener for programmatic global-intent opens
-            guidedPrayerOpenRef.current = openOriginless;
+        <View
+          style={{ marginVertical: 16 }}
+          onLayout={(e) => registerStepY(5, e.nativeEvent.layout.y)}
+        >
+          <ButtonModalTransitionBridge>
+            {({
+              open,
+              openOriginless,
+              close,
+              isModalVisible,
+              progress,
+              buttonAnimatedStyle,
+              modalAnimatedStyle,
+              buttonRef,
+              handlePressIn,
+              handlePressOut,
+            }) => {
+              // Use originless opener for programmatic global-intent opens
+              guidedPrayerOpenRef.current = openOriginless;
 
-            return (
-              <>
-                <GuidedPrayer
-                  buttonRef={buttonRef}
-                  style={buttonAnimatedStyle}
-                  onPress={open}
-                  onPressIn={handlePressIn}
-                  onPressOut={handlePressOut}
-                  onBeginPrayer={open}
-                />
-                <GuidedPrayerModal
-                  isVisible={isModalVisible}
-                  progress={progress}
-                  modalAnimatedStyle={modalAnimatedStyle}
-                  close={close}
-                />
-              </>
-            );
-          }}
-        </ButtonModalTransitionBridge>
+              return (
+                <>
+                  <ConditionalAttachStep index={6} fill>
+                    <GuidedPrayer
+                      buttonRef={buttonRef}
+                      style={buttonAnimatedStyle}
+                      onPress={open}
+                      onPressIn={handlePressIn}
+                      onPressOut={handlePressOut}
+                      onBeginPrayer={open}
+                    />
+                  </ConditionalAttachStep>
+                  <GuidedPrayerModal
+                    isVisible={isModalVisible}
+                    progress={progress}
+                    modalAnimatedStyle={modalAnimatedStyle}
+                    close={close}
+                  />
+                </>
+              );
+            }}
+          </ButtonModalTransitionBridge>
+        </View>
 
         {/* ---- Community Card ---- */}
-        <CommunityCard />
+        <ConditionalAttachStep index={7} fill>
+          <CommunityCard />
+        </ConditionalAttachStep>
       </ScrollView>
     </View>
   );

@@ -62,8 +62,6 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 100, // OPTION B — preserve original huge padding
     borderRadius: 20,
-    marginBottom: 16,
-    marginTop: 16,
     alignItems: "center",
     justifyContent: "center",
 

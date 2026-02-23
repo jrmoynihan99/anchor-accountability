@@ -16,6 +16,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
 
 interface FloatingPillNavigationProps {
   activeTab: string;
@@ -199,35 +200,44 @@ export function FloatingPillNavigation({
                 (tab.key === "messages" && showMessagesNotification) ||
                 (tab.key === "accountability" &&
                   showAccountabilityNotification);
+
+              // Tour step index: messages = 3, accountability = 4
+              const tourIndex = tab.key === "messages" ? 4 : 5;
+
               return (
-                <Pressable
+                <View
                   key={tab.key}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onTabPress(tab.key);
-                  }}
                   onLayout={(event) => handleTabLayout(iconIndex, event)}
-                  style={[
-                    styles.tabButton,
-                    !isLast && { marginRight: TAB_GAP },
-                  ]}
+                  style={!isLast ? { marginRight: TAB_GAP } : undefined}
                 >
-                  <View style={{ position: "relative" }}>
-                    <IconSymbol
-                      size={ICON_SIZE}
-                      name={tab.icon as any}
-                      color={
-                        isActive ? colors.navActiveText : colors.tabIconDefault
-                      }
-                    />
-                    {showNotif ? (
-                      <NotificationDot
-                        color={colors.error}
-                        borderColor={colors.navActiveText}
-                      />
-                    ) : null}
-                  </View>
-                </Pressable>
+                  <ConditionalAttachStep index={tourIndex}>
+                    <Pressable
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        onTabPress(tab.key);
+                      }}
+                      style={styles.tabButton}
+                    >
+                      <View style={{ position: "relative" }}>
+                        <IconSymbol
+                          size={ICON_SIZE}
+                          name={tab.icon as any}
+                          color={
+                            isActive
+                              ? colors.navActiveText
+                              : colors.tabIconDefault
+                          }
+                        />
+                        {showNotif ? (
+                          <NotificationDot
+                            color={colors.error}
+                            borderColor={colors.navActiveText}
+                          />
+                        ) : null}
+                      </View>
+                    </Pressable>
+                  </ConditionalAttachStep>
+                </View>
               );
             })}
           </View>

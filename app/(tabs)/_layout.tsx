@@ -27,12 +27,26 @@ import React, { useEffect, useRef, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TourProvider } from "@/context/TourContext";
+import { getHasCompletedTour } from "@/lib/tour";
+import { TourActiveProvider, ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
+
+  // Tour state management - both AsyncStorage status and runtime visibility
+  const [tourCompleted, setTourCompleted] = useState<boolean | null>(null);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    getHasCompletedTour().then((completed) => {
+      setTourCompleted(completed);
+      setShowTour(!completed);
+    });
+  }, []);
   const { myReachOuts } = useMyReachOuts();
   const hasUnreadEncouragements = myReachOuts.some((r) => r.unreadCount > 0);
   // In your actual _layout.tsx file, add this:
@@ -105,8 +119,23 @@ export default function TabLayout() {
     }
   };
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+  // Tour uses this to programmatically switch tabs during the spotlight tour
+  const handleTourTabNavigate = (tab: string) => {
+    handleTabPress(tab);
+  };
+
+  // Immediately unmount TourProvider when tour completes (zero performance overhead)
+  const handleTourComplete = () => {
+    setShowTour(false);
+  };
+
+  // Show loading state while checking tour completion status
+  if (tourCompleted === null) {
+    return null; // Or a minimal loading screen
+  }
+
+  const content = (
+    <>
       {/* Sticky Top Blur Header */}
       <View
         style={{
@@ -148,7 +177,7 @@ export default function TabLayout() {
       </View>
 
       {/* ✅ NEW: Email Verification Banner (shown above accountability banners) */}
-      <EmailVerificationBanner />
+      <EmailVerificationBanner suppress={showTour} />
 
       {/* Banner for accountability events */}
       {showBanner && (
@@ -316,6 +345,22 @@ export default function TabLayout() {
         }}
       </ButtonModalTransitionBridge>
 
+      {/* Invisible anchor for tour step — matches FloatingSettingsButton position */}
+      <View
+        style={{
+          position: "absolute",
+          top: insets.top + 20,
+          right: 24,
+          width: 40,
+          height: 40,
+        }}
+        pointerEvents="none"
+      >
+        <ConditionalAttachStep index={8} fill>
+          <View style={{ width: 40, height: 40 }} />
+        </ConditionalAttachStep>
+      </View>
+
       {/* Notification Permission Modal */}
       <NotificationPermissionModal
         isVisible={shouldShowModal}
@@ -324,6 +369,23 @@ export default function TabLayout() {
         permissionStatus={permissionStatus}
         androidDenialCount={androidDenialCount}
       />
+    </>
+  );
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {!tourCompleted ? (
+        <TourActiveProvider isActive={showTour}>
+          <TourProvider
+            onTabNavigate={handleTourTabNavigate}
+            onComplete={handleTourComplete}
+          >
+            {content}
+          </TourProvider>
+        </TourActiveProvider>
+      ) : (
+        content
+      )}
     </GestureHandlerRootView>
   );
 }

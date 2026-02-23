@@ -60,8 +60,6 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     borderRadius: 20,
-    marginTop: 16,
-    marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 4 },

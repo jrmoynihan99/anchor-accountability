@@ -67,3 +67,4 @@ ios/**/*.xcuserstate
 # macOS
 .DS_Store
 
+.claude/

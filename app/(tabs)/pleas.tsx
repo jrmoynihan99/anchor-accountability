@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import React, { useCallback } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
 
 export default function PleasScreen() {
   const { colors, effectiveTheme } = useTheme();
@@ -24,7 +25,7 @@ export default function PleasScreen() {
       markPleasAsSeen(organizationId)
         .then(() => refreshUnreadCount())
         .catch(console.error);
-    }, [organizationId, refreshUnreadCount])
+    }, [organizationId, refreshUnreadCount]),
   );
 
   return (
@@ -44,10 +45,14 @@ export default function PleasScreen() {
         keyboardDismissMode="interactive"
       >
         {/* Pending Requests Section */}
-        <PendingPleasSection />
+        <ConditionalAttachStep index={2} fill>
+          <PendingPleasSection />
+        </ConditionalAttachStep>
 
         {/* My Reach Outs Section */}
-        <MyReachOutsSection />
+        <ConditionalAttachStep index={3} fill>
+          <MyReachOutsSection />
+        </ConditionalAttachStep>
       </ScrollView>
     </View>
   );
