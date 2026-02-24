@@ -83,6 +83,6 @@ module.exports = {
   // Widget
   ...widgetFunctions,
 
-  // Migration - Unread totals
-  migrateUnreadTotals: notificationUtils.migrateUnreadTotals,
+  // Unread total reconciliation
+  reconcileUnreadTotal: notificationUtils.reconcileUnreadTotal,
 };

@@ -109,6 +109,7 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
     if (before.status !== "pending" || after.status !== "active") return;
 
     const menteeUid = after.menteeUid;
+    const mentorUid = after.mentorUid;
     const acceptedInviteId = event.params.inviteId;
 
     try {
@@ -174,8 +175,57 @@ exports.cleanupPendingInvitesOnAccept = onDocumentUpdated(
       if (canceledCount > 0) {
         await batch.commit();
         console.log(
-          `✅ Successfully canceled ${canceledCount} pending invite(s) in org ${orgId}`,
+          `✅ Successfully canceled ${canceledCount} pending invite(s) from mentee in org ${orgId}`,
         );
+      }
+
+      // --- Mentor capacity check ---
+      // If the accepting mentor now has 3+ active mentees, cancel remaining
+      // pending invites TO this mentor from other mentees
+      const activeRelationships = await db
+        .collection(`organizations/${orgId}/accountabilityRelationships`)
+        .where("mentorUid", "==", mentorUid)
+        .where("status", "==", "active")
+        .get();
+
+      if (activeRelationships.size >= 3) {
+        const pendingToMentor = await db
+          .collection(`organizations/${orgId}/accountabilityRelationships`)
+          .where("mentorUid", "==", mentorUid)
+          .where("status", "==", "pending")
+          .get();
+
+        if (!pendingToMentor.empty) {
+          const capacityBatch = db.batch();
+          let capacityCanceledCount = 0;
+
+          for (const doc of pendingToMentor.docs) {
+            capacityBatch.update(doc.ref, {
+              status: "canceled",
+              cancelReason: "mentor_at_capacity",
+              endedByUid: mentorUid,
+              endedAt: admin.firestore.FieldValue.serverTimestamp(),
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            capacityCanceledCount++;
+          }
+
+          if (capacityCanceledCount > 0) {
+            // Decrement mentor's unreadTotal by the number of canceled invites
+            const mentorRef = db.doc(
+              `organizations/${orgId}/users/${mentorUid}`,
+            );
+            capacityBatch.update(mentorRef, {
+              unreadTotal: admin.firestore.FieldValue.increment(
+                -capacityCanceledCount,
+              ),
+            });
+            await capacityBatch.commit();
+            console.log(
+              `✅ Canceled ${capacityCanceledCount} pending invite(s) to mentor ${mentorUid} (at capacity) in org ${orgId}`,
+            );
+          }
+        }
       }
     } catch (error) {
       console.error(

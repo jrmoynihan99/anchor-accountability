@@ -14,21 +14,13 @@ export function ThreadProvider({ children }: { children: React.ReactNode }) {
   const [currentThreadId, setCurrentThreadId] = useState<string | null>(null);
   const [currentPleaId, setCurrentPleaId] = useState<string | null>(null);
 
-  const setCurrentThreadIdWithLog = (threadId: string | null) => {
-    setCurrentThreadId(threadId);
-  };
-
-  const setCurrentPleaIdWithLog = (pleaId: string | null) => {
-    setCurrentPleaId(pleaId);
-  };
-
   return (
     <ThreadContext.Provider
       value={{
         currentThreadId,
-        setCurrentThreadId: setCurrentThreadIdWithLog,
+        setCurrentThreadId,
         currentPleaId,
-        setCurrentPleaId: setCurrentPleaIdWithLog,
+        setCurrentPleaId,
       }}
     >
       {children}

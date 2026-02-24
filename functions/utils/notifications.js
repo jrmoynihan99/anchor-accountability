@@ -1,12 +1,12 @@
-const { onRequest } = require("firebase-functions/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { admin } = require("./database");
 
 /**
- * Calculate total unread count for a user (messages + encouragements)
- *
- * This function calculates the badge count shown in the app by summing:
- * - Unread messages from all threads (where user is either userA or userB)
- * - Unread encouragements on all of the user's pleas
+ * Calculate total unread count for a user by summing all unread sources:
+ * - Messages: userA/B_unreadCount from all threads
+ * - Encouragements: unreadEncouragementCount from all owned pleas
+ * - Pleas: unreadPleaCount from user doc
+ * - Invites: count of pending accountability invites where user is mentor
  *
  * @param {string} uid - User ID
  * @param {string} orgId - Organization ID (REQUIRED)
@@ -17,16 +17,16 @@ async function getTotalUnreadForUser(uid, orgId) {
     console.error(
       "getTotalUnreadForUser called without orgId - this should not happen"
     );
-    return 0; // Return 0 to avoid breaking badge functionality
+    return 0;
   }
 
   try {
+    const db = admin.firestore();
+
     // --- Messages ---
     let messageUnread = 0;
 
-    // UserA side - get threads where this user is userA
-    const threadsA = await admin
-      .firestore()
+    const threadsA = await db
       .collection(`organizations/${orgId}/threads`)
       .where("userA", "==", uid)
       .get();
@@ -35,9 +35,7 @@ async function getTotalUnreadForUser(uid, orgId) {
       messageUnread += doc.data().userA_unreadCount || 0;
     });
 
-    // UserB side - get threads where this user is userB
-    const threadsB = await admin
-      .firestore()
+    const threadsB = await db
       .collection(`organizations/${orgId}/threads`)
       .where("userB", "==", uid)
       .get();
@@ -49,9 +47,7 @@ async function getTotalUnreadForUser(uid, orgId) {
     // --- Encouragements ---
     let encouragementUnread = 0;
 
-    // Get all pleas owned by this user
-    const pleasSnap = await admin
-      .firestore()
+    const pleasSnap = await db
       .collection(`organizations/${orgId}/pleas`)
       .where("uid", "==", uid)
       .get();
@@ -60,10 +56,25 @@ async function getTotalUnreadForUser(uid, orgId) {
       encouragementUnread += doc.data().unreadEncouragementCount || 0;
     });
 
-    const totalUnread = messageUnread + encouragementUnread;
+    // --- Pleas ---
+    const userDoc = await db
+      .doc(`organizations/${orgId}/users/${uid}`)
+      .get();
+    const pleaUnread = userDoc.data()?.unreadPleaCount || 0;
+
+    // --- Pending invites (where user is mentor) ---
+    const invitesSnap = await db
+      .collection(`organizations/${orgId}/accountabilityRelationships`)
+      .where("mentorUid", "==", uid)
+      .where("status", "==", "pending")
+      .get();
+    const inviteUnread = invitesSnap.size;
+
+    const totalUnread =
+      messageUnread + encouragementUnread + pleaUnread + inviteUnread;
 
     console.log(
-      `[getTotalUnreadForUser] User ${uid} in org ${orgId}: ${messageUnread} messages + ${encouragementUnread} encouragements = ${totalUnread} total`
+      `[getTotalUnreadForUser] User ${uid} in org ${orgId}: ${messageUnread} messages + ${encouragementUnread} encouragements + ${pleaUnread} pleas + ${inviteUnread} invites = ${totalUnread} total`
     );
 
     return totalUnread;
@@ -72,7 +83,7 @@ async function getTotalUnreadForUser(uid, orgId) {
       `Error calculating unread for user ${uid} in org ${orgId}:`,
       error
     );
-    return 0; // Return 0 to avoid breaking badge functionality
+    return 0;
   }
 }
 
@@ -131,55 +142,49 @@ async function incrementUnreadTotal(uid, orgId) {
 }
 
 /**
- * One-time migration: backfill unreadTotal and unreadPleaCount on all user docs.
- * Run once before deploying the refactored notification functions.
- *
- * GET /migrateUnreadTotals
+ * Reconcile unreadTotal for the calling user.
+ * Recalculates the true total from all sources and corrects if drifted.
+ * Called by the client on app foreground as a self-healing mechanism.
  */
-const migrateUnreadTotals = onRequest(async (req, res) => {
+const reconcileUnreadTotal = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "User must be authenticated");
+  }
+
+  const uid = request.auth.uid;
+  const orgId = request.auth.token.organizationId;
+
+  if (!orgId) {
+    throw new HttpsError(
+      "failed-precondition",
+      "User has no organizationId claim"
+    );
+  }
+
   try {
-    const orgsSnap = await admin
+    const calculatedTotal = await getTotalUnreadForUser(uid, orgId);
+
+    const userRef = admin
       .firestore()
-      .collection("organizations")
-      .get();
+      .doc(`organizations/${orgId}/users/${uid}`);
+    const userDoc = await userRef.get();
+    const currentTotal = userDoc.data()?.unreadTotal || 0;
 
-    let totalUsers = 0;
-    let totalUpdated = 0;
-
-    for (const orgDoc of orgsSnap.docs) {
-      const orgId = orgDoc.id;
-      const usersSnap = await admin
-        .firestore()
-        .collection(`organizations/${orgId}/users`)
-        .get();
-
-      for (const userDoc of usersSnap.docs) {
-        totalUsers++;
-        const uid = userDoc.id;
-        const calculatedTotal = await getTotalUnreadForUser(uid, orgId);
-
-        const updateData = {
-          unreadTotal: calculatedTotal,
-        };
-        // Initialize unreadPleaCount if it doesn't exist
-        if (userDoc.data().unreadPleaCount === undefined) {
-          updateData.unreadPleaCount = 0;
-        }
-
-        await userDoc.ref.update(updateData);
-        totalUpdated++;
-        console.log(
-          `[migrate] ${uid} in org ${orgId}: unreadTotal = ${calculatedTotal}`
-        );
-      }
+    if (currentTotal !== calculatedTotal) {
+      await userRef.update({ unreadTotal: calculatedTotal });
+      console.log(
+        `[reconcile] Corrected unreadTotal for ${uid} in org ${orgId}: ${currentTotal} → ${calculatedTotal}`
+      );
+      return { corrected: true, oldValue: currentTotal, newValue: calculatedTotal };
     }
 
-    const message = `Migration complete: ${totalUpdated}/${totalUsers} users updated.`;
-    console.log(message);
-    res.status(200).send(message);
+    return { corrected: false, oldValue: currentTotal, newValue: currentTotal };
   } catch (error) {
-    console.error("Migration failed:", error);
-    res.status(500).send(`Migration failed: ${error.message}`);
+    console.error(
+      `[reconcile] Error for ${uid} in org ${orgId}:`,
+      error
+    );
+    throw new HttpsError("internal", "Failed to reconcile unread total");
   }
 });
 
@@ -187,5 +192,5 @@ module.exports = {
   getTotalUnreadForUser,
   getUnreadTotal,
   incrementUnreadTotal,
-  migrateUnreadTotals,
+  reconcileUnreadTotal,
 };

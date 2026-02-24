@@ -167,6 +167,7 @@ export default function MessageThreadScreen() {
   const isUserAtBottomRef = useRef(true);
   const previousMessageCountRef = useRef(0);
   const hasInitiallyLoadedRef = useRef(false);
+  const prevMessagesLengthRef = useRef(0);
 
   // Calculate banner top position based on context section
   const hasContext =
@@ -536,6 +537,7 @@ export default function MessageThreadScreen() {
     previousMessageCountRef.current = messages.length;
   }, [messages]);
 
+  // Mark as read on thread enter
   useEffect(() => {
     if (actualThreadId && !isNewThread) {
       markMessagesAsRead(organizationId!, actualThreadId)
@@ -543,6 +545,19 @@ export default function MessageThreadScreen() {
         .catch(console.error);
     }
   }, [actualThreadId, isNewThread, refreshUnreadCount]);
+
+  // Auto-mark new messages as read while viewing the thread
+  useEffect(() => {
+    const prevLength = prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messages.length;
+
+    // Only fire for new messages after initial load (skip 0 → N)
+    if (prevLength > 0 && messages.length > prevLength && actualThreadId && !isNewThread) {
+      markMessagesAsRead(organizationId!, actualThreadId)
+        .then(() => refreshUnreadCount())
+        .catch(console.error);
+    }
+  }, [messages.length, actualThreadId, isNewThread, refreshUnreadCount]);
 
   const handleSendMessage = async () => {
     if (inputText.trim().length === 0 || !currentUserId || sending) return;

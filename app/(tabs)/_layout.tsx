@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TourProvider } from "@/context/TourContext";
 import { getHasCompletedTour } from "@/lib/tour";
 import { TourActiveProvider, ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
+import { useUnreadReconciliation } from "@/hooks/notification/useUnreadReconciliation";
 import { useWidgetDataSync } from "@/hooks/widget/useWidgetDataSync";
 
 export default function TabLayout() {
@@ -40,6 +41,9 @@ export default function TabLayout() {
 
   // Sync widget data to App Group for iOS widgets
   useWidgetDataSync();
+
+  // Reconcile unreadTotal on mount and app foreground
+  useUnreadReconciliation();
 
   // Tour state management - both AsyncStorage status and runtime visibility
   const [tourCompleted, setTourCompleted] = useState<boolean | null>(null);
