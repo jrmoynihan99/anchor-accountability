@@ -1,45 +1,45 @@
 // app/update.tsx
-import { StyleSheet, View, Platform, Text } from "react-native";
+import {
+  Image,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const STORE_URL = Platform.select({
+  ios: "https://apps.apple.com/us/app/anchor-fight-lust-together/id6752869901",
+  android:
+    "https://play.google.com/store/apps/details?id=com.jrmoynihan99.anchor",
+}) as string;
 
 export default function UpdateScreen() {
-  const isIOS = Platform.OS === "ios";
-
-  const instructions = isIOS
-    ? [
-        "Open the App Store",
-        "Tap your profile picture (top right)",
-        "Scroll to find Anchor",
-        "Tap \"Update\"",
-      ]
-    : [
-        "Open the Google Play Store",
-        "Tap your profile picture (top right)",
-        "Tap \"Manage apps & device\"",
-        "Find Anchor and tap \"Update\"",
-      ];
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Title */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../assets/images/icon.png")}
+            style={styles.logo}
+          />
+        </View>
+
         <Text style={styles.title}>Update Required</Text>
 
-        {/* Message */}
         <Text style={styles.message}>
           A new version of Anchor is available. Please update to continue using
           the app.
         </Text>
 
-        {/* Instructions */}
-        <View style={styles.instructionsContainer}>
-          <Text style={styles.instructionsTitle}>How to update:</Text>
-          {instructions.map((instruction, index) => (
-            <View key={index} style={styles.instructionRow}>
-              <Text style={styles.stepNumber}>{index + 1}.</Text>
-              <Text style={styles.instructionText}>{instruction}</Text>
-            </View>
-          ))}
-        </View>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => Linking.openURL(STORE_URL)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonText}>Update Now</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -57,6 +57,20 @@ const styles = StyleSheet.create({
     maxWidth: 400,
     width: "100%",
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
   title: {
     fontSize: 32,
     fontFamily: "Spectral_700Bold",
@@ -72,34 +86,15 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 24,
   },
-  instructionsContainer: {
-    backgroundColor: "#E6DED7", // Card background
+  button: {
+    backgroundColor: "#CBAD8D",
     borderRadius: 12,
-    padding: 20,
+    paddingVertical: 16,
+    alignItems: "center",
   },
-  instructionsTitle: {
+  buttonText: {
     fontSize: 18,
     fontFamily: "Spectral_700Bold",
-    color: "#3D3022", // Dark text
-    marginBottom: 16,
-  },
-  instructionRow: {
-    flexDirection: "row",
-    marginBottom: 12,
-    alignItems: "flex-start",
-  },
-  stepNumber: {
-    fontSize: 16,
-    fontFamily: "Spectral_700Bold",
-    color: "#CBAD8D", // Tint color
-    marginRight: 8,
-    minWidth: 24,
-  },
-  instructionText: {
-    fontSize: 16,
-    fontFamily: "Spectral_400Regular",
-    color: "#3D3022", // Dark text
-    flex: 1,
-    lineHeight: 24,
+    color: "#FFFFFF",
   },
 });
