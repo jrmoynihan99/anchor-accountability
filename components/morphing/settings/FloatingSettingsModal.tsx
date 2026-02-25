@@ -1,11 +1,18 @@
 // components/morphing/settings/FloatingSettingsModal.tsx - UPDATED v2
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import { useLegalContent } from "@/hooks/misc/useLegalContent";
 import { isAnonymousUser } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Animated, {
   Easing,
   interpolate,
@@ -29,6 +36,7 @@ import { EmailVerificationSection } from "./EmailVerificationSection";
 import { NotificationsSection } from "./NotificationsSection";
 import { PrivacySection } from "./PrivacySection";
 import { SettingsHeader } from "./SettingsHeader";
+import { ShareView } from "./ShareView";
 import { SignOutButton } from "./SignOutButton";
 import { SupportSection } from "./SupportSection";
 import { TextContentView } from "./TextContentView";
@@ -47,7 +55,8 @@ type ScreenType =
   | "textContent"
   | "blockList"
   | "convertAccount"
-  | "changePassword";
+  | "changePassword"
+  | "share";
 
 interface TextContentData {
   title: string;
@@ -117,7 +126,7 @@ export function FloatingSettingsModal({
 
   const transitionToTextContent = (title: string, contentType: string) => {
     const content = getTextContent(
-      contentType as "privacy" | "terms" | "about" | "community"
+      contentType as "privacy" | "terms" | "about" | "community",
     );
     setTextContentData({ title, content: content.content });
     screenTransition.value = withTiming(1, {
@@ -152,6 +161,14 @@ export function FloatingSettingsModal({
     setCurrentScreen("changePassword");
   };
 
+  const transitionToShare = () => {
+    screenTransition.value = withTiming(1, {
+      duration: 300,
+      easing: Easing.out(Easing.quad),
+    });
+    setCurrentScreen("share");
+  };
+
   const handleBackToSettings = () => {
     screenTransition.value = withTiming(0, {
       duration: 300,
@@ -166,7 +183,7 @@ export function FloatingSettingsModal({
 
   // Text content for different sections
   const getTextContent = (
-    type: "privacy" | "terms" | "about" | "community"
+    type: "privacy" | "terms" | "about" | "community",
   ) => {
     switch (type) {
       case "privacy":
@@ -233,7 +250,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
           screenTransition.value,
           [0, 1],
           [0, -100],
-          "clamp"
+          "clamp",
         ),
       },
     ],
@@ -241,7 +258,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
       screenTransition.value,
       [0, 0.8, 1],
       [1, 0.3, 0],
-      "clamp"
+      "clamp",
     ),
   }));
 
@@ -252,7 +269,7 @@ Thank you for helping us keep this a safe and welcoming space!`,
           screenTransition.value,
           [0, 1],
           [300, 0],
-          "clamp"
+          "clamp",
         ),
       },
     ],
@@ -260,8 +277,12 @@ Thank you for helping us keep this a safe and welcoming space!`,
       screenTransition.value,
       [0, 0.2, 1],
       [0, 1, 1],
-      "clamp"
+      "clamp",
     ),
+  }));
+
+  const shareButtonStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(screenTransition.value, [0, 0.3], [1, 0], "clamp"),
   }));
 
   // Button content (the settings icon in its collapsed state)
@@ -300,6 +321,25 @@ Thank you for helping us keep this a safe and welcoming space!`,
   // Modal content with screen transitions
   const modalContent = (
     <View style={styles.screenContainer}>
+      {/* Share button - top right, near the close button */}
+      <Animated.View style={[styles.shareIconContainer, shareButtonStyle]}>
+        <TouchableOpacity
+          style={[
+            styles.shareIconButton,
+            { backgroundColor: colors.closeButtonBackground },
+          ]}
+          onPress={transitionToShare}
+          activeOpacity={0.7}
+        >
+          <IconSymbol
+            name="square.and.arrow.up"
+            size={20}
+            weight="light"
+            color={colors.closeButtonText}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+
       {/* Settings Screen - Always rendered */}
       <Animated.View style={[styles.screenWrapper, settingsScreenStyle]}>
         <ScrollView
@@ -381,6 +421,13 @@ Thank you for helping us keep this a safe and welcoming space!`,
           />
         </Animated.View>
       )}
+
+      {/* Share Screen */}
+      {currentScreen === "share" && (
+        <Animated.View style={[styles.screenWrapper, textContentScreenStyle]}>
+          <ShareView onBackPress={handleBackToSettings} colors={colors} />
+        </Animated.View>
+      )}
     </View>
   );
 
@@ -449,6 +496,19 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: "transparent",
+  },
+  shareIconContainer: {
+    position: "absolute",
+    top: 1,
+    right: 42,
+    zIndex: 20,
+  },
+  shareIconButton: {
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
   },
   screenContainer: {
     flex: 1,

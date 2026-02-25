@@ -103,6 +103,7 @@ const MAPPING = {
   "doc.text.fill": "file-document",
   "book.fill": "book",
   "envelope.badge": "email-alert",
+  "square.and.arrow.up": "share-variant",
 } as const;
 
 // 3. Fallback icon for unmapped symbols on Android
