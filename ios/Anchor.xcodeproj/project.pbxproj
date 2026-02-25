@@ -20,7 +20,6 @@
 		0D2C02422F3FA6B400E303E5 /* StorefrontModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 0D2C023F2F3FA6B400E303E5 /* StorefrontModule.m */; };
 		0D89D9182F4CD0150069D6DD /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D89D9172F4CD0150069D6DD /* WidgetKit.framework */; };
 		0D89D91A2F4CD0150069D6DD /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D89D9192F4CD0150069D6DD /* SwiftUI.framework */; };
-		0D89D9272F4CD0150069D6DD /* AnchorWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0D89D9162F4CD0150069D6DD /* AnchorWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0D89D93B2F4CD0D00069D6DD /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D89D9172F4CD0150069D6DD /* WidgetKit.framework */; };
 		0D8D15742F1AD5AE00BC0006 /* AnchorClip.app in Embed App Clips */ = {isa = PBXBuildFile; fileRef = 0D8D15502F1AD5AD00BC0006 /* AnchorClip.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
@@ -33,13 +32,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		0D89D9252F4CD0150069D6DD /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0D89D9152F4CD0150069D6DD;
-			remoteInfo = AnchorWidgetExtension;
-		};
 		0D8D15612F1AD5AE00BC0006 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -70,7 +62,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				0D89D9272F4CD0150069D6DD /* AnchorWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,7 +406,6 @@
 			);
 			dependencies = (
 				0D8D15732F1AD5AE00BC0006 /* PBXTargetDependency */,
-				0D89D9262F4CD0150069D6DD /* PBXTargetDependency */,
 			);
 			name = Anchor;
 			productName = Anchor;
@@ -675,11 +665,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		0D89D9262F4CD0150069D6DD /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 0D89D9152F4CD0150069D6DD /* AnchorWidgetExtension */;
-			targetProxy = 0D89D9252F4CD0150069D6DD /* PBXContainerItemProxy */;
-		};
 		0D8D15622F1AD5AE00BC0006 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0D8D154F2F1AD5AD00BC0006 /* AnchorClip */;
