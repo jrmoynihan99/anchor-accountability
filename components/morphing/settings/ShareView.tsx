@@ -138,7 +138,7 @@ export function ShareView({ onBackPress, colors }: ShareViewProps) {
           style={[styles.description, { color: colors.textSecondary }]}
         >
           {mode === "org"
-            ? `Share an invite link for ${organization?.name}. No pin code needed to join.`
+            ? `Share an invite link to download Anchor and join ${organization?.name}. No pin code needed to join.`
             : "Share a link to download Anchor from the app store."}
         </ThemedText>
 
