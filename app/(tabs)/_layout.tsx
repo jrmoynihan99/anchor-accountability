@@ -31,7 +31,8 @@ import { TourProvider } from "@/context/TourContext";
 import { getHasCompletedTour } from "@/lib/tour";
 import { TourActiveProvider, ConditionalAttachStep } from "@/components/tour/ConditionalAttachStep";
 import { useUnreadReconciliation } from "@/hooks/notification/useUnreadReconciliation";
-import { useWidgetDataSync } from "@/hooks/widget/useWidgetDataSync";
+// TODO: Re-enable when widgets are finished
+// import { useWidgetDataSync } from "@/hooks/widget/useWidgetDataSync";
 
 export default function TabLayout() {
   const { colors, effectiveTheme } = useTheme();
@@ -39,8 +40,8 @@ export default function TabLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  // Sync widget data to App Group for iOS widgets
-  useWidgetDataSync();
+  // TODO: Re-enable when widgets are finished
+  // useWidgetDataSync();
 
   // Reconcile unreadTotal on mount and app foreground
   useUnreadReconciliation();
