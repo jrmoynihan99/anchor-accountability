@@ -295,20 +295,30 @@ function AppRouterGate({
         }
 
         const hasOnboarded = await getHasOnboarded();
+        const isAuthenticated = !!auth.currentUser;
         const inOnboarding = segments[0] === "onboarding";
         const inTabs = segments[0] === "(tabs)";
         const segmentUndefined = segments[0] === undefined;
 
-        // If we're on update screen but no longer need update, route based on onboarding status
-        // OR if we're in wrong place for onboarding state
-        // OR if segment is undefined (navigation not ready yet but we need to route)
+        // Three routing states:
+        // 1. Not onboarded → full onboarding flow (problem-1)
+        // 2. Onboarded but not authenticated (logged out) → login screen only
+        // 3. Onboarded + authenticated → main app
         if (
           (isUpdateRoute && !updateRequired) ||
-          (hasOnboarded && inOnboarding) ||
+          (hasOnboarded && isAuthenticated && inOnboarding) ||
+          (hasOnboarded && !isAuthenticated && !inOnboarding && !isUpdateRoute) ||
           (!hasOnboarded && !inOnboarding && !isUpdateRoute) ||
-          (segmentUndefined && !updateRequired) // Force route when segment is undefined
+          (segmentUndefined && !updateRequired)
         ) {
-          const targetRoute = hasOnboarded ? "/(tabs)" : "/onboarding/intro";
+          let targetRoute: string;
+          if (!hasOnboarded) {
+            targetRoute = "/onboarding/narrative";
+          } else if (!isAuthenticated) {
+            targetRoute = "/onboarding/login";
+          } else {
+            targetRoute = "/(tabs)";
+          }
           console.log(
             `[AppRouterGate] ➡️ Routing to ${targetRoute} (segmentUndefined: ${segmentUndefined})`,
           );
@@ -332,7 +342,7 @@ function AppRouterGate({
         }, 40);
       } catch (err) {
         console.error("🔴 [RootLayout] Routing error:", err);
-        await router.replace("/onboarding/intro");
+        await router.replace("/onboarding/narrative");
         setTimeout(async () => {
           setAppReady(true);
           await SplashScreen.hideAsync();

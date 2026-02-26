@@ -372,7 +372,7 @@ export default function TabLayout() {
 
       {/* Notification Permission Modal */}
       <NotificationPermissionModal
-        isVisible={shouldShowModal}
+        isVisible={shouldShowModal && !showTour}
         onClose={closeModal}
         onPermissionResult={handlePermissionResult}
         permissionStatus={permissionStatus}

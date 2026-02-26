@@ -82,9 +82,9 @@ export default function OnboardingLayout() {
             gestureEnabled: false, // Prevent swiping back during onboarding
           }}
         >
-          <Stack.Screen name="intro" />
+          <Stack.Screen name="narrative" />
+          <Stack.Screen name="community" />
           <Stack.Screen name="login" />
-          <Stack.Screen name="notifications" />
         </Stack>
       </GestureHandlerRootView>
     </OnboardingContext.Provider>

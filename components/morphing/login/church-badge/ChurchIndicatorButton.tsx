@@ -57,7 +57,7 @@ export function ChurchIndicatorButton({
               type="bodyMedium"
               style={{ color: colors.textSecondary }}
             >
-              Join through your Church
+              Join through your community
             </ThemedText>
           ) : (
             <>

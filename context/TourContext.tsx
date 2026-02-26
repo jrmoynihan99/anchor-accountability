@@ -42,12 +42,12 @@ const STEP_CONTENT = [
   {
     title: "Private Messages",
     description:
-      "When you initiate a chat from a received encouragement (or vice-versa) the conversation continues here.",
+      "Initiate a chat from a received encouragement (or vice-versa) for continued support",
   },
   {
     title: "Accountability",
     description:
-      "Connect with an accountability partner for ongoing support and daily check-ins.",
+      "Connect with an accountability partner for deeper support and daily check-ins.",
   },
   {
     title: "Guided Prayer",

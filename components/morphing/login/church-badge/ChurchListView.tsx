@@ -40,7 +40,7 @@ export function ChurchListView({
 
   // Filter organizations based on search
   const filteredOrganizations = organizations.filter((org) =>
-    org.name.toLowerCase().includes(searchQuery.toLowerCase())
+    org.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleChurchSelect = (org: OrganizationData) => {
@@ -57,7 +57,7 @@ export function ChurchListView({
     <View style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={[styles.title, { color: colors.text }]}>
-          Select Your Church
+          Select Your Community
         </ThemedText>
       </View>
 
@@ -133,7 +133,7 @@ export function ChurchListView({
             color={colors.textSecondary}
           />{" "}
           You will only interact with other members who join through your
-          church. Your identity is kept completely anonymous.
+          community. Your identity is kept completely anonymous.
         </ThemedText>
       </View>
     </View>

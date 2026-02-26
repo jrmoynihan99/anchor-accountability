@@ -9,6 +9,7 @@ const NOTIFICATION_PROMPT_KEY = "hasSeenNotificationPrompt";
 const NOTIFICATION_DISMISSED_KEY = "notificationPromptDismissedAt";
 const ANDROID_DENIAL_COUNT_KEY = "androidNotificationDenialCount";
 const NOTIFICATION_ONBOARDING_KEY = "hasSeenNotificationOnboarding";
+const ONBOARDING_NOTIFICATION_PROMPTED_KEY = "onboarding_notification_prompted_at";
 
 export function useNotificationPermission() {
   const [hasSeenPrompt, setHasSeenPrompt] = useState<boolean | null>(null);
@@ -107,9 +108,34 @@ export function useNotificationPermission() {
       setHasSeenPrompt(hasSeenBefore);
 
       if (!hasSeenBefore) {
-        setTimeout(() => {
-          setShouldShowModal(true);
-        }, 1500);
+        // Check if user was prompted during onboarding (device-level, pre-account)
+        const onboardingPromptedAt = await AsyncStorage.getItem(
+          ONBOARDING_NOTIFICATION_PROMPTED_KEY
+        );
+
+        if (onboardingPromptedAt) {
+          // Migrate to per-user keys so this only runs once
+          await AsyncStorage.setItem(userSpecificPromptKey, "true");
+          await AsyncStorage.setItem(userSpecificDismissedKey, onboardingPromptedAt);
+          setHasSeenPrompt(true);
+
+          // Apply the same 3-day rule
+          const promptedDate = new Date(onboardingPromptedAt);
+          const now = new Date();
+          const daysSincePrompted =
+            (now.getTime() - promptedDate.getTime()) / (1000 * 60 * 60 * 24);
+
+          if (daysSincePrompted >= 3) {
+            setTimeout(() => {
+              setShouldShowModal(true);
+            }, 1500);
+          }
+        } else {
+          // Never prompted at all — show immediately
+          setTimeout(() => {
+            setShouldShowModal(true);
+          }, 1500);
+        }
       } else {
         const dismissedAt = await AsyncStorage.getItem(
           userSpecificDismissedKey

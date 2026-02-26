@@ -105,7 +105,7 @@ export function ShareView({ onBackPress, colors }: ShareViewProps) {
                   fontWeight: mode === "org" ? "600" : "400",
                 }}
               >
-                {organization?.name ?? "My Church"}
+                {organization?.name ?? "My Community"}
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity

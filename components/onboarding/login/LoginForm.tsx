@@ -34,7 +34,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../../hooks/theme/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
 import { auth } from "../../../lib/firebase";
-import { setHasOnboarded } from "../../../lib/onboarding";
 import { ThemedText } from "../../ThemedText";
 import * as Localization from "expo-localization";
 
@@ -126,21 +125,8 @@ export function LoginForm({
   const [loadingButton, setLoadingButton] = useState<LoadingButton>(null);
   const insets = useSafeAreaInsets();
 
-  const completeOnboarding = async (isNewAccount: boolean) => {
-    try {
-      await setHasOnboarded();
-      // New accounts go to notification onboarding page first
-      // Existing accounts (login) go directly to main app
-      if (isNewAccount) {
-        router.replace("/onboarding/notifications");
-      } else {
-        router.replace("/(tabs)");
-      }
-    } catch (error) {
-      console.error("Error saving onboarding status:", error);
-      // On error, still navigate but skip notification page
-      router.replace("/(tabs)");
-    }
+  const completeOnboarding = async () => {
+    router.replace("/(tabs)");
   };
 
   const handleEmailAuth = async () => {
@@ -221,7 +207,7 @@ export function LoginForm({
         // ✅ Normal sign in - no flag needed
         await signInWithEmailAndPassword(auth, email, password);
       }
-      await completeOnboarding(isSignUp);
+      await completeOnboarding();
     } catch (error: any) {
       setIsSigningUp(false); // Reset flag on any auth error
       showAuthError({ error, isSignUp, setIsSignUp });
@@ -286,7 +272,7 @@ export function LoginForm({
       }
 
       // Guest accounts are always "new" accounts
-      await completeOnboarding(true);
+      await completeOnboarding();
     } catch (error) {
       setIsSigningUp(false); // Reset flag on any error
       console.error("Error with anonymous sign in:", error);

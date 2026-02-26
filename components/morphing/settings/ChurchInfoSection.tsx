@@ -44,7 +44,7 @@ export function ChurchInfoSection() {
             type="caption"
             style={[styles.subtitle, { color: colors.textSecondary }]}
           >
-            Your Church Community
+            Your Community
           </ThemedText>
         </View>
       </View>

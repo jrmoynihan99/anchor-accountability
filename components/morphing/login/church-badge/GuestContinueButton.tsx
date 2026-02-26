@@ -46,7 +46,7 @@ export function GuestContinueButton({ onPress }: GuestContinueButtonProps) {
             type="caption"
             style={[styles.subtitleText, { color: colors.white }]}
           >
-            No church code needed
+            No community code needed
           </ThemedText>
         </TouchableOpacity>
       </BlurView>

@@ -83,7 +83,7 @@ export function DeleteAccountButton({ onPress }: DeleteAccountButtonProps) {
       await deleteAccount();
 
       // Navigate to onboarding after successful deletion
-      router.replace("/onboarding/intro");
+      router.replace("/onboarding/login");
       onPress?.();
     } catch (error: any) {
       console.error("Account deletion failed:", error);

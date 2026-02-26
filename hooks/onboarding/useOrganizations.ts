@@ -46,9 +46,9 @@ export function useOrganizations() {
       } catch (err) {
         console.error(
           "🔴 [useOrganizations] Error fetching organizations:",
-          err
+          err,
         );
-        setError("Failed to load churches");
+        setError("Failed to load communities");
       } finally {
         setLoading(false);
       }

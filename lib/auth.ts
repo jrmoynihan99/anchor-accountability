@@ -58,7 +58,6 @@ export async function signOut() {
     }
 
     await auth.signOut();
-    await AsyncStorage.removeItem("hasCompletedOnboarding");
 
     // Clear widget data from App Group
     if (Platform.OS === "ios") {

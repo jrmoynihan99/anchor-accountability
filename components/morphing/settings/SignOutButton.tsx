@@ -39,7 +39,7 @@ export function SignOutButton({ onPress }: SignOutButtonProps) {
   const performSignOut = async () => {
     try {
       await signOut();
-      router.replace("/onboarding/intro");
+      router.replace("/onboarding/login");
       onPress?.();
     } catch (error) {
       console.error("Sign out failed:", error);

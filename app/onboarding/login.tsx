@@ -17,6 +17,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { LoginForm } from "../../components/onboarding/login/LoginForm";
 import { LoginHeader } from "../../components/onboarding/login/LoginHeader";
+import { setHasOnboarded } from "../../lib/onboarding";
 import { useOnboardingContext } from "./_layout";
 
 export default function LoginScreen() {
@@ -49,6 +50,11 @@ export default function LoginScreen() {
   const [isChurchModalVisible, setIsChurchModalVisible] = useState(false);
 
   const { colors } = useTheme();
+
+  // Mark onboarding complete once user reaches login screen
+  useEffect(() => {
+    setHasOnboarded();
+  }, []);
 
   // Set deferred org from context when it loads
   useEffect(() => {
@@ -104,6 +110,7 @@ export default function LoginScreen() {
             <LoginHeader
               isSignUp={isSignUp}
               onBackPress={() => router.back()}
+              showBack={false}
             />
 
             <LoginForm

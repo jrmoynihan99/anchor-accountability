@@ -78,7 +78,7 @@ export function PinEntryModalView({
             type="body"
             style={[styles.pinInstructions, { color: colors.textSecondary }]}
           >
-            Enter the 6-digit code from your church leadership
+            Enter the 6-digit code for your community
           </ThemedText>
 
           <View pointerEvents="auto">

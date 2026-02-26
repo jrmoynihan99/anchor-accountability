@@ -74,7 +74,7 @@ struct ContentView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.primary)
 
-                        Text(org?.capitalized ?? "Your Church")
+                        Text(org?.capitalized ?? "Your Community")
                             .font(.system(size: 18, weight: .semibold))
                             .multilineTextAlignment(.leading)
                             .foregroundColor(.primary)

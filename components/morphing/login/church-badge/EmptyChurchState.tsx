@@ -15,7 +15,7 @@ export function EmptyChurchState() {
         type="body"
         style={[styles.text, { color: colors.textSecondary }]}
       >
-        No churches found
+        No communities found
       </ThemedText>
     </View>
   );

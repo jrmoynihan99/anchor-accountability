@@ -20,7 +20,7 @@ export function ChurchSearchBar({ value, onChangeText }: ChurchSearchBarProps) {
         <Ionicons name="search" size={20} color={colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder="Search for your church"
+          placeholder="Search for your community"
           placeholderTextColor={colors.textSecondary}
           value={value}
           onChangeText={onChangeText}
@@ -45,6 +45,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    letterSpacing: 1,
+    letterSpacing: 0,
   },
 });
