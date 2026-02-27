@@ -40,7 +40,7 @@ export function HowItWorks({ onReady }: { onReady: () => void }) {
           type="titleLarge"
           style={{ textAlign: "center", marginTop: 20 }}
         >
-          Real people who understand.
+          Real people who understand...
         </ThemedText>
       </FadeInText>
       <FadeInText delay={1000} ready={line3Done} onComplete={onReady}>

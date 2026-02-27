@@ -25,7 +25,7 @@ export function Problem1({ onReady }: { onReady: () => void }) {
       <CountUpNumber
         target={75}
         suffix="%"
-        delay={800}
+        delay={1200}
         onComplete={() => setCountDone(true)}
       />
       <FadeInText delay={400} ready={countDone} onComplete={onReady}>

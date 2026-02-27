@@ -14,7 +14,7 @@ export function Reinforcement({ onReady }: { onReady: () => void }) {
           Awesome.
         </ThemedText>
       </FadeInText>
-      <FadeInText delay={1000} ready={line1Done} onComplete={onReady}>
+      <FadeInText delay={600} ready={line1Done} onComplete={onReady}>
         <ThemedText
           type="bodyMedium"
           style={{

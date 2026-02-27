@@ -11,9 +11,22 @@ export function Problem1b({ onReady }: { onReady: () => void }) {
 
   return (
     <>
+      <FadeInText delay={400}>
+        <ThemedText
+          type="bodyMedium"
+          style={{
+            textAlign: "center",
+            color: colors.textSecondary,
+            marginBottom: 16,
+          }}
+        >
+          ...and
+        </ThemedText>
+      </FadeInText>
       <CountUpNumber
         target={40}
         suffix="%"
+        delay={800}
         onComplete={() => setCountDone(true)}
       />
       <FadeInText
@@ -37,7 +50,7 @@ export function Problem1b({ onReady }: { onReady: () => void }) {
             color: colors.textSecondary,
           }}
         >
-          And that's just those who were brave enough to say yes.
+          And that's just those who were brave enough to share...
         </ThemedText>
       </FadeInText>
     </>

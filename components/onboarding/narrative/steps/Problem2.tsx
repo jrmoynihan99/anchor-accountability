@@ -11,9 +11,22 @@ export function Problem2({ onReady }: { onReady: () => void }) {
 
   return (
     <>
+      <FadeInText delay={400}>
+        <ThemedText
+          type="bodyMedium"
+          style={{
+            textAlign: "center",
+            color: colors.textSecondary,
+            marginBottom: 16,
+          }}
+        >
+          But despite that...
+        </ThemedText>
+      </FadeInText>
       <CountUpNumber
         target={84}
         suffix="%"
+        delay={1200}
         onComplete={() => setCountDone(true)}
       />
       <FadeInText
@@ -25,7 +38,7 @@ export function Problem2({ onReady }: { onReady: () => void }) {
           type="titleLarge"
           style={{ textAlign: "center", marginTop: 16 }}
         >
-          say they've never once asked for help.
+          say they've never once shared or asked for help.
         </ThemedText>
       </FadeInText>
       <FadeInText delay={600} ready={line1Done} onComplete={onReady}>

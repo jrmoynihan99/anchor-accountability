@@ -45,7 +45,7 @@ export function CommitReachOut({ onCommit }: { onCommit: () => void }) {
         </ThemedText>
       </FadeInText>
       <FadeInText
-        delay={1000}
+        delay={500}
         ready={line2Done}
         onComplete={() => setLine3Done(true)}
       >
@@ -69,11 +69,11 @@ export function CommitReachOut({ onCommit }: { onCommit: () => void }) {
             color: colors.textSecondary,
           }}
         >
-          It's completely anonymous.
+          It's completely anonymous...
         </ThemedText>
       </FadeInText>
       <FadeInText
-        delay={1000}
+        delay={400}
         ready={line4Done}
         onComplete={() => setLine5Done(true)}
       >
