@@ -26,6 +26,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -603,7 +604,7 @@ export function LoginForm({
         style={[
           styles.footer,
           {
-            paddingBottom: insets.bottom,
+            paddingBottom: insets.bottom + (Platform.OS === "android" ? 16 : 0),
           },
         ]}
       >
@@ -704,7 +705,7 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     justifyContent: "center",
-    paddingBottom: 50,
+    paddingBottom: Platform.OS === "android" ? 34 : 50,
   },
   inputShadow: {
     marginBottom: 16,
