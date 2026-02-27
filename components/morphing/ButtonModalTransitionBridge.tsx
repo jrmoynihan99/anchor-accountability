@@ -124,7 +124,12 @@ export function ButtonModalTransitionBridge({
           const overlap = modalBottom - (screenHeight - keyboardHeight);
 
           if (overlap > 0) {
-            keyboardOffset.value = withTiming(-overlap - 20, {
+            // On Android with edge-to-edge, the modal is centered above the
+            // nav bar, so the overlap is overestimated. Reduce the offset to
+            // compensate, keeping the modal snug against the keyboard.
+            const offsetAmount =
+              Platform.OS === "android" ? -overlap + 20 : -overlap - 20;
+            keyboardOffset.value = withTiming(offsetAmount, {
               duration: Platform.OS === "ios" ? event.duration : 250,
               easing:
                 Platform.OS === "ios"

@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import React, { useState } from "react";
 import {
   Keyboard,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -60,7 +61,12 @@ export function PinEntryModalView({
           </ThemedText>
         </View>
 
-        <View style={styles.pinSection} pointerEvents="box-none">
+        <ScrollView
+          contentContainerStyle={styles.pinSection}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Static Church Badge */}
           <View
             style={[
@@ -140,7 +146,7 @@ export function PinEntryModalView({
               </ThemedText>
             </TouchableOpacity>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </TouchableWithoutFeedback>
   );
@@ -165,9 +171,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pinSection: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   churchBadge: {
     flexDirection: "row",
