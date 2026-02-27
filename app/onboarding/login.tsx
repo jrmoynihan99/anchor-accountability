@@ -4,16 +4,17 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   Keyboard,
+  Platform,
   StatusBar,
   StyleSheet,
   TouchableWithoutFeedback,
   View,
 } from "react-native";
 import Animated, {
-  useAnimatedKeyboard,
+  Easing,
   useAnimatedStyle,
-  useDerivedValue,
-  withSpring,
+  useSharedValue,
+  withTiming,
 } from "react-native-reanimated";
 import { LoginForm } from "../../components/onboarding/login/LoginForm";
 import { LoginHeader } from "../../components/onboarding/login/LoginHeader";
@@ -70,25 +71,41 @@ export default function LoginScreen() {
     setOrganizationName(orgName);
   };
 
-  // Smooth keyboard animation - only when modal is NOT visible
-  const keyboard = useAnimatedKeyboard();
-  const translateY = useDerivedValue(() => {
-    // Don't animate if church modal is open
-    if (isChurchModalVisible) {
-      return 0;
-    }
-    return withSpring(-keyboard.height.value * 0.5, {
-      damping: 20,
-      stiffness: 100,
-      mass: 0.5,
-    });
-  });
+  // Smooth keyboard animation using event listeners (not useAnimatedKeyboard)
+  const keyboardHeight = useSharedValue(0);
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: translateY.value }],
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      if (isChurchModalVisible) return;
+      const duration = Platform.OS === "ios" ? e.duration || 250 : 250;
+      keyboardHeight.value = withTiming(-e.endCoordinates.height * 0.5, {
+        duration,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    });
+
+    const hideSub = Keyboard.addListener(hideEvent, (e) => {
+      const duration = Platform.OS === "ios" ? e.duration || 250 : 250;
+      keyboardHeight.value = withTiming(0, {
+        duration,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
     };
-  });
+  }, [isChurchModalVisible]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: keyboardHeight.value }],
+  }));
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
