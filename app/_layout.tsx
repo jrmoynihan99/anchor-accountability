@@ -301,23 +301,22 @@ function AppRouterGate({
         const segmentUndefined = segments[0] === undefined;
 
         // Three routing states:
-        // 1. Not onboarded → full onboarding flow (problem-1)
-        // 2. Onboarded but not authenticated (logged out) → login screen only
-        // 3. Onboarded + authenticated → main app
+        // 1. Authenticated → main app (takes precedence, covers existing users updating)
+        // 2. Not onboarded → full onboarding flow (narrative)
+        // 3. Onboarded but not authenticated (logged out) → login screen only
         if (
           (isUpdateRoute && !updateRequired) ||
-          (hasOnboarded && isAuthenticated && inOnboarding) ||
-          (hasOnboarded && !isAuthenticated && !inOnboarding && !isUpdateRoute) ||
-          (!hasOnboarded && !inOnboarding && !isUpdateRoute) ||
+          (isAuthenticated && !inTabs) ||
+          (!isAuthenticated && !inOnboarding && !isUpdateRoute) ||
           (segmentUndefined && !updateRequired)
         ) {
           let targetRoute: string;
-          if (!hasOnboarded) {
-            targetRoute = "/onboarding/narrative";
-          } else if (!isAuthenticated) {
-            targetRoute = "/onboarding/login";
-          } else {
+          if (isAuthenticated) {
             targetRoute = "/(tabs)";
+          } else if (!hasOnboarded) {
+            targetRoute = "/onboarding/narrative";
+          } else {
+            targetRoute = "/onboarding/login";
           }
           console.log(
             `[AppRouterGate] ➡️ Routing to ${targetRoute} (segmentUndefined: ${segmentUndefined})`,
