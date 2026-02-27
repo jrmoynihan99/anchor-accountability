@@ -26,7 +26,6 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -604,8 +603,7 @@ export function LoginForm({
         style={[
           styles.footer,
           {
-            paddingBottom:
-              insets.bottom + (Platform.OS === "android" ? 16 : 0),
+            paddingBottom: insets.bottom,
           },
         ]}
       >
@@ -789,10 +787,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    paddingBottom: 32,
     alignItems: "center",
   },
   footerTextContainer: {
