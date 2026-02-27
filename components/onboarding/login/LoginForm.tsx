@@ -14,6 +14,7 @@ import { useOrganization } from "@/context/OrganizationContext";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
+import * as Localization from "expo-localization";
 import { router } from "expo-router";
 import {
   createUserWithEmailAndPassword,
@@ -25,6 +26,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StyleSheet,
   TextInput,
   TouchableOpacity,
@@ -35,7 +37,6 @@ import { useTheme } from "../../../hooks/theme/useTheme";
 import { ensureSignedIn } from "../../../lib/auth";
 import { auth } from "../../../lib/firebase";
 import { ThemedText } from "../../ThemedText";
-import * as Localization from "expo-localization";
 
 type LoadingButton = "auth" | "guest" | null;
 
@@ -155,18 +156,30 @@ export function LoginForm({
             functions,
             "setUserOrganization",
           );
-          const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
-          console.log("[LoginForm] 🔵 Calling setUserOrganization with:", { organizationId, timezone });
-          const result = await setUserOrganization({ organizationId, timezone });
+          const timezone =
+            Localization.getCalendars()[0]?.timeZone ?? "Unknown";
+          console.log("[LoginForm] 🔵 Calling setUserOrganization with:", {
+            organizationId,
+            timezone,
+          });
+          const result = await setUserOrganization({
+            organizationId,
+            timezone,
+          });
           console.log("[LoginForm] ✅ setUserOrganization completed:", result);
 
           // Wait for claim to appear in client token before proceeding
-          console.log("[LoginForm] 🔵 Waiting for claim to propagate to client token...");
+          console.log(
+            "[LoginForm] 🔵 Waiting for claim to propagate to client token...",
+          );
           let claimVerified = false;
           for (let attempt = 0; attempt < 10; attempt++) {
             await auth.currentUser?.getIdToken(true); // Force refresh
             const tokenResult = await auth.currentUser?.getIdTokenResult();
-            console.log(`[LoginForm] 🔍 Attempt ${attempt + 1}: organizationId in token:`, tokenResult?.claims.organizationId);
+            console.log(
+              `[LoginForm] 🔍 Attempt ${attempt + 1}: organizationId in token:`,
+              tokenResult?.claims.organizationId,
+            );
 
             if (tokenResult?.claims.organizationId === organizationId) {
               claimVerified = true;
@@ -176,12 +189,14 @@ export function LoginForm({
 
             // Wait 500ms before next attempt
             if (attempt < 9) {
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise((resolve) => setTimeout(resolve, 500));
             }
           }
 
           if (!claimVerified) {
-            throw new Error("Token refresh timed out - claim not appearing in token after 5 seconds");
+            throw new Error(
+              "Token refresh timed out - claim not appearing in token after 5 seconds",
+            );
           }
 
           // NOW update the context - token has the claim, hooks will work
@@ -233,17 +248,28 @@ export function LoginForm({
           "setUserOrganization",
         );
         const timezone = Localization.getCalendars()[0]?.timeZone ?? "Unknown";
-        console.log("[LoginForm-Anonymous] 🔵 Calling setUserOrganization with:", { organizationId, timezone });
+        console.log(
+          "[LoginForm-Anonymous] 🔵 Calling setUserOrganization with:",
+          { organizationId, timezone },
+        );
         const result = await setUserOrganization({ organizationId, timezone });
-        console.log("[LoginForm-Anonymous] ✅ setUserOrganization completed:", result);
+        console.log(
+          "[LoginForm-Anonymous] ✅ setUserOrganization completed:",
+          result,
+        );
 
         // Wait for claim to appear in client token before proceeding
-        console.log("[LoginForm-Anonymous] 🔵 Waiting for claim to propagate to client token...");
+        console.log(
+          "[LoginForm-Anonymous] 🔵 Waiting for claim to propagate to client token...",
+        );
         let claimVerified = false;
         for (let attempt = 0; attempt < 10; attempt++) {
           await auth.currentUser?.getIdToken(true); // Force refresh
           const tokenResult = await auth.currentUser?.getIdTokenResult();
-          console.log(`[LoginForm-Anonymous] 🔍 Attempt ${attempt + 1}: organizationId in token:`, tokenResult?.claims.organizationId);
+          console.log(
+            `[LoginForm-Anonymous] 🔍 Attempt ${attempt + 1}: organizationId in token:`,
+            tokenResult?.claims.organizationId,
+          );
 
           if (tokenResult?.claims.organizationId === organizationId) {
             claimVerified = true;
@@ -253,16 +279,20 @@ export function LoginForm({
 
           // Wait 500ms before next attempt
           if (attempt < 9) {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise((resolve) => setTimeout(resolve, 500));
           }
         }
 
         if (!claimVerified) {
-          throw new Error("Token refresh timed out - claim not appearing in token after 5 seconds");
+          throw new Error(
+            "Token refresh timed out - claim not appearing in token after 5 seconds",
+          );
         }
 
         // NOW update the context - token has the claim, hooks will work
-        console.log("[LoginForm-Anonymous] 🔵 Updating organization context...");
+        console.log(
+          "[LoginForm-Anonymous] 🔵 Updating organization context...",
+        );
         await updateOrganization(organizationId);
         console.log("[LoginForm-Anonymous] ✅ Organization context updated");
       } catch (claimError) {
@@ -570,7 +600,15 @@ export function LoginForm({
       </View>
 
       {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom:
+              insets.bottom + (Platform.OS === "android" ? 16 : 0),
+          },
+        ]}
+      >
         <View style={styles.footerTextContainer}>
           <ThemedText
             type="small"
@@ -751,7 +789,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   footer: {
-    paddingBottom: 32,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     alignItems: "center",
   },
   footerTextContainer: {
