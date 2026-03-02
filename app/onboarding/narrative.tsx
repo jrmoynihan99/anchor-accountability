@@ -6,6 +6,7 @@ import {
   Greeting,
   HowItWorks,
   IntroAnchor,
+  WhatIfEasy,
   Problem1,
   Problem1b,
   Problem2,
@@ -31,7 +32,7 @@ export default function NarrativeScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const isTransitioning = useRef(false);
 
-  const isCommitmentStep = step === 9 || step === 11;
+  const isCommitmentStep = step === 10 || step === 12;
 
   const goToNext = () => {
     if (isTransitioning.current) return;
@@ -78,18 +79,20 @@ export default function NarrativeScreen() {
       case 5:
         return <TheEnemy onReady={() => setNextVisible(true)} />;
       case 6:
-        return <IntroAnchor onReady={() => setNextVisible(true)} />;
+        return <WhatIfEasy onReady={() => setNextVisible(true)} />;
       case 7:
-        return <HowItWorks onReady={() => setNextVisible(true)} />;
+        return <IntroAnchor onReady={() => setNextVisible(true)} />;
       case 8:
-        return <TheExperience onReady={() => setNextVisible(true)} />;
+        return <HowItWorks onReady={() => setNextVisible(true)} />;
       case 9:
-        return <CommitReachOut onCommit={goToNext} />;
+        return <TheExperience onReady={() => setNextVisible(true)} />;
       case 10:
-        return <Reinforcement onReady={() => setNextVisible(true)} />;
+        return <CommitReachOut onCommit={goToNext} />;
       case 11:
-        return <CommitSupport onCommit={goToNext} onSkip={goToNext} />;
+        return <Reinforcement onReady={() => setNextVisible(true)} />;
       case 12:
+        return <CommitSupport onCommit={goToNext} onSkip={goToNext} />;
+      case 13:
         return <Closing onReady={() => setNextVisible(true)} />;
       default:
         return null;
@@ -121,8 +124,8 @@ export default function NarrativeScreen() {
         {!isCommitmentStep && (
           <OnboardingNextButton
             visible={nextVisible}
-            onPress={step === 12 ? advancePastNarrative : goToNext}
-            icon={step === 12 ? "checkmark" : "arrow-forward"}
+            onPress={step === 13 ? advancePastNarrative : goToNext}
+            icon={step === 13 ? "checkmark" : "arrow-forward"}
           />
         )}
       </LinearGradient>

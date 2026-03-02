@@ -31,7 +31,7 @@ export function TheEnemy({ onReady }: { onReady: () => void }) {
           It's not the first thing we want to share about ourselves.
         </ThemedText>
       </FadeInText>
-      <FadeInText delay={1500} ready={line2Done} onComplete={onReady}>
+      <FadeInText delay={1000} ready={line2Done} onComplete={onReady}>
         <ThemedText
           type="titleLarge"
           style={{ textAlign: "center", marginTop: 32 }}

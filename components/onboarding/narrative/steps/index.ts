@@ -11,3 +11,4 @@ export { Reinforcement } from "./Reinforcement";
 export { TheEnemy } from "./TheEnemy";
 export { TheExperience } from "./TheExperience";
 export { TheWeight } from "./TheWeight";
+export { WhatIfEasy } from "./WhatIfEasy";

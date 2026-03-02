@@ -295,6 +295,7 @@ export function PleaResponseInputScreen({
                 styles.sendButton,
                 {
                   backgroundColor: getButtonBackgroundColor(),
+                  elevation: isButtonDisabled ? 0 : 2,
                 },
               ]}
               onPress={handleSendPress}

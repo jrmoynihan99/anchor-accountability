@@ -48,7 +48,7 @@ export function PleaResponseModal({
 
   // Screen logic
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("input");
-  const screenTransition = useSharedValue(0); // 0 = input, 1 = other screens
+  const screenTransition = useSharedValue(0);
   const [encouragementText, setEncouragementText] = useState("");
   const [isOpenToChat, setIsOpenToChat] = useState(true); // Default to true
   const [currentEncouragementId, setCurrentEncouragementId] = useState<
@@ -140,10 +140,6 @@ export function PleaResponseModal({
           const status = data.status;
           if (status === "approved") {
             transitionToScreen("confirmation");
-            // Auto-close after showing confirmation for 2 seconds
-            setTimeout(() => {
-              close?.();
-            }, 2000);
           } else if (status === "rejected") {
             setRejectionReason(data.rejectionReason || undefined);
             transitionToScreen("rejected");
@@ -226,7 +222,7 @@ export function PleaResponseModal({
       case "pending":
         return <PleaResponsePendingScreen />;
       case "confirmation":
-        return <PleaResponseConfirmationScreen />;
+        return <PleaResponseConfirmationScreen onClose={close} />;
       case "rejected":
         return (
           <PleaResponseRejectedScreen

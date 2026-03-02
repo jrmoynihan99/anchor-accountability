@@ -385,18 +385,10 @@ export default function RootLayout() {
     updateUserTimezone();
   }, [claimsReady]);
 
-  // Gate on fonts loading first
-  if (!fontsLoaded) {
-    return <FullScreenLoader />;
-  }
-
-  // Check version requirement (after fonts, before auth)
-  if (versionLoading) {
-    return <FullScreenLoader />;
-  }
-
-  // Gate EVERYTHING (including providers that mount Firestore listeners)
-  if (!authInitialized || !claimsReady) {
+  // Gate on fonts + auth (both run in parallel via hooks above).
+  // Version check is intentionally NOT a gate — it runs in the background
+  // and AppRouterGate will redirect to /update if needed once it resolves.
+  if (!fontsLoaded || !authInitialized || !claimsReady) {
     return <FullScreenLoader />;
   }
 

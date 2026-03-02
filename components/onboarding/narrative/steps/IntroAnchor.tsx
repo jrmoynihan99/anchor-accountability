@@ -10,23 +10,10 @@ export function IntroAnchor({ onReady }: { onReady: () => void }) {
   const [line2Done, setLine2Done] = useState(false);
   const [line3Done, setLine3Done] = useState(false);
   const [line4Done, setLine4Done] = useState(false);
-  const [line5Done, setLine5Done] = useState(false);
 
   return (
     <>
       <FadeInText delay={600} onComplete={() => setLine1Done(true)}>
-        <ThemedText
-          type="bodyMedium"
-          style={{ textAlign: "center", color: colors.textSecondary }}
-        >
-          But what if reaching out was easy?
-        </ThemedText>
-      </FadeInText>
-      <FadeInText
-        delay={1000}
-        ready={line1Done}
-        onComplete={() => setLine2Done(true)}
-      >
         <View style={styles.logoContainer}>
           <View
             style={[
@@ -53,8 +40,8 @@ export function IntroAnchor({ onReady }: { onReady: () => void }) {
       </FadeInText>
       <FadeInText
         delay={1000}
-        ready={line2Done}
-        onComplete={() => setLine3Done(true)}
+        ready={line1Done}
+        onComplete={() => setLine2Done(true)}
       >
         <ThemedText
           type="bodyMedium"
@@ -69,9 +56,9 @@ export function IntroAnchor({ onReady }: { onReady: () => void }) {
         </ThemedText>
       </FadeInText>
       <FadeInText
-        delay={2500}
-        ready={line3Done}
-        onComplete={() => setLine4Done(true)}
+        delay={2000}
+        ready={line2Done}
+        onComplete={() => setLine3Done(true)}
       >
         <ThemedText
           type="bodyMedium"
@@ -81,9 +68,9 @@ export function IntroAnchor({ onReady }: { onReady: () => void }) {
         </ThemedText>
       </FadeInText>
       <FadeInText
-        delay={1000}
-        ready={line4Done}
-        onComplete={() => setLine5Done(true)}
+        delay={800}
+        ready={line3Done}
+        onComplete={() => setLine4Done(true)}
       >
         <ThemedText
           type="bodyMedium"
@@ -92,7 +79,7 @@ export function IntroAnchor({ onReady }: { onReady: () => void }) {
           Without the shame...
         </ThemedText>
       </FadeInText>
-      <FadeInText delay={1000} ready={line5Done} onComplete={onReady}>
+      <FadeInText delay={800} ready={line4Done} onComplete={onReady}>
         <ThemedText
           type="bodyMedium"
           style={{ textAlign: "center", marginTop: 12 }}

@@ -254,7 +254,7 @@ export function BaseModal({
                 style={[
                   styles.blurBackground,
                   {
-                    backgroundColor: `${backgroundColor}99`,
+                    backgroundColor: `${backgroundColor}A0`,
                     borderColor: colors.modalCardBorder,
                   },
                 ]}

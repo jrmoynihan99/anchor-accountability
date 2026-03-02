@@ -1,11 +1,9 @@
 // ReachOutConfirmationScreen.tsx
 import { ThemedText } from "@/components/ThemedText";
-import { useModalIntent } from "@/context/ModalIntentContext";
 import { useTheme } from "@/context/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Linking,
   ScrollView,
@@ -13,27 +11,55 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
 
 interface ReachOutConfirmationScreenProps {
   onClose: () => void;
   crisis?: boolean;
 }
 
-interface RecommendedAction {
-  icon: string;
+interface FleeAction {
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle: string;
-  action?: () => void;
+  encouragement: string;
 }
+
+const FLEE_ACTIONS: FleeAction[] = [
+  {
+    icon: "walk",
+    title: "Go for a walk/run",
+    subtitle: "Get outside and move",
+    encouragement: "Go for that walk.",
+  },
+  {
+    icon: "barbell",
+    title: "Hit the gym",
+    subtitle: "Channel it into a workout",
+    encouragement: "Go hit the gym.",
+  },
+  {
+    icon: "cafe",
+    title: "Go get coffee/food",
+    subtitle: "Grab something to eat or drink",
+    encouragement: "Go grab that coffee.",
+  },
+  {
+    icon: "people",
+    title: "Go to a public place",
+    subtitle: "Get yourself around other people",
+    encouragement: "Get yourself out there.",
+  },
+];
 
 export function ReachOutConfirmationScreen({
   onClose,
   crisis,
 }: ReachOutConfirmationScreenProps) {
   const { colors, effectiveTheme } = useTheme();
-  const { setModalIntent } = useModalIntent();
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [committed, setCommitted] = useState(false);
 
-  // Main color for icons/titles based on theme
   const mainTextColor = effectiveTheme === "dark" ? colors.text : colors.text;
 
   const handleCallHotline = () => {
@@ -44,47 +70,65 @@ export function ReachOutConfirmationScreen({
     Linking.openURL("sms:988");
   };
 
-  // Handler for "Read Scripture"
-  const handleReadScripture = () => {
+  const handleSelect = (index: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setModalIntent("verse");
-    router.push("/(tabs)");
-    onClose?.();
+    setSelectedIndex(index);
   };
 
-  // Handler for "Guided Prayer"
-  const handleGuidedPrayer = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setModalIntent("guidedPrayer");
-    router.push("/(tabs)");
-    onClose?.();
+  const handleCommit = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setCommitted(true);
   };
-
-  const recommendedActions: RecommendedAction[] = [
-    {
-      icon: "book",
-      title: "Read Scripture",
-      subtitle: "Find peace in God's word",
-      action: handleReadScripture,
-    },
-    {
-      icon: "heart",
-      title: "Guided Prayer",
-      subtitle: "Connect with God",
-      action: handleGuidedPrayer,
-    },
-    {
-      icon: "walk",
-      title: "Take a Walk",
-      subtitle: "Get some fresh air",
-      // No action property = non-interactive
-    },
-  ];
 
   const handleDonePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onClose();
   };
+
+  if (committed && selectedIndex !== null) {
+    const chosen = FLEE_ACTIONS[selectedIndex];
+    return (
+      <Animated.View
+        entering={FadeIn.duration(300)}
+        style={styles.encouragementContainer}
+      >
+        <Ionicons
+          name={chosen.icon}
+          size={48}
+          color={mainTextColor}
+          style={{ marginBottom: 20 }}
+        />
+        <ThemedText
+          type="titleLarge"
+          style={{ textAlign: "center", marginBottom: 12 }}
+        >
+          {chosen.encouragement}
+        </ThemedText>
+        <ThemedText
+          type="body"
+          style={{
+            textAlign: "center",
+            color: colors.textSecondary,
+            lineHeight: 22,
+            marginBottom: 32,
+          }}
+        >
+          Your community will respond in the meantime.
+        </ThemedText>
+        <TouchableOpacity
+          style={[
+            styles.doneButton,
+            { backgroundColor: colors.secondaryButtonBackground },
+          ]}
+          onPress={handleDonePress}
+        >
+          <ThemedText type="buttonLarge" style={{ color: colors.background }}>
+            Done
+          </ThemedText>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
 
   return (
     <ScrollView
@@ -116,8 +160,7 @@ export function ReachOutConfirmationScreen({
           marginBottom: 24,
         }}
       >
-        Your anonymous request has been sent to the community. Sit tight –
-        people will be responding with encouragement soon.
+        Your community will see your message. In the meantime...
       </ThemedText>
 
       {crisis && (
@@ -188,135 +231,102 @@ export function ReachOutConfirmationScreen({
 
       <View style={styles.recommendationsContainer}>
         <ThemedText
-          type="captionMedium"
+          type="title"
           style={{
             color: mainTextColor,
             marginBottom: 16,
             textAlign: "center",
           }}
         >
-          While you wait:
+          "Flee sexual immorality"
         </ThemedText>
 
-        {recommendedActions.map((action, index) => {
-          const isInteractive = !!action.action;
+        <View style={styles.grid}>
+          {FLEE_ACTIONS.map((action, index) => {
+            const isSelected = selectedIndex === index;
+            const isDimmed = selectedIndex !== null && !isSelected;
 
-          if (isInteractive) {
             return (
               <TouchableOpacity
                 key={index}
                 style={[
-                  styles.recommendationCard,
+                  styles.gridCard,
                   {
                     backgroundColor: colors.modalCardBackground,
-                    borderColor: colors.modalCardBorder,
+                    borderColor: isSelected
+                      ? colors.tint
+                      : colors.modalCardBorder,
+                    borderWidth: isSelected ? 2 : 1,
+                    opacity: isDimmed ? 0.4 : 1,
                   },
                 ]}
-                onPress={action.action}
+                onPress={() => handleSelect(index)}
                 activeOpacity={0.7}
               >
                 <View
                   style={[
-                    styles.recommendationIconContainer,
+                    styles.gridIconContainer,
                     {
-                      backgroundColor: colors.iconCircleSecondaryBackground,
+                      backgroundColor: isSelected
+                        ? `${colors.tint}20`
+                        : colors.iconCircleSecondaryBackground,
                     },
                   ]}
                 >
                   <Ionicons
-                    name={action.icon as any}
+                    name={action.icon}
                     size={24}
-                    color={mainTextColor}
+                    color={isSelected ? colors.tint : mainTextColor}
                   />
                 </View>
-                <View style={styles.recommendationText}>
-                  <ThemedText
-                    type="body"
-                    style={{
-                      color: mainTextColor,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {action.title}
-                  </ThemedText>
-                  <ThemedText
-                    type="caption"
-                    style={{
-                      color: colors.textSecondary,
-                    }}
-                  >
-                    {action.subtitle}
-                  </ThemedText>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={colors.textSecondary}
-                />
+                <ThemedText
+                  type="body"
+                  style={{
+                    color: mainTextColor,
+                    textAlign: "center",
+                    marginTop: 10,
+                  }}
+                >
+                  {action.title}
+                </ThemedText>
               </TouchableOpacity>
             );
-          } else {
-            return (
-              <View
-                key={index}
-                style={[
-                  styles.recommendationCard,
-                  {
-                    backgroundColor: colors.modalCardBackground,
-                    borderColor: colors.modalCardBorder,
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.recommendationIconContainer,
-                    {
-                      backgroundColor: colors.iconCircleSecondaryBackground,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={action.icon as any}
-                    size={24}
-                    color={mainTextColor}
-                  />
-                </View>
-                <View style={styles.recommendationText}>
-                  <ThemedText
-                    type="body"
-                    style={{
-                      color: mainTextColor,
-                      marginBottom: 2,
-                    }}
-                  >
-                    {action.title}
-                  </ThemedText>
-                  <ThemedText
-                    type="caption"
-                    style={{
-                      color: colors.textMuted,
-                    }}
-                  >
-                    {action.subtitle}
-                  </ThemedText>
-                </View>
-              </View>
-            );
-          }
-        })}
+          })}
+        </View>
       </View>
 
-      <TouchableOpacity
-        style={[
-          styles.doneButton,
-          { backgroundColor: colors.secondaryButtonBackground },
-        ]}
-        onPress={handleDonePress}
-      >
-        <ThemedText type="buttonLarge" style={{ color: colors.background }}>
-          Done
-        </ThemedText>
-      </TouchableOpacity>
+      {selectedIndex !== null ? (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          layout={LinearTransition}
+        >
+          <TouchableOpacity
+            style={[
+              styles.doneButton,
+              { backgroundColor: colors.secondaryButtonBackground },
+            ]}
+            onPress={handleCommit}
+          >
+            <ThemedText type="buttonLarge" style={{ color: colors.background }}>
+              I'm gonna do this
+            </ThemedText>
+          </TouchableOpacity>
+        </Animated.View>
+      ) : (
+        <View
+          style={[
+            styles.doneButton,
+            {
+              backgroundColor: colors.secondaryButtonBackground,
+              opacity: 0.35,
+            },
+          ]}
+        >
+          <ThemedText type="buttonLarge" style={{ color: colors.background }}>
+            Choose one
+          </ThemedText>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -338,24 +348,24 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 12,
   },
-  recommendationCard: {
-    borderWidth: 1,
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  gridCard: {
+    width: "47%",
     borderRadius: 16,
     padding: 16,
-    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  recommendationIconContainer: {
+  gridIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
-  },
-  recommendationText: {
-    flex: 1,
   },
   doneButton: {
     borderRadius: 16,
@@ -364,6 +374,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 0,
+  },
+  encouragementContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 32,
   },
   crisisBanner: {
     padding: 16,

@@ -4,7 +4,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#3A2D28", // Dark Brown
-      textSecondary: "#6F5D47", // Secondary text
+      textSecondary: "#554538", // Secondary text
       textMuted: "rgba(58, 45, 40, 0.6)", // Muted text for placeholders, disabled states, etc.
 
       background: "#F1EDE6", // Cream
@@ -122,7 +122,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#24394D", // Midpoint between original #2C3E50 and deep #1B2631
-      textSecondary: "#516B7A", // Between #5D6D7E and #34495E
+      textSecondary: "#3B5264", // Between #5D6D7E and #34495E
       textMuted: "rgba(36, 57, 77, 0.6)",
 
       background: "#F6F9FB", // Between original #F8FAFB and deeper #F4F6F8
@@ -241,7 +241,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#2D3A2E", // Deep forest green
-      textSecondary: "#4A5952", // Muted sage
+      textSecondary: "#3C4A40", // Muted sage
       textMuted: "rgba(45, 58, 46, 0.6)",
 
       background: "#F7F9F7", // Very light sage
@@ -360,7 +360,7 @@ export const Colors = {
     light: {
       // --- Text Colors ---
       text: "#1E293B", // Dark navy
-      textSecondary: "#4A5568", // Slate gray
+      textSecondary: "#343F52", // Slate gray
       textMuted: "rgba(30, 41, 59, 0.6)",
       background: "#F1F5F9", // Navy tinted light background
       tint: "#C2730C", // Brighter bronze
