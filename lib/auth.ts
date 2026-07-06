@@ -133,6 +133,10 @@ export async function convertAnonymousToEmail(
     throw new Error("Current user is not anonymous");
   }
 
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters");
+  }
+
   try {
     // Create email/password credential
     const credential = EmailAuthProvider.credential(email, password);

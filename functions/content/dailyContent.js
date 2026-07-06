@@ -8,6 +8,7 @@ const {
   getDateWithOffset,
   getAllOrgIds,
 } = require("../utils/database");
+const { requireAdminSecret } = require("../utils/adminAuth");
 
 // Initialize OpenAI
 const openai = new OpenAI({
@@ -114,6 +115,7 @@ Keep it concise and meaningful.
  * Usage: GET /testGenerateContent?orgId=public&date=2026-01-10
  */
 exports.testGenerateContent = onRequest(async (request, response) => {
+  if (!requireAdminSecret(request, response)) return;
   try {
     const orgId = request.query.orgId || "public";
     const targetDate = request.query.date || formatDate(new Date());
@@ -143,6 +145,7 @@ exports.testGenerateContent = onRequest(async (request, response) => {
  * Usage: POST /updatePrompt with body: { orgId: "public", prompt: "..." }
  */
 exports.updatePrompt = onRequest(async (request, response) => {
+  if (!requireAdminSecret(request, response)) return;
   try {
     const { orgId, prompt } = request.body;
 
@@ -188,6 +191,7 @@ exports.updatePrompt = onRequest(async (request, response) => {
  * Usage: GET /createContentNow?orgId=public&date=2026-01-10
  */
 exports.createContentNow = onRequest(async (request, response) => {
+  if (!requireAdminSecret(request, response)) return;
   try {
     const orgId = request.query.orgId || "public";
     const dateString = request.query.date || formatDate(getDateWithOffset(2));

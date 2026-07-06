@@ -3,6 +3,7 @@ const { onSchedule } = require("firebase-functions/scheduler");
 const { onRequest } = require("firebase-functions/https");
 const axios = require("axios");
 const { admin, getAllOrgIds } = require("../utils/database");
+const { requireAdminSecret } = require("../utils/adminAuth");
 
 /**
  * Notify mentor when mentee checks in
@@ -387,6 +388,7 @@ exports.sendMissedCheckInNotifications = onSchedule(
  * Usage: GET /testMissedCheckInNotification?orgId=public&relationshipId=abc123
  */
 exports.testMissedCheckInNotification = onRequest(async (req, res) => {
+  if (!requireAdminSecret(req, res)) return;
   try {
     const orgId = req.query.orgId || "public";
     const relationshipId = req.query.relationshipId;

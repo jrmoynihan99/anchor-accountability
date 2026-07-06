@@ -1,6 +1,7 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const axios = require("axios");
 const { admin } = require("../utils/database");
+const { requireAdminSecret } = require("../utils/adminAuth");
 
 /**
  * Callable HTTP function to send update notification to all users
@@ -9,6 +10,7 @@ const { admin } = require("../utils/database");
  * Example: https://us-central1-YOUR_PROJECT_ID.cloudfunctions.net/sendUpdateNotification
  */
 exports.sendUpdateNotification = onRequest({ cors: true }, async (req, res) => {
+  if (!requireAdminSecret(req, res)) return;
   try {
     const db = admin.firestore();
 

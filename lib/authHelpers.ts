@@ -109,8 +109,8 @@ export async function changePassword(
     throw new Error("Please enter a new password");
   }
 
-  if (newPassword.length < 6) {
-    throw new Error("New password must be at least 6 characters");
+  if (newPassword.length < 8) {
+    throw new Error("New password must be at least 8 characters");
   }
 
   if (currentPassword === newPassword) {
@@ -137,7 +137,7 @@ export async function changePassword(
     ) {
       throw new Error("Current password is incorrect");
     } else if (error.code === "auth/weak-password") {
-      throw new Error("New password is too weak. Use at least 6 characters.");
+      throw new Error("New password is too weak. Use at least 8 characters.");
     } else if (error.code === "auth/requires-recent-login") {
       throw new Error(
         "For security, please sign out and sign back in before changing your password"

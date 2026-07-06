@@ -2,6 +2,7 @@ const { onSchedule } = require("firebase-functions/scheduler");
 const { onRequest } = require("firebase-functions/https");
 const axios = require("axios");
 const { admin, formatDate, getAllOrgIds } = require("../utils/database");
+const { requireAdminSecret } = require("../utils/adminAuth");
 
 /**
  * Send accountability check-in reminders at 6 PM local time
@@ -230,6 +231,7 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
  * Usage: GET /testAccountabilityReminder?orgId=public&menteeUid=abc123
  */
 exports.testAccountabilityReminder = onRequest(async (req, res) => {
+  if (!requireAdminSecret(req, res)) return;
   try {
     const orgId = req.query.orgId || "public";
     const menteeUid = req.query.menteeUid;

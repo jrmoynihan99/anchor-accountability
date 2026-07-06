@@ -1,6 +1,7 @@
 const { onSchedule } = require("firebase-functions/scheduler");
 const { onRequest } = require("firebase-functions/https");
 const { admin, formatDate, getAllOrgIds } = require("../utils/database");
+const { requireAdminSecret } = require("../utils/adminAuth");
 
 /**
  * Calculate analytics for a single organization
@@ -932,6 +933,7 @@ exports.calculateOrganizationAnalytics = onSchedule(
  * Usage: GET /testOrganizationAnalytics?orgId=public
  */
 exports.testOrganizationAnalytics = onRequest(async (req, res) => {
+  if (!requireAdminSecret(req, res)) return;
   try {
     const orgId = req.query.orgId || "public";
 
