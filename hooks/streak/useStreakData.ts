@@ -51,8 +51,10 @@ export function useStreakData() {
   const [user, setUser] = useState(auth.currentUser);
   const [todayKey, setTodayKey] = useState(getLocalDateString(0));
   const loadedMonths = useRef<Set<string>>(new Set());
-  // Server-computed streak length, used only to size the window below.
+  // Authoritative streak totals. recalculateUserStreak computes these over the
+  // user's entire history and writes them to the user document.
   const [serverStreak, setServerStreak] = useState(0);
+  const [serverBest, setServerBest] = useState(0);
 
   const { organizationId, loading: orgLoading } = useOrganization();
 
@@ -90,43 +92,35 @@ export function useStreakData() {
     setOlderDocs([]);
   }, [user?.uid, organizationId]);
 
-  // The authoritative streak length, recomputed server-side over the user's
-  // whole history by recalculateUserStreak. Read here purely to size the
-  // subscription window — see effectiveWindowDays.
+  /**
+   * Subscribe to the streak totals the server already maintains.
+   *
+   * These are the displayed numbers. Deriving them on the client instead would
+   * mean loading the user's entire streak history just to recount something
+   * already stored as two integers — a 307-day streak would cost 307 document
+   * reads on every app open. The windowed documents below exist for the
+   * calendar and check-in UI, not for these totals.
+   */
   useEffect(() => {
     const uid = user?.uid;
     if (!uid || !organizationId || orgLoading) {
       setServerStreak(0);
+      setServerBest(0);
       return;
     }
 
     const unsub = onSnapshot(
       doc(db, "organizations", organizationId, "users", uid),
-      (snap) => setServerStreak(snap.data()?.currentStreak ?? 0),
+      (snap) => {
+        setServerStreak(snap.data()?.currentStreak ?? 0);
+        setServerBest(snap.data()?.bestStreak ?? 0);
+      },
       (error) =>
         console.error(`useStreakData: user doc listener error:`, error)
     );
 
     return () => unsub();
   }, [user?.uid, organizationId, orgLoading]);
-
-  /**
-   * How far back to subscribe.
-   *
-   * getCurrentStreak counts successes after the most recent `fail`. If no fail
-   * is loaded it cannot tell where the streak began and simply counts every
-   * success in view, so a streak longer than the window reads as exactly the
-   * window size — a 307-day streak displayed as 90.
-   *
-   * Widening the window to cover the server's count pulls that bounding fail
-   * back into view, so the existing client calculation becomes correct on its
-   * own and every consumer keeps working unchanged. Users below the default
-   * window are unaffected and still load only STREAK_WINDOW_DAYS.
-   */
-  const effectiveWindowDays = useMemo(
-    () => Math.max(STREAK_WINDOW_DAYS, serverStreak + 2),
-    [serverStreak]
-  );
 
   // Subscribe to a bounded window rather than the whole collection. Document IDs
   // are YYYY-MM-DD, so a documentId() range is a date range and needs no index.
@@ -138,7 +132,7 @@ export function useStreakData() {
       return;
     }
 
-    const windowStart = getLocalDateString(-effectiveWindowDays);
+    const windowStart = getLocalDateString(-STREAK_WINDOW_DAYS);
     const streakQuery = query(
       collection(db, "organizations", organizationId, "users", uid, "streak"),
       orderBy(documentId()),
@@ -163,7 +157,7 @@ export function useStreakData() {
     );
 
     return () => unsub();
-  }, [user?.uid, organizationId, orgLoading, todayKey, effectiveWindowDays]);
+  }, [user?.uid, organizationId, orgLoading, todayKey]);
 
   /**
    * Fetch a month that falls outside the live window, for calendar browsing.
@@ -183,7 +177,7 @@ export function useStreakData() {
       const monthEnd = toLocalDateString(
         new Date(month.getFullYear(), month.getMonth() + 1, 0)
       );
-      if (monthEnd >= getLocalDateString(-effectiveWindowDays)) return;
+      if (monthEnd >= getLocalDateString(-STREAK_WINDOW_DAYS)) return;
 
       loadedMonths.current.add(monthKey);
 
@@ -220,7 +214,7 @@ export function useStreakData() {
         console.error(`useStreakData: failed to load ${monthKey}:`, error);
       }
     },
-    [user?.uid, organizationId, effectiveWindowDays]
+    [user?.uid, organizationId]
   );
 
   // Never synthesise pending days from before the account existed.
@@ -284,6 +278,10 @@ export function useStreakData() {
 
   return {
     streakData,
+    // Server-maintained totals. Prefer these over recomputing from streakData,
+    // which only covers the recent window and cannot see a streak's beginning.
+    currentStreak: serverStreak,
+    personalBest: serverBest,
     loading,
     updateStreakStatus,
     undoStreakStatus,

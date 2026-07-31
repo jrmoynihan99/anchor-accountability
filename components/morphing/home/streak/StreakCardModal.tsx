@@ -31,6 +31,12 @@ interface StreakCardModalProps {
    * the live subscription window can be fetched on demand.
    */
   onMonthChange?: (month: Date) => void;
+  /**
+   * Server-maintained totals from useStreakData. streakData only covers the
+   * recent window, so totals derived from it cap at the window size.
+   */
+  currentStreak?: number;
+  personalBest?: number;
 }
 
 export function StreakCardModal({
@@ -39,6 +45,8 @@ export function StreakCardModal({
   modalAnimatedStyle,
   close,
   streakData,
+  currentStreak: currentStreakProp,
+  personalBest: personalBestProp,
   onCheckIn,
   onUndo,
   showUndo,
@@ -67,8 +75,8 @@ export function StreakCardModal({
   };
 
   // Calculate streak stats
-  const currentStreak = getCurrentStreak(streakData);
-  const personalBest = getPersonalBest(streakData);
+  const currentStreak = currentStreakProp ?? getCurrentStreak(streakData);
+  const personalBest = personalBestProp ?? getPersonalBest(streakData);
   const totalDays = getTotalDaysTracked(streakData);
   const successRate = getSuccessRate(streakData);
 
@@ -133,6 +141,8 @@ export function StreakCardModal({
     <View style={styles.streakButtonContent}>
       <StreakCardContent
         streakData={streakData}
+        currentStreak={currentStreak}
+        personalBest={personalBest}
         onCheckIn={onCheckIn}
         onUndo={onUndo}
         showButtons={true}

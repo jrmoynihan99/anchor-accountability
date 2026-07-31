@@ -28,6 +28,13 @@ import {
 
 interface StreakCardContentProps {
   streakData: StreakEntry[];
+  /**
+   * Server-maintained totals from useStreakData. Pass these whenever they are
+   * available: streakData only covers the recent window, so deriving the totals
+   * from it caps them at the window size once a streak outgrows it.
+   */
+  currentStreak?: number;
+  personalBest?: number;
   loading?: boolean;
   onCheckIn: (status: "success" | "fail") => void;
   onUndo?: (date: string) => void;
@@ -40,6 +47,8 @@ interface StreakCardContentProps {
 
 export function StreakCardContent({
   streakData,
+  currentStreak: currentStreakProp,
+  personalBest: personalBestProp,
   loading,
   onCheckIn,
   onUndo,
@@ -72,8 +81,10 @@ export function StreakCardContent({
     );
   }
 
-  const currentStreak = getCurrentStreak(streakData);
-  const personalBest = getPersonalBest(streakData);
+  // Fall back to the windowed calculation only when the server totals are
+  // unavailable, e.g. a caller that has streakData but no user document.
+  const currentStreak = currentStreakProp ?? getCurrentStreak(streakData);
+  const personalBest = personalBestProp ?? getPersonalBest(streakData);
   const dateToAsk = getDateToAskAbout(streakData);
   const hasActiveStreak = currentStreak > 0;
 

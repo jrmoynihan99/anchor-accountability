@@ -6,6 +6,8 @@ import { type StreakEntry } from "./streakUtils";
 
 interface StreakCardProps {
   streakData: StreakEntry[];
+  currentStreak?: number;
+  personalBest?: number;
   loading?: boolean;
   onCheckIn: (status: "success" | "fail") => void;
   onUndo: (date: string) => void;
@@ -22,6 +24,8 @@ interface StreakCardProps {
 
 export function StreakCard({
   streakData,
+  currentStreak,
+  personalBest,
   loading,
   onCheckIn,
   onUndo,
@@ -50,6 +54,8 @@ export function StreakCard({
         >
           <StreakCardContent
             streakData={streakData}
+            currentStreak={currentStreak}
+            personalBest={personalBest}
             loading={loading}
             onCheckIn={onCheckIn}
             onUndo={onUndo}
@@ -70,6 +76,8 @@ export function StreakCard({
     >
       <StreakCardContent
         streakData={streakData}
+        currentStreak={currentStreak}
+        personalBest={personalBest}
         loading={loading}
         onCheckIn={onCheckIn}
         onUndo={onUndo}

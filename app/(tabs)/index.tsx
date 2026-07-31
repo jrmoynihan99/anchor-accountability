@@ -34,6 +34,8 @@ export default function HomeScreen() {
 
   const {
     streakData,
+    currentStreak,
+    personalBest,
     loading: streakLoading,
     updateStreakStatus,
     undoStreakStatus,
@@ -209,6 +211,8 @@ export default function HomeScreen() {
                 <ConditionalAttachStep index={1} fill>
                   <StreakCard
                     streakData={streakData}
+                    currentStreak={currentStreak}
+                    personalBest={personalBest}
                     loading={streakLoading}
                     onCheckIn={handleStreakCheckIn}
                     onUndo={undoStreakStatus}
@@ -230,6 +234,8 @@ export default function HomeScreen() {
                   modalAnimatedStyle={modalAnimatedStyle}
                   close={close}
                   streakData={streakData}
+                  currentStreak={currentStreak}
+                  personalBest={personalBest}
                   onCheckIn={handleStreakCheckIn}
                   onUndo={undoStreakStatus}
                   showUndo={undoState.showUndo}
