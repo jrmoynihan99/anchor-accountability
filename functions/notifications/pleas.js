@@ -20,6 +20,13 @@ const FIRESTORE_CONCURRENCY = 25;
 // Expo's push API accepts up to 100 messages per request.
 const EXPO_BATCH_SIZE = 100;
 
+// Expo rate-limits bursts of back-to-back batches with HTTP 429. Under waves a
+// single wave is one or two batches and never trips it, but the "all" strategy
+// and any large waveSizes still can, so batches are paced and retried.
+const EXPO_MAX_RETRIES = 4;
+const EXPO_BACKOFF_BASE_MS = 500;
+const EXPO_INTER_BATCH_DELAY_MS = 250;
+
 // Candidates are over-fetched so the per-user cooldown has something to filter
 // against. Without this the cooldown is inert: a slice of exactly N always
 // yields exactly N recipients regardless of when they were last notified.
@@ -40,6 +47,44 @@ function chunk(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * POST one batch to Expo, retrying on rate limits and transient server errors.
+ *
+ * Honours Retry-After when Expo sends it, otherwise backs off exponentially.
+ * Anything still failing after EXPO_MAX_RETRIES throws, so the caller can
+ * revert that batch's counters rather than leaving badges claiming a
+ * notification that never arrived.
+ */
+async function postToExpo(payload, attempt = 0) {
+  try {
+    return await axios.post("https://exp.host/--/api/v2/push/send", payload, {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    const status = error?.response?.status;
+    const retryable = status === 429 || (status >= 500 && status < 600);
+
+    if (!retryable || attempt >= EXPO_MAX_RETRIES) throw error;
+
+    const retryAfter = Number(error?.response?.headers?.["retry-after"]);
+    const delay = Number.isFinite(retryAfter)
+      ? retryAfter * 1000
+      : EXPO_BACKOFF_BASE_MS * Math.pow(2, attempt);
+
+    console.warn(
+      `[plea] Expo returned ${status}; retrying in ${delay}ms (attempt ${
+        attempt + 1
+      }/${EXPO_MAX_RETRIES})`
+    );
+    await sleep(delay);
+    return postToExpo(payload, attempt + 1);
+  }
 }
 
 /** Run `fn` over `items` in parallel, at most `limit` at a time. */
@@ -386,15 +431,19 @@ async function deliverWave(orgId, plea, pleaId, recipients) {
   ).filter(Boolean);
 
   const notified = [];
+  const batches = chunk(prepared, EXPO_BATCH_SIZE);
 
-  for (const batch of chunk(prepared, EXPO_BATCH_SIZE)) {
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i];
+
+    // Pace multi-batch sends. A single-batch wave pays nothing for this.
+    if (i > 0) await sleep(EXPO_INTER_BATCH_DELAY_MS);
+
     const payload = batch.map((r) =>
       buildNotification(r, plea, pleaId, r.badge)
     );
     try {
-      await axios.post("https://exp.host/--/api/v2/push/send", payload, {
-        headers: { "Content-Type": "application/json" },
-      });
+      await postToExpo(payload);
       notified.push(...batch.map((r) => r.uid));
     } catch (error) {
       console.error(
@@ -627,7 +676,9 @@ exports.sendHelpNotificationOnApprove = onDocumentUpdated(
  */
 exports.escalatePleaNotifications = onSchedule(
   {
-    schedule: "every 1 minutes",
+    // Waves are waveDelayMinutes apart (default 5), so sub-2-minute precision
+    // buys nothing and this is by far the highest-frequency function here.
+    schedule: "every 2 minutes",
     timeoutSeconds: 300,
   },
   async () => {
