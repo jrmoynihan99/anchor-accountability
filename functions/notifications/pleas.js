@@ -4,7 +4,7 @@ const {
 } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
 const axios = require("axios");
-const { admin } = require("../utils/database");
+const { admin, offsetMinutesForTimezone } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
 const {
   getPleaNotificationConfig,
@@ -195,37 +195,33 @@ function hasValidToken(userData) {
 /**
  * Resolve a user's current local hour (0-23), or null if unknowable.
  *
- * Prefers the IANA `timezone` string because it resolves DST correctly at the
- * moment of sending. Falls back to `utcOffsetMinutes`, which the client
- * rewrites on every app open. Both are written by `updateUserTimezone()`.
+ * Offset resolution is delegated to `offsetMinutesForTimezone` — the same
+ * function the hour-bucketed notification jobs use — so the two systems cannot
+ * disagree about what time it is for a user, including across DST boundaries.
+ *
+ * The IANA `timezone` string is preferred because it is evaluated at the moment
+ * of sending. The stored `utcOffsetMinutes` is the fallback for users whose
+ * zone is missing or unrecognised. Both fields are written by
+ * `updateUserTimezone()` in `lib/firebase.ts`.
  */
-function localHourFor(userData) {
+function localHourFor(userData, now = new Date()) {
   const tz = userData?.timezone;
-  if (typeof tz === "string" && tz && tz !== "Unknown") {
-    try {
-      const hour = Number(
-        new Intl.DateTimeFormat("en-US", {
-          timeZone: tz,
-          hour: "numeric",
-          hour12: false,
-        }).format(new Date())
-      );
-      // hour12:false yields 24 for midnight under some ICU versions.
-      if (Number.isFinite(hour)) return hour % 24;
-    } catch {
-      // Unrecognised zone — fall through to the numeric offset.
-    }
+  let offset =
+    typeof tz === "string" && tz && tz !== "Unknown"
+      ? offsetMinutesForTimezone(tz, now)
+      : null;
+
+  if (offset === null || !Number.isFinite(offset)) {
+    const stored = userData?.utcOffsetMinutes;
+    offset =
+      typeof stored === "number" && Number.isFinite(stored) ? stored : null;
   }
 
-  const offset = userData?.utcOffsetMinutes;
-  if (typeof offset === "number" && Number.isFinite(offset)) {
-    const now = new Date();
-    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-    const localMinutes = (((utcMinutes + offset) % 1440) + 1440) % 1440;
-    return Math.floor(localMinutes / 60);
-  }
+  if (offset === null) return null;
 
-  return null;
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const localMinutes = (((utcMinutes + offset) % 1440) + 1440) % 1440;
+  return Math.floor(localMinutes / 60);
 }
 
 /** True when `hour` is inside the [start, end) window, which may wrap midnight. */
