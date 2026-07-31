@@ -36,9 +36,11 @@ const toLocalDateString = (d: Date) =>
  * 1. A day with no document is pending. Only explicit success/fail results are
  *    written, so nothing creates placeholder rows — `withImplicitPending` fills
  *    unlogged days back in for rendering. Consumers see a dense list either way.
- * 2. The subscription is bounded to STREAK_WINDOW_DAYS. Older months are fetched
- *    on demand via `loadMonth`, so the cost of opening the app stays flat
- *    instead of growing with the length of the user's history.
+ * 2. The subscription is bounded to STREAK_WINDOW_DAYS, widened when the user's
+ *    server-computed streak is longer than that (see effectiveWindowDays).
+ *    Older months are fetched on demand via `loadMonth`, so the cost of opening
+ *    the app stays flat instead of growing with the length of the user's
+ *    history.
  */
 export function useStreakData() {
   // Documents from the live, bounded subscription
@@ -49,6 +51,8 @@ export function useStreakData() {
   const [user, setUser] = useState(auth.currentUser);
   const [todayKey, setTodayKey] = useState(getLocalDateString(0));
   const loadedMonths = useRef<Set<string>>(new Set());
+  // Server-computed streak length, used only to size the window below.
+  const [serverStreak, setServerStreak] = useState(0);
 
   const { organizationId, loading: orgLoading } = useOrganization();
 
@@ -86,6 +90,44 @@ export function useStreakData() {
     setOlderDocs([]);
   }, [user?.uid, organizationId]);
 
+  // The authoritative streak length, recomputed server-side over the user's
+  // whole history by recalculateUserStreak. Read here purely to size the
+  // subscription window — see effectiveWindowDays.
+  useEffect(() => {
+    const uid = user?.uid;
+    if (!uid || !organizationId || orgLoading) {
+      setServerStreak(0);
+      return;
+    }
+
+    const unsub = onSnapshot(
+      doc(db, "organizations", organizationId, "users", uid),
+      (snap) => setServerStreak(snap.data()?.currentStreak ?? 0),
+      (error) =>
+        console.error(`useStreakData: user doc listener error:`, error)
+    );
+
+    return () => unsub();
+  }, [user?.uid, organizationId, orgLoading]);
+
+  /**
+   * How far back to subscribe.
+   *
+   * getCurrentStreak counts successes after the most recent `fail`. If no fail
+   * is loaded it cannot tell where the streak began and simply counts every
+   * success in view, so a streak longer than the window reads as exactly the
+   * window size — a 307-day streak displayed as 90.
+   *
+   * Widening the window to cover the server's count pulls that bounding fail
+   * back into view, so the existing client calculation becomes correct on its
+   * own and every consumer keeps working unchanged. Users below the default
+   * window are unaffected and still load only STREAK_WINDOW_DAYS.
+   */
+  const effectiveWindowDays = useMemo(
+    () => Math.max(STREAK_WINDOW_DAYS, serverStreak + 2),
+    [serverStreak]
+  );
+
   // Subscribe to a bounded window rather than the whole collection. Document IDs
   // are YYYY-MM-DD, so a documentId() range is a date range and needs no index.
   useEffect(() => {
@@ -96,7 +138,7 @@ export function useStreakData() {
       return;
     }
 
-    const windowStart = getLocalDateString(-STREAK_WINDOW_DAYS);
+    const windowStart = getLocalDateString(-effectiveWindowDays);
     const streakQuery = query(
       collection(db, "organizations", organizationId, "users", uid, "streak"),
       orderBy(documentId()),
@@ -121,7 +163,7 @@ export function useStreakData() {
     );
 
     return () => unsub();
-  }, [user?.uid, organizationId, orgLoading, todayKey]);
+  }, [user?.uid, organizationId, orgLoading, todayKey, effectiveWindowDays]);
 
   /**
    * Fetch a month that falls outside the live window, for calendar browsing.
@@ -141,7 +183,7 @@ export function useStreakData() {
       const monthEnd = toLocalDateString(
         new Date(month.getFullYear(), month.getMonth() + 1, 0)
       );
-      if (monthEnd >= getLocalDateString(-STREAK_WINDOW_DAYS)) return;
+      if (monthEnd >= getLocalDateString(-effectiveWindowDays)) return;
 
       loadedMonths.current.add(monthKey);
 
@@ -178,7 +220,7 @@ export function useStreakData() {
         console.error(`useStreakData: failed to load ${monthKey}:`, error);
       }
     },
-    [user?.uid, organizationId]
+    [user?.uid, organizationId, effectiveWindowDays]
   );
 
   // Never synthesise pending days from before the account existed.
