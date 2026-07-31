@@ -2,131 +2,608 @@ const {
   onDocumentCreated,
   onDocumentUpdated,
 } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const axios = require("axios");
 const { admin } = require("../utils/database");
 const { eitherBlocked } = require("../utils/blocking");
-const { incrementUnreadTotal } = require("../utils/notifications");
+const {
+  getPleaNotificationConfig,
+} = require("../utils/pleaNotificationConfig");
+
+const FieldPath = admin.firestore.FieldPath;
+const FieldValue = admin.firestore.FieldValue;
+
+// Per-user Firestore work runs in parallel, chunked so a large wave doesn't
+// open hundreds of simultaneous connections.
+const FIRESTORE_CONCURRENCY = 25;
+
+// Expo's push API accepts up to 100 messages per request.
+const EXPO_BATCH_SIZE = 100;
+
+// Candidates are over-fetched so the per-user cooldown has something to filter
+// against. Without this the cooldown is inert: a slice of exactly N always
+// yields exactly N recipients regardless of when they were last notified.
+const CANDIDATE_OVERSAMPLE = 2;
+
+// Ceiling on how many user documents a single rotation claim reads.
+const MAX_CANDIDATE_FETCH = 1000;
+
+// The escalation sweeper processes at most this many pleas per tick.
+const SWEEP_BATCH = 50;
+
+// How long to wait before retrying a wave that was deferred because every
+// candidate was inside their quiet hours. Longer than waveDelayMinutes so a
+// plea posted overnight doesn't re-check every few minutes until morning.
+const QUIET_HOURS_RETRY_MINUTES = 30;
+
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+/** Run `fn` over `items` in parallel, at most `limit` at a time. */
+async function mapWithConcurrency(items, limit, fn) {
+  const results = [];
+  for (const group of chunk(items, limit)) {
+    results.push(...(await Promise.all(group.map(fn))));
+  }
+  return results;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Recipient selection                                                        */
+/* -------------------------------------------------------------------------- */
 
 /**
- * Send help notifications to all opted-in helpers within the same organization
+ * Claim the next slice of users in the org's rotation.
  *
- * @param {Object} plea - Plea document data
- * @param {string} pleaId - Plea document ID
+ * Rotation is ordered by document ID rather than a "last notified" timestamp
+ * because Firestore's orderBy silently excludes documents missing the ordered
+ * field — any user created without that field would become permanently
+ * unreachable. Every document has an ID, so ordering by it can't drop anyone.
+ *
+ * The cursor advance happens inside the transaction so two pleas arriving at
+ * once claim different slices instead of both notifying the same people.
+ *
+ * Filtering happens inside the transaction so the cursor can rest on the last
+ * user actually consumed. Advancing past the whole over-fetched page instead
+ * would skip eligible users for a full rotation cycle.
+ *
  * @param {string} orgId - Organization ID
+ * @param {Object} config - Sanitised plea notification config
+ * @param {Object} plea - Plea document data
+ * @param {number} size - Recipients wanted
+ * @param {Set<string>} exclude - UIDs never to select
+ * @param {boolean} respectQuietHours - False for crisis pleas
+ * @returns {Promise<{recipients: Array<{uid: string, token: string}>, deferred: boolean}>}
  */
-async function sendHelpNotificationToHelpers(plea, pleaId, orgId) {
-  const { message, uid } = plea || {}; // uid = plea author
+async function claimRotationSlice(
+  orgId,
+  config,
+  plea,
+  size,
+  exclude,
+  respectQuietHours
+) {
+  const db = admin.firestore();
+  const usersCol = db.collection(`organizations/${orgId}/users`);
+  const stateRef = db.doc(`organizations/${orgId}/config/pleaNotificationState`);
 
-  try {
-    // Only users in THIS org who opted in for plea notifications
-    const usersSnap = await admin
-      .firestore()
-      .collection(`organizations/${orgId}/users`)
-      .where("notificationPreferences.pleas", "==", true)
-      .get();
+  const baseQuery = usersCol
+    .where("notificationPreferences.pleas", "==", true)
+    .orderBy(FieldPath.documentId());
 
-    const tokenPairs = [];
+  // Over-fetch so the per-user cooldown has something to filter against. A page
+  // of exactly `size` would make the cooldown inert. Capped because this reads
+  // inside a transaction, where very large reads are slow and contention-prone.
+  const pageSize = Math.min(size * CANDIDATE_OVERSAMPLE, MAX_CANDIDATE_FETCH);
+  const cutoff = Date.now() - config.minMinutesBetweenPerUser * 60 * 1000;
 
-    usersSnap.forEach((doc) => {
-      const data = doc.data();
+  return db.runTransaction(async (t) => {
+    const stateSnap = await t.get(stateRef);
+    const cursor = stateSnap.exists ? stateSnap.data()?.rotationCursor : null;
 
-      if (
-        data.expoPushToken &&
-        typeof data.expoPushToken === "string" &&
-        data.expoPushToken.startsWith("ExponentPushToken")
-      ) {
-        // Don't notify the sender of the plea
-        if (doc.id === uid) return;
+    let query = baseQuery.limit(pageSize);
+    if (cursor) query = query.startAfter(usersCol.doc(cursor));
 
-        tokenPairs.push({ token: data.expoPushToken, helperUid: doc.id });
-      }
-    });
+    const snap = await t.get(query);
+    let docs = snap.docs;
 
-    if (tokenPairs.length === 0) {
-      console.log(`No users opted in for plea notifications in org ${orgId}.`);
-      return;
+    // Reached the end of the org — wrap around to the start of the rotation.
+    if (docs.length < pageSize) {
+      const wrapSnap = await t.get(baseQuery.limit(pageSize - docs.length));
+      const seen = new Set(docs.map((d) => d.id));
+      docs = docs.concat(wrapSnap.docs.filter((d) => !seen.has(d.id)));
     }
 
-    // Filter out helpers that are blocked either direction,
-    // increment unread counts, and build notification payloads
-    const notifications = [];
-    for (const { token, helperUid } of tokenPairs) {
-      const blocked = await eitherBlocked(uid, helperUid, orgId);
-      if (blocked) {
-        console.log(
-          `[help] Skipping blocked pair ${uid} <-> ${helperUid} in org ${orgId}`
-        );
+    const fresh = [];
+    const throttled = [];
+    let quietCount = 0;
+    let lastConsumed = cursor;
+
+    for (const d of docs) {
+      if (fresh.length >= size) break;
+      lastConsumed = d.id;
+
+      const data = d.data();
+      if (exclude.has(d.id) || !hasValidToken(data)) continue;
+
+      if (respectQuietHours && inQuietHours(data, config)) {
+        quietCount++;
         continue;
       }
 
-      // Increment unreadPleaCount on helper's user doc
-      await admin
-        .firestore()
-        .doc(`organizations/${orgId}/users/${helperUid}`)
-        .update({
-          unreadPleaCount: admin.firestore.FieldValue.increment(1),
-        });
-
-      // Increment centralized unreadTotal and get badge value
-      const totalUnread = await incrementUnreadTotal(helperUid, orgId);
-
-      notifications.push({
-        to: token,
-        sound: "default",
-        title: "Someone is struggling",
-        body: message?.length
-          ? `They wrote: "${message.slice(0, 100)}"`
-          : "They need encouragement. Tap to respond.",
-        badge: totalUnread,
-        data: {
-          pleaId,
-          type: "plea",
-        },
-      });
+      // A missing timestamp means "never notified" — always eligible. Reading
+      // an absent field is safe; only ordering by one is not.
+      const lastMs = data.lastPleaNotifiedAt?.toMillis?.() ?? 0;
+      const entry = { uid: d.id, token: data.expoPushToken };
+      if (lastMs <= cutoff) fresh.push(entry);
+      else throttled.push(entry);
     }
 
-    if (notifications.length === 0) {
-      console.log(`No eligible helpers after block filtering in org ${orgId}.`);
-      return;
+    // Everyone in range is asleep. Defer without advancing the cursor —
+    // otherwise a plea posted at 3am burns through the rotation reaching
+    // nobody, and those users lose their turn for the whole cycle.
+    if (fresh.length === 0 && throttled.length === 0 && quietCount > 0) {
+      return { recipients: [], deferred: true };
     }
 
-    // Send in batches of 100
-    const batchSize = 100;
-    for (let i = 0; i < notifications.length; i += batchSize) {
-      const chunk = notifications.slice(i, i + batchSize);
-      const res = await axios.post(
-        "https://exp.host/--/api/v2/push/send",
-        chunk,
-        { headers: { "Content-Type": "application/json" } }
-      );
-      console.log(
-        `✅ Sent batch of ${chunk.length} in org ${orgId}:`,
-        res.data?.data
-      );
+    // The cooldown is a preference, not a hard rule: if honouring it would
+    // leave the wave under-filled, top up from recently-notified users. A plea
+    // reaching nobody is far worse than someone getting two pings.
+    if (fresh.length < size) {
+      const topUp = throttled.slice(0, size - fresh.length);
+      if (topUp.length) {
+        console.log(
+          `[plea] Org ${orgId}: topped up wave with ${topUp.length} recently-notified users to preserve coverage`
+        );
+      }
+      fresh.push(...topUp);
     }
 
-    console.log(
-      `✅ Notifications sent to ${notifications.length} helpers in org ${orgId}.`
+    t.set(
+      stateRef,
+      {
+        rotationCursor: lastConsumed || null,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
     );
-  } catch (err) {
-    console.error(`❌ Failed to send plea notifications in org ${orgId}:`, err);
+
+    return { recipients: fresh, deferred: false };
+  });
+}
+
+/** Fetch every opted-in user. Only used by the "all" escape-hatch strategy. */
+async function fetchAllOptedIn(orgId) {
+  const snap = await admin
+    .firestore()
+    .collection(`organizations/${orgId}/users`)
+    .where("notificationPreferences.pleas", "==", true)
+    .get();
+  return snap.docs.map((d) => ({ uid: d.id, data: d.data() }));
+}
+
+function hasValidToken(userData) {
+  const token = userData?.expoPushToken;
+  return (
+    typeof token === "string" && token.startsWith("ExponentPushToken")
+  );
+}
+
+/**
+ * Resolve a user's current local hour (0-23), or null if unknowable.
+ *
+ * Prefers the IANA `timezone` string because it resolves DST correctly at the
+ * moment of sending. Falls back to `utcOffsetMinutes`, which the client
+ * rewrites on every app open. Both are written by `updateUserTimezone()`.
+ */
+function localHourFor(userData) {
+  const tz = userData?.timezone;
+  if (typeof tz === "string" && tz && tz !== "Unknown") {
+    try {
+      const hour = Number(
+        new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          hour: "numeric",
+          hour12: false,
+        }).format(new Date())
+      );
+      // hour12:false yields 24 for midnight under some ICU versions.
+      if (Number.isFinite(hour)) return hour % 24;
+    } catch {
+      // Unrecognised zone — fall through to the numeric offset.
+    }
+  }
+
+  const offset = userData?.utcOffsetMinutes;
+  if (typeof offset === "number" && Number.isFinite(offset)) {
+    const now = new Date();
+    const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+    const localMinutes = (((utcMinutes + offset) % 1440) + 1440) % 1440;
+    return Math.floor(localMinutes / 60);
+  }
+
+  return null;
+}
+
+/** True when `hour` is inside the [start, end) window, which may wrap midnight. */
+function isQuietHour(hour, start, end) {
+  if (start === end) return false;
+  return start < end ? hour >= start && hour < end : hour >= start || hour < end;
+}
+
+/**
+ * Whether a user should be skipped right now for quiet hours.
+ *
+ * Users with no usable timezone data fail open: being permanently unreachable
+ * is a worse outcome than an occasional badly-timed notification.
+ */
+function inQuietHours(userData, config) {
+  if (!config.quietHoursEnabled) return false;
+  const hour = localHourFor(userData);
+  if (hour === null) return false;
+  return isQuietHour(hour, config.quietHoursStart, config.quietHoursEnd);
+}
+
+/**
+ * Pick recipients for one wave.
+ *
+ * @returns {Promise<{recipients: Array<{uid: string, token: string}>, deferred: boolean}>}
+ */
+async function selectRecipients(
+  orgId,
+  config,
+  plea,
+  size,
+  excludeUids,
+  respectQuietHours
+) {
+  const exclude = new Set(excludeUids || []);
+  exclude.add(plea.uid); // never notify the plea's author
+
+  if (config.strategy === "all") {
+    const all = await fetchAllOptedIn(orgId);
+    const recipients = [];
+    let quietCount = 0;
+
+    for (const { uid, data } of all) {
+      if (exclude.has(uid) || !hasValidToken(data)) continue;
+      if (respectQuietHours && inQuietHours(data, config)) {
+        quietCount++;
+        continue;
+      }
+      recipients.push({ uid, token: data.expoPushToken });
+    }
+
+    return {
+      recipients,
+      deferred: recipients.length === 0 && quietCount > 0,
+    };
+  }
+
+  return claimRotationSlice(
+    orgId,
+    config,
+    plea,
+    size,
+    exclude,
+    respectQuietHours
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Delivery                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Increment a user's plea and total unread counters in one transaction and
+ * return the new total, which becomes the push badge value.
+ *
+ * Both counters move together so the badge can't drift from the plea count,
+ * and it's one round trip instead of two.
+ */
+async function incrementPleaCounters(uid, orgId) {
+  const userRef = admin.firestore().doc(`organizations/${orgId}/users/${uid}`);
+  return admin.firestore().runTransaction(async (t) => {
+    const snap = await t.get(userRef);
+    const data = snap.data() || {};
+    const newTotal = (data.unreadTotal || 0) + 1;
+    t.update(userRef, {
+      unreadPleaCount: (data.unreadPleaCount || 0) + 1,
+      unreadTotal: newTotal,
+    });
+    return newTotal;
+  });
+}
+
+/** Undo an increment when the corresponding push failed to send. */
+async function revertPleaCounters(uid, orgId) {
+  const userRef = admin.firestore().doc(`organizations/${orgId}/users/${uid}`);
+  try {
+    await admin.firestore().runTransaction(async (t) => {
+      const snap = await t.get(userRef);
+      const data = snap.data() || {};
+      t.update(userRef, {
+        unreadPleaCount: Math.max(0, (data.unreadPleaCount || 0) - 1),
+        unreadTotal: Math.max(0, (data.unreadTotal || 0) - 1),
+      });
+    });
+  } catch (error) {
+    // reconcileUnreadTotal will self-heal this on next app foreground.
+    console.error(`[plea] Failed to revert counters for ${uid}:`, error);
   }
 }
+
+function buildNotification(recipient, plea, pleaId, badge) {
+  const message = plea.message;
+  return {
+    to: recipient.token,
+    sound: "default",
+    title: "Someone is struggling",
+    body: message?.length
+      ? `They wrote: "${message.slice(0, 100)}"`
+      : "They need encouragement. Tap to respond.",
+    badge,
+    data: { pleaId, type: "plea" },
+  };
+}
+
+/**
+ * Deliver one wave: filter blocked pairs, increment counters, push, and stamp
+ * the rotation timestamp.
+ *
+ * Failure is scoped per Expo batch — if one batch of 100 fails, only those
+ * users have their counters reverted. The rest of the wave still lands.
+ *
+ * @returns {Promise<string[]>} UIDs actually notified
+ */
+async function deliverWave(orgId, plea, pleaId, recipients) {
+  if (recipients.length === 0) return [];
+
+  // Block-check every recipient in parallel rather than serially.
+  const allowed = (
+    await mapWithConcurrency(recipients, FIRESTORE_CONCURRENCY, async (r) => {
+      const blocked = await eitherBlocked(plea.uid, r.uid, orgId);
+      return blocked ? null : r;
+    })
+  ).filter(Boolean);
+
+  if (allowed.length === 0) {
+    console.log(`[plea] ${pleaId}: no eligible recipients after block filter`);
+    return [];
+  }
+
+  // Counters must be incremented before sending because the new total is the
+  // badge value carried in the payload.
+  const prepared = (
+    await mapWithConcurrency(allowed, FIRESTORE_CONCURRENCY, async (r) => {
+      try {
+        const badge = await incrementPleaCounters(r.uid, orgId);
+        return { ...r, badge };
+      } catch (error) {
+        console.error(`[plea] Counter increment failed for ${r.uid}:`, error);
+        return null;
+      }
+    })
+  ).filter(Boolean);
+
+  const notified = [];
+
+  for (const batch of chunk(prepared, EXPO_BATCH_SIZE)) {
+    const payload = batch.map((r) =>
+      buildNotification(r, plea, pleaId, r.badge)
+    );
+    try {
+      await axios.post("https://exp.host/--/api/v2/push/send", payload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      notified.push(...batch.map((r) => r.uid));
+    } catch (error) {
+      console.error(
+        `[plea] ${pleaId}: Expo push failed for batch of ${batch.length}, reverting counters:`,
+        error?.response?.data || error.message
+      );
+      await mapWithConcurrency(batch, FIRESTORE_CONCURRENCY, (r) =>
+        revertPleaCounters(r.uid, orgId)
+      );
+    }
+  }
+
+  // Stamp the cooldown only for users who actually received something.
+  for (const group of chunk(notified, 400)) {
+    const writer = admin.firestore().batch();
+    for (const uid of group) {
+      writer.update(
+        admin.firestore().doc(`organizations/${orgId}/users/${uid}`),
+        { lastPleaNotifiedAt: FieldValue.serverTimestamp() }
+      );
+    }
+    await writer.commit();
+  }
+
+  console.log(`[plea] ${pleaId}: notified ${notified.length} users in ${orgId}`);
+  return notified;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Wave state machine                                                          */
+/* -------------------------------------------------------------------------- */
+
+async function countEncouragements(pleaRef) {
+  try {
+    const agg = await pleaRef
+      .collection("encouragements")
+      .where("status", "==", "approved")
+      .count()
+      .get();
+    return agg.data().count || 0;
+  } catch (error) {
+    console.error(`[plea] Failed to count encouragements:`, error);
+    // Return 0 so a counting failure escalates rather than silently muting
+    // a plea that may still need help.
+    return 0;
+  }
+}
+
+/**
+ * Run the next wave for a plea, then schedule or close out the escalation.
+ */
+async function runPleaWave(orgId, pleaId) {
+  const pleaRef = admin
+    .firestore()
+    .doc(`organizations/${orgId}/pleas/${pleaId}`);
+  const snap = await pleaRef.get();
+  if (!snap.exists) return;
+
+  const plea = snap.data();
+  if (plea.status !== "approved") return;
+
+  const config = await getPleaNotificationConfig(orgId);
+  const alreadyNotified = plea.notifiedUids || [];
+
+  /** Push the next attempt out without consuming a wave. */
+  const deferWave = async (reason) => {
+    await pleaRef.update({
+      notifyState: "active",
+      nextWaveAt: admin.firestore.Timestamp.fromMillis(
+        Date.now() + QUIET_HOURS_RETRY_MINUTES * 60 * 1000
+      ),
+    });
+    console.log(`[plea] ${pleaId}: wave deferred (${reason})`);
+  };
+
+  // Crisis pleas and the "all" escape hatch both fan out once, wide, and finish.
+  // Crisis ignores quiet hours by design — that is the whole point of the flag.
+  const isCrisis = plea.crisis === true && config.crisisBypass;
+  if (isCrisis || config.strategy === "all") {
+    const size = config.strategy === "all" ? Infinity : config.crisisFanOutSize;
+    const { recipients, deferred } = await selectRecipients(
+      orgId,
+      config,
+      plea,
+      size,
+      alreadyNotified,
+      !isCrisis
+    );
+
+    if (deferred) return deferWave("all candidates in quiet hours");
+
+    const notified = await deliverWave(orgId, plea, pleaId, recipients);
+    // notifiedUids is only needed to keep later waves from repeating people.
+    // These paths finish here, so storing thousands of UIDs would just risk
+    // the 1MB document limit for no benefit.
+    await pleaRef.update({
+      notifyState: "complete",
+      notifyWave: 1,
+      nextWaveAt: null,
+    });
+    console.log(
+      `[plea] ${pleaId}: ${isCrisis ? "crisis" : "strategy=all"} fan-out complete, ${notified.length} notified`
+    );
+    return;
+  }
+
+  const waveIndex = plea.notifyWave || 0;
+  const waveSizes =
+    config.strategy === "fanout" ? [config.fanOutSize] : config.waveSizes;
+
+  if (waveIndex >= waveSizes.length) {
+    await pleaRef.update({ notifyState: "complete", nextWaveAt: null });
+    return;
+  }
+
+  const { recipients, deferred } = await selectRecipients(
+    orgId,
+    config,
+    plea,
+    waveSizes[waveIndex],
+    alreadyNotified,
+    true
+  );
+
+  // Deferring leaves notifyWave untouched, so this same wave runs again later
+  // rather than being consumed on an empty delivery.
+  if (deferred) return deferWave("all candidates in quiet hours");
+
+  const notified = await deliverWave(orgId, plea, pleaId, recipients);
+
+  const isLastWave = waveIndex + 1 >= waveSizes.length;
+  const update = {
+    notifyWave: waveIndex + 1,
+    notifyState: isLastWave ? "complete" : "active",
+    nextWaveAt: isLastWave
+      ? null
+      : admin.firestore.Timestamp.fromMillis(
+          Date.now() + config.waveDelayMinutes * 60 * 1000
+        ),
+  };
+  if (notified.length) {
+    update.notifiedUids = FieldValue.arrayUnion(...notified);
+  }
+  await pleaRef.update(update);
+}
+
+/**
+ * Transactionally claim a plea for notification so retries and overlapping
+ * triggers can't start two escalation chains for the same plea.
+ *
+ * `nextWaveAt` is set as part of the claim so that if the first wave throws,
+ * the sweeper picks the plea back up and retries instead of leaving it stuck
+ * in "active" forever — which would mean silently notifying nobody.
+ *
+ * @returns {Promise<boolean>} True if this caller owns the notification run
+ */
+async function claimPleaForNotification(pleaRef, retryAt) {
+  try {
+    return await admin.firestore().runTransaction(async (t) => {
+      const snap = await t.get(pleaRef);
+      if (!snap.exists) return false;
+      if (snap.data().notifyState) return false; // already started
+      t.update(pleaRef, {
+        notifyState: "active",
+        notifyWave: 0,
+        nextWaveAt: retryAt,
+      });
+      return true;
+    });
+  } catch (error) {
+    console.error(`[plea] Failed to claim ${pleaRef.id}:`, error);
+    return false;
+  }
+}
+
+async function startPleaNotifications(orgId, pleaId) {
+  const pleaRef = admin
+    .firestore()
+    .doc(`organizations/${orgId}/pleas/${pleaId}`);
+
+  const config = await getPleaNotificationConfig(orgId);
+  const retryAt = admin.firestore.Timestamp.fromMillis(
+    Date.now() + Math.max(config.waveDelayMinutes, 1) * 60 * 1000
+  );
+
+  if (!(await claimPleaForNotification(pleaRef, retryAt))) return;
+  await runPleaWave(orgId, pleaId);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Triggers                                                                    */
+/* -------------------------------------------------------------------------- */
 
 /**
  * When a plea is created and immediately approved
  */
 exports.sendHelpNotification = onDocumentCreated(
-  "organizations/{orgId}/pleas/{pleaId}",
+  {
+    document: "organizations/{orgId}/pleas/{pleaId}",
+    timeoutSeconds: 180,
+  },
   async (event) => {
-    const orgId = event.params.orgId;
-    const snap = event.data;
-    const plea = snap?.data();
-
-    // Only notify for approved pleas
+    const plea = event.data?.data();
     if (!plea || plea.status !== "approved") return;
-
-    await sendHelpNotificationToHelpers(plea, snap.id, orgId);
+    await startPleaNotifications(event.params.orgId, event.params.pleaId);
   }
 );
 
@@ -134,14 +611,69 @@ exports.sendHelpNotification = onDocumentCreated(
  * When a plea's status changes to approved
  */
 exports.sendHelpNotificationOnApprove = onDocumentUpdated(
-  "organizations/{orgId}/pleas/{pleaId}",
+  {
+    document: "organizations/{orgId}/pleas/{pleaId}",
+    timeoutSeconds: 180,
+  },
   async (event) => {
-    const orgId = event.params.orgId;
     const before = event.data.before.data();
     const after = event.data.after.data();
+    if (before.status === "approved" || after.status !== "approved") return;
+    await startPleaNotifications(event.params.orgId, event.params.pleaId);
+  }
+);
 
-    if (before.status !== "approved" && after.status === "approved") {
-      await sendHelpNotificationToHelpers(after, event.params.pleaId, orgId);
+/**
+ * Escalation sweeper.
+ *
+ * Advances any plea whose next wave is due, unless it has already collected
+ * enough encouragement — at which point further notifications are pure noise.
+ */
+exports.escalatePleaNotifications = onSchedule(
+  {
+    schedule: "every 1 minutes",
+    timeoutSeconds: 300,
+  },
+  async () => {
+    const due = await admin
+      .firestore()
+      .collectionGroup("pleas")
+      .where("notifyState", "==", "active")
+      .where("nextWaveAt", "<=", admin.firestore.Timestamp.now())
+      .limit(SWEEP_BATCH)
+      .get();
+
+    if (due.empty) return;
+
+    if (due.size === SWEEP_BATCH) {
+      console.warn(
+        `[plea] Sweeper hit its ${SWEEP_BATCH}-plea cap; remaining pleas escalate next tick`
+      );
     }
+
+    await mapWithConcurrency(due.docs, 5, async (doc) => {
+      const orgId = doc.ref.parent.parent?.id;
+      if (!orgId) return;
+
+      try {
+        const config = await getPleaNotificationConfig(orgId);
+        const encouragements = await countEncouragements(doc.ref);
+
+        if (encouragements >= config.stopAfterEncouragements) {
+          await doc.ref.update({
+            notifyState: "complete",
+            nextWaveAt: null,
+          });
+          console.log(
+            `[plea] ${doc.id}: stopping escalation, ${encouragements} encouragements received`
+          );
+          return;
+        }
+
+        await runPleaWave(orgId, doc.id);
+      } catch (error) {
+        console.error(`[plea] Escalation failed for ${doc.id}:`, error);
+      }
+    });
   }
 );
