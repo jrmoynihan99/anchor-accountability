@@ -1,6 +1,14 @@
 const { onSchedule } = require("firebase-functions/scheduler");
 const axios = require("axios");
-const { admin, formatDate, getAllOrgIds } = require("../utils/database");
+const {
+  admin,
+  formatDate,
+  getAllOrgIds,
+  offsetsForLocalHour,
+} = require("../utils/database");
+
+// Local hour at which streak reminders are sent
+const REMINDER_LOCAL_HOUR = 12;
 
 /**
  * Send streak reminders at 12 PM local time to users with pending streaks
@@ -31,15 +39,22 @@ exports.sendStreakReminders = onSchedule(
         console.log(`\n--- Processing org: ${orgId} ---`);
 
         try {
-          // Get all users in THIS org with general notifications enabled
+          // Only users whose local clock currently reads REMINDER_LOCAL_HOUR.
+          // Bucketing on utcOffsetMinutes means this reads ~1/24th of the org
+          // per run instead of every user, 24 times a day.
           const usersSnap = await db
             .collection(`organizations/${orgId}/users`)
             .where("notificationPreferences.general", "==", true)
+            .where(
+              "utcOffsetMinutes",
+              "in",
+              offsetsForLocalHour(REMINDER_LOCAL_HOUR, now)
+            )
             .get();
 
           if (usersSnap.empty) {
             console.log(
-              `No users with general notifications enabled in org ${orgId}.`
+              `No users due for a streak reminder this hour in org ${orgId}.`
             );
             continue;
           }
@@ -65,8 +80,12 @@ exports.sendStreakReminders = onSchedule(
             );
             const userHour = userTime.getHours();
 
-            // Only process if it's between 12:00 PM (12) and 12:59 PM (12)
-            if (userHour !== 12) {
+            // Defence in depth. The offset bucket above already narrowed this
+            // to the right hour, but `timezone` remains the source of truth and
+            // `utcOffsetMinutes` is only a query accelerator. If a stored offset
+            // is stale (e.g. a DST shift not yet picked up by refreshUserUtcOffsets)
+            // this suppresses the send rather than firing at the wrong local time.
+            if (userHour !== REMINDER_LOCAL_HOUR) {
               continue;
             }
 
@@ -84,23 +103,21 @@ exports.sendStreakReminders = onSchedule(
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayDate = formatDate(yesterday);
 
-            // Check if yesterday's streak is pending
+            // A day with no document is pending — pending means nothing has
+            // been logged for that day, not that a placeholder record exists.
+            // Only an explicit success/fail means there is nothing to remind
+            // about, so a missing document must remind rather than skip.
             const streakDoc = await db
               .doc(
                 `organizations/${orgId}/users/${userId}/streak/${yesterdayDate}`
               )
               .get();
 
-            if (!streakDoc.exists) {
-              console.log(
-                `No streak document for ${userId} on ${yesterdayDate} in org ${orgId}`
-              );
-              continue;
-            }
+            const streakStatus = streakDoc.exists
+              ? streakDoc.data()?.status
+              : "pending";
 
-            const streakData = streakDoc.data();
-
-            if (streakData.status === "pending") {
+            if (streakStatus === "pending") {
               // Send notification
               notifications.push({
                 to: userData.expoPushToken,

@@ -23,22 +23,37 @@ async function getTotalUnreadForUser(uid, orgId) {
   try {
     const db = admin.firestore();
 
+    // These five lookups are independent, so they run concurrently. Issued
+    // sequentially they cost five round-trips of wall-clock, and gen2 bills CPU
+    // for the whole request duration — this is called on every app foreground.
+    const [threadsA, threadsB, pleasSnap, userDoc, invitesSnap] =
+      await Promise.all([
+        db
+          .collection(`organizations/${orgId}/threads`)
+          .where("userA", "==", uid)
+          .get(),
+        db
+          .collection(`organizations/${orgId}/threads`)
+          .where("userB", "==", uid)
+          .get(),
+        db
+          .collection(`organizations/${orgId}/pleas`)
+          .where("uid", "==", uid)
+          .get(),
+        db.doc(`organizations/${orgId}/users/${uid}`).get(),
+        db
+          .collection(`organizations/${orgId}/accountabilityRelationships`)
+          .where("mentorUid", "==", uid)
+          .where("status", "==", "pending")
+          .get(),
+      ]);
+
     // --- Messages ---
     let messageUnread = 0;
-
-    const threadsA = await db
-      .collection(`organizations/${orgId}/threads`)
-      .where("userA", "==", uid)
-      .get();
 
     threadsA.forEach((doc) => {
       messageUnread += doc.data().userA_unreadCount || 0;
     });
-
-    const threadsB = await db
-      .collection(`organizations/${orgId}/threads`)
-      .where("userB", "==", uid)
-      .get();
 
     threadsB.forEach((doc) => {
       messageUnread += doc.data().userB_unreadCount || 0;
@@ -47,27 +62,14 @@ async function getTotalUnreadForUser(uid, orgId) {
     // --- Encouragements ---
     let encouragementUnread = 0;
 
-    const pleasSnap = await db
-      .collection(`organizations/${orgId}/pleas`)
-      .where("uid", "==", uid)
-      .get();
-
     pleasSnap.forEach((doc) => {
       encouragementUnread += doc.data().unreadEncouragementCount || 0;
     });
 
     // --- Pleas ---
-    const userDoc = await db
-      .doc(`organizations/${orgId}/users/${uid}`)
-      .get();
     const pleaUnread = userDoc.data()?.unreadPleaCount || 0;
 
     // --- Pending invites (where user is mentor) ---
-    const invitesSnap = await db
-      .collection(`organizations/${orgId}/accountabilityRelationships`)
-      .where("mentorUid", "==", uid)
-      .where("status", "==", "pending")
-      .get();
     const inviteUnread = invitesSnap.size;
 
     const totalUnread =

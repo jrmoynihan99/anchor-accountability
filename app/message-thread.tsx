@@ -4,6 +4,7 @@
 import { AccountabilityInviteBanner } from "@/components/messages/chat/AccountabilityInviteBanner";
 import { AccountabilityReceivedInviteBanner } from "@/components/messages/chat/AccountabilityReceivedInviteBanner";
 import { ContextSection } from "@/components/messages/chat/ContextSection";
+import { MessageComposerHandle } from "@/components/messages/chat/MessageComposer";
 import { MessageInput } from "@/components/messages/chat/MessageInput";
 import { MessagesList } from "@/components/messages/chat/MessagesList";
 import { MessageThreadHeader } from "@/components/messages/chat/MessageThreadHeader";
@@ -32,7 +33,6 @@ import {
   Keyboard,
   Platform,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -71,7 +71,6 @@ export default function MessageThreadScreen() {
   const { mentor, mentees, receivedInvites, getPendingInviteWith } =
     useAccountability();
 
-  const [inputText, setInputText] = useState("");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [actualThreadId, setActualThreadId] = useState<string>(threadId);
   const [isTyping, setIsTyping] = useState(false);
@@ -127,7 +126,7 @@ export default function MessageThreadScreen() {
     useThreadMessages(actualThreadId);
   const { refreshUnreadCount } = useUnreadCount();
   const flatListRef = useRef<FlatList>(null);
-  const inputRef = useRef<TextInput>(null);
+  const composerRef = useRef<MessageComposerHandle>(null);
 
   // Get the actual other user ID (from params or fetched from thread)
   const actualOtherUserId = otherUserId || fetchedOtherUserId;
@@ -559,10 +558,14 @@ export default function MessageThreadScreen() {
     }
   }, [messages.length, actualThreadId, isNewThread, refreshUnreadCount]);
 
-  const handleSendMessage = async () => {
-    if (inputText.trim().length === 0 || !currentUserId || sending) return;
-    const messageText = inputText.trim();
-    setInputText("");
+  const handleSendMessage = async (messageText: string) => {
+    if (messageText.length === 0) return;
+    // The composer clears itself optimistically, so hand the draft back
+    // rather than dropping it if we can't send yet.
+    if (!currentUserId || sending) {
+      composerRef.current?.setText(messageText);
+      return;
+    }
     setSending(true);
     setTimeout(() => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -572,7 +575,7 @@ export default function MessageThreadScreen() {
     } catch (error) {
       console.error("Failed to send message:", error);
       Alert.alert("Error", "Failed to send message. Please try again.");
-      setInputText(messageText);
+      composerRef.current?.setText(messageText);
     } finally {
       setSending(false);
     }
@@ -711,9 +714,7 @@ export default function MessageThreadScreen() {
 
         <Animated.View style={[styles.inputContainer, animatedInputStyle]}>
           <MessageInput
-            ref={inputRef}
-            inputText={inputText}
-            onInputChange={setInputText}
+            ref={composerRef}
             onSend={handleSendMessage}
             onFocus={handleInputFocus}
             colors={colors}

@@ -315,6 +315,12 @@ export async function updateUserTimezone(): Promise<void> {
       userRef,
       {
         timezone: timezone,
+        // Query accelerator for the hourly notification jobs. They bucket on
+        // this field so each run reads only the users whose local clock is at
+        // the target hour, instead of every user 24 times a day. Minutes east
+        // of UTC; rewritten on every app open so DST shifts are picked up.
+        // `timezone` above remains the source of truth.
+        utcOffsetMinutes: -new Date().getTimezoneOffset(),
         lastUpdated: serverTimestamp(),
       },
       { merge: true }

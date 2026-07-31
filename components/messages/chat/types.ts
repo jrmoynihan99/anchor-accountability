@@ -24,9 +24,7 @@ export interface ThreadHeaderProps {
 }
 
 export interface MessageInputProps {
-  inputText: string;
-  onInputChange: (text: string) => void;
-  onSend: () => void;
+  onSend: (text: string) => void;
   onFocus: () => void;
   colors: any;
   disabled?: boolean;

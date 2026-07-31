@@ -3,7 +3,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useTheme } from "@/context/ThemeContext";
 import { TriggerType } from "@/hooks/accountability/useCheckIns";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
   Easing,
@@ -33,7 +33,8 @@ interface MissingCheckIn {
 type TimelineItem = CheckInRecord | MissingCheckIn;
 
 interface RecentCheckInsSectionProps {
-  checkIns: TimelineItem[];
+  checkIns: TimelineItem[]; // Compact timeline window (last 7 days, padded)
+  allCheckIns?: TimelineItem[]; // Full history for the expanded calendar
   timezone?: string; // Renamed from userTimezone for consistency
   onFillMissing?: (date: string) => void; // Optional callback for retroactive fill
   onSelectFilled?: () => void; // Optional callback when filled day is selected
@@ -41,6 +42,7 @@ interface RecentCheckInsSectionProps {
 
 export const RecentCheckInsSection = React.memo(function RecentCheckInsSection({
   checkIns,
+  allCheckIns,
   timezone,
   onFillMissing,
   onSelectFilled,
@@ -59,17 +61,24 @@ export const RecentCheckInsSection = React.memo(function RecentCheckInsSection({
   // Get local time for the timezone
   const localTime = getLocalTimeForTimezone(timezone);
 
-  // Sync selectedCheckIn with updated timeline data
+  // Timeline window first (it carries the missing-day placeholders for the last
+  // 7 days), then the full history for everything older.
+  const calendarItems = useMemo(
+    () => (allCheckIns ? [...checkIns, ...allCheckIns] : checkIns),
+    [checkIns, allCheckIns]
+  );
+
+  // Sync selectedCheckIn with updated check-in data
   useEffect(() => {
     if (selectedCheckIn) {
-      const updatedItem = checkIns.find(
+      const updatedItem = calendarItems.find(
         (item) => item.date === selectedCheckIn.date
       );
       if (updatedItem) {
         setSelectedCheckIn(updatedItem);
       }
     }
-  }, [checkIns]);
+  }, [calendarItems]);
 
   // Animate expansion
   useEffect(() => {
@@ -106,7 +115,7 @@ export const RecentCheckInsSection = React.memo(function RecentCheckInsSection({
   ) => {
     const item: TimelineItem = isMissingDay
       ? { date: dateString, temptationLevel: null, isMissing: true }
-      : checkIns.find((ci) => ci.date === dateString) || {
+      : calendarItems.find((ci) => ci.date === dateString) || {
           date: dateString,
           temptationLevel: null,
           isMissing: true,
@@ -227,7 +236,7 @@ export const RecentCheckInsSection = React.memo(function RecentCheckInsSection({
         <Animated.View style={animatedCalendarStyle}>
           <ExpandedCalendar
             currentMonth={currentMonth}
-            checkIns={checkIns}
+            checkIns={calendarItems}
             selectedDate={selectedCheckIn?.date || null}
             onSelectDate={handleCalendarDateSelect}
             onPreviousMonth={goToPreviousMonth}

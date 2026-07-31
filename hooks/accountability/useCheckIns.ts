@@ -5,7 +5,6 @@ import {
   collection,
   doc,
   getDoc,
-  limit,
   onSnapshot,
   orderBy,
   query,
@@ -59,7 +58,10 @@ interface UseCheckInsResult {
 
 /**
  * Hook for reading check-ins, computing timeline, and submitting new check-ins.
- * NOW AUTO-FETCHES TIMEZONE FROM users/{menteeUid}.
+ * AUTO-FETCHES TIMEZONE FROM users/{menteeUid}.
+ *
+ * `checkIns` is the full history (newest first). `timeline` is only the last
+ * `daysCount` days, padded with missing-day placeholders for the compact row.
  */
 export function useCheckIns(
   relationshipId: string | null,
@@ -123,7 +125,9 @@ export function useCheckIns(
       "checkIns"
     );
 
-    const q = query(checkInsRef, orderBy("date", "desc"), limit(daysCount));
+    // No limit: the expanded calendar needs the full history, not just the
+    // compact timeline window. `daysCount` only controls the timeline below.
+    const q = query(checkInsRef, orderBy("date", "desc"));
 
     const unsubscribe = onSnapshot(
       q,
@@ -142,7 +146,7 @@ export function useCheckIns(
     );
 
     return () => unsubscribe();
-  }, [relationshipId, organizationId, orgLoading, daysCount]);
+  }, [relationshipId, organizationId, orgLoading]);
 
   // ========================================
   // WRITE: Submit check-in function

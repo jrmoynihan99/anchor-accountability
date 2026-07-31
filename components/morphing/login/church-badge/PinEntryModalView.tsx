@@ -107,6 +107,7 @@ export function PinEntryModalView({
               keyboardType="number-pad"
               maxLength={6}
               autoFocus
+              disableFullscreenUI
             />
           </View>
 

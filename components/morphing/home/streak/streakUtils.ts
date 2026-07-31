@@ -142,6 +142,51 @@ export const hadNewPersonalBest = (streakData: StreakEntry[]) => {
   return recentStreakLength > previousBest;
 };
 
+/**
+ * How many days back the client keeps streak data loaded. Bounds both the
+ * Firestore subscription and the range over which unlogged days are treated as
+ * pending, so the two can never disagree.
+ */
+export const STREAK_WINDOW_DAYS = 90;
+
+/**
+ * Expand stored entries into a dense list over the recent window, treating any
+ * day without a document as pending.
+ *
+ * Pending means nothing has been logged for a day — it is the absence of a
+ * record, not a stored one. Only explicit success/fail results are written to
+ * Firestore, so anything that needs to reason about unlogged days (which day to
+ * ask about, which days to render as blank) works from this rather than from the
+ * raw documents.
+ *
+ * @param streakData - Entries actually present in Firestore
+ * @param options.since - Local YYYY-MM-DD before which no day is synthesised,
+ *   normally the account creation date. Without it a brand-new account would
+ *   appear to have a backlog of unlogged days predating the account.
+ * @param options.lookbackDays - Window size; defaults to STREAK_WINDOW_DAYS
+ */
+export const withImplicitPending = (
+  streakData: StreakEntry[],
+  options: { since?: string | null; lookbackDays?: number } = {}
+): StreakEntry[] => {
+  const { since = null, lookbackDays = STREAK_WINDOW_DAYS } = options;
+
+  const byDate = new Map(streakData.map((e) => [e.date, e]));
+
+  const windowStart = getLocalDateString(-lookbackDays);
+  const floor = since && since > windowStart ? since : windowStart;
+
+  for (let i = lookbackDays; i >= 0; i--) {
+    const date = getLocalDateString(-i);
+    if (date < floor) continue;
+    if (!byDate.has(date)) {
+      byDate.set(date, { date, status: "pending" });
+    }
+  }
+
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+};
+
 export const getDateToAskAbout = (streakData: StreakEntry[]) => {
   const currentStreak = getCurrentStreak(streakData);
   const pendingEntries = streakData.filter((e) => e.status === "pending");

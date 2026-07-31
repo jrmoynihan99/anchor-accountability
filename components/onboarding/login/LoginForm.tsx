@@ -391,6 +391,7 @@ export function LoginForm({
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              disableFullscreenUI
             />
           </BlurView>
         </View>
@@ -419,6 +420,7 @@ export function LoginForm({
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
+              disableFullscreenUI
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}

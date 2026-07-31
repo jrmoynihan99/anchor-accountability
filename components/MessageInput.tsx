@@ -52,6 +52,7 @@ export function MessageInput({
         onChangeText={onChangeText}
         maxLength={maxLength}
         textAlignVertical="top"
+        disableFullscreenUI
       />
       {showCharacterCount && (
         <ThemedText

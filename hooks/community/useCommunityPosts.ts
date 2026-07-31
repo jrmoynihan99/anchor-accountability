@@ -4,7 +4,6 @@ import { useOrganization } from "@/context/OrganizationContext";
 import { auth, db } from "@/lib/firebase";
 import {
   collection,
-  DocumentSnapshot,
   doc as fsDoc,
   getDoc,
   limit,
@@ -12,7 +11,6 @@ import {
   orderBy,
   query,
   QueryDocumentSnapshot,
-  startAfter,
   where,
 } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
@@ -38,14 +36,15 @@ export function useCommunityPosts() {
   // pull-to-refresh trigger
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // pagination & listener refs
-  const lastDocRef = useRef<DocumentSnapshot | null>(null);
+  // Pagination grows the window of the single realtime listener, so paginated
+  // posts stay live and never get dropped by a first-page snapshot.
+  const [currentLimit, setCurrentLimit] = useState(POSTS_PER_PAGE);
+  const loadingMoreRef = useRef(false);
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const shouldHideAuthor = (authorUid: string) =>
     blockedUserIds.has(authorUid) || blockedByUserIds.has(authorUid);
 
-  // Initial page listener (re-run when uid or block sets change, or refreshKey bumps)
   useEffect(() => {
     // cleanup any previous listener
     if (unsubscribeRef.current) {
@@ -66,28 +65,27 @@ export function useCommunityPosts() {
       return;
     }
 
-    setLoading(true);
+    // Growing the window is not a fresh load — keep the list on screen and let
+    // the footer spinner cover it.
+    if (currentLimit === POSTS_PER_PAGE) {
+      setLoading(true);
+    }
     setError(null);
-    lastDocRef.current = null;
 
     const postsQuery = query(
       collection(db, "organizations", organizationId, "communityPosts"),
       where("status", "==", "approved"),
       where("isDeleted", "==", false),
       orderBy("createdAt", "desc"),
-      limit(POSTS_PER_PAGE)
+      limit(currentLimit)
     );
 
     const unsub = onSnapshot(
       postsQuery,
       async (snapshot) => {
         try {
-          if (!snapshot.empty) {
-            lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-            setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
-          } else {
-            setHasMore(false);
-          }
+          // Fewer docs than we asked for means we've reached the end
+          setHasMore(snapshot.docs.length >= currentLimit);
 
           // filter out authors hidden by 2-way blocks
           const visibleDocs = snapshot.docs.filter(
@@ -96,49 +94,7 @@ export function useCommunityPosts() {
 
           // process posts + like status
           const rows = await Promise.all(
-            visibleDocs.map(async (d) => {
-              const data = d.data() as any;
-              const postId = d.id;
-
-              // like doc id == current user uid
-              let hasUserLiked = false;
-              try {
-                const likeSnap = await getDoc(
-                  fsDoc(
-                    db,
-                    "organizations",
-                    organizationId,
-                    "communityPosts",
-                    postId,
-                    "likes",
-                    uid
-                  )
-                );
-                hasUserLiked = likeSnap.exists();
-              } catch (e) {
-                console.error("like check failed:", e);
-              }
-
-              const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
-
-              return {
-                id: postId,
-                uid: data.uid,
-                title: data.title,
-                content: data.content,
-                categories: data.categories || [],
-                openToChat: data.openToChat,
-                createdAt: data.createdAt?.toDate?.() || new Date(),
-                updatedAt: data.updatedAt?.toDate?.() || new Date(),
-                lastEditableAt: data.lastEditableAt?.toDate?.() || new Date(),
-                likeCount: data.likeCount || 0,
-                commentCount: data.commentCount || 0,
-                status: data.status,
-                isDeleted: data.isDeleted || false,
-                hasUserLiked,
-                authorUsername,
-              } as CommunityPost;
-            })
+            visibleDocs.map((d) => toCommunityPost(d, organizationId, uid))
           );
 
           setPosts(rows);
@@ -148,12 +104,16 @@ export function useCommunityPosts() {
           setError("Failed to load posts");
         } finally {
           setLoading(false);
+          loadingMoreRef.current = false;
+          setLoadingMore(false);
         }
       },
       (err) => {
         console.error("Error listening to posts:", err);
         setError("Failed to load posts");
         setLoading(false);
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
       }
     );
 
@@ -170,123 +130,35 @@ export function useCommunityPosts() {
     organizationId,
     orgLoading,
     refreshKey,
+    currentLimit,
     blockedLoading,
     blockedByLoading,
     blockedUserIds,
     blockedByUserIds,
   ]);
 
-  // Pagination (respects 2-way blocks and reuses getDoc like check)
-  const loadMore = async () => {
-    if (
-      !uid ||
-      !organizationId ||
-      !lastDocRef.current ||
-      loadingMore ||
-      !hasMore
-    )
-      return;
+  const loadMore = () => {
+    // onEndReached can fire repeatedly before the next render, so guard on a ref
+    if (loading || loadingMoreRef.current || !hasMore) return;
 
+    loadingMoreRef.current = true;
     setLoadingMore(true);
-    try {
-      const moreQuery = query(
-        collection(db, "organizations", organizationId, "communityPosts"),
-        where("status", "==", "approved"),
-        where("isDeleted", "==", false),
-        orderBy("createdAt", "desc"),
-        startAfter(lastDocRef.current),
-        limit(POSTS_PER_PAGE)
-      );
-
-      const snapshot = await new Promise<any>((resolve, reject) => {
-        const unsub = onSnapshot(
-          moreQuery,
-          (snap) => {
-            resolve(snap);
-            unsub();
-          },
-          reject
-        );
-      });
-
-      if (snapshot.empty) {
-        setHasMore(false);
-        setLoadingMore(false);
-        return;
-      }
-
-      lastDocRef.current = snapshot.docs[snapshot.docs.length - 1];
-      setHasMore(snapshot.docs.length === POSTS_PER_PAGE);
-
-      const visibleDocs: QueryDocumentSnapshot[] = snapshot.docs.filter(
-        (d: QueryDocumentSnapshot) => !shouldHideAuthor((d.data() as any).uid)
-      );
-
-      const morePosts: CommunityPost[] = await Promise.all(
-        visibleDocs.map(async (d: QueryDocumentSnapshot) => {
-          const data = d.data() as any;
-          const postId = d.id;
-
-          let hasUserLiked = false;
-          try {
-            const likeSnap = await getDoc(
-              fsDoc(
-                db,
-                "organizations",
-                organizationId,
-                "communityPosts",
-                postId,
-                "likes",
-                uid
-              )
-            );
-            hasUserLiked = likeSnap.exists();
-          } catch (e) {
-            console.error("like check failed:", e);
-          }
-
-          const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
-
-          return {
-            id: postId,
-            uid: data.uid,
-            title: data.title,
-            content: data.content,
-            categories: data.categories || [],
-            openToChat: data.openToChat,
-            createdAt: data.createdAt?.toDate?.() || new Date(),
-            updatedAt: data.updatedAt?.toDate?.() || new Date(),
-            lastEditableAt: data.lastEditableAt?.toDate?.() || new Date(),
-            likeCount: data.likeCount || 0,
-            commentCount: data.commentCount || 0,
-            status: data.status,
-            isDeleted: data.isDeleted || false,
-            hasUserLiked,
-            authorUsername,
-          } as CommunityPost;
-        })
-      );
-
-      setPosts((prev) => [...prev, ...morePosts]);
-    } catch (err) {
-      console.error("Error loading more posts:", err);
-      setError("Failed to load more posts");
-    } finally {
-      setLoadingMore(false);
-    }
+    setCurrentLimit((prev) => prev + POSTS_PER_PAGE);
   };
 
   const refresh = async () => {
     setHasMore(true);
     setPosts([]);
     setLoading(true);
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
 
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
-    lastDocRef.current = null;
 
+    setCurrentLimit(POSTS_PER_PAGE);
     setRefreshKey((k) => k + 1);
   };
 
@@ -299,4 +171,52 @@ export function useCommunityPosts() {
     loadMore,
     refresh,
   };
+}
+
+async function toCommunityPost(
+  d: QueryDocumentSnapshot,
+  organizationId: string,
+  uid: string
+): Promise<CommunityPost> {
+  const data = d.data() as any;
+  const postId = d.id;
+
+  // like doc id == current user uid
+  let hasUserLiked = false;
+  try {
+    const likeSnap = await getDoc(
+      fsDoc(
+        db,
+        "organizations",
+        organizationId,
+        "communityPosts",
+        postId,
+        "likes",
+        uid
+      )
+    );
+    hasUserLiked = likeSnap.exists();
+  } catch (e) {
+    console.error("like check failed:", e);
+  }
+
+  const authorUsername = `user-${(data.uid as string).slice(0, 5)}`;
+
+  return {
+    id: postId,
+    uid: data.uid,
+    title: data.title,
+    content: data.content,
+    categories: data.categories || [],
+    openToChat: data.openToChat,
+    createdAt: data.createdAt?.toDate?.() || new Date(),
+    updatedAt: data.updatedAt?.toDate?.() || new Date(),
+    lastEditableAt: data.lastEditableAt?.toDate?.() || new Date(),
+    likeCount: data.likeCount || 0,
+    commentCount: data.commentCount || 0,
+    status: data.status,
+    isDeleted: data.isDeleted || false,
+    hasUserLiked,
+    authorUsername,
+  } as CommunityPost;
 }

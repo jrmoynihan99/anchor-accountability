@@ -24,6 +24,7 @@ export function ChurchSearchBar({ value, onChangeText }: ChurchSearchBarProps) {
           placeholderTextColor={colors.textSecondary}
           value={value}
           onChangeText={onChangeText}
+          disableFullscreenUI
         />
       </View>
     </View>

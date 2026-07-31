@@ -140,6 +140,7 @@ export function ChangePasswordView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
             <TouchableOpacity
               onPress={() => setShowCurrentPassword(!showCurrentPassword)}
@@ -178,6 +179,7 @@ export function ChangePasswordView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
             <TouchableOpacity
               onPress={() => setShowNewPassword(!showNewPassword)}
@@ -216,6 +218,7 @@ export function ChangePasswordView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
             <TouchableOpacity
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}

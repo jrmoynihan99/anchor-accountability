@@ -19,6 +19,7 @@ const checkIns = require("./accountability/checkIns");
 const invites = require("./accountability/invites");
 const blockFunctions = require("./user/blocks");
 const streakFunctions = require("./user/streaks");
+const timezoneBuckets = require("./user/timezoneBuckets");
 const userDeletion = require("./user/deletion");
 const organizationFunctions = require("./user/organization");
 const adminOrganization = require("./admin/organization");
@@ -64,6 +65,10 @@ module.exports = {
 
   // User - Streaks
   ...streakFunctions,
+
+  // User - Timezone bucketing (keeps utcOffsetMinutes in sync for the
+  // hour-bucketed notification jobs)
+  ...timezoneBuckets,
 
   // User - Deletion
   ...userDeletion,

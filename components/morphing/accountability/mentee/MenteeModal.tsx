@@ -142,6 +142,7 @@ export function MenteeModal({
           {!loading && timeline.length > 0 && (
             <RecentCheckInsSection
               checkIns={timeline}
+              allCheckIns={checkIns}
               timezone={userTimezone}
             />
           )}

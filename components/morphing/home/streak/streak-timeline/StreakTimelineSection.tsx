@@ -23,11 +23,17 @@ export interface StreakEntry {
 interface StreakTimelineSectionProps {
   streakData: StreakEntry[];
   onDaySelect?: (date: string) => void; // Optional callback when a day is selected
+  /**
+   * Called when the calendar moves to a different month, so months older than
+   * the live subscription window can be fetched on demand.
+   */
+  onMonthChange?: (month: Date) => void;
 }
 
 export const StreakTimelineSection = React.memo(function StreakTimelineSection({
   streakData,
   onDaySelect,
+  onMonthChange,
 }: StreakTimelineSectionProps) {
   const { colors } = useTheme();
   const [selectedEntry, setSelectedEntry] = useState<StreakEntry | null>(null);
@@ -70,24 +76,32 @@ export const StreakTimelineSection = React.memo(function StreakTimelineSection({
   };
 
   const handleCalendarDateSelect = (dateString: string) => {
-    const entry = streakData.find((e) => e.date === dateString);
-    if (entry) {
-      handleDayClick(entry);
-    }
+    // A day with no document is pending, so fall back rather than ignoring the
+    // tap — otherwise unlogged days in an older month would be unselectable.
+    const entry = streakData.find((e) => e.date === dateString) ?? {
+      date: dateString,
+      status: "pending" as const,
+    };
+    handleDayClick(entry);
   };
 
   const handleCloseDropdown = () => {
     setSelectedEntry(null);
   };
 
+  const goToMonth = (month: Date) => {
+    setCurrentMonth(month);
+    onMonthChange?.(month);
+  };
+
   const goToPreviousMonth = () => {
-    setCurrentMonth(
+    goToMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1)
     );
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth(
+    goToMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1)
     );
   };

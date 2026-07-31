@@ -1,8 +1,16 @@
 const { onSchedule } = require("firebase-functions/scheduler");
 const { onRequest } = require("firebase-functions/https");
 const axios = require("axios");
-const { admin, formatDate, getAllOrgIds } = require("../utils/database");
+const {
+  admin,
+  formatDate,
+  getAllOrgIds,
+  offsetsForLocalHour,
+} = require("../utils/database");
 const { requireAdminSecret } = require("../utils/adminAuth");
+
+// Local hour at which accountability check-in reminders are sent
+const REMINDER_LOCAL_HOUR = 18;
 
 /**
  * Send accountability check-in reminders at 6 PM local time
@@ -35,15 +43,22 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
         console.log(`\n--- Processing org: ${orgId} ---`);
 
         try {
-          // Get all users in THIS org with accountability notifications enabled
+          // Only users whose local clock currently reads REMINDER_LOCAL_HOUR.
+          // Bucketing on utcOffsetMinutes means this reads ~1/24th of the org
+          // per run instead of every user, 24 times a day.
           const usersSnap = await db
             .collection(`organizations/${orgId}/users`)
             .where("notificationPreferences.accountability", "==", true)
+            .where(
+              "utcOffsetMinutes",
+              "in",
+              offsetsForLocalHour(REMINDER_LOCAL_HOUR, now),
+            )
             .get();
 
           if (usersSnap.empty) {
             console.log(
-              `No users with accountability notifications enabled in org ${orgId}.`,
+              `No users due for an accountability reminder this hour in org ${orgId}.`,
             );
             continue;
           }
@@ -75,8 +90,10 @@ exports.sendAccountabilityCheckInReminders = onSchedule(
                 ?.value || "0",
             );
 
-            // Only process if it's between 6:00 PM (18) and 6:59 PM (18)
-            if (userHour !== 18) {
+            // Defence in depth — see the equivalent guard in notifications/streaks.js.
+            // `timezone` stays the source of truth; a stale offset bucket
+            // suppresses the send rather than firing at the wrong local time.
+            if (userHour !== REMINDER_LOCAL_HOUR) {
               continue;
             }
 

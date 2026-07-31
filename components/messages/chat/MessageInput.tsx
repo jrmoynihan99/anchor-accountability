@@ -1,26 +1,20 @@
 // components/messages/MessageInput.tsx
 import { ButtonModalTransitionBridge } from "@/components/morphing/ButtonModalTransitionBridge";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useAccountability } from "@/context/AccountabilityContext";
 import { useOtherUserAccountability } from "@/hooks/accountability/useOtherUserAccountability";
 import { BlurView } from "expo-blur";
 import React, { forwardRef } from "react";
-import {
-  Platform,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MenteeModal } from "../../morphing/accountability/mentee/MenteeModal";
 import { MentorModal } from "../../morphing/accountability/mentor/MentorModal";
 import { AccountabilityInviteButton } from "../../morphing/message-thread/accountability/AccountabilityInviteButton";
 import { AccountabilityInviteModal } from "../../morphing/message-thread/accountability/AccountabilityInviteModal";
+import { MessageComposer, MessageComposerHandle } from "./MessageComposer";
 import { MessageInputProps } from "./types";
 
 export const MessageInput = forwardRef<
-  TextInput,
+  MessageComposerHandle,
   MessageInputProps & {
     colorScheme?: "light" | "dark";
     otherUserId?: string;
@@ -34,8 +28,6 @@ export const MessageInput = forwardRef<
 >(
   (
     {
-      inputText,
-      onInputChange,
       onSend,
       onFocus,
       colors,
@@ -102,12 +94,6 @@ export const MessageInput = forwardRef<
     };
 
     const buttonVariant = getButtonVariant();
-
-    // ✅ NEW: Handle layout changes to track input height
-    const handleLayout = (event: any) => {
-      const { height } = event.nativeEvent.layout;
-      onHeightChange?.(height + 8);
-    };
 
     // ------------------------------------------------------------
     // Shared inner content (used for iOS BlurView + Android solid View)
@@ -274,59 +260,20 @@ export const MessageInput = forwardRef<
           {/* ------------------------------------------------ */}
           {/* INPUT FIELD + SEND BUTTON                       */}
           {/* ------------------------------------------------ */}
-          <View
-            style={[
-              styles.inputWrapper,
-              {
-                backgroundColor: colors.textInputBackground,
-                borderColor: colors.border,
-              },
-            ]}
-            onLayout={handleLayout}
-          >
-            <TextInput
-              ref={ref}
-              style={[styles.textInput, { color: colors.text }]}
-              placeholder="Message..."
-              placeholderTextColor={colors.textSecondary}
-              value={inputText}
-              onChangeText={onInputChange}
-              onFocus={onFocus}
-              multiline
-              maxLength={1000}
-              submitBehavior="newline"
-            />
-
-            <TouchableOpacity
-              style={[
-                styles.sendButton,
-                {
-                  backgroundColor:
-                    inputText.trim().length > 0 ? colors.tint : colors.border,
-                },
-              ]}
-              onPress={onSend}
-              disabled={inputText.trim().length === 0 || disabled}
-              activeOpacity={0.8}
-            >
-              <IconSymbol
-                name="arrow.up"
-                size={16}
-                color={
-                  inputText.trim().length > 0
-                    ? colors.white
-                    : colors.textSecondary
-                }
-              />
-            </TouchableOpacity>
-          </View>
+          <MessageComposer
+            ref={ref}
+            onSend={onSend}
+            onFocus={onFocus}
+            colors={colors}
+            disabled={disabled}
+            onHeightChange={onHeightChange}
+          />
         </View>
       </View>
     );
 
     return (
       <View style={styles.inputContainer}>
-        {/* ✅ ADDED onLayout */}
         {/* -------------------------------------------- */}
         {/* ANDROID fallback without blur                */}
         {/* -------------------------------------------- */}
@@ -376,35 +323,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 8,
-  },
-
-  /* Existing input wrapper (unchanged) */
-  inputWrapper: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    borderRadius: 30,
-    borderWidth: 1,
-    paddingLeft: 14,
-    paddingRight: 6,
-    paddingVertical: 6,
-    minHeight: 40,
-  },
-
-  textInput: {
-    flex: 1,
-    fontSize: 16,
-    lineHeight: 20,
-    maxHeight: 80,
-    paddingVertical: 6,
-  },
-
-  sendButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 6,
   },
 });

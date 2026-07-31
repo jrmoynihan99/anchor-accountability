@@ -26,6 +26,11 @@ interface StreakCardModalProps {
   showUndo?: boolean;
   lastModifiedDate?: string | null;
   onUndoStateChange?: (showUndo: boolean, date: string | null) => void;
+  /**
+   * Called when the calendar navigates to a different month, so months outside
+   * the live subscription window can be fetched on demand.
+   */
+  onMonthChange?: (month: Date) => void;
 }
 
 export function StreakCardModal({
@@ -39,6 +44,7 @@ export function StreakCardModal({
   showUndo,
   lastModifiedDate,
   onUndoStateChange,
+  onMonthChange,
 }: StreakCardModalProps) {
   const { colors, effectiveTheme } = useTheme();
 
@@ -182,7 +188,10 @@ export function StreakCardModal({
       </View>
 
       {/* NEW: Streak Timeline Section */}
-      <StreakTimelineSection streakData={streakData} />
+      <StreakTimelineSection
+        streakData={streakData}
+        onMonthChange={onMonthChange}
+      />
     </ScrollView>
   );
 

@@ -37,6 +37,7 @@ export default function HomeScreen() {
     loading: streakLoading,
     updateStreakStatus,
     undoStreakStatus,
+    loadMonth,
   } = useStreakData();
   const { mentor, loading } = useAccountability();
   const { threads } = useThreads();
@@ -236,6 +237,7 @@ export default function HomeScreen() {
                   onUndoStateChange={(showUndo, date) =>
                     setUndoState({ showUndo, lastModifiedDate: date })
                   }
+                  onMonthChange={loadMonth}
                 />
               </>
             )}

@@ -54,7 +54,7 @@ export function MentorModal({
   const { threads } = useThreads();
 
   // Bidirectional hook - READ and WRITE
-  const { timeline, loading, submitCheckIn } = useCheckIns(
+  const { checkIns, timeline, loading, submitCheckIn } = useCheckIns(
     relationshipId,
     uid,
     7,
@@ -169,6 +169,7 @@ export function MentorModal({
           {!loading && timeline.length > 0 && (
             <RecentCheckInsSection
               checkIns={timeline}
+              allCheckIns={checkIns}
               timezone={mentorTimezone}
               onFillMissing={handleFillMissing}
               onSelectFilled={handleSelectFilled}

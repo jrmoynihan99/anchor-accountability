@@ -188,6 +188,7 @@ export function ForgotPasswordModal({
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!loading}
+                    disableFullscreenUI
                   />
                 </BlurView>
               </View>

@@ -2,7 +2,14 @@ const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onSchedule } = require("firebase-functions/scheduler");
 const { onRequest } = require("firebase-functions/https");
 const axios = require("axios");
-const { admin, getAllOrgIds } = require("../utils/database");
+const {
+  admin,
+  getAllOrgIds,
+  offsetsForLocalHour,
+} = require("../utils/database");
+
+// Mentee's local hour at which mentors are told about a missed check-in
+const CHECK_IN_LOCAL_HOUR = 10;
 const { requireAdminSecret } = require("../utils/adminAuth");
 
 /**
@@ -162,33 +169,73 @@ exports.sendMissedCheckInNotifications = onSchedule(
         console.log(`\n--- Processing org: ${orgId} ---`);
 
         try {
-          // Get all active relationships in THIS org
-          const relationshipsSnap = await db
-            .collection(`organizations/${orgId}/accountabilityRelationships`)
-            .where("status", "==", "active")
+          // Start from the mentees whose local clock currently reads
+          // CHECK_IN_LOCAL_HOUR, rather than scanning every active relationship
+          // and fetching each mentee to discover their timezone. This inverts
+          // the old N-relationships-plus-N-gets-per-hour pattern into a bounded
+          // query over ~1/24th of the org.
+          const menteesSnap = await db
+            .collection(`organizations/${orgId}/users`)
+            .where(
+              "utcOffsetMinutes",
+              "in",
+              offsetsForLocalHour(CHECK_IN_LOCAL_HOUR, now)
+            )
             .get();
 
-          if (relationshipsSnap.empty) {
+          if (menteesSnap.empty) {
+            console.log(`No mentees at the check-in hour in org ${orgId}.`);
+            continue;
+          }
+
+          const menteeById = new Map(
+            menteesSnap.docs.map((d) => [d.id, d.data()])
+          );
+          const menteeIds = [...menteeById.keys()];
+
+          // Firestore caps `in` at 30 values, so chunk the mentee list.
+          const relationshipDocs = [];
+          for (let i = 0; i < menteeIds.length; i += 30) {
+            const snap = await db
+              .collection(`organizations/${orgId}/accountabilityRelationships`)
+              .where("status", "==", "active")
+              .where("menteeUid", "in", menteeIds.slice(i, i + 30))
+              .get();
+            relationshipDocs.push(...snap.docs);
+          }
+
+          if (relationshipDocs.length === 0) {
             console.log(
-              `No active accountability relationships in org ${orgId}.`
+              `No active relationships for mentees at the check-in hour in org ${orgId}.`
             );
             continue;
           }
 
+          // Fetch the mentors in one round trip instead of one get per relationship.
+          const mentorIds = [
+            ...new Set(relationshipDocs.map((d) => d.data().mentorUid)),
+          ].filter(Boolean);
+          const mentorDocs = mentorIds.length
+            ? await db.getAll(
+                ...mentorIds.map((id) =>
+                  db.doc(`organizations/${orgId}/users/${id}`)
+                )
+              )
+            : [];
+          const mentorById = new Map(
+            mentorDocs.filter((d) => d.exists).map((d) => [d.id, d.data()])
+          );
+
           const notifications = [];
 
-          for (const relationshipDoc of relationshipsSnap.docs) {
+          for (const relationshipDoc of relationshipDocs) {
             const relationship = relationshipDoc.data();
             const mentorUid = relationship.mentorUid;
             const menteeUid = relationship.menteeUid;
 
-            // Get MENTEE's timezone
-            const menteeDoc = await db
-              .doc(`organizations/${orgId}/users/${menteeUid}`)
-              .get();
-            if (!menteeDoc.exists) continue;
+            const menteeData = menteeById.get(menteeUid);
+            if (!menteeData) continue;
 
-            const menteeData = menteeDoc.data();
             const menteeTimezone = menteeData.timezone;
 
             if (!menteeTimezone) {
@@ -210,18 +257,15 @@ exports.sendMissedCheckInNotifications = onSchedule(
                 ?.value || "0"
             );
 
-            // Only process if it's 10:00 AM in the MENTEE's timezone
-            if (menteeHour !== 10) {
+            // Defence in depth — see the equivalent guard in notifications/streaks.js.
+            // `timezone` stays the source of truth; a stale offset bucket
+            // suppresses the send rather than firing at the wrong local time.
+            if (menteeHour !== CHECK_IN_LOCAL_HOUR) {
               continue;
             }
 
-            // Get mentor's data
-            const mentorDoc = await db
-              .doc(`organizations/${orgId}/users/${mentorUid}`)
-              .get();
-            if (!mentorDoc.exists) continue;
-
-            const mentorData = mentorDoc.data();
+            const mentorData = mentorById.get(mentorUid);
+            if (!mentorData) continue;
 
             // Skip if no push token or notifications disabled
             if (

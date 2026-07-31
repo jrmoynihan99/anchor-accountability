@@ -273,6 +273,7 @@ export const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(
                 multiline
                 maxLength={500}
                 submitBehavior="newline"
+                disableFullscreenUI
               />
               <TouchableOpacity
                 style={[

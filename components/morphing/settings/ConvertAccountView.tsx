@@ -185,6 +185,7 @@ export function ConvertAccountView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
           </View>
 
@@ -212,6 +213,7 @@ export function ConvertAccountView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
           </View>
 
@@ -239,6 +241,7 @@ export function ConvertAccountView({
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              disableFullscreenUI
             />
           </View>
         </View>
